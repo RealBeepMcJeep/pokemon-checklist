@@ -8,6 +8,7 @@ import json
 import re
 import struct
 from pathlib import Path
+from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "src" / "index.template.html"
@@ -127,7 +128,12 @@ def validate_inputs(pokemon: object, encounters: object) -> list[str]:
             seen_locations += 1
             for value in location.get("assets", []):
                 asset(value, location.get("name", "location"))
-            required_map = REQUIRED_GRASS_MAPS.get(location.get("name"))
+            location_name = location.get("name")
+            required_map = (
+                REQUIRED_GRASS_MAPS.get(location_name)
+                if isinstance(location_name, str)
+                else None
+            )
             if required_map and required_map not in location.get("assets", []):
                 errors.append(f"{location.get('name')} is missing its numbered grass map {required_map}")
             for group in location.get("groups", []):
@@ -236,13 +242,15 @@ def validate_output(html: str, pokemon: list[dict], encounters: dict) -> None:
 
 
 def build(check: bool) -> int:
-    pokemon = read_json(POKEMON_PATH)
-    encounters = read_json(ENCOUNTERS_PATH)
-    errors = validate_inputs(pokemon, encounters)
+    pokemon_data = read_json(POKEMON_PATH)
+    encounters_data = read_json(ENCOUNTERS_PATH)
+    errors = validate_inputs(pokemon_data, encounters_data)
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
+    pokemon = cast(list[dict], pokemon_data)
+    encounters = cast(dict, encounters_data)
     html = render(pokemon, encounters)
     validate_output(html, pokemon, encounters)
     if check:

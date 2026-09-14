@@ -18,24 +18,6 @@ Completed items move to `changelog.md`.
 - Export versioned user-state JSON. Import replaces current progress after confirmation.
 - Keep editable extracted JSON and images as source assets while generating one portable application file.
 
-## Milestones
+## Outstanding work
 
-### 1. Repository documentation
-
-- [ ] Add a concise README with usage and regeneration instructions.
-
-### 2. Application
-
-- [ ] Build the responsive location checklist and expandable sections.
-- [ ] Build the searchable desktop/mobile Pokédex sidebar and location links.
-- [ ] Implement shared species status, completion counts, and first-incomplete navigation.
-- [ ] Implement optional Form Dex tracking.
-- [ ] Implement localStorage, reset, versioned export, and replace-only import.
-- [ ] Add accessible controls, keyboard operation, and reduced-motion support.
-
-### 3. Self-contained build and verification
-
-- [ ] Generate one self-contained `index.html` with embedded data and image assets.
-- [ ] Add the smallest runnable dataset/state checks.
-- [ ] Verify direct `file://` use on desktop and mobile-sized layouts.
-- [ ] Run diagnostics and final repository checks.
+No outstanding items.

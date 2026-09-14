@@ -207,6 +207,7 @@
     const formSlug = (value) => normalize(value);
     const titleForm = (value) => String(value).split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" ");
     const escapeHTML = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    const replaceMarkup = (element, markup) => element.replaceChildren(document.createRange().createContextualFragment(markup));
     const safeId = (value) => String(value).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "");
     const statusOf = (bucket, key) => bucket[String(key)] || "none";
     const statusClass = (status) => `status-${status}`;
@@ -246,7 +247,7 @@
       if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
       const result = {};
       Object.keys(value).forEach((key) => {
-        if (numeric && (!/^(?:[1-9]|[1-9][0-9]|[1-7][0-9]{2})$/.test(key) || !byDex.has(Number(key)))) throw new Error(`Invalid Pokémon ID in ${label}`);
+        if (numeric && (!/^(?:[1-9]|[1-9][0-9]|[1-9][0-9]{2})$/.test(key) || !byDex.has(Number(key)))) throw new Error(`Invalid Pokémon ID in ${label}`);
         if (!numeric && !allowedKeys.has(key)) throw new Error(`Invalid form ID in ${label}`);
         if (!STATUS_ORDER.includes(value[key])) throw new Error(`Invalid status in ${label}`);
         if (value[key] !== "none") result[key] = value[key];
@@ -382,7 +383,9 @@
     }
 
     function blockingRows(location) {
-      return location.groups.filter((group) => group.category === "regular").flatMap((group) => group.encounters).filter((row) => row.speciesId);
+      const unique = new Map();
+      location.groups.filter((group) => group.category === "regular").flatMap((group) => group.encounters).filter((row) => row.speciesId).forEach((row) => unique.set(row.speciesId, row));
+      return [...unique.values()];
     }
 
     function locationComplete(location) {
@@ -407,6 +410,11 @@
       return `<figure><img src="${ASSETS[path]}" alt="${escapeHTML(label)}"><figcaption>${escapeHTML(caption)}</figcaption></figure>`;
     }
 
+    function islandImage(path, islandName) {
+      const label = `${islandName} overview map`;
+      return `<figure><img src="${ASSETS[path]}" alt="${escapeHTML(label)}"><figcaption>${escapeHTML(label)}</figcaption></figure>`;
+    }
+
     function locationHTML(location, focusId) {
       const progress = locationProgress(location);
       const complete = progress.total > 0 && progress.caught === progress.total;
@@ -424,7 +432,7 @@
     function renderMain(focusId = null, preserveOpen = true) {
       const oldOpen = preserveOpen ? currentOpenLocations() : new Set();
       const view = document.getElementById("main-view");
-      view.innerHTML = ENCOUNTERS.islands.map((island) => `<section class="island"><h2>${escapeHTML(island.name)}</h2>${island.locations.map((location) => locationHTML(location, focusId ? (location.id === focusId ? focusId : null) : (oldOpen.has(location.id) ? location.id : null))).join("")}</section>`).join("");
+      replaceMarkup(view, ENCOUNTERS.islands.map((island) => `<section class="island"><h2>${escapeHTML(island.name)}</h2>${island.assets?.length ? `<div class="map-grid">${island.assets.map((path) => islandImage(path, island.name)).join("")}</div>` : ""}${island.locations.map((location) => locationHTML(location, focusId ? (location.id === focusId ? focusId : null) : (oldOpen.has(location.id) ? location.id : null))).join("")}</section>`).join(""));
       if (focusId) {
         const target = [...document.querySelectorAll("[data-location-id]")].find((item) => item.dataset.locationId === focusId);
         if (target) setTimeout(() => { target.scrollIntoView({ block: "start" }); target.querySelector("summary")?.focus({ preventScroll: true }); }, 0);
@@ -442,11 +450,11 @@
 
     function renderSelection() {
       const selection = document.getElementById("dex-selection");
-      if (!selectedDex) { selection.innerHTML = "<div class=\"empty\">Select a Pokémon to see its status and wild locations.</div>"; return; }
+      if (!selectedDex) { replaceMarkup(selection, "<div class=\"empty\">Select a Pokémon to see its status and wild locations.</div>"); return; }
       const pokemon = byDex.get(selectedDex);
       const occurrences = getOccurrences(selectedDex);
       const forms = [...formDefs.values()].filter((form) => form.speciesId === selectedDex);
-      selection.innerHTML = `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Form progress (does not affect locations)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? "Wild locations" : "No wild location is listed in this PDF."}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.location.name)} · ${escapeHTML(item.group.name)} · ${item.ally ? "optional ally" : "primary"}</a></li>`).join("")}</ul>` : ""}</div>`;
+      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Form progress (does not affect locations)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? "Wild locations" : "No wild location is listed in this PDF."}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.location.name)} · ${escapeHTML(item.group.name)} · ${item.ally ? "optional ally" : "primary"}</a></li>`).join("")}</ul>` : ""}</div>`);
     }
 
     function renderDex() {
@@ -455,7 +463,7 @@
       const caught = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "caught").length;
       const seen = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "seen").length;
       document.getElementById("dex-count").textContent = `${filtered.length} of ${POKEMON.length} Pokémon · ${caught} caught · ${seen} seen`;
-      document.getElementById("dex-list").innerHTML = filtered.length ? filtered.map((pokemon) => `<div class="dex-row"><button type="button" class="dex-select" data-action="select" data-species="${pokemon.id}" aria-current="${selectedDex === pokemon.id}"><span class="icon" aria-hidden="true" style="background-position: -${((pokemon.id - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((pokemon.id - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span class="dex-name">${String(pokemon.id).padStart(3, "0")} · ${escapeHTML(pokemon.name)}</span></button>${speciesStatusButton(pokemon.id, "", "Pokédex")}</div>`).join("") : "<div class=\"empty\">No Pokémon match that search.</div>";
+      replaceMarkup(document.getElementById("dex-list"), filtered.length ? filtered.map((pokemon) => `<div class="dex-row"><button type="button" class="dex-select" data-action="select" data-species="${pokemon.id}" aria-current="${selectedDex === pokemon.id}"><span class="icon" aria-hidden="true" style="background-position: -${((pokemon.id - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((pokemon.id - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span class="dex-name">${String(pokemon.id).padStart(3, "0")} · ${escapeHTML(pokemon.name)}</span></button>${speciesStatusButton(pokemon.id, "", "Pokédex")}</div>`).join("") : "<div class=\"empty\">No Pokémon match that search.</div>");
       renderSelection();
     }
 

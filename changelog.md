@@ -16,3 +16,15 @@
 - Added a reproducible extraction and validation utility and corrected the explicit Floette-Eternal and Route 5 revisit metadata.
 - Validated all 807 species IDs, encounter references, stable IDs, source pages, and asset paths.
 - Corrected all seven grass-region maps to include the PDF's numbered vector overlays, with regression validation to prevent stripped markers.
+- Added the responsive chronological location checklist with expandable sections, all associated images, encounter details, and Return later labels.
+- Added the searchable National Dex sidebar/mobile drawer with all 807 icons, shared tri-state statuses, and links to direct and optional encounters.
+- Added first-incomplete location navigation based on unique regular species.
+- Added optional Living Form Dex tracking and form-to-species status promotion.
+- Added versioned localStorage persistence, reset, deterministic export, and validated replace-only import.
+- Added keyboard-accessible controls, focus management, visible labels, reduced-motion support, and responsive layouts.
+- Added `tools/build.py` and generated the self-contained, offline `index.html` with every data and image asset embedded.
+- Added usage, regeneration, attribution, and save-format documentation to `README.md`.
+- Corrected imported status handling for National Dex entries 800–807.
+- Verified `file://` operation in Edge at desktop and 390×844 mobile viewports with no horizontal overflow or browser exceptions.
+- Smoke-tested all 60 location sections, 807 sidebar rows, status cycling and persistence, Form Dex promotion, search, valid/invalid imports, drawer behavior, and embedded map visibility.
+- Passed source extraction validation, generated-file freshness checks, Python compilation, HTML/JSON checks, LSP diagnostics, and repository-wide static diagnostics with no blocking findings.
