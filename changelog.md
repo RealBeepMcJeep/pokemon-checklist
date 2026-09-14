@@ -28,3 +28,4 @@
 - Verified `file://` operation in Edge at desktop and 390×844 mobile viewports with no horizontal overflow or browser exceptions.
 - Smoke-tested all 60 location sections, 807 sidebar rows, status cycling and persistence, Form Dex promotion, search, valid/invalid imports, drawer behavior, and embedded map visibility.
 - Passed source extraction validation, generated-file freshness checks, Python compilation, HTML/JSON checks, LSP diagnostics, and repository-wide static diagnostics with no blocking findings.
+- Replaced internal “blocker” terminology with clear regular-encounter progress labels.

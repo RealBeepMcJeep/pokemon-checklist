@@ -420,7 +420,7 @@
       const complete = progress.total > 0 && progress.caught === progress.total;
       const empty = progress.total === 0;
       const open = focusId === location.id;
-      const progressText = empty ? "No regular blockers" : `${progress.caught} / ${progress.total} blockers caught`;
+      const progressText = empty ? "No regular encounters" : `${progress.caught} / ${progress.total} regular Pokémon caught`;
       const notes = location.notes || [];
       return `<details class="location" id="location-${safeId(location.id)}" data-location-id="${escapeHTML(location.id)}"${open ? " open" : ""}><summary><span class="location-heading"><span class="location-title">${escapeHTML(location.name)}</span><span class="location-progress ${complete ? "complete" : ""}">${complete ? "Complete · " : ""}${progressText}</span></span></summary><div class="location-body">${location.assets?.length ? `<div class="map-grid">${location.assets.map((path) => locationImage(path, location.name)).join("")}</div>` : ""}${notes.length ? `<div class="notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}${location.groups.map(groupHTML).join("")}</div></details>`;
     }
