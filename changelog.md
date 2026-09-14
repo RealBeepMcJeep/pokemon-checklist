@@ -47,3 +47,8 @@
 - Migrated browser saves and backups to schema v2 with a persistent mode setting while accepting existing v1 data losslessly.
 - Reused accurate location screenshots in Sun mode while omitting mod-specific numbered and island maps.
 - Verified pinned-source reproducibility, encounter-rate invariants, v1 migration, invalid restore safety, rapid switching, shared progress, 57/60 mode-specific location counts, desktop/tablet/mobile layouts, and offline browser operation with no exceptions.
+- Added canonical Pokémon Moon, Ultra Sun, and Ultra Moon encounter datasets from checksum-pinned table dumps and PokeAPI versions 28–30.
+- Replaced the two-mode button with a five-mode dropdown while retaining shared progress, overlapping locations, and remembered selection.
+- Added distinct Prismatic Moon, Sun, Moon, Ultra Sun, and Ultra Moon themes that restore with the selected mode.
+- Added small Pokémon sprites to location encounter rows and SOS ally controls by reusing the embedded icon atlas.
+- Verified all five mode datasets, pinned-source checks, version-exclusive forms, theme restoration, cross-mode restore/reset synchronization, desktop/tablet/mobile layouts, and offline operation with no browser exceptions.

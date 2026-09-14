@@ -20,15 +20,17 @@ Completed items move to `changelog.md`.
 
 ## Outstanding work
 
-### Pokémon Sun mode
+### Game modes
 
-- [x] Confirm a reproducible vanilla Pokémon Sun encounter source and cross-check representative locations.
-- [x] Generate canonical Sun encounter JSON with forms, rates, levels, methods, conditions, SOS encounters, and provenance.
-- [x] Map Sun areas onto reusable islands, locations, and screenshots; hide Ultra/mod-only or misleading numbered maps.
-- [x] Add a one-click mode toggle that swaps encounter information while preserving the current location when possible.
-- [x] Persist the selected mode and migrate existing local saves/backups without changing shared Pokémon/form progress.
-- [x] Update Pokédex known-place links, progress totals, validation, build embedding, documentation, and attribution for both modes.
-- [x] Test data invariants, migration, rapid mode switching, backup/restore, desktop, tablet, mobile, and offline operation.
+- [x] Confirm reproducible sources for Pokémon Sun, Moon, Ultra Sun, and Ultra Moon.
+- [x] Generate canonical vanilla encounter JSON with forms, rates, levels, methods, conditions, SOS encounters, and provenance.
+- [x] Reconcile vanilla areas with stable guide locations and omit misleading mod-specific numbered maps.
+- [x] Replace the two-mode button with a five-mode native dropdown while preserving overlapping locations.
+- [x] Persist the selected mode without changing shared Pokémon/form progress or the v1 save migration.
+- [x] Apply a distinct accessible theme to each mode and restore it with the saved selection.
+- [x] Reuse the embedded atlas for small sprites beside location-table Pokémon.
+- [x] Update known-place links, progress totals, build validation, documentation, and attribution for all modes.
+- [x] Test data invariants, migration, mode switching, backup/restore, desktop, tablet, mobile, and offline operation.
 
 ### Stable Pokédex scrolling
 

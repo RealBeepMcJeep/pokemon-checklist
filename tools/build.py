@@ -15,7 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "src" / "index.template.html"
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
 ENCOUNTERS_PATH = ROOT / "data" / "encounters.json"
-SUN_ENCOUNTERS_PATH = ROOT / "data" / "encounters-sun.json"
+VANILLA_ENCOUNTERS = {
+    "sun": (ROOT / "data" / "encounters-sun.json", 57),
+    "moon": (ROOT / "data" / "encounters-moon.json", 57),
+    "ultra-sun": (ROOT / "data" / "encounters-ultra-sun.json", 60),
+    "ultra-moon": (ROOT / "data" / "encounters-ultra-moon.json", 60),
+}
 ATLAS_PATH = ROOT / "assets" / "gen7-icons.png"
 OUTPUT = ROOT / "index.html"
 ATLAS_WIDTH = 1280
@@ -70,6 +75,7 @@ def validate_inputs(
     encounters: object,
     expected_locations: int = 60,
     require_grass_maps: bool = True,
+    expected_mode: str | None = None,
 ) -> list[str]:
     errors: list[str] = []
     if not isinstance(pokemon, list) or len(pokemon) != 807:
@@ -94,6 +100,8 @@ def validate_inputs(
     if not isinstance(encounters, dict) or encounters.get("schemaVersion") != 1:
         errors.append("encounters.json schemaVersion must be 1")
         return errors
+    if expected_mode and encounters.get("mode") != expected_mode:
+        errors.append(f"encounters.json mode must be {expected_mode}")
     islands = encounters.get("islands")
     if not isinstance(islands, list) or len(islands) != 4:
         errors.append("encounters.json must contain four islands")
@@ -306,17 +314,21 @@ def validate_output(
 def build(check: bool) -> int:
     pokemon_data = read_json(POKEMON_PATH)
     encounters_data = read_json(ENCOUNTERS_PATH)
-    sun_encounters_data = read_json(SUN_ENCOUNTERS_PATH)
+    vanilla_data = {
+        mode: read_json(path) for mode, (path, _) in VANILLA_ENCOUNTERS.items()
+    }
     errors = validate_inputs(pokemon_data, encounters_data)
-    errors.extend(
-        f"encounters-sun.json: {error}"
-        for error in validate_inputs(
-            pokemon_data,
-            sun_encounters_data,
-            expected_locations=57,
-            require_grass_maps=False,
+    for mode, (path, expected_locations) in VANILLA_ENCOUNTERS.items():
+        errors.extend(
+            f"{path.name}: {error}"
+            for error in validate_inputs(
+                pokemon_data,
+                vanilla_data[mode],
+                expected_locations=expected_locations,
+                require_grass_maps=False,
+                expected_mode=mode,
+            )
         )
-    )
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
@@ -324,7 +336,7 @@ def build(check: bool) -> int:
     pokemon = cast(list[dict], pokemon_data)
     encounters_by_mode = {
         "photonic-prismatic": cast(dict, encounters_data),
-        "sun": cast(dict, sun_encounters_data),
+        **{mode: cast(dict, data) for mode, data in vanilla_data.items()},
     }
     html = render(pokemon, encounters_by_mode)
     validate_output(html, pokemon, encounters_by_mode)
