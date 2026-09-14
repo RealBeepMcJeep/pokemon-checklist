@@ -110,7 +110,7 @@
     #dex-search { display: block; width: 100%; margin-top: .2rem; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: .35rem; background: #0f1b13; color: var(--ink); }
     .dex-count { margin-top: .35rem; color: var(--muted); font-size: .76rem; }
     .dex-content { max-height: calc(100vh - 14.5rem); overflow-y: auto; }
-    .dex-selection { padding: .6rem .75rem; border-bottom: 1px solid var(--line); background: #1b2d21; }
+    .dex-selection { position: sticky; z-index: 2; top: 0; max-height: min(45vh, 24rem); overflow-y: auto; padding: .6rem .75rem; border-bottom: 1px solid var(--line); background: #1b2d21; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
     .selected-title { display: flex; align-items: center; gap: .45rem; font-weight: 750; }
     .selected-title .status-button { margin-left: auto; }
     .form-summary { margin-top: .45rem; }
@@ -638,9 +638,10 @@
       if (!control) return;
       const action = control.dataset.action;
       if (action === "select") {
+        document.querySelector('.dex-select[aria-current="true"]')?.setAttribute("aria-current", "false");
         selectedDex = Number(control.dataset.species);
-        renderDex();
-        document.querySelector(".dex-content").scrollTop = 0;
+        control.setAttribute("aria-current", "true");
+        renderSelection();
         document.getElementById("dex-selection").focus({ preventScroll: true });
         return;
       }

@@ -22,10 +22,10 @@ Completed items move to `changelog.md`.
 
 ### Stable Pokédex scrolling
 
-- [ ] Keep selected Pokémon details pinned above the scrolling Pokédex list.
-- [ ] Preserve the current list position and existing rows when a Pokémon is selected.
-- [ ] Bound long location lists so they do not cover the entire drawer.
-- [ ] Update the browser regression check for sticky details without a jump to 001.
+- [x] Keep selected Pokémon details pinned above the scrolling Pokédex list.
+- [x] Preserve the current list position and existing rows when a Pokémon is selected.
+- [x] Bound long location lists so they do not cover the entire drawer.
+- [x] Update the browser regression check for sticky details without a jump to 001.
 
 ### Targeted status updates
 
