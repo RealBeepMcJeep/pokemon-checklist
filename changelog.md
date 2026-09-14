@@ -15,3 +15,4 @@
 - Extracted and mapped 71 useful title, island, location, and map images while excluding decorative swatches.
 - Added a reproducible extraction and validation utility and corrected the explicit Floette-Eternal and Route 5 revisit metadata.
 - Validated all 807 species IDs, encounter references, stable IDs, source pages, and asset paths.
+- Corrected all seven grass-region maps to include the PDF's numbered vector overlays, with regression validation to prevent stripped markers.
