@@ -20,14 +20,13 @@ Completed items move to `changelog.md`.
 
 ## Milestones
 
-### 1. Repository documentation and remote
+### 1. Repository documentation
 
-- [ ] Connect and push `main` to the private Gitea repository.
 - [ ] Add a concise README with usage and regeneration instructions.
 
 ### 2. Source dataset
 
-- [ ] Snapshot National Dex 001–807 names and Gen VII menu icons.
+- [ ] Snapshot National Dex 001–807 names.
 - [ ] Extract and normalize every location, encounter group, rate, level, condition, SOS ally, note, and explicitly named form from the PDF.
 - [ ] Extract the PDF location screenshots.
 - [ ] Classify encounter groups as regular or Return later.
