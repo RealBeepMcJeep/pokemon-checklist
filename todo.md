@@ -22,13 +22,13 @@ Completed items move to `changelog.md`.
 
 ### Pokémon Sun mode
 
-- [ ] Confirm a reproducible vanilla Pokémon Sun encounter source and cross-check representative locations.
-- [ ] Generate canonical Sun encounter JSON with forms, rates, levels, methods, conditions, SOS encounters, and provenance.
-- [ ] Map Sun areas onto reusable islands, locations, and screenshots; hide Ultra/mod-only or misleading numbered maps.
-- [ ] Add a one-click mode toggle that swaps encounter information while preserving the current location when possible.
-- [ ] Persist the selected mode and migrate existing local saves/backups without changing shared Pokémon/form progress.
-- [ ] Update Pokédex known-place links, progress totals, validation, build embedding, documentation, and attribution for both modes.
-- [ ] Test data invariants, migration, rapid mode switching, backup/restore, desktop, tablet, mobile, and offline operation.
+- [x] Confirm a reproducible vanilla Pokémon Sun encounter source and cross-check representative locations.
+- [x] Generate canonical Sun encounter JSON with forms, rates, levels, methods, conditions, SOS encounters, and provenance.
+- [x] Map Sun areas onto reusable islands, locations, and screenshots; hide Ultra/mod-only or misleading numbered maps.
+- [x] Add a one-click mode toggle that swaps encounter information while preserving the current location when possible.
+- [x] Persist the selected mode and migrate existing local saves/backups without changing shared Pokémon/form progress.
+- [x] Update Pokédex known-place links, progress totals, validation, build embedding, documentation, and attribution for both modes.
+- [x] Test data invariants, migration, rapid mode switching, backup/restore, desktop, tablet, mobile, and offline operation.
 
 ### Stable Pokédex scrolling
 

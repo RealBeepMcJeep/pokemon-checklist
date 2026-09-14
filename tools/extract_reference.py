@@ -152,7 +152,9 @@ def download_pokemon_csv() -> bytes:
         )
         response = connection.getresponse()
         if response.status != 200:
-            raise RuntimeError(f"PokéAPI CSV request failed with HTTP {response.status}")
+            raise RuntimeError(
+                f"PokéAPI CSV request failed with HTTP {response.status}"
+            )
         return response.read()
     finally:
         connection.close()
@@ -168,20 +170,27 @@ def refresh_pokemon() -> list[dict]:
                 names[dex] = row["name"]
     if set(names) != set(range(1, 808)):
         raise ValueError("PokéAPI snapshot did not contain exactly IDs 1..807")
-    pokemon = [{"id": dex, "name": names[dex], "slug": slugify(names[dex])} for dex in range(1, 808)]
+    pokemon = [
+        {"id": dex, "name": names[dex], "slug": slugify(names[dex])}
+        for dex in range(1, 808)
+    ]
     POKEMON_PATH.write_text(
         json.dumps(pokemon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     return pokemon
 
 
-def compose_numbered_map(image: Image.Image, page, reader, resource_name: str) -> Image.Image:
+def compose_numbered_map(
+    image: Image.Image, page, reader, resource_name: str
+) -> Image.Image:
     """Render the PDF's vector grass markers over its embedded map raster."""
     placements = []
 
     def find_placement(operator, operands, matrix, _text_matrix) -> None:
         if operator == b"Do" and str(operands[0]).lstrip("/") == resource_name:
-            placements.append(tuple(parse_float(value, "map placement") for value in matrix))
+            placements.append(
+                tuple(parse_float(value, "map placement") for value in matrix)
+            )
 
     page.extract_text(visitor_operand_before=find_placement)
     if len(placements) != 1:
@@ -194,7 +203,12 @@ def compose_numbered_map(image: Image.Image, page, reader, resource_name: str) -
     pending: int | None = None
     for operands, operator in ContentStream(page.get_contents(), reader).operations:
         if operator == b"m":
-            path = [(parse_float(operands[0], "marker x"), parse_float(operands[1], "marker y"))]
+            path = [
+                (
+                    parse_float(operands[0], "marker x"),
+                    parse_float(operands[1], "marker y"),
+                )
+            ]
         elif operator == b"c" and path:
             path.extend(
                 (
@@ -254,8 +268,15 @@ def compose_numbered_map(image: Image.Image, page, reader, resource_name: str) -
             round((right - offset_x) * pixel_x),
             round(result.height - (bottom - offset_y) * pixel_y),
         )
-        draw.ellipse(bounds, fill="white", outline="black", width=max(2, round(min(pixel_x, pixel_y) * 3)))
-        draw.ellipse(bounds, outline="#ef1010", width=max(1, round(min(pixel_x, pixel_y) * 2)))
+        draw.ellipse(
+            bounds,
+            fill="white",
+            outline="black",
+            width=max(2, round(min(pixel_x, pixel_y) * 3)),
+        )
+        draw.ellipse(
+            bounds, outline="#ef1010", width=max(1, round(min(pixel_x, pixel_y) * 2))
+        )
         label = item["label"]
         text_box = draw.textbbox((0, 0), label, font=font)
         width, height = text_box[2] - text_box[0], text_box[3] - text_box[1]
@@ -281,18 +302,28 @@ def extract_assets() -> None:
         decoded = image.image
         if kind == "map":
             if decoded is None:
-                raise ValueError(f"PDF map {page_number}:{image_index} could not be decoded")
+                raise ValueError(
+                    f"PDF map {page_number}:{image_index} could not be decoded"
+                )
             rendered = compose_numbered_map(
                 decoded, reader.pages[page_number - 1], reader, Path(image.name).stem
             )
             buffer = BytesIO()
-            rendered.save(buffer, format="PNG" if suffix == ".png" else "JPEG", quality=95)
+            rendered.save(
+                buffer, format="PNG" if suffix == ".png" else "JPEG", quality=95
+            )
             payload = buffer.getvalue()
-        elif suffix == Path(image.name).suffix.lower() and suffix in {".png", ".jpg", ".jpeg"}:
+        elif suffix == Path(image.name).suffix.lower() and suffix in {
+            ".png",
+            ".jpg",
+            ".jpeg",
+        }:
             payload = image.data
         else:
             if decoded is None:
-                raise ValueError(f"PDF image {page_number}:{image_index} could not be decoded")
+                raise ValueError(
+                    f"PDF image {page_number}:{image_index} could not be decoded"
+                )
             buffer = BytesIO()
             decoded.save(buffer, format="PNG" if suffix == ".png" else "JPEG")
             payload = buffer.getvalue()
@@ -341,7 +372,9 @@ def main() -> int:
         return 1
     if args.validate:
         locations = sum(len(island["locations"]) for island in encounters["islands"])
-        print(f"OK: 807 Pokémon, {len(encounters['islands'])} islands, {locations} locations, {len(encounters['assets'])} assets")
+        print(
+            f"OK: 807 Pokémon, {len(encounters['islands'])} islands, {locations} locations, {len(encounters['assets'])} assets"
+        )
     return 0
 
 

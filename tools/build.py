@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build the dependency-free, file://-friendly checklist page."""
+
 from __future__ import annotations
 
 import argparse
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "src" / "index.template.html"
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
 ENCOUNTERS_PATH = ROOT / "data" / "encounters.json"
+SUN_ENCOUNTERS_PATH = ROOT / "data" / "encounters-sun.json"
 ATLAS_PATH = ROOT / "assets" / "gen7-icons.png"
 OUTPUT = ROOT / "index.html"
 ATLAS_WIDTH = 1280
@@ -41,14 +43,19 @@ def read_json(path: Path) -> object:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"Cannot read valid JSON from {path.relative_to(ROOT)}") from error
+        raise ValueError(
+            f"Cannot read valid JSON from {path.relative_to(ROOT)}"
+        ) from error
 
 
 def script_json(value: object) -> str:
     """JSON safe inside a classic script element."""
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).replace(
-        "<", "\\u003c"
-    ).replace(">", "\\u003e").replace("&", "\\u0026")
+    return (
+        json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
 
 
 def png_size(path: Path) -> tuple[int, int]:
@@ -58,7 +65,12 @@ def png_size(path: Path) -> tuple[int, int]:
     return struct.unpack(">II", raw[16:24])
 
 
-def validate_inputs(pokemon: object, encounters: object) -> list[str]:
+def validate_inputs(
+    pokemon: object,
+    encounters: object,
+    expected_locations: int = 60,
+    require_grass_maps: bool = True,
+) -> list[str]:
     errors: list[str] = []
     if not isinstance(pokemon, list) or len(pokemon) != 807:
         errors.append("pokemon.json must contain exactly 807 entries")
@@ -68,7 +80,11 @@ def validate_inputs(pokemon: object, encounters: object) -> list[str]:
         errors.append("pokemon.json IDs must be unique and ordered 1..807")
     by_slug: dict[str, dict] = {}
     for item in pokemon:
-        if not isinstance(item, dict) or not isinstance(item.get("slug"), str) or not isinstance(item.get("name"), str):
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("slug"), str)
+            or not isinstance(item.get("name"), str)
+        ):
             errors.append("each Pokémon needs a string name and slug")
             continue
         if item["slug"] in by_slug:
@@ -123,7 +139,9 @@ def validate_inputs(pokemon: object, encounters: object) -> list[str]:
             stable(location.get("id"), location.get("name", "location"))
             order = location.get("order")
             if not isinstance(order, int) or order <= location_order:
-                errors.append(f"location order is not strictly increasing at {location.get('name')}")
+                errors.append(
+                    f"location order is not strictly increasing at {location.get('name')}"
+                )
             location_order = order if isinstance(order, int) else location_order
             seen_locations += 1
             for value in location.get("assets", []):
@@ -134,8 +152,14 @@ def validate_inputs(pokemon: object, encounters: object) -> list[str]:
                 if isinstance(location_name, str)
                 else None
             )
-            if required_map and required_map not in location.get("assets", []):
-                errors.append(f"{location.get('name')} is missing its numbered grass map {required_map}")
+            if (
+                require_grass_maps
+                and required_map
+                and required_map not in location.get("assets", [])
+            ):
+                errors.append(
+                    f"{location.get('name')} is missing its numbered grass map {required_map}"
+                )
             for group in location.get("groups", []):
                 if not isinstance(group, dict):
                     errors.append("groups must contain objects")
@@ -169,95 +193,148 @@ def validate_inputs(pokemon: object, encounters: object) -> list[str]:
                     if rates is not None and (
                         not isinstance(rates, dict)
                         or not rates
-                        or any(key not in {"single", "day", "night", "bubbling"} or not isinstance(value, int) or not 0 <= value <= 100 for key, value in rates.items())
+                        or any(
+                            key not in {"single", "day", "night", "bubbling"}
+                            or not isinstance(value, int)
+                            or not 0 <= value <= 100
+                            for key, value in rates.items()
+                        )
                     ):
                         errors.append(f"invalid rates at {row.get('id')}")
                     for ally in row.get("allies", []):
-                        if not isinstance(ally, dict) or ally.get("species") not in by_slug:
+                        if (
+                            not isinstance(ally, dict)
+                            or ally.get("species") not in by_slug
+                        ):
                             errors.append(f"unknown ally at {row.get('id')}")
-                        elif ally.get("speciesId") != by_slug[ally["species"]].get("id"):
+                        elif ally.get("speciesId") != by_slug[ally["species"]].get(
+                            "id"
+                        ):
                             errors.append(f"ally ID mismatch at {row.get('id')}")
 
     for value in manifest:
         asset(value, "manifest")
-    if seen_locations != 60:
-        errors.append(f"expected 60 locations, found {seen_locations}")
+    if seen_locations != expected_locations:
+        errors.append(
+            f"expected {expected_locations} locations, found {seen_locations}"
+        )
     if not ATLAS_PATH.is_file():
         errors.append("missing icon atlas assets/gen7-icons.png")
     else:
         try:
             width, height = png_size(ATLAS_PATH)
             if (width, height) != (ATLAS_WIDTH, ATLAS_HEIGHT):
-                errors.append(f"icon atlas must be {ATLAS_WIDTH}x{ATLAS_HEIGHT}, got {width}x{height}")
+                errors.append(
+                    f"icon atlas must be {ATLAS_WIDTH}x{ATLAS_HEIGHT}, got {width}x{height}"
+                )
         except (OSError, ValueError) as error:
             errors.append(str(error))
     return errors
 
 
-def asset_data_urls(encounters: dict) -> dict[str, str]:
+def asset_data_urls(encounters_by_mode: dict[str, dict]) -> dict[str, str]:
     result: dict[str, str] = {}
-    for path in encounters["assets"]:
+    paths = dict.fromkeys(
+        path
+        for encounters in encounters_by_mode.values()
+        for path in encounters["assets"]
+    )
+    for path in paths:
         file_path = ROOT / path
         suffix = file_path.suffix.lower()
-        mime = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}.get(suffix)
+        mime = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}.get(
+            suffix
+        )
         if mime is None:
             raise ValueError(f"unsupported asset type {path}")
-        result[path] = f"data:{mime};base64," + base64.b64encode(file_path.read_bytes()).decode("ascii")
+        result[path] = f"data:{mime};base64," + base64.b64encode(
+            file_path.read_bytes()
+        ).decode("ascii")
     return result
 
 
-def render(pokemon: list[dict], encounters: dict) -> str:
+def render(pokemon: list[dict], encounters_by_mode: dict[str, dict]) -> str:
     template = TEMPLATE.read_text(encoding="utf-8")
     atlas_raw = base64.b64encode(ATLAS_PATH.read_bytes()).decode("ascii")
     values = {
         PLACEHOLDERS["pokemon"]: script_json(pokemon),
-        PLACEHOLDERS["encounters"]: script_json(encounters),
-        PLACEHOLDERS["atlas"]: script_json({"data": f"data:image/png;base64,{atlas_raw}", "width": ATLAS_WIDTH, "height": ATLAS_HEIGHT, "columns": ATLAS_COLUMNS, "frameWidth": ATLAS_FRAME[0], "frameHeight": ATLAS_FRAME[1]}),
-        PLACEHOLDERS["assets"]: script_json(asset_data_urls(encounters)),
+        PLACEHOLDERS["encounters"]: script_json(encounters_by_mode),
+        PLACEHOLDERS["atlas"]: script_json(
+            {
+                "data": f"data:image/png;base64,{atlas_raw}",
+                "width": ATLAS_WIDTH,
+                "height": ATLAS_HEIGHT,
+                "columns": ATLAS_COLUMNS,
+                "frameWidth": ATLAS_FRAME[0],
+                "frameHeight": ATLAS_FRAME[1],
+            }
+        ),
+        PLACEHOLDERS["assets"]: script_json(asset_data_urls(encounters_by_mode)),
     }
     for placeholder, value in values.items():
         if template.count(placeholder) != 1:
-            raise ValueError(f"template must contain exactly one {placeholder} placeholder")
+            raise ValueError(
+                f"template must contain exactly one {placeholder} placeholder"
+            )
         template = template.replace(placeholder, value)
     if any(value in template for value in PLACEHOLDERS.values()):
         raise ValueError("template placeholders were not fully replaced")
     return template
 
 
-def validate_output(html: str, pokemon: list[dict], encounters: dict) -> None:
-    if "</script>" in "".join(script_json(value) for value in (pokemon, encounters)):
+def validate_output(
+    html: str, pokemon: list[dict], encounters_by_mode: dict[str, dict]
+) -> None:
+    if "</script>" in "".join(
+        script_json(value) for value in (pokemon, encounters_by_mode)
+    ):
         raise ValueError("JSON escaping failed to protect a closing script tag")
     if re.search(r"https?://", html, re.IGNORECASE):
         raise ValueError("generated HTML contains an external URL")
     if re.search(r"(?:src|href)\s*=\s*['\"]https?://", html, re.IGNORECASE):
         raise ValueError("generated HTML contains an external resource URL")
-    for path, data_url in asset_data_urls(encounters).items():
+    for path, data_url in asset_data_urls(encounters_by_mode).items():
         if data_url not in html:
             raise ValueError(f"generated HTML is missing embedded asset {path}")
     atlas_prefix = "data:image/png;base64,"
     if html.count(atlas_prefix) < 1:
         raise ValueError("generated HTML is missing the icon atlas")
-    if script_json(pokemon) not in html or script_json(encounters) not in html:
+    if script_json(pokemon) not in html or script_json(encounters_by_mode) not in html:
         raise ValueError("generated HTML is missing canonical JSON")
 
 
 def build(check: bool) -> int:
     pokemon_data = read_json(POKEMON_PATH)
     encounters_data = read_json(ENCOUNTERS_PATH)
+    sun_encounters_data = read_json(SUN_ENCOUNTERS_PATH)
     errors = validate_inputs(pokemon_data, encounters_data)
+    errors.extend(
+        f"encounters-sun.json: {error}"
+        for error in validate_inputs(
+            pokemon_data,
+            sun_encounters_data,
+            expected_locations=57,
+            require_grass_maps=False,
+        )
+    )
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
     pokemon = cast(list[dict], pokemon_data)
-    encounters = cast(dict, encounters_data)
-    html = render(pokemon, encounters)
-    validate_output(html, pokemon, encounters)
+    encounters_by_mode = {
+        "photonic-prismatic": cast(dict, encounters_data),
+        "sun": cast(dict, sun_encounters_data),
+    }
+    html = render(pokemon, encounters_by_mode)
+    validate_output(html, pokemon, encounters_by_mode)
     if check:
         if not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != html:
             print("ERROR: index.html is stale; run python tools/build.py")
             return 1
-        print("OK: canonical data, embedded resources, safety checks, and index.html freshness")
+        print(
+            "OK: canonical data, embedded resources, safety checks, and index.html freshness"
+        )
     else:
         OUTPUT.write_text(html, encoding="utf-8", newline="\n")
         print(f"Wrote {OUTPUT.relative_to(ROOT)} ({len(html):,} characters)")
@@ -266,7 +343,11 @@ def build(check: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="validate inputs and fail if index.html is stale")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="validate inputs and fail if index.html is stale",
+    )
     return build(parser.parse_args().check)
 
 

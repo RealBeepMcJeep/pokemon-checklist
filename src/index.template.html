@@ -186,11 +186,12 @@
           <img class="title-art" id="title-art" alt="Photonic Sun and Prismatic Moon">
           <div class="brand-copy">
             <h1>Wild Pokémon Checklist</h1>
-            <div class="subtitle">Alola locations in story order · National Pokédex 001–807</div>
+            <div class="subtitle" id="mode-summary">Alola locations in story order · National Pokédex 001–807</div>
           </div>
         </div>
         <div class="actions" aria-label="Checklist actions">
           <button class="action-button" id="sidebar-toggle" type="button" aria-controls="pokedex" aria-expanded="true">Pokédex</button>
+          <button class="action-button" id="mode-toggle" type="button">Mode: Photonic / Prismatic</button>
           <button class="action-button" id="forms-toggle" type="button" aria-pressed="false">Track forms: Off</button>
           <button class="action-button" id="export-button" type="button">Backup</button>
           <button class="action-button" id="import-button" type="button">Restore</button>
@@ -230,18 +231,22 @@
 
   <script>
     const POKEMON = __POKEMON_JSON__;
-    const ENCOUNTERS = __ENCOUNTERS_JSON__;
+    const ENCOUNTERS_BY_MODE = __ENCOUNTERS_JSON__;
     const ATLAS = __ATLAS_JSON__;
     const ASSETS = __ASSETS_JSON__;
 
-    const STATE_VERSION = 1;
-    const STORAGE_KEY = "pokemon-checklist-state-v1";
+    const STATE_VERSION = 2;
+    const STORAGE_KEY = "pokemon-checklist-state-v2";
+    const LEGACY_STORAGE_KEY = "pokemon-checklist-state-v1";
+    const DEFAULT_MODE = "photonic-prismatic";
+    const MODE_LABELS = { "photonic-prismatic": "Photonic / Prismatic", sun: "Pokémon Sun" };
     const DRAWER_BREAKPOINT = 1000;
     const STATUS_ORDER = ["none", "caught", "seen"];
     const STATUS_LABEL = { none: "None", caught: "Caught", seen: "Seen" };
     const byDex = new Map(POKEMON.map((pokemon) => [pokemon.id, pokemon]));
-    const locations = ENCOUNTERS.islands.flatMap((island) => island.locations);
-    const byLocationId = new Map(locations.map((location) => [location.id, location]));
+    let ENCOUNTERS = ENCOUNTERS_BY_MODE[DEFAULT_MODE];
+    let locations = ENCOUNTERS.islands.flatMap((island) => island.locations);
+    let byLocationId = new Map(locations.map((location) => [location.id, location]));
     const formDefs = new Map();
     const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
     const formSlug = (value) => normalize(value);
@@ -252,7 +257,7 @@
     const statusOf = (bucket, key) => bucket[String(key)] || "none";
     const statusClass = (status) => `status-${status}`;
     const statusText = (status) => STATUS_LABEL[status] || "None";
-    let state = { schemaVersion: STATE_VERSION, species: {}, forms: {}, settings: { forms: false } };
+    let state = { schemaVersion: STATE_VERSION, species: {}, forms: {}, settings: { forms: false, mode: DEFAULT_MODE } };
     let storageOK = true;
     let selectedDex = null;
     let searchTerm = "";
@@ -266,21 +271,27 @@
       if (!formDefs.has(key)) formDefs.set(key, { key, speciesId, label: displayName || titleForm(rawName), kind });
     }
 
-    function forEachEncounter(callback) {
-      ENCOUNTERS.islands.forEach((island) => island.locations.forEach((location) => location.groups.forEach((group) => group.encounters.forEach((row) => callback(row, group, location, island)))));
+    function forEachEncounter(callback, encounters = ENCOUNTERS) {
+      encounters.islands.forEach((island) => island.locations.forEach((location) => location.groups.forEach((group) => group.encounters.forEach((row) => callback(row, group, location, island)))));
     }
 
-    forEachEncounter((row) => {
+    Object.values(ENCOUNTERS_BY_MODE).forEach((encounters) => forEachEncounter((row) => {
       if (row.speciesId) {
         addForm(row.speciesId, row.form);
         (row.forms || []).forEach((form) => addForm(row.speciesId, form));
         if (row.ability) addForm(row.speciesId, row.ability, "ability", `${row.ability} ability`);
       }
       (row.allies || []).forEach((ally) => addForm(ally.speciesId, ally.form));
-    });
+    }, encounters));
+
+    function useMode(mode) {
+      ENCOUNTERS = ENCOUNTERS_BY_MODE[mode];
+      locations = ENCOUNTERS.islands.flatMap((island) => island.locations);
+      byLocationId = new Map(locations.map((location) => [location.id, location]));
+    }
 
     function defaultState() {
-      return { schemaVersion: STATE_VERSION, species: {}, forms: {}, settings: { forms: false } };
+      return { schemaVersion: STATE_VERSION, species: {}, forms: {}, settings: { forms: false, mode: DEFAULT_MODE } };
     }
 
     function validateStatusMap(value, allowedKeys, label, numeric = false) {
@@ -296,11 +307,14 @@
     }
 
     function validateState(value) {
-      if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== STATE_VERSION) throw new Error("This backup format is not supported");
+      if (!value || typeof value !== "object" || Array.isArray(value) || ![1, STATE_VERSION].includes(value.schemaVersion)) throw new Error("This backup format is not supported");
       const topKeys = Object.keys(value).sort().join(",");
       if (topKeys !== "forms,schemaVersion,settings,species") throw new Error("This backup contains unexpected information");
-      if (!value.settings || typeof value.settings.forms !== "boolean" || Object.keys(value.settings).length !== 1) throw new Error("This backup has invalid settings");
-      return { schemaVersion: STATE_VERSION, species: validateStatusMap(value.species, null, "Pokémon statuses", true), forms: validateStatusMap(value.forms, new Set(formDefs.keys()), "form statuses"), settings: { forms: value.settings.forms } };
+      const expectedSettings = value.schemaVersion === 1 ? "forms" : "forms,mode";
+      if (!value.settings || typeof value.settings.forms !== "boolean" || Object.keys(value.settings).sort().join(",") !== expectedSettings) throw new Error("This backup has invalid settings");
+      const mode = value.schemaVersion === 1 ? DEFAULT_MODE : value.settings.mode;
+      if (!Object.prototype.hasOwnProperty.call(ENCOUNTERS_BY_MODE, mode)) throw new Error("This backup has an unknown game mode");
+      return { schemaVersion: STATE_VERSION, species: validateStatusMap(value.species, null, "Pokémon statuses", true), forms: validateStatusMap(value.forms, new Set(formDefs.keys()), "form statuses"), settings: { forms: value.settings.forms, mode } };
     }
 
     function exportState() {
@@ -309,7 +323,7 @@
       Object.keys(state.species).sort(sortNumeric).forEach((key) => { if (state.species[key] !== "none") species[key] = state.species[key]; });
       const forms = {};
       Object.keys(state.forms).sort().forEach((key) => { if (state.forms[key] !== "none") forms[key] = state.forms[key]; });
-      return { schemaVersion: STATE_VERSION, species, forms, settings: { forms: Boolean(state.settings.forms) } };
+      return { schemaVersion: STATE_VERSION, species, forms, settings: { forms: Boolean(state.settings.forms), mode: state.settings.mode } };
     }
 
     function showNotice(message, kind = "") {
@@ -330,10 +344,14 @@
 
     function loadState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) state = validateState(JSON.parse(raw));
+        const current = localStorage.getItem(STORAGE_KEY);
+        const legacy = current ? null : localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (current || legacy) state = validateState(JSON.parse(current || legacy));
+        useMode(state.settings.mode);
+        if (!current && legacy) persist();
       } catch (error) {
         state = defaultState();
+        useMode(state.settings.mode);
         storageOK = false;
         showNotice("Saved data could not be read; starting a fresh checklist that will not be saved.", "error");
       }
@@ -491,7 +509,7 @@
     function getOccurrences(speciesId) {
       const found = [];
       forEachEncounter((row, group, location, island) => {
-        if (row.speciesId === speciesId) found.push({ row, group, location, island, ally: false });
+        if (row.speciesId === speciesId) found.push({ row, group, location, island, ally: group.encounterType === "sos" });
         (row.allies || []).forEach((ally) => { if (ally.speciesId === speciesId) found.push({ row, group, location, island, ally: true }); });
       });
       return found;
@@ -503,7 +521,7 @@
       const pokemon = byDex.get(selectedDex);
       const occurrences = getOccurrences(selectedDex);
       const forms = [...formDefs.values()].filter((form) => form.speciesId === selectedDex);
-      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? `Known places in this guide (${occurrences.length})` : "No direct wild location in this guide"}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.island.name)} › ${escapeHTML(item.location.name)} › ${escapeHTML(item.group.name)} · ${item.group.category === "return-later" ? "return later" : "catch now"} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : '<p class="muted">The source does not include evolution paths.</p>'}</div>`);
+      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? `Known places in this mode (${occurrences.length})` : "No direct wild location in this mode"}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.island.name)} › ${escapeHTML(item.location.name)} › ${escapeHTML(item.group.name)} · ${item.group.category === "return-later" ? "return later" : "catch now"} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : '<p class="muted">The source does not include evolution paths.</p>'}</div>`);
     }
 
     function updateDexCount(filteredCount = document.querySelectorAll(".dex-row").length) {
@@ -533,6 +551,14 @@
       const formsToggle = document.getElementById("forms-toggle");
       formsToggle.setAttribute("aria-pressed", String(state.settings.forms));
       formsToggle.textContent = `Track forms: ${state.settings.forms ? "On" : "Off"}`;
+      const modeLabel = MODE_LABELS[state.settings.mode];
+      const modeToggle = document.getElementById("mode-toggle");
+      modeToggle.textContent = `Mode: ${modeLabel}`;
+      modeToggle.setAttribute("aria-label", `Current mode: ${modeLabel}. Activate to switch modes.`);
+      document.getElementById("mode-summary").textContent = `${modeLabel} · Alola locations in story order · National Pokédex 001–807`;
+      const titleArt = document.getElementById("title-art");
+      titleArt.hidden = state.settings.mode === "sun";
+      titleArt.alt = state.settings.mode === "sun" ? "" : "Photonic Sun and Prismatic Moon";
     }
 
     function updateSpeciesButtons(id) {
@@ -608,7 +634,7 @@
       const blob = new Blob([JSON.stringify(exportState(), null, 2) + "\n"], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "pokemon-checklist-state-v1.json";
+      link.download = "pokemon-checklist-state-v2.json";
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(link.href), 0);
       showNotice("Backup downloaded.", "good");
@@ -621,6 +647,15 @@
     renderAll(firstIncompleteLocation()?.id || null, false);
 
     document.getElementById("sidebar-toggle").addEventListener("click", toggleSidebar);
+    document.getElementById("mode-toggle").addEventListener("click", () => {
+      const open = [...currentOpenLocations()];
+      state.settings.mode = state.settings.mode === DEFAULT_MODE ? "sun" : DEFAULT_MODE;
+      useMode(state.settings.mode);
+      persist();
+      const preserved = open.find((id) => byLocationId.has(id));
+      showNotice(`Switched to ${MODE_LABELS[state.settings.mode]}.`, "good");
+      renderAll(preserved || firstIncompleteLocation()?.id || null, false);
+    });
     document.getElementById("drawer-close").addEventListener("click", closeDrawer);
     document.getElementById("backdrop").addEventListener("click", closeDrawer);
     document.getElementById("dex-search").addEventListener("input", (event) => { searchTerm = event.target.value; renderDex(); });
