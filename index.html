@@ -6,58 +6,63 @@
   <title>Alola Wild Checklist</title>
   <style>
     :root {
-      color-scheme: light;
-      --ink: #172033;
-      --muted: #5e687a;
-      --line: #d7deea;
-      --panel: #ffffff;
-      --paper: #f4f7fb;
-      --accent: #315dcc;
-      --accent-dark: #23449a;
-      --caught: #16744a;
-      --seen: #9a5a00;
-      --focus: #d13c00;
-      --shadow: 0 5px 18px rgba(29, 45, 78, .10);
+      color-scheme: dark;
+      --ink: #eef7ef;
+      --muted: #a9b9ad;
+      --line: #38513f;
+      --panel: #17251b;
+      --panel-soft: #1d3023;
+      --paper: #0b120d;
+      --accent: #72bd68;
+      --accent-bright: #9bdd91;
+      --accent-dark: #b8e8b2;
+      --caught: #64d68a;
+      --seen: #f1bd63;
+      --focus: #ffe066;
+      --shadow: 0 10px 28px rgba(0, 0, 0, .35);
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.4; }
+    body { margin: 0; background: radial-gradient(circle at 50% -10rem, #21462d 0, var(--paper) 34rem); color: var(--ink); line-height: 1.4; }
     button, input { font: inherit; }
     button { cursor: pointer; }
     button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible, [tabindex="-1"]:focus-visible {
       outline: 3px solid var(--focus); outline-offset: 2px;
     }
-    .app-header { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.97); box-shadow: var(--shadow); }
-    .header-inner { max-width: 1500px; margin: 0 auto; padding: .65rem 1rem .5rem; }
-    .title-row, .actions, .progress-row, .location-heading, .group-heading, .dex-row, .drawer-heading { display: flex; align-items: center; gap: .55rem; }
+    .app-header { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #4f7658; background: rgba(13, 30, 18, .97); box-shadow: var(--shadow); backdrop-filter: blur(10px); }
+    .header-inner { max-width: 1500px; margin: 0 auto; padding: .55rem 1rem .45rem; }
+    .title-row, .brand, .actions, .progress-row, .location-heading, .group-heading, .dex-row, .drawer-heading { display: flex; align-items: center; gap: .55rem; }
     h1, h2, h3, p { margin-top: 0; }
-    h1 { margin-bottom: .1rem; font-size: clamp(1.05rem, 2vw, 1.45rem); }
+    h1 { margin: 0 0 .08rem; color: #fff; font-size: clamp(1.05rem, 2vw, 1.45rem); letter-spacing: .01em; }
     h2 { margin-bottom: .8rem; font-size: clamp(1.2rem, 2.4vw, 1.7rem); }
     h3 { margin-bottom: .35rem; font-size: 1rem; }
+    .brand { min-width: 0; }
+    .title-art { width: clamp(8rem, 14vw, 12rem); height: 3.2rem; object-fit: cover; object-position: center; filter: drop-shadow(0 2px 4px #000); }
     .subtitle, .muted, .source-note { color: var(--muted); font-size: .86rem; }
-    .title-row { justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+    .title-row { justify-content: space-between; flex-wrap: wrap; }
     .actions { justify-content: flex-end; flex-wrap: wrap; }
     .action-button, .drawer-close, .backdrop, .status-button, .dex-select {
-      border: 1px solid var(--line); border-radius: .45rem; background: var(--panel); color: var(--ink);
+      border: 1px solid var(--line); border-radius: .45rem; background: #203427; color: var(--ink);
     }
-    .action-button { padding: .38rem .58rem; font-size: .86rem; }
-    .action-button:hover, .drawer-close:hover, .dex-select:hover { border-color: var(--accent); background: #edf2ff; }
-    .action-button[aria-pressed="true"] { border-color: var(--accent); background: #dce6ff; color: var(--accent-dark); font-weight: 700; }
-    .progress-row { margin-top: .5rem; flex-wrap: wrap; font-size: .86rem; }
+    .action-button { padding: .38rem .62rem; font-size: .86rem; }
+    .action-button:hover, .drawer-close:hover, .dex-select:hover { border-color: var(--accent); background: #2b4933; }
+    .action-button[aria-pressed="true"] { border-color: var(--accent); background: #315a38; color: #fff; font-weight: 700; }
+    .progress-row { margin-top: .45rem; flex-wrap: wrap; font-size: .86rem; }
     progress { width: min(25rem, 48vw); height: .8rem; accent-color: var(--caught); }
     #notice { min-height: 1.2rem; margin-top: .35rem; color: var(--muted); font-size: .82rem; }
-    #notice.error { color: #a31e1e; font-weight: 600; }
+    #notice.error { color: #ff9a9a; font-weight: 600; }
     #notice.good { color: var(--caught); }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem); gap: 1rem; max-width: 1500px; margin: 0 auto; padding: 1rem; }
     main { min-width: 0; }
     .island { margin-bottom: 1.5rem; }
-    .island > h2 { padding-bottom: .4rem; border-bottom: 2px solid var(--accent); }
-    details.location { margin: .7rem 0; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel); box-shadow: 0 2px 7px rgba(29,45,78,.05); scroll-margin-top: 7rem; }
-    details.location[open] { box-shadow: var(--shadow); }
-    details.location > summary { padding: .72rem .8rem; list-style-position: inside; cursor: pointer; }
-    details.location > summary::marker { color: var(--accent); }
+    .island > h2 { margin: 0 0 .8rem; padding: .6rem .8rem; border: 1px solid #56815f; border-radius: .55rem; background: linear-gradient(100deg, #2d6138, #173b23); color: #fff; box-shadow: var(--shadow); }
+    details.location { margin: .7rem 0; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel); box-shadow: 0 2px 8px rgba(0,0,0,.25); scroll-margin-top: 7rem; overflow: clip; }
+    details.location[open] { border-color: #4f7958; box-shadow: var(--shadow); }
+    details.location > summary { padding: .72rem .8rem; list-style-position: inside; cursor: pointer; background: linear-gradient(90deg, #203a28, var(--panel)); }
+    details.location > summary:hover { background: #294630; }
+    details.location > summary::marker { color: var(--accent-bright); }
     .location-heading { justify-content: space-between; flex-wrap: wrap; }
     .location-title { font-weight: 750; }
     .location-progress { color: var(--muted); font-size: .84rem; }
@@ -66,44 +71,46 @@
     .location-meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: start; }
     .map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .5rem; }
     .map-grid figure { margin: 0; }
-    .map-grid img { display: block; width: 100%; max-height: 18rem; object-fit: contain; border: 1px solid var(--line); border-radius: .35rem; background: #edf1f8; }
-    .map-grid figcaption { margin-top: .2rem; color: var(--muted); font-size: .75rem; }
-    .notes { margin: .65rem 0; padding: .55rem .7rem; border-left: 3px solid var(--accent); background: #f1f5ff; font-size: .86rem; }
-    .encounter-group { margin-top: .8rem; border: 1px solid var(--line); border-radius: .45rem; overflow: hidden; }
-    .encounter-group.return-later { border-color: #d8bd85; }
-    .group-heading { justify-content: space-between; padding: .5rem .65rem; background: #eef2f8; flex-wrap: wrap; }
-    .return-later .group-heading { background: #fff4db; }
+    .map-grid img { display: block; width: 100%; max-height: 18rem; object-fit: contain; border: 1px solid var(--line); border-radius: .4rem; background: #09100b; box-shadow: 0 3px 12px rgba(0,0,0,.35); }
+    .map-grid figcaption { margin-top: .25rem; color: var(--muted); font-size: .75rem; }
+    .notes { margin: .65rem 0; padding: .55rem .7rem; border-left: 3px solid var(--accent); background: #1a3020; font-size: .86rem; }
+    .encounter-group { margin-top: .8rem; border: 1px solid var(--line); border-radius: .5rem; overflow: hidden; background: #111d15; }
+    .encounter-group.return-later { border-color: #735f35; }
+    .group-heading { justify-content: space-between; padding: .5rem .65rem; background: #27432f; flex-wrap: wrap; }
+    .return-later .group-heading { background: #41361f; }
     .group-heading strong { font-size: .92rem; }
-    .group-tag { padding: .12rem .35rem; border-radius: .25rem; background: #dce6ff; color: var(--accent-dark); font-size: .7rem; font-weight: 750; letter-spacing: .03em; text-transform: uppercase; }
-    .return-later .group-tag { background: #ffe3a7; color: #6d4400; }
+    .group-tag { padding: .12rem .4rem; border: 1px solid #5b9064; border-radius: 999px; background: #315a38; color: #dff6dc; font-size: .7rem; font-weight: 750; letter-spacing: .03em; text-transform: uppercase; }
+    .return-later .group-tag { border-color: #91723a; background: #654e24; color: #ffe2a8; }
     .group-notes { margin: .45rem .65rem 0; color: var(--muted); font-size: .82rem; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    th, td { padding: .42rem .5rem; border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
-    thead th { border-top: 0; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+    th, td { padding: .45rem .5rem; border-top: 1px solid #2b4031; text-align: left; vertical-align: top; }
+    thead th { border-top: 0; background: #19291e; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+    tbody tr:nth-child(even) { background: rgba(68, 105, 76, .09); }
+    tbody tr:hover { background: rgba(114, 189, 104, .1); }
     .species-cell { min-width: 10rem; }
     .species-name { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
     .status-button { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .4rem; font-size: .8rem; text-align: left; }
     .status-button:hover { border-color: var(--accent); }
-    .status-button.status-caught { border-color: #65af88; background: #e2f5e9; color: #0d5f3a; }
-    .status-button.status-seen { border-color: #d5a657; background: #fff1d2; color: #754400; }
+    .status-button.status-caught { border-color: #4aa66a; background: #1d5132; color: #baf3ca; }
+    .status-button.status-seen { border-color: #a97c34; background: #59431f; color: #ffe0a7; }
     .status-text { font-weight: 750; }
     .form-list { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
     .form-status { font-size: .72rem; }
     .ally-list { display: flex; flex-wrap: wrap; gap: .3rem; min-width: 12rem; }
     .ally-label { display: block; margin-bottom: .2rem; color: var(--muted); font-size: .72rem; }
-    .condition { display: inline-block; margin: .1rem .15rem .1rem 0; padding: .1rem .3rem; border-radius: .22rem; background: #edf0f5; }
+    .condition { display: inline-block; margin: .1rem .15rem .1rem 0; padding: .1rem .32rem; border: 1px solid #3a5140; border-radius: 999px; background: #23352a; }
     .icon { display: inline-block; width: 40px; height: 30px; flex: 0 0 40px; background-image: var(--atlas); background-repeat: no-repeat; image-rendering: pixelated; }
-    .pokedex { position: sticky; top: 7rem; align-self: start; max-height: calc(100vh - 8rem); overflow: hidden; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel); box-shadow: var(--shadow); }
-    .drawer-heading { justify-content: space-between; padding: .7rem .75rem .35rem; }
+    .pokedex { position: sticky; top: 7rem; align-self: start; max-height: calc(100vh - 8rem); overflow: hidden; border: 1px solid #4b7053; border-radius: .65rem; background: var(--panel); box-shadow: var(--shadow); }
+    .drawer-heading { justify-content: space-between; padding: .7rem .75rem .45rem; background: linear-gradient(90deg, #2d6138, #1b4027); }
     .drawer-heading h2 { margin: 0; font-size: 1.15rem; }
     .drawer-close { display: none; padding: .3rem .5rem; }
     .dex-controls { padding: .2rem .75rem .55rem; border-bottom: 1px solid var(--line); }
     .dex-controls label { display: block; color: var(--muted); font-size: .78rem; }
-    #dex-search { display: block; width: 100%; margin-top: .2rem; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: .35rem; }
+    #dex-search { display: block; width: 100%; margin-top: .2rem; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: .35rem; background: #0f1b13; color: var(--ink); }
     .dex-count { margin-top: .35rem; color: var(--muted); font-size: .76rem; }
     .dex-content { max-height: calc(100vh - 14.5rem); overflow-y: auto; }
-    .dex-selection { padding: .6rem .75rem; border-bottom: 1px solid var(--line); background: #f7f9fd; }
+    .dex-selection { padding: .6rem .75rem; border-bottom: 1px solid var(--line); background: #1b2d21; }
     .selected-title { display: flex; align-items: center; gap: .45rem; font-weight: 750; }
     .selected-title .status-button { margin-left: auto; }
     .form-summary { margin-top: .45rem; }
@@ -115,29 +122,53 @@
     .dex-row { gap: .3rem; }
     .dex-row + .dex-row { margin-top: .15rem; }
     .dex-select { display: flex; align-items: center; flex: 1; min-width: 0; padding: .2rem .3rem; border: 0; background: transparent; }
-    .dex-select[aria-current="true"] { border: 1px solid var(--accent); background: #edf2ff; }
+    .dex-select[aria-current="true"] { border: 1px solid var(--accent); background: #2b4933; }
     .dex-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dex-row .status-button { flex: 0 0 auto; min-width: 4.9rem; }
     .empty { padding: .75rem; color: var(--muted); font-size: .85rem; }
     .backdrop { display: none; }
-    @media (min-width: 760px) {
+    @media (min-width: 1000px) {
       body.sidebar-hidden .layout { grid-template-columns: minmax(0, 1fr); }
       body.sidebar-hidden .pokedex { display: none; }
     }
-    @media (max-width: 759px) {
+    @media (max-width: 999px) {
       html { scroll-behavior: auto; }
-      .layout { display: block; padding: .65rem; }
-      .pokedex { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; width: min(92vw, 24rem); max-height: none; border-radius: .65rem 0 0 .65rem; transform: translateX(105%); visibility: hidden; transition: transform .2s ease; }
+      .layout { display: block; padding: .75rem; }
+      .pokedex { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; width: min(92vw, 25rem); max-height: none; border-radius: .65rem 0 0 .65rem; transform: translateX(105%); visibility: hidden; transition: transform .2s ease; }
       .pokedex.drawer-open { transform: translateX(0); visibility: visible; }
       .pokedex .drawer-close { display: inline-block; }
       .dex-content { max-height: calc(100vh - 9rem); }
-      .backdrop { position: fixed; z-index: 20; inset: 0; border: 0; border-radius: 0; background: rgba(9, 18, 38, .55); }
+      .backdrop { position: fixed; z-index: 20; inset: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .68); }
       .backdrop.visible { display: block; }
       .title-row { gap: .4rem; }
       .actions { justify-content: flex-start; width: 100%; }
-      .location-meta { display: block; }
       .map-grid { margin-bottom: .5rem; }
-      table { min-width: 42rem; }
+    }
+    @media (max-width: 680px) {
+      .app-header { position: static; }
+      .header-inner { padding: .55rem .65rem .45rem; }
+      .brand { width: 100%; }
+      .brand-copy { min-width: 0; }
+      .subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .action-button { padding: .42rem .3rem; }
+      progress { flex: 1; width: auto; min-width: 8rem; }
+      .layout { padding: .55rem; }
+      .location-body { padding: 0 .55rem .7rem; }
+      .map-grid { grid-template-columns: 1fr; }
+      .table-wrap { overflow: visible; }
+      table, tbody, tr, th, td { display: block; width: 100%; }
+      thead { display: none; }
+      tbody tr { padding: .55rem; border-top: 1px solid var(--line); }
+      th, td { padding: .2rem 0; border: 0; }
+      .species-cell { min-width: 0; padding-bottom: .4rem; }
+      td { display: grid; grid-template-columns: 6.1rem minmax(0, 1fr); gap: .45rem; }
+      td::before { color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+      td:nth-of-type(1)::before { content: "Chance"; }
+      td:nth-of-type(2)::before { content: "When / where"; }
+      td:nth-of-type(3)::before { content: "Notes"; }
+      td:nth-of-type(4)::before { content: "SOS allies"; }
+      .ally-list { min-width: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; }
@@ -148,16 +179,19 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="title-row">
-        <div>
-          <h1>Alola Wild Checklist</h1>
-          <div class="subtitle">Chronological wild Pokémon locations · National Dex 001–807</div>
+        <div class="brand">
+          <img class="title-art" id="title-art" alt="Photonic Sun and Prismatic Moon">
+          <div class="brand-copy">
+            <h1>Wild Pokémon Checklist</h1>
+            <div class="subtitle">Alola locations in story order · National Pokédex 001–807</div>
+          </div>
         </div>
         <div class="actions" aria-label="Checklist actions">
           <button class="action-button" id="sidebar-toggle" type="button" aria-controls="pokedex" aria-expanded="true">Pokédex</button>
-          <button class="action-button" id="forms-toggle" type="button" aria-pressed="false">Form Dex: Off</button>
-          <button class="action-button" id="export-button" type="button">Export</button>
-          <button class="action-button" id="import-button" type="button">Import</button>
-          <input class="visually-hidden" id="import-file" type="file" accept="application/json,.json" aria-label="Choose checklist JSON to import">
+          <button class="action-button" id="forms-toggle" type="button" aria-pressed="false">Track forms: Off</button>
+          <button class="action-button" id="export-button" type="button">Backup</button>
+          <button class="action-button" id="import-button" type="button">Restore</button>
+          <input class="visually-hidden" id="import-file" type="file" accept="application/json,.json" aria-label="Choose a checklist backup to restore">
           <button class="action-button" id="reset-button" type="button">Reset</button>
         </div>
       </div>
@@ -199,6 +233,7 @@
 
     const STATE_VERSION = 1;
     const STORAGE_KEY = "pokemon-checklist-state-v1";
+    const DRAWER_BREAKPOINT = 1000;
     const STATUS_ORDER = ["none", "caught", "seen"];
     const STATUS_LABEL = { none: "None", caught: "Caught", seen: "Seen" };
     const byDex = new Map(POKEMON.map((pokemon) => [pokemon.id, pokemon]));
@@ -247,20 +282,20 @@
       if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
       const result = {};
       Object.keys(value).forEach((key) => {
-        if (numeric && (!/^(?:[1-9]|[1-9][0-9]|[1-9][0-9]{2})$/.test(key) || !byDex.has(Number(key)))) throw new Error(`Invalid Pokémon ID in ${label}`);
-        if (!numeric && !allowedKeys.has(key)) throw new Error(`Invalid form ID in ${label}`);
-        if (!STATUS_ORDER.includes(value[key])) throw new Error(`Invalid status in ${label}`);
+        if (numeric && (!/^(?:[1-9]|[1-9][0-9]|[1-9][0-9]{2})$/.test(key) || !byDex.has(Number(key)))) throw new Error(`Unknown Pokémon number in ${label}`);
+        if (!numeric && !allowedKeys.has(key)) throw new Error(`Unknown form in ${label}`);
+        if (!STATUS_ORDER.includes(value[key])) throw new Error(`Unknown status in ${label}`);
         if (value[key] !== "none") result[key] = value[key];
       });
       return result;
     }
 
     function validateState(value) {
-      if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== STATE_VERSION) throw new Error("Unsupported state schema");
+      if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== STATE_VERSION) throw new Error("This backup format is not supported");
       const topKeys = Object.keys(value).sort().join(",");
-      if (topKeys !== "forms,schemaVersion,settings,species") throw new Error("State contains unexpected fields");
-      if (!value.settings || typeof value.settings.forms !== "boolean" || Object.keys(value.settings).length !== 1) throw new Error("Invalid settings");
-      return { schemaVersion: STATE_VERSION, species: validateStatusMap(value.species, null, "species", true), forms: validateStatusMap(value.forms, new Set(formDefs.keys()), "forms"), settings: { forms: value.settings.forms } };
+      if (topKeys !== "forms,schemaVersion,settings,species") throw new Error("This backup contains unexpected information");
+      if (!value.settings || typeof value.settings.forms !== "boolean" || Object.keys(value.settings).length !== 1) throw new Error("This backup has invalid settings");
+      return { schemaVersion: STATE_VERSION, species: validateStatusMap(value.species, null, "Pokémon statuses", true), forms: validateStatusMap(value.forms, new Set(formDefs.keys()), "form statuses"), settings: { forms: value.settings.forms } };
     }
 
     function exportState() {
@@ -284,7 +319,7 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(exportState()));
       } catch (error) {
         storageOK = false;
-        showNotice("Browser storage is unavailable; changes remain in memory until this tab closes.", "error");
+        showNotice("Browser storage is unavailable; changes will disappear when this tab closes.", "error");
       }
     }
 
@@ -295,7 +330,7 @@
       } catch (error) {
         state = defaultState();
         storageOK = false;
-        showNotice("Saved data could not be read; using a fresh in-memory checklist.", "error");
+        showNotice("Saved data could not be read; starting a fresh checklist that will not be saved.", "error");
       }
     }
 
@@ -355,7 +390,7 @@
     function rateText(rates) {
       if (!rates) return "—";
       const parts = [];
-      if (Object.prototype.hasOwnProperty.call(rates, "single")) parts.push(`Single ${rates.single}%`);
+      if (Object.prototype.hasOwnProperty.call(rates, "single")) parts.push(`${rates.single}%`);
       if (Object.prototype.hasOwnProperty.call(rates, "day")) parts.push(`Day ${rates.day}%`);
       if (Object.prototype.hasOwnProperty.call(rates, "night")) parts.push(`Night ${rates.night}%`);
       if (Object.prototype.hasOwnProperty.call(rates, "bubbling")) parts.push(`Bubbling ${rates.bubbling}%`);
@@ -368,7 +403,7 @@
 
     function allyHTML(row) {
       if (!row.allies?.length) return "—";
-      return `<span class="ally-label">Optional SOS allies</span><div class="ally-list">${row.allies.map((ally) => `${speciesStatusButton(ally.speciesId, ally.name, "ally")} ${allyForms(ally)}`).join("")}</div>`;
+      return `<span class="ally-label">Called into battle by this Pokémon</span><div class="ally-list">${row.allies.map((ally) => `${speciesStatusButton(ally.speciesId, ally.name, "SOS ally")} ${allyForms(ally)}`).join("")}</div>`;
     }
 
     function rowHTML(row, group) {
@@ -379,21 +414,21 @@
     function groupHTML(group) {
       const levels = group.levels ? ` · Lv. ${group.levels.min}–${group.levels.max}` : "";
       const notes = [...(group.notes || []), ...(group.conditions || []).map((condition) => `Condition: ${condition}`)];
-      return `<section class="encounter-group ${group.category === "return-later" ? "return-later" : "regular"}"><div class="group-heading"><strong>${escapeHTML(group.name)}${levels ? escapeHTML(levels) : ""}</strong><span class="group-tag">${group.category === "return-later" ? "Return later" : "Regular"}</span></div>${notes.length ? `<div class="group-notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}<div class="table-wrap"><table><thead><tr><th scope="col">Species / status</th><th scope="col">Rate</th><th scope="col">Conditions</th><th scope="col">Row notes</th><th scope="col">Optional allies</th></tr></thead><tbody>${group.encounters.map((row) => rowHTML(row, group)).join("")}</tbody></table></div></section>`;
+      return `<section class="encounter-group ${group.category === "return-later" ? "return-later" : "regular"}"><div class="group-heading"><strong>${escapeHTML(group.name)}${levels ? escapeHTML(levels) : ""}</strong><span class="group-tag">${group.category === "return-later" ? "Return later" : "Catch now"}</span></div>${notes.length ? `<div class="group-notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}<div class="table-wrap"><table><thead><tr><th scope="col">Pokémon / status</th><th scope="col">Chance</th><th scope="col">When / where</th><th scope="col">Notes</th><th scope="col">SOS allies</th></tr></thead><tbody>${group.encounters.map((row) => rowHTML(row, group)).join("")}</tbody></table></div></section>`;
     }
 
-    function blockingRows(location) {
+    function catchNowRows(location) {
       const unique = new Map();
       location.groups.filter((group) => group.category === "regular").flatMap((group) => group.encounters).filter((row) => row.speciesId).forEach((row) => unique.set(row.speciesId, row));
       return [...unique.values()];
     }
 
     function locationComplete(location) {
-      return blockingRows(location).every((row) => statusOf(state.species, row.speciesId) === "caught");
+      return catchNowRows(location).every((row) => statusOf(state.species, row.speciesId) === "caught");
     }
 
     function locationProgress(location) {
-      const rows = blockingRows(location);
+      const rows = catchNowRows(location);
       const caught = rows.filter((row) => statusOf(state.species, row.speciesId) === "caught").length;
       return { caught, total: rows.length };
     }
@@ -420,7 +455,7 @@
       const complete = progress.total > 0 && progress.caught === progress.total;
       const empty = progress.total === 0;
       const open = focusId === location.id;
-      const progressText = empty ? "No regular encounters" : `${progress.caught} / ${progress.total} regular Pokémon caught`;
+      const progressText = empty ? "No Pokémon to catch now" : `${progress.caught} / ${progress.total} caught here`;
       const notes = location.notes || [];
       return `<details class="location" id="location-${safeId(location.id)}" data-location-id="${escapeHTML(location.id)}"${open ? " open" : ""}><summary><span class="location-heading"><span class="location-title">${escapeHTML(location.name)}</span><span class="location-progress ${complete ? "complete" : ""}">${complete ? "Complete · " : ""}${progressText}</span></span></summary><div class="location-body">${location.assets?.length ? `<div class="map-grid">${location.assets.map((path) => locationImage(path, location.name)).join("")}</div>` : ""}${notes.length ? `<div class="notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}${location.groups.map(groupHTML).join("")}</div></details>`;
     }
@@ -454,7 +489,7 @@
       const pokemon = byDex.get(selectedDex);
       const occurrences = getOccurrences(selectedDex);
       const forms = [...formDefs.values()].filter((form) => form.speciesId === selectedDex);
-      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Form progress (does not affect locations)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? "Wild locations" : "No wild location is listed in this PDF."}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.location.name)} · ${escapeHTML(item.group.name)} · ${item.ally ? "optional ally" : "primary"}</a></li>`).join("")}</ul>` : ""}</div>`);
+      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? "Wild locations" : "No wild location is listed in this PDF."}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.location.name)} · ${escapeHTML(item.group.name)} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : ""}</div>`);
     }
 
     function renderDex() {
@@ -479,7 +514,7 @@
       formProgress.textContent = `Forms caught: ${formsCaught} / ${formCount}`;
       const formsToggle = document.getElementById("forms-toggle");
       formsToggle.setAttribute("aria-pressed", String(state.settings.forms));
-      formsToggle.textContent = `Form Dex: ${state.settings.forms ? "On" : "Off"}`;
+      formsToggle.textContent = `Track forms: ${state.settings.forms ? "On" : "Off"}`;
     }
 
     function renderAll(focusId = null, preserveOpen = true) {
@@ -513,14 +548,14 @@
     function closeDrawer() {
       const drawer = document.getElementById("pokedex");
       drawer.classList.remove("drawer-open");
-      if (window.innerWidth < 760) { drawer.setAttribute("aria-hidden", "true"); drawer.inert = true; }
+      if (window.innerWidth < DRAWER_BREAKPOINT) { drawer.setAttribute("aria-hidden", "true"); drawer.inert = true; }
       document.getElementById("backdrop").classList.remove("visible");
       document.getElementById("sidebar-toggle").setAttribute("aria-expanded", "false");
-      if (window.innerWidth < 760 && previousFocus?.focus) previousFocus.focus();
+      if (window.innerWidth < DRAWER_BREAKPOINT && previousFocus?.focus) previousFocus.focus();
     }
 
     function toggleSidebar() {
-      if (window.innerWidth < 760) {
+      if (window.innerWidth < DRAWER_BREAKPOINT) {
         if (document.getElementById("pokedex").classList.contains("drawer-open")) closeDrawer(); else openDrawer();
       } else {
         const hidden = document.body.classList.toggle("sidebar-hidden");
@@ -533,11 +568,11 @@
 
     function importText(text) {
       let imported;
-      try { imported = validateState(JSON.parse(text)); } catch (error) { showNotice(`Import rejected: ${error.message}`, "error"); return; }
-      if (!window.confirm("Replace the current checklist with this import?")) return;
+      try { imported = validateState(JSON.parse(text)); } catch (error) { showNotice(`Restore failed: ${error.message}.`, "error"); return; }
+      if (!window.confirm("Replace your current checklist with this backup?")) return;
       state = imported;
       persist();
-      showNotice("Checklist imported.", "good");
+      showNotice("Backup restored.", "good");
       renderAll(firstIncompleteLocation()?.id || null, false);
     }
 
@@ -548,11 +583,12 @@
       link.download = "pokemon-checklist-state-v1.json";
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(link.href), 0);
-      showNotice("Checklist exported as schema version 1.", "good");
+      showNotice("Backup downloaded.", "good");
     }
 
     document.documentElement.style.setProperty("--atlas", `url("${ATLAS.data}")`);
-    if (window.innerWidth < 760) { document.getElementById("pokedex").setAttribute("aria-hidden", "true"); document.getElementById("pokedex").inert = true; document.getElementById("sidebar-toggle").setAttribute("aria-expanded", "false"); }
+    document.getElementById("title-art").src = ASSETS["assets/locations/title.png"];
+    if (window.innerWidth < DRAWER_BREAKPOINT) { document.getElementById("pokedex").setAttribute("aria-hidden", "true"); document.getElementById("pokedex").inert = true; document.getElementById("sidebar-toggle").setAttribute("aria-expanded", "false"); }
     loadState();
     renderAll(firstIncompleteLocation()?.id || null, false);
 
@@ -563,8 +599,8 @@
     document.getElementById("forms-toggle").addEventListener("click", () => { state.settings.forms = !state.settings.forms; persist(); renderAll(null, true); });
     document.getElementById("export-button").addEventListener("click", exportJSON);
     document.getElementById("import-button").addEventListener("click", () => document.getElementById("import-file").click());
-    document.getElementById("import-file").addEventListener("change", (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => importText(String(reader.result)); reader.onerror = () => showNotice("Import rejected: file could not be read.", "error"); reader.readAsText(file); event.target.value = ""; });
-    document.getElementById("reset-button").addEventListener("click", () => { if (!window.confirm("Reset all Pokémon, form, and setting state?")) return; state = defaultState(); persist(); showNotice("Checklist reset.", "good"); renderAll(firstIncompleteLocation()?.id || null, false); });
+    document.getElementById("import-file").addEventListener("change", (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => importText(String(reader.result)); reader.onerror = () => showNotice("Restore failed: that file could not be read.", "error"); reader.readAsText(file); event.target.value = ""; });
+    document.getElementById("reset-button").addEventListener("click", () => { if (!window.confirm("Clear all caught and seen statuses, tracked forms, and settings?")) return; state = defaultState(); persist(); showNotice("Checklist reset.", "good"); renderAll(firstIncompleteLocation()?.id || null, false); });
 
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && document.getElementById("pokedex").classList.contains("drawer-open")) closeDrawer(); });
     document.addEventListener("click", (event) => {
@@ -579,13 +615,13 @@
         cycleSpecies(Number(control.dataset.species));
         persist();
         const after = firstIncompleteLocation()?.id || null;
-        showNotice(storageOK ? "Status saved." : "Status changed in memory only.", storageOK ? "good" : "error");
+        showNotice(storageOK ? "Status saved." : "Status changed, but it will disappear when this tab closes.", storageOK ? "good" : "error");
         renderAll(before !== after ? after : null, before === after);
       }
       if (action === "form") {
         cycleForm(control.dataset.form);
         persist();
-        showNotice(storageOK ? "Form status saved." : "Form status changed in memory only.", storageOK ? "good" : "error");
+        showNotice(storageOK ? "Form status saved." : "Form status changed, but it will disappear when this tab closes.", storageOK ? "good" : "error");
         renderAll(null, true);
       }
     });

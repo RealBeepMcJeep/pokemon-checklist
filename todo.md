@@ -22,17 +22,17 @@ Completed items move to `changelog.md`.
 
 ### Dark encyclopedia polish
 
-- [ ] Apply a dark Bulbapedia-inspired visual theme without copying its layout.
-- [ ] Replace remaining developer/game-mechanic shorthand with plain-language labels.
-- [ ] Turn encounter tables into readable cards on phones and keep the drawer layout on portrait tablets.
-- [ ] Display the bundled Photonic Sun / Prismatic Moon title artwork instead of embedding it unused.
+- [x] Apply a dark Bulbapedia-inspired visual theme without copying its layout.
+- [x] Replace remaining developer/game-mechanic shorthand with plain-language labels.
+- [x] Turn encounter tables into readable cards on phones and keep the drawer layout on portrait tablets.
+- [x] Display the bundled Photonic Sun / Prismatic Moon title artwork instead of embedding it unused.
 
 ### Simplification
 
-- [ ] Make `data/encounters.json` the canonical dataset and remove its duplicate Python transcription.
-- [ ] Retain only the source-image extraction, data validation, and optional Pokémon-name refresh tooling.
+- [x] Make `data/encounters.json` the canonical dataset and remove its duplicate Python transcription.
+- [x] Retain only the source-image extraction, data validation, and optional Pokémon-name refresh tooling.
 
 ### Verification
 
-- [ ] Rebuild the self-contained `index.html` and repeat desktop, tablet, and phone smoke checks.
-- [ ] Run final source, build, diagnostics, and repository checks.
+- [x] Rebuild the self-contained `index.html` and repeat desktop, tablet, and phone smoke checks.
+- [x] Run final source, build, diagnostics, and repository checks.

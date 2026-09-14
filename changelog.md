@@ -29,3 +29,9 @@
 - Smoke-tested all 60 location sections, 807 sidebar rows, status cycling and persistence, Form Dex promotion, search, valid/invalid imports, drawer behavior, and embedded map visibility.
 - Passed source extraction validation, generated-file freshness checks, Python compilation, HTML/JSON checks, LSP diagnostics, and repository-wide static diagnostics with no blocking findings.
 - Replaced internal “blocker” terminology with clear regular-encounter progress labels.
+- Reworked the interface into a dark, green encyclopedia theme inspired by Bulbapedia's information hierarchy without copying its layout.
+- Displayed the bundled Photonic Sun / Prismatic Moon title artwork in the application header.
+- Replaced technical and ambiguous UI terms with Catch now, Track forms, Backup, Restore, Chance, When / where, and explanatory SOS labels.
+- Changed phone encounter tables into stacked cards and extended the Pokédex drawer layout through portrait-tablet widths.
+- Made `data/encounters.json` the sole encounter transcription and reduced the extraction utility from 2,512 to 349 lines.
+- Re-extracted all PDF assets to confirm deterministic output and repeated desktop, 820px tablet, and 390px phone smoke tests with no overflow or browser exceptions.
