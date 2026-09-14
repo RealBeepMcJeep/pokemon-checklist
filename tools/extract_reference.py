@@ -13,17 +13,17 @@ import hashlib
 import json
 import re
 import unicodedata
+from http.client import HTTPSConnection
 from pathlib import Path
-from urllib.request import urlopen
 
-from PIL import Image
 from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
 PDF = ROOT / "references" / "Wild Pokemon Locations.pdf"
 DATA = ROOT / "data"
 ASSETS = ROOT / "assets" / "locations"
-POKEAPI_CSV = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv"
+POKEAPI_HOST = "raw.githubusercontent.com"
+POKEAPI_PATH = "/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv"
 
 # The document explicitly says that red names are Kantonian forms.  Unmarked
 # names use the game's Alolan form where one exists.
@@ -46,7 +46,6 @@ NAME_FIXES = {
     "Hakamo -o": "Hakamo-o",
     "Hakamo-o": "Hakamo-o",
     "Seadra*": "Seadra",
-    "Tentac ruel": "Tentacruel",
 }
 
 FORM_NOTES = {
@@ -98,11 +97,32 @@ def clean_name(name: str) -> str:
     return name
 
 
+def parse_int(value: object, context: str) -> int:
+    try:
+        return int(str(value))
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Invalid integer for {context}: {value!r}") from error
+
+
+def download_pokemon_csv() -> bytes:
+    connection = HTTPSConnection(POKEAPI_HOST, timeout=30)
+    try:
+        connection.request(
+            "GET", POKEAPI_PATH, headers={"User-Agent": "pokemon-checklist-builder/1"}
+        )
+        response = connection.getresponse()
+        if response.status != 200:
+            raise RuntimeError(f"PokéAPI CSV request failed with HTTP {response.status}")
+        return response.read()
+    finally:
+        connection.close()
+
+
 def parse_pokemon_csv(raw: bytes) -> list[dict]:
     names: dict[int, str] = {}
     for row in csv.DictReader(raw.decode("utf-8-sig").splitlines()):
         if row["local_language_id"] == "9":
-            dex = int(row["pokemon_species_id"])
+            dex = parse_int(row["pokemon_species_id"], "Pokédex ID")
             if 1 <= dex <= 807:
                 names[dex] = row["name"]
     if set(names) != set(range(1, 808)):
@@ -113,21 +133,25 @@ def parse_pokemon_csv(raw: bytes) -> list[dict]:
 def load_pokemon(refresh: bool = False) -> list[dict]:
     path = DATA / "pokemon.json"
     if refresh or not path.exists():
-        raw = urlopen(POKEAPI_CSV, timeout=30).read()
-        pokemon = parse_pokemon_csv(raw)
+        pokemon = parse_pokemon_csv(download_pokemon_csv())
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(pokemon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        path.write_text(
+            json.dumps(pokemon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
         return pokemon
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"Cannot read Pokémon snapshot: {path}") from error
 
 
 def ref(text: str) -> tuple[str, str | None]:
-    """Return source display name and an explicit form marker."""
-    form = None
-    if text.endswith("#kanto"):
-        text, form = text[:-6], "kanto"
-    elif text.endswith("#alolan"):
-        text, form = text[:-7], "alolan"
+    """Return source display name and an optional ``#form`` marker."""
+    name, marker, form = text.rpartition("#")
+    if marker:
+        text = name
+    else:
+        form = None
     return clean_name(text.rstrip("*")), form
 
 
@@ -155,14 +179,24 @@ def row(species: str, rate: str | None = None, allies: str = "", condition: str 
         if len(values) == 2:
             if "/" in values[0]:
                 day, night = values[0].split("/", 1)
-                rates = {"day": int(day), "night": int(night), "bubbling": int(values[1])}
+                rates = {
+                    "day": parse_int(day, f"{source} day rate"),
+                    "night": parse_int(night, f"{source} night rate"),
+                    "bubbling": parse_int(values[1], f"{source} bubbling rate"),
+                }
             else:
-                rates = {"single": int(values[0]), "bubbling": int(values[1])}
+                rates = {
+                    "single": parse_int(values[0], f"{source} rate"),
+                    "bubbling": parse_int(values[1], f"{source} bubbling rate"),
+                }
         elif "/" in values[0]:
             day, night = values[0].split("/", 1)
-            rates = {"day": int(day), "night": int(night)}
+            rates = {
+                "day": parse_int(day, f"{source} day rate"),
+                "night": parse_int(night, f"{source} night rate"),
+            }
         else:
-            rates = {"single": int(values[0])}
+            rates = {"single": parse_int(values[0], f"{source} rate")}
         data["rates"] = rates
     else:
         data["rates"] = None
@@ -321,7 +355,7 @@ def build_encounters() -> dict:
                     g("Grass 1", 21, (18, 21), rlist("Fomantis:20; Slakoth:15; Shroomish:15; Yanma:15; Foongus:15; Treecko:15; Farfetch'd:10")),
                     g("Grass 2 (via Route 8)", 21, (30, 33), rlist("Lickitung:15; Gligar:15; Sudowoodo:15; Phanpy:15; Emolga:15; Wurmple:15; Silcoon:5; Cascoon:5"), category="return-later", conditions=["Accessible via Route 8."]),
                     g("Berry Piles", 21, (18, 21), rlist("Volbeat:100")),
-                    g("Dust Clouds", 21, (30, 33), rlist("Diglett:60; Durant:40")),
+                    g("Dust Clouds", 21, (30, 33), rlist("Diglett:60; Durant:40"), category="return-later", conditions=["Accessible via Route 8."]),
                     g("SOS Calls", 22, None, rlist("Treecko>Panpour,Grovyle; Sudowoodo>Trevenant; Phanpy>Donphan; Wurmple>Beautifly,Dustox; Silcoon>Beautifly,Dustox; Cascoon>Dustox,Beautifly; Diglett>Diglett#kanto; Durant>Heatmor; Volbeat>Illumise")),
                 ], pages=[21, 22], assets=["route-5.jpg", "route-5-map.jpg"]),
                 location("Brooklet Hill", 23, [
@@ -528,7 +562,7 @@ def build_encounters() -> dict:
                     g("Shadows", 63, (95, 98), rlist("Braviary:40; Mandibuzz:40; Talonflame:20")),
                 ], assets=["poni-plains.jpg"]),
                 location("Poni Meadow", 64, [
-                    g("Grass", 64, (95, 98), rlist("Ribombee:20; Leavanny:20; Floette:20>Floette,Florges; Oricorio:10; Mismagius:10; Bellossom:10")),
+                    g("Grass", 64, (95, 98), rlist("Ribombee:20; Leavanny:20; Floette:20>Floette#eternal-flower,Florges; Oricorio:10; Mismagius:10; Bellossom:10")),
                     g("Fishing", 64, (85, 98), rlist("Gyarados:50+30; Whiscash:30+30; Dragonair:20+40>Dragonite")),
                 ], assets=["poni-meadow.jpg"]),
                 location("Resolution Cave", 65, [
@@ -648,7 +682,10 @@ def extract_assets() -> dict[str, dict]:
         else:
             # The title is JP2 in the source; PNG is lossless and broadly web-usable.
             out = ASSETS / filename
-            image.image.save(out, format="PNG" if suffix == ".png" else "JPEG")
+            decoded = image.image
+            if decoded is None:
+                raise ValueError(f"PDF image {page_no}:{image_index} could not be decoded")
+            decoded.save(out, format="PNG" if suffix == ".png" else "JPEG")
             payload = out.read_bytes()
         digest = hashlib.sha256(payload).hexdigest()
         existing = by_hash.get(digest)
@@ -765,11 +802,6 @@ def main() -> int:
     encounters = build_encounters()
     link_species(encounters, pokemon)
     assets = extract_assets() if args.extract_assets else {}
-    if args.extract_assets:
-        # Asset filenames are already catalogued in encounters; include metadata
-        # separately so consumers can inspect provenance without parsing the PDF.
-        for path, meta in assets.items():
-            pass
     DATA.mkdir(exist_ok=True)
     (DATA / "encounters.json").write_text(json.dumps(encounters, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     errors = resolve_and_validate(pokemon, encounters, assets)

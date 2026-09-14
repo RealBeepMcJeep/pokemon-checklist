@@ -24,16 +24,7 @@ Completed items move to `changelog.md`.
 
 - [ ] Add a concise README with usage and regeneration instructions.
 
-### 2. Source dataset
-
-- [ ] Snapshot National Dex 001–807 names.
-- [ ] Extract and normalize every location, encounter group, rate, level, condition, SOS ally, note, and explicitly named form from the PDF.
-- [ ] Extract the PDF location screenshots.
-- [ ] Classify encounter groups as regular or Return later.
-- [ ] Validate species names, location order, encounter rates, references, and image coverage.
-- [ ] Save normalized source data as JSON.
-
-### 3. Application
+### 2. Application
 
 - [ ] Build the responsive location checklist and expandable sections.
 - [ ] Build the searchable desktop/mobile Pokédex sidebar and location links.
@@ -42,7 +33,7 @@ Completed items move to `changelog.md`.
 - [ ] Implement localStorage, reset, versioned export, and replace-only import.
 - [ ] Add accessible controls, keyboard operation, and reduced-motion support.
 
-### 4. Self-contained build and verification
+### 3. Self-contained build and verification
 
 - [ ] Generate one self-contained `index.html` with embedded data and image assets.
 - [ ] Add the smallest runnable dataset/state checks.

@@ -4286,7 +4286,7 @@
             {
               "name": "Dust Clouds",
               "sourcePage": 21,
-              "category": "regular",
+              "category": "return-later",
               "levels": {
                 "min": 30,
                 "max": 33
@@ -4315,7 +4315,9 @@
                 }
               ],
               "notes": [],
-              "conditions": [],
+              "conditions": [
+                "Accessible via Route 8."
+              ],
               "id": "akala-island/route-5/dust-clouds-4"
             },
             {
@@ -13692,6 +13694,7 @@
                     {
                       "species": "floette",
                       "name": "Floette",
+                      "form": "eternal-flower",
                       "speciesId": 670
                     },
                     {
