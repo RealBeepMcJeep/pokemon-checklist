@@ -619,7 +619,7 @@ ASSET_SPECS = {
     (36, 0): ("akala-outskirts.jpg", "location"), (37, 0): ("ulaula-island.jpg", "island-map"), (38, 0): ("malie-city.jpg", "location"),
     (39, 0): ("malie-garden.jpg", "location"), (40, 0): ("route-10.jpg", "location"), (41, 0): ("route-11.jpg", "location"),
     (42, 0): ("mount-hokulani.jpg", "location"), (42, 1): ("mount-hokulani-map.png", "map"), (43, 0): ("route-12.jpg", "location"),
-    (44, 0): ("blush-mountain.jpg", "location"), (45, 0): ("route-13.jpg", "location"), (45, 1): ("ulaula-beach.jpg", "location"),
+    (44, 0): ("blush-mountain.jpg", "location"), (45, 0): ("ulaula-beach.jpg", "location"), (45, 1): ("route-13.jpg", "location"),
     (46, 0): ("tapu-village.jpg", "location"), (47, 0): ("mount-lanakila.jpg", "location"), (48, 0): ("route-14.jpg", "location"),
     (49, 0): ("thrifty-megamart.jpg", "location"), (50, 0): ("route-15-16.jpg", "location"), (51, 0): ("ulaula-meadow.jpg", "location"),
     (52, 0): ("route-17.jpg", "location"), (53, 0): ("haina-desert.jpg", "location"), (54, 0): ("victory-road.jpg", "location"),
