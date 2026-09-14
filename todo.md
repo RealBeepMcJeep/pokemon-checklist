@@ -22,10 +22,10 @@ Completed items move to `changelog.md`.
 
 ### Targeted status updates
 
-- [ ] Stop rebuilding all 60 locations and 807 Pokédex rows for an ordinary status change.
-- [ ] Update matching status buttons, location totals, and overall totals in place.
-- [ ] Keep full renders for area transitions, forms, restore, and reset.
-- [ ] Add a browser regression check that unaffected DOM nodes survive a status click.
+- [x] Stop rebuilding all 60 locations and 807 Pokédex rows for an ordinary status change.
+- [x] Update matching status buttons, location totals, and overall totals in place.
+- [x] Keep full renders for area transitions, forms, restore, and reset.
+- [x] Add a browser regression check that unaffected DOM nodes survive a status click.
 
 ### Pokédex location discovery
 

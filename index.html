@@ -240,6 +240,8 @@
     const STATUS_ORDER = ["none", "caught", "seen"];
     const STATUS_LABEL = { none: "None", caught: "Caught", seen: "Seen" };
     const byDex = new Map(POKEMON.map((pokemon) => [pokemon.id, pokemon]));
+    const locations = ENCOUNTERS.islands.flatMap((island) => island.locations);
+    const byLocationId = new Map(locations.map((location) => [location.id, location]));
     const formDefs = new Map();
     const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
     const formSlug = (value) => normalize(value);
@@ -436,6 +438,15 @@
       return { caught, total: rows.length };
     }
 
+    function updateLocationProgress() {
+      document.querySelectorAll("[data-location-progress]").forEach((element) => {
+        const progress = locationProgress(byLocationId.get(element.dataset.locationProgress));
+        const complete = progress.total > 0 && progress.caught === progress.total;
+        element.classList.toggle("complete", complete);
+        element.textContent = progress.total ? `${complete ? "Complete · " : ""}${progress.caught} / ${progress.total} caught here` : "No Pokémon to catch now";
+      });
+    }
+
     function firstIncompleteLocation() {
       for (const island of ENCOUNTERS.islands) for (const location of island.locations) if (!locationComplete(location)) return location;
       return null;
@@ -460,7 +471,7 @@
       const open = focusId === location.id;
       const progressText = empty ? "No Pokémon to catch now" : `${progress.caught} / ${progress.total} caught here`;
       const notes = location.notes || [];
-      return `<details class="location" id="location-${safeId(location.id)}" data-location-id="${escapeHTML(location.id)}"${open ? " open" : ""}><summary><span class="location-heading"><span class="location-title">${escapeHTML(location.name)}</span><span class="location-progress ${complete ? "complete" : ""}">${complete ? "Complete · " : ""}${progressText}</span></span></summary><div class="location-body">${location.assets?.length ? `<div class="map-grid">${location.assets.map((path) => locationImage(path, location.name)).join("")}</div>` : ""}${notes.length ? `<div class="notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}${location.groups.map(groupHTML).join("")}</div></details>`;
+      return `<details class="location" id="location-${safeId(location.id)}" data-location-id="${escapeHTML(location.id)}"${open ? " open" : ""}><summary><span class="location-heading"><span class="location-title">${escapeHTML(location.name)}</span><span class="location-progress ${complete ? "complete" : ""}" data-location-progress="${escapeHTML(location.id)}">${complete ? "Complete · " : ""}${progressText}</span></span></summary><div class="location-body">${location.assets?.length ? `<div class="map-grid">${location.assets.map((path) => locationImage(path, location.name)).join("")}</div>` : ""}${notes.length ? `<div class="notes">${notes.map((note) => `<p>${escapeHTML(note)}</p>`).join("")}</div>` : ""}${location.groups.map(groupHTML).join("")}</div></details>`;
     }
 
     function currentOpenLocations() {
@@ -495,12 +506,16 @@
       replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? `Known places in this guide (${occurrences.length})` : "No direct wild location in this guide"}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.island.name)} › ${escapeHTML(item.location.name)} › ${escapeHTML(item.group.name)} · ${item.group.category === "return-later" ? "return later" : "catch now"} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : '<p class="muted">The source does not include evolution paths.</p>'}</div>`);
     }
 
+    function updateDexCount(filteredCount = document.querySelectorAll(".dex-row").length) {
+      const caught = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "caught").length;
+      const seen = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "seen").length;
+      document.getElementById("dex-count").textContent = `${filteredCount} of ${POKEMON.length} Pokémon · ${caught} caught · ${seen} seen`;
+    }
+
     function renderDex() {
       const query = normalize(searchTerm);
       const filtered = POKEMON.filter((pokemon) => !query || normalize(pokemon.name).includes(query) || String(pokemon.id).padStart(3, "0").includes(query) || String(pokemon.id) === query);
-      const caught = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "caught").length;
-      const seen = POKEMON.filter((pokemon) => statusOf(state.species, pokemon.id) === "seen").length;
-      document.getElementById("dex-count").textContent = `${filtered.length} of ${POKEMON.length} Pokémon · ${caught} caught · ${seen} seen`;
+      updateDexCount(filtered.length);
       replaceMarkup(document.getElementById("dex-list"), filtered.length ? filtered.map((pokemon) => `<div class="dex-row"><button type="button" class="dex-select" data-action="select" data-species="${pokemon.id}" aria-current="${selectedDex === pokemon.id}"><span class="icon" aria-hidden="true" style="background-position: -${((pokemon.id - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((pokemon.id - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span class="dex-name">${String(pokemon.id).padStart(3, "0")} · ${escapeHTML(pokemon.name)}</span></button>${speciesStatusButton(pokemon.id, "", "Pokédex")}</div>`).join("") : "<div class=\"empty\">No Pokémon match that search.</div>");
       renderSelection();
     }
@@ -518,6 +533,16 @@
       const formsToggle = document.getElementById("forms-toggle");
       formsToggle.setAttribute("aria-pressed", String(state.settings.forms));
       formsToggle.textContent = `Track forms: ${state.settings.forms ? "On" : "Off"}`;
+    }
+
+    function updateSpeciesButtons(id) {
+      const status = statusOf(state.species, id);
+      document.querySelectorAll(`[data-action="species"][data-species="${id}"]`).forEach((button) => {
+        button.classList.remove(...STATUS_ORDER.map(statusClass));
+        button.classList.add(statusClass(status));
+        button.querySelector(".status-text").textContent = statusText(status);
+        button.setAttribute("aria-label", button.getAttribute("aria-label").replace(/status: (?:None|Caught|Seen)/, `status: ${statusText(status)}`));
+      });
     }
 
     function renderAll(focusId = null, preserveOpen = true) {
@@ -620,12 +645,19 @@
         return;
       }
       if (action === "species") {
+        const id = Number(control.dataset.species);
         const before = firstIncompleteLocation()?.id || null;
-        cycleSpecies(Number(control.dataset.species));
+        cycleSpecies(id);
         persist();
         const after = firstIncompleteLocation()?.id || null;
         showNotice(storageOK ? "Status saved." : "Status changed, but it will disappear when this tab closes.", storageOK ? "good" : "error");
-        renderAll(before !== after ? after : null, before === after);
+        if (before !== after) renderAll(after, false);
+        else {
+          updateSpeciesButtons(id);
+          updateLocationProgress();
+          updateDexCount();
+          renderHeader();
+        }
       }
       if (action === "form") {
         cycleForm(control.dataset.form);

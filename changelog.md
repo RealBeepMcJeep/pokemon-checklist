@@ -38,3 +38,5 @@
 - Made selected-Pokémon details automatically return to view even after choosing an entry far down the Pokédex list.
 - Expanded known-place links with island, location, encounter group, Catch now/Return later availability, and wild/SOS encounter type.
 - Added a clear no-direct-location message instead of inventing evolution paths absent from the source data.
+- Replaced ordinary status-click full-page rebuilding with targeted button and progress updates while retaining full renders for location transitions and bulk state changes.
+- Preserved unrelated location and Pokédex DOM nodes during status changes and reduced the representative Edge smoke timing from roughly 66 ms to 5 ms without adding Preact.
