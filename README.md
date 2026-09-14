@@ -6,7 +6,7 @@ A dependency-free wild Pokémon checklist for the supplied Generation VII locati
 
 Open [`index.html`](index.html) directly in a browser. It is self-contained and works from `file://`; no server, package manager, CDN, or network connection is needed.
 
-Use the **Mode** button to switch between Photonic Sun / Prismatic Moon and vanilla Pokémon Sun in one step. The current location is retained when both modes contain it; Pokémon and form progress is shared. Sun mode uses its own encounters and omits the mod guide's numbered maps.
+Use the **Mode** button to switch between Prismatic Moon and vanilla Pokémon Sun in one step. The current location is retained when both modes contain it; Pokémon and form progress is shared. Sun mode uses its own encounters and omits the mod guide's numbered maps.
 
 Select a Pokémon's name in the Pokédex to show every known location in the active mode, including its island, encounter group, availability, and whether it is a wild encounter or SOS ally. The source data does not contain evolution paths, so the app says so instead of guessing when no direct location is listed.
 

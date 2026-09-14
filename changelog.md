@@ -43,7 +43,7 @@
 - Pinned selected-Pokémon details above the scrolling Pokédex list, preserved the selected row and scroll position, and capped long detail panels at 45% of the viewport.
 - Added a pinned, reproducible vanilla Pokémon Sun data generator and canonical 57-location, 269-group, 771-row encounter snapshot.
 - Restored day/night rates from datamined Sun tables, retained normalized methods and SOS data, and corrected source disagreements at Verdant Cavern, Blush Mountain, Mount Lanakila, Vast Poni Canyon, and Poni Plains.
-- Added a one-click Photonic/Prismatic ↔ Pokémon Sun mode switch with shared species/form progress, active-mode location links and totals, and location preservation where IDs overlap.
+- Added a one-click Prismatic Moon ↔ Pokémon Sun mode switch with shared species/form progress, active-mode location links and totals, and location preservation where IDs overlap.
 - Migrated browser saves and backups to schema v2 with a persistent mode setting while accepting existing v1 data losslessly.
 - Reused accurate location screenshots in Sun mode while omitting mod-specific numbered and island maps.
 - Verified pinned-source reproducibility, encounter-rate invariants, v1 migration, invalid restore safety, rapid switching, shared progress, 57/60 mode-specific location counts, desktop/tablet/mobile layouts, and offline browser operation with no exceptions.
