@@ -588,12 +588,19 @@ def generate(
     poni_rustling = grouped.pop(
         ("poni-plains", "center", "Poni Plains", "bubbling-spots", 54, 57)
     )
-    grouped[("poni-plains", "center-rustling-grass", "Poni Plains", "bubbling-spots", 54, 57)] = [
-        record for record in poni_rustling if record["speciesId"] in {20, 297, 735}
-    ]
-    grouped[("poni-plains", "center-rustling-bush", "Poni Plains", "bubbling-spots", 54, 57)] = [
-        record for record in poni_rustling if record["speciesId"] in {123, 546}
-    ]
+    grouped[
+        (
+            "poni-plains",
+            "center-rustling-grass",
+            "Poni Plains",
+            "bubbling-spots",
+            54,
+            57,
+        )
+    ] = [record for record in poni_rustling if record["speciesId"] in {20, 297, 735}]
+    grouped[
+        ("poni-plains", "center-rustling-bush", "Poni Plains", "bubbling-spots", 54, 57)
+    ] = [record for record in poni_rustling if record["speciesId"] in {123, 546}]
 
     parsed_tables = parse_tables(table_text, by_name)
     unmatched = []
@@ -648,7 +655,9 @@ def generate(
         if method == "island-scan":
             species_slug = by_id[records[0]["speciesId"]]["slug"]
             weekday = ISLAND_SCAN_DAYS[species_slug]
-            conditions = [f"Use Island Scan on {weekday}; the encounter remains available for one hour."]
+            conditions = [
+                f"Use Island Scan on {weekday}; the encounter remains available for one hour."
+            ]
         if postgame:
             conditions.append("Postgame Ultra Beast encounter.")
         encounter_rows = (
@@ -768,10 +777,12 @@ def validate_generated(
         "max": 30,
     }:
         raise ValueError("Blush Mountain does not match the Pokémon Sun table")
-    if {row["species"] for row in find_group("Verdant Cavern", "Bubbling")["encounters"]} != {
-        "yungoos"
-    }:
-        raise ValueError("Verdant Cavern contains the wrong version-exclusive encounter")
+    if {
+        row["species"] for row in find_group("Verdant Cavern", "Bubbling")["encounters"]
+    } != {"yungoos"}:
+        raise ValueError(
+            "Verdant Cavern contains the wrong version-exclusive encounter"
+        )
     if find_group("Victory Road", "Walking encounters")["levels"] != {
         "min": 45,
         "max": 48,
