@@ -166,7 +166,7 @@
     .ally-label { display: block; margin-bottom: .2rem; color: var(--muted); font-size: .72rem; }
     .condition { display: inline-block; margin: .1rem .15rem .1rem 0; padding: .1rem .32rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel-soft); }
     .icon { display: inline-block; width: 40px; height: 30px; flex: 0 0 40px; background-image: var(--atlas); background-repeat: no-repeat; image-rendering: pixelated; }
-    .icon.tiny { width: 28px; height: 21px; flex-basis: 28px; }
+    .icon.tiny { width: 36px; height: 27px; flex-basis: 36px; }
     .pokedex { position: sticky; top: 7rem; align-self: start; max-height: calc(100vh - 8rem); overflow: hidden; border: 1px solid var(--drawer-line); border-radius: .65rem; background: var(--panel); box-shadow: var(--shadow); }
     .drawer-heading { justify-content: space-between; padding: .7rem .75rem .45rem; background: linear-gradient(90deg, var(--drawer-start), var(--drawer-end)); }
     .drawer-heading h2 { margin: 0; font-size: 1.15rem; }
@@ -326,7 +326,7 @@
     const titleForm = (value) => String(value).split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" ");
     const escapeHTML = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     const pokemonIcon = (id, tiny = false) => {
-      const scale = tiny ? .7 : 1;
+      const scale = tiny ? .9 : 1;
       return `<span class="icon${tiny ? " tiny" : ""}" aria-hidden="true" style="background-size:${ATLAS.width * scale}px ${ATLAS.height * scale}px;background-position:-${((id - 1) % ATLAS.columns) * ATLAS.frameWidth * scale}px -${Math.floor((id - 1) / ATLAS.columns) * ATLAS.frameHeight * scale}px"></span>`;
     };
     const replaceMarkup = (element, markup) => element.replaceChildren(document.createRange().createContextualFragment(markup));
