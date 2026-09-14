@@ -6,6 +6,8 @@ A dependency-free wild Pokémon checklist for the supplied Generation VII locati
 
 Open [`index.html`](index.html) directly in a browser. It is self-contained and works from `file://`; no server, package manager, CDN, or network connection is needed.
 
+Select a Pokémon's name in the Pokédex to show every known guide location, including its island, encounter group, availability, and whether it is a wild encounter or SOS ally. The source data does not contain evolution paths, so the app says so instead of guessing when no direct location is listed.
+
 Status buttons cycle **None → Caught → Seen → None**. Only Caught counts toward location and overall progress. The browser saves species statuses, tracked forms, and settings in versioned local storage (`pokemon-checklist-state-v1`). **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
 
 ## Build and validate

@@ -35,3 +35,6 @@
 - Changed phone encounter tables into stacked cards and extended the Pokédex drawer layout through portrait-tablet widths.
 - Made `data/encounters.json` the sole encounter transcription and reduced the extraction utility from 2,512 to 349 lines.
 - Re-extracted all PDF assets to confirm deterministic output and repeated desktop, 820px tablet, and 390px phone smoke tests with no overflow or browser exceptions.
+- Made selected-Pokémon details automatically return to view even after choosing an entry far down the Pokédex list.
+- Expanded known-place links with island, location, encounter group, Catch now/Return later availability, and wild/SOS encounter type.
+- Added a clear no-direct-location message instead of inventing evolution paths absent from the source data.

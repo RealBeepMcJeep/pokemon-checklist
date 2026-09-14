@@ -115,9 +115,12 @@
     .selected-title .status-button { margin-left: auto; }
     .form-summary { margin-top: .45rem; }
     .form-summary > strong { display: block; margin-bottom: .25rem; font-size: .78rem; }
-    .location-links { margin: .55rem 0 0; padding-left: 1.1rem; font-size: .78rem; }
-    .location-links li { margin: .22rem 0; }
+    .location-links { margin-top: .55rem; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: .4rem; background: #112017; font-size: .78rem; }
+    .location-links > strong { display: block; color: var(--accent-bright); }
+    .location-links ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+    .location-links li { margin: .28rem 0; }
     .location-links a { color: var(--accent-dark); }
+    .location-links p { margin: .3rem 0 0; }
     .dex-list { padding: .35rem; }
     .dex-row { gap: .3rem; }
     .dex-row + .dex-row { margin-top: .15rem; }
@@ -219,7 +222,7 @@
         <div class="dex-count" id="dex-count"></div>
       </div>
       <div class="dex-content">
-        <div class="dex-selection" id="dex-selection"></div>
+        <div class="dex-selection" id="dex-selection" tabindex="-1" aria-live="polite"></div>
         <div class="dex-list" id="dex-list"></div>
       </div>
     </aside>
@@ -489,7 +492,7 @@
       const pokemon = byDex.get(selectedDex);
       const occurrences = getOccurrences(selectedDex);
       const forms = [...formDefs.values()].filter((form) => form.speciesId === selectedDex);
-      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? "Wild locations" : "No wild location is listed in this PDF."}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.location.name)} · ${escapeHTML(item.group.name)} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : ""}</div>`);
+      replaceMarkup(selection, `<div class="selected-title"><span class="icon" aria-hidden="true" style="background-position: -${((selectedDex - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((selectedDex - 1) / ATLAS.columns) * ATLAS.frameHeight}px"></span><span>#${String(selectedDex).padStart(3, "0")} ${escapeHTML(pokemon.name)}</span>${speciesStatusButton(selectedDex, "", "selected")}</div>${state.settings.forms && forms.length ? `<div class="form-summary"><strong>Tracked forms (separate from location progress)</strong><div class="form-list">${forms.map((form) => formStatusButton(form.key)).join("")}</div></div>` : ""}<div class="location-links"><strong>${occurrences.length ? `Known places in this guide (${occurrences.length})` : "No direct wild location in this guide"}</strong>${occurrences.length ? `<ul>${occurrences.map((item) => `<li><a href="#encounter-${safeId(item.row.id)}">${escapeHTML(item.island.name)} › ${escapeHTML(item.location.name)} › ${escapeHTML(item.group.name)} · ${item.group.category === "return-later" ? "return later" : "catch now"} · ${item.ally ? "SOS ally" : "wild encounter"}</a></li>`).join("")}</ul>` : '<p class="muted">The source does not include evolution paths.</p>'}</div>`);
     }
 
     function renderDex() {
@@ -609,7 +612,13 @@
       const control = event.target.closest?.("[data-action]");
       if (!control) return;
       const action = control.dataset.action;
-      if (action === "select") { selectedDex = Number(control.dataset.species); renderDex(); return; }
+      if (action === "select") {
+        selectedDex = Number(control.dataset.species);
+        renderDex();
+        document.querySelector(".dex-content").scrollTop = 0;
+        document.getElementById("dex-selection").focus({ preventScroll: true });
+        return;
+      }
       if (action === "species") {
         const before = firstIncompleteLocation()?.id || null;
         cycleSpecies(Number(control.dataset.species));

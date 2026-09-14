@@ -22,10 +22,10 @@ Completed items move to `changelog.md`.
 
 ### Pokédex location discovery
 
-- [ ] Bring the selected Pokémon's guide locations into view after any Pokédex-row click.
-- [ ] Show island, location, encounter group, availability, and SOS/wild encounter type.
-- [ ] Explain when the guide contains no direct location rather than guessing an evolution path.
-- [ ] Add a browser regression check for selecting a Pokémon far down the Pokédex.
+- [x] Bring the selected Pokémon's guide locations into view after any Pokédex-row click.
+- [x] Show island, location, encounter group, availability, and SOS/wild encounter type.
+- [x] Explain when the guide contains no direct location rather than guessing an evolution path.
+- [x] Add a browser regression check for selecting a Pokémon far down the Pokédex.
 
 ### Dark encyclopedia polish
 
