@@ -53,3 +53,4 @@
 - Added small Pokémon sprites to location encounter rows and SOS ally controls by reusing the embedded icon atlas.
 - Verified all five mode datasets, pinned-source checks, version-exclusive forms, theme restoration, cross-mode restore/reset synchronization, desktop/tablet/mobile layouts, and offline operation with no browser exceptions.
 - Increased location-table sprites from 28×21 to 36×27 pixels while preserving the native atlas frames' 4:3 proportions.
+- Standardized Pokédex and encounter-table sprites at their native 40×30-pixel atlas frame size.
