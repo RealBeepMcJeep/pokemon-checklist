@@ -20,6 +20,13 @@ Completed items move to `changelog.md`.
 
 ## Outstanding work
 
+### Stable Pokédex scrolling
+
+- [ ] Keep selected Pokémon details pinned above the scrolling Pokédex list.
+- [ ] Preserve the current list position and existing rows when a Pokémon is selected.
+- [ ] Bound long location lists so they do not cover the entire drawer.
+- [ ] Update the browser regression check for sticky details without a jump to 001.
+
 ### Targeted status updates
 
 - [x] Stop rebuilding all 60 locations and 807 Pokédex rows for an ordinary status change.
