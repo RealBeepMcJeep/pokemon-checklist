@@ -20,6 +20,13 @@ Completed items move to `changelog.md`.
 
 ## Outstanding work
 
+### Pokédex location discovery
+
+- [ ] Bring the selected Pokémon's guide locations into view after any Pokédex-row click.
+- [ ] Show island, location, encounter group, availability, and SOS/wild encounter type.
+- [ ] Explain when the guide contains no direct location rather than guessing an evolution path.
+- [ ] Add a browser regression check for selecting a Pokémon far down the Pokédex.
+
 ### Dark encyclopedia polish
 
 - [x] Apply a dark Bulbapedia-inspired visual theme without copying its layout.
