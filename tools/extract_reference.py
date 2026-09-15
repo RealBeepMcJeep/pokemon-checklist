@@ -16,10 +16,10 @@ from io import BytesIO
 from pathlib import Path
 from typing import cast
 
-from build import validate_inputs
 from PIL import Image, ImageDraw, ImageFont
 from pypdf import PdfReader
 from pypdf.generic import ContentStream
+from validate_data import validate_inputs
 
 ROOT = Path(__file__).resolve().parents[1]
 PDF = ROOT / "references" / "Wild Pokemon Locations.pdf"

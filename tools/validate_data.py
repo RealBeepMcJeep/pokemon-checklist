@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-"""Build the dependency-free, file://-friendly checklist page."""
+"""Validate canonical checklist data and assets."""
 
 from __future__ import annotations
 
-import argparse
-import base64
 import json
-import re
 import struct
 from pathlib import Path
-from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / "src" / "index.template.html"
+
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
 ENCOUNTERS_PATH = ROOT / "data" / "encounters.json"
 VANILLA_ENCOUNTERS = {
@@ -22,11 +18,10 @@ VANILLA_ENCOUNTERS = {
     "ultra-moon": (ROOT / "data" / "encounters-ultra-moon.json", 60),
 }
 ATLAS_PATH = ROOT / "assets" / "gen7-icons.png"
-OUTPUT = ROOT / "index.html"
+
 ATLAS_WIDTH = 1280
 ATLAS_HEIGHT = 780
 ATLAS_COLUMNS = 32
-ATLAS_FRAME = (40, 30)
 REQUIRED_GRASS_MAPS = {
     "Route 1": "assets/locations/route-1-map.png",
     "Hau'oli City": "assets/locations/hau-oli-city-map.jpg",
@@ -35,12 +30,6 @@ REQUIRED_GRASS_MAPS = {
     "Route 5": "assets/locations/route-5-map.jpg",
     "Route 6": "assets/locations/route-6-map.png",
     "Mount Hokulani": "assets/locations/mount-hokulani-map.png",
-}
-PLACEHOLDERS = {
-    "pokemon": "__POKEMON_JSON__",
-    "encounters": "__ENCOUNTERS_JSON__",
-    "atlas": "__ATLAS_JSON__",
-    "assets": "__ASSETS_JSON__",
 }
 
 
@@ -240,127 +229,32 @@ def validate_inputs(
     return errors
 
 
-def asset_data_urls(encounters_by_mode: dict[str, dict]) -> dict[str, str]:
-    result: dict[str, str] = {}
-    paths = dict.fromkeys(
-        path
-        for encounters in encounters_by_mode.values()
-        for path in encounters["assets"]
-    )
-    for path in paths:
-        file_path = ROOT / path
-        suffix = file_path.suffix.lower()
-        mime = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}.get(
-            suffix
-        )
-        if mime is None:
-            raise ValueError(f"unsupported asset type {path}")
-        result[path] = f"data:{mime};base64," + base64.b64encode(
-            file_path.read_bytes()
-        ).decode("ascii")
-    return result
-
-
-def render(pokemon: list[dict], encounters_by_mode: dict[str, dict]) -> str:
-    template = TEMPLATE.read_text(encoding="utf-8")
-    atlas_raw = base64.b64encode(ATLAS_PATH.read_bytes()).decode("ascii")
-    values = {
-        PLACEHOLDERS["pokemon"]: script_json(pokemon),
-        PLACEHOLDERS["encounters"]: script_json(encounters_by_mode),
-        PLACEHOLDERS["atlas"]: script_json(
-            {
-                "data": f"data:image/png;base64,{atlas_raw}",
-                "width": ATLAS_WIDTH,
-                "height": ATLAS_HEIGHT,
-                "columns": ATLAS_COLUMNS,
-                "frameWidth": ATLAS_FRAME[0],
-                "frameHeight": ATLAS_FRAME[1],
-            }
-        ),
-        PLACEHOLDERS["assets"]: script_json(asset_data_urls(encounters_by_mode)),
-    }
-    for placeholder, value in values.items():
-        if template.count(placeholder) != 1:
-            raise ValueError(
-                f"template must contain exactly one {placeholder} placeholder"
-            )
-        template = template.replace(placeholder, value)
-    if any(value in template for value in PLACEHOLDERS.values()):
-        raise ValueError("template placeholders were not fully replaced")
-    return template
-
-
-def validate_output(
-    html: str, pokemon: list[dict], encounters_by_mode: dict[str, dict]
-) -> None:
-    if "</script>" in "".join(
-        script_json(value) for value in (pokemon, encounters_by_mode)
-    ):
-        raise ValueError("JSON escaping failed to protect a closing script tag")
-    if re.search(r"https?://", html, re.IGNORECASE):
-        raise ValueError("generated HTML contains an external URL")
-    if re.search(r"(?:src|href)\s*=\s*['\"]https?://", html, re.IGNORECASE):
-        raise ValueError("generated HTML contains an external resource URL")
-    for path, data_url in asset_data_urls(encounters_by_mode).items():
-        if data_url not in html:
-            raise ValueError(f"generated HTML is missing embedded asset {path}")
-    atlas_prefix = "data:image/png;base64,"
-    if html.count(atlas_prefix) < 1:
-        raise ValueError("generated HTML is missing the icon atlas")
-    if script_json(pokemon) not in html or script_json(encounters_by_mode) not in html:
-        raise ValueError("generated HTML is missing canonical JSON")
-
-
-def build(check: bool) -> int:
-    pokemon_data = read_json(POKEMON_PATH)
-    encounters_data = read_json(ENCOUNTERS_PATH)
-    vanilla_data = {
-        mode: read_json(path) for mode, (path, _) in VANILLA_ENCOUNTERS.items()
-    }
-    errors = validate_inputs(pokemon_data, encounters_data)
+def validate_all() -> list[str]:
+    pokemon = read_json(POKEMON_PATH)
+    encounters = read_json(ENCOUNTERS_PATH)
+    errors = validate_inputs(pokemon, encounters)
     for mode, (path, expected_locations) in VANILLA_ENCOUNTERS.items():
         errors.extend(
             f"{path.name}: {error}"
             for error in validate_inputs(
-                pokemon_data,
-                vanilla_data[mode],
+                pokemon,
+                read_json(path),
                 expected_locations=expected_locations,
                 require_grass_maps=False,
                 expected_mode=mode,
             )
         )
+    return errors
+
+
+def main() -> int:
+    errors = validate_all()
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
-    pokemon = cast(list[dict], pokemon_data)
-    encounters_by_mode = {
-        "photonic-prismatic": cast(dict, encounters_data),
-        **{mode: cast(dict, data) for mode, data in vanilla_data.items()},
-    }
-    html = render(pokemon, encounters_by_mode)
-    validate_output(html, pokemon, encounters_by_mode)
-    if check:
-        if not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != html:
-            print("ERROR: index.html is stale; run python tools/build.py")
-            return 1
-        print(
-            "OK: canonical data, embedded resources, safety checks, and index.html freshness"
-        )
-    else:
-        OUTPUT.write_text(html, encoding="utf-8", newline="\n")
-        print(f"Wrote {OUTPUT.relative_to(ROOT)} ({len(html):,} characters)")
+    print("OK: canonical data and assets")
     return 0
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="validate inputs and fail if index.html is stale",
-    )
-    return build(parser.parse_args().check)
 
 
 if __name__ == "__main__":
