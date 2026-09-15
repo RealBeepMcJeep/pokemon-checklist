@@ -54,3 +54,10 @@
 - Verified all five mode datasets, pinned-source checks, version-exclusive forms, theme restoration, cross-mode restore/reset synchronization, desktop/tablet/mobile layouts, and offline operation with no browser exceptions.
 - Increased location-table sprites from 28×21 to 36×27 pixels while preserving the native atlas frames' 4:3 proportions.
 - Standardized Pokédex and encounter-table sprites at their native 40×30-pixel atlas frame size.
+- Replaced the monolithic HTML/Python UI builder with Vite 8, strict TypeScript, Preact, and Preact Signals.
+- Split the frontend into typed data, domain, signal-state, UI action, component, and global style modules with working component and CSS HMR.
+- Added a production publisher that emits and audits one minified `index.html` containing all CSS, JavaScript, JSON, and 72 images for network-free `file://` use.
+- Preserved save schema v2, v1 migration, deterministic backups, five game modes, fine-grained status updates, location navigation, accessibility, and responsive layouts.
+- Declared and clean-environment-tested the Python tooling dependencies in `requirements-dev.txt`.
+- Added Vitest domain coverage, dual Vite/standalone Playwright parity tests, and pinned GitHub Actions CI.
+- Verified strict types, seven domain tests, ten browser tests, canonical data, generated-file freshness, blocked-network standalone operation, and component HMR without a page reload.

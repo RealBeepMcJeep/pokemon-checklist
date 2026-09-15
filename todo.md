@@ -20,6 +20,11 @@ Completed items move to `changelog.md`.
 
 ## Outstanding work
 
+### Mobile performance
+
+- [ ] Profile startup, mode-switch, and restore costs on representative phones.
+- [ ] Reduce initial DOM work with measured lazy mounting or Pokédex virtualization while preserving search, accessibility, location links, and offline behavior.
+
 ### Game modes
 
 - [x] Confirm reproducible sources for Pokémon Sun, Moon, Ultra Sun, and Ultra Moon.

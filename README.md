@@ -1,6 +1,6 @@
 # Alola Wild Checklist
 
-A dependency-free wild Pokémon checklist for the supplied Generation VII location guide and all four vanilla Alola games. It covers National Dex 001–807, chronological island/location sections, encounter rates, SOS allies, optional forms, and a searchable Pokédex in a responsive dark encyclopedia layout.
+A self-contained wild Pokémon checklist for the supplied Generation VII location guide and all four vanilla Alola games. It covers National Dex 001–807, chronological island/location sections, encounter rates, SOS allies, optional forms, and a searchable Pokédex in a responsive dark encyclopedia layout.
 
 ## Use it
 
@@ -12,23 +12,38 @@ Select a Pokémon's name in the Pokédex to show every known location in the act
 
 Status buttons cycle **None → Caught → Seen → None**. Only Caught counts toward location and overall progress. The browser saves species statuses, tracked forms, and the selected mode in versioned local storage (`pokemon-checklist-state-v2`). Existing v1 browser saves and backup files migrate without changing progress. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
 
-## Build and validate
+## Develop
 
-From the repository root:
+Install Node 22 and the locked dependencies, then start Vite:
 
 ```text
+npm ci
+npm run dev
+```
+
+The development server provides Preact component HMR and live CSS updates. It serves source modules and assets normally for fast iteration; the one-file constraint applies to production builds.
+
+## Build and validate
+
+Install the Python tooling dependencies with `python -m pip install -r requirements-dev.txt`. From the repository root:
+
+```text
+npm run build
+npm run check
+npx playwright install chromium
+npm run test:e2e
 python tools/extract_reference.py --validate
 python tools/build_vanilla_encounters.py --check
-python tools/build.py
-python tools/build.py --check
-python -m py_compile tools/build.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py
+python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py
 ```
+
+Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external resources and runtime network APIs, and copies it to the tracked root `index.html`. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
+
+`npm run check` runs strict TypeScript checking, Vitest domain tests, canonical Python data validation, and the production build/freshness audit. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. GitHub Actions enforces these checks for pull requests and `main`.
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`.
 
 `python tools/build_vanilla_encounters.py` regenerates all four vanilla snapshots from pinned sources and requires network access; normal builds remain fully offline. Direct tables come from the pinned [Pokémon Sun mirror](https://gist.github.com/RichardPaulAstley/42fbabe24250969f22d18fe8b919c520), SciresM's Pokémon Moon Pastebins (`YjNi4Qdk` and `HKEVPUYX`), and the pinned [Ultra Sun](https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2) and [Ultra Moon](https://gist.github.com/SciresM/deecdcf5fc49fc8191a29d111643c6b6) dumps. SHA-256 checks guard every table download. The pinned [PokeAPI repository](https://github.com/PokeAPI/pokeapi/tree/4b82c204ddd19ecb8eda2ea044ccb59e222b721c/data/v2/csv) supplies normalized area, method, SOS, Island Scan, berry-pile, and postgame records.
-
-Run `python tools/build.py` afterward; `--check` verifies both data structures, references, stable IDs, categories, assets, atlas dimensions, embedded-resource completeness, script-safe escaping, external-resource absence, and generated `index.html` freshness.
 
 ## Attribution and disclaimer
 
