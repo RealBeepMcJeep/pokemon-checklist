@@ -529,6 +529,12 @@ tbody tr:hover {
 .selected-title .status-button {
   margin-left: auto;
 }
+.bulbapedia-link {
+  flex: 0 0 auto;
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
 .pokemon-facts {
   display: inline-flex;
   align-items: center;

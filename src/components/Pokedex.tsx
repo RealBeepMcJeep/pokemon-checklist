@@ -38,6 +38,7 @@ function Selection() {
   if (!pokemon) return null;
   const occurrences = getOccurrences(activeEncounters.value, selected);
   const details = detailsByDex.get(selected);
+  const bulbapediaUrl = `https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(`${pokemon.name}_(Pokémon)`).replaceAll("%20", "_")}`;
   const forms = [...formDefinitions.values()].filter(
     (form) => form.speciesId === selected,
   );
@@ -48,6 +49,15 @@ function Selection() {
         <span>
           #{String(selected).padStart(3, "0")} {pokemon.name}
         </span>
+        <a
+          class="bulbapedia-link"
+          href={bulbapediaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${pokemon.name} on Bulbapedia in a new tab`}
+        >
+          Bulbapedia ↗
+        </a>
         <StatusButton id={selected} context="selected" />
       </div>
       {details && <PokemonFacts details={details} name={pokemon.name} labels />}

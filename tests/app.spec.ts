@@ -103,6 +103,14 @@ test("searches, selects, and navigates to known locations", async ({
   await page.locator("#dex-search").fill("731");
   await page.locator('[data-action="select"][data-species="731"]').click();
   await expect(page.locator("#dex-selection")).toContainText("Pikipek");
+  await expect(page.locator("#dex-selection .bulbapedia-link")).toHaveAttribute(
+    "href",
+    "https://bulbapedia.bulbagarden.net/wiki/Pikipek_(Pok%C3%A9mon)",
+  );
+  await expect(page.locator("#dex-selection .bulbapedia-link")).toHaveAttribute(
+    "target",
+    "_blank",
+  );
   const link = page.locator("#dex-selection .location-links a").first();
   await expect(link).toContainText("Route 1");
   const targetId = (await link.getAttribute("href"))?.slice(1);
