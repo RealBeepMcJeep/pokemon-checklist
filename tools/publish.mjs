@@ -1,4 +1,4 @@
-import { copyFileSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
 
@@ -17,7 +17,7 @@ if (files.length !== 1 || files[0] !== "index.html") {
   );
 }
 
-const html = readFileSync(output, "utf8");
+const html = readFileSync(output, "utf8").replace(/\r\n?/g, "\n");
 const failures = [
   [/<script\b[^>]*\bsrc\s*=/i, "external script"],
   [/<link\b[^>]*\brel\s*=\s*["']?stylesheet/i, "external stylesheet"],
@@ -44,7 +44,7 @@ if (check) {
   }
   console.log("OK: one-file artifact is complete and index.html is fresh");
 } else {
-  copyFileSync(output, published);
+  writeFileSync(published, html, "utf8");
   console.log(
     `Published ${html.length.toLocaleString()} characters to index.html`,
   );
