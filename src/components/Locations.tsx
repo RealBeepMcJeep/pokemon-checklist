@@ -1,7 +1,7 @@
 import { Fragment } from "preact";
 import { useEffect } from "preact/hooks";
-import { ASSETS } from "../data";
-import { locationProgress, rateText, safeId } from "../domain";
+import { ASSETS, detailsByDex, formDetails } from "../data";
+import { formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
   focusedLocation,
@@ -14,7 +14,44 @@ import type {
   Island as IslandData,
   Location as LocationData,
 } from "../types";
-import { AllyForms, RowForms, StatusButton } from "./StatusControls";
+import { PokemonFacts } from "./PokemonFacts";
+import {
+  AllyForms,
+  PokemonIcon,
+  RowForms,
+  StatusButton,
+} from "./StatusControls";
+
+function GuidePokemon({
+  id,
+  name,
+  context = "",
+  form,
+  ability,
+}: {
+  id: number;
+  name: string;
+  context?: string;
+  form?: string;
+  ability?: string;
+}) {
+  const formKey = form
+    ? `${id}:${formSlug(form)}`
+    : ability
+      ? `${id}:ability-${formSlug(ability)}`
+      : "";
+  const details = formDetails.get(formKey) || detailsByDex.get(id);
+  return (
+    <span class="guide-pokemon">
+      <StatusButton id={id} context={context} compact />
+      <span class="guide-pokemon-identity">
+        <PokemonIcon id={id} />
+        <span>{name}</span>
+        {details && <PokemonFacts details={details} name={name} />}
+      </span>
+    </span>
+  );
+}
 
 function Conditions({
   group,
@@ -44,10 +81,11 @@ function Allies({ row }: { row: EncounterRowData }) {
       <div class="ally-list">
         {row.allies.map((ally, index) => (
           <Fragment key={`${ally.speciesId}:${ally.form || ""}:${index}`}>
-            <StatusButton
+            <GuidePokemon
               id={ally.speciesId}
               name={ally.name}
               context="SOS ally"
+              form={ally.form}
             />
             <AllyForms ally={ally} />
           </Fragment>
@@ -70,7 +108,12 @@ function EncounterRow({
         <span class="species-name">
           {row.speciesId ? (
             <>
-              <StatusButton id={row.speciesId} name={row.speciesName} />
+              <GuidePokemon
+                id={row.speciesId}
+                name={row.speciesName || row.species || "Pokémon"}
+                form={row.form}
+                ability={row.ability}
+              />
               <RowForms row={row} />
             </>
           ) : (

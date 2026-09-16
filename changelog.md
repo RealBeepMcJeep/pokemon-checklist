@@ -61,3 +61,8 @@
 - Declared and clean-environment-tested the Python tooling dependencies in `requirements-dev.txt`.
 - Added Vitest domain coverage, dual Vite/standalone Playwright parity tests, and pinned GitHub Actions CI.
 - Verified strict types, seven domain tests, ten browser tests, canonical data, generated-file freshness, blocked-network standalone operation, and component HMR without a page reload.
+- Added compact colored type markers and child-friendly SSS–F grades to all 807 Pokédex rows, with ordinary final-evolution grade inheritance for unevolved Pokémon.
+- Added form-specific types and grades to selected Form Dex details and historical November 2019 Gen VII OU usage context to grade tooltips.
+- Added a checksum-pinned Pokémon Showdown data generator and offline validation for the generated Pokédex details snapshot.
+- Added type markers and grade badges to guide Pokémon and SOS allies, with compact separate ❌/✅/👁️ status buttons placed before each Pokémon.
+- Expanded inherited-grade tooltips to show the Pokémon's own non-inherited tier alongside the evolution source and historical usage.

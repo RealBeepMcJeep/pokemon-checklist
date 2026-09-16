@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENCOUNTERS_BY_MODE, POKEMON } from "./data";
+import { ENCOUNTERS_BY_MODE, POKEMON, detailsByDex, formDetails } from "./data";
 import {
   DEFAULT_MODE,
   buildFormDefinitions,
@@ -92,6 +92,21 @@ describe("checklist domain", () => {
       true,
     );
     expect(getOccurrences(encounters, 440).some(({ ally }) => ally)).toBe(true);
+  });
+
+  it("uses final evolutions for grades and keeps form details separate", () => {
+    expect(detailsByDex.get(1)).toMatchObject({
+      types: ["Grass", "Poison"],
+      grade: "B",
+      source: "Venusaur",
+      tier: "RU",
+      ownTier: "LC",
+    });
+    expect(formDetails.get("37:alolan")).toMatchObject({
+      types: ["Ice"],
+      grade: "S",
+      source: "Ninetales-Alola",
+    });
   });
 
   it("indexes forms once across all five modes", () => {

@@ -27,6 +27,28 @@ test("renders the complete responsive checklist", async ({
   await expect(page.locator("details.location")).toHaveCount(60);
   await expect(page.locator("details.location[open]")).toHaveCount(1);
   await expect(page.locator(".dex-row")).toHaveCount(807);
+  await expect(
+    page.locator(".dex-row").first().locator(".type-mark"),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(".dex-row").first().locator(".grade-badge"),
+  ).toHaveText("B");
+  await expect(
+    page.locator(".dex-row").first().locator(".grade-badge"),
+  ).toHaveAttribute(
+    "title",
+    /Inherited from Venusaur.*tier RU.*Without evolution inheritance, Bulbasaur's tier is LC.*OU usage: 1\.62%/,
+  );
+  const guidePokemon = page.locator("tbody .guide-pokemon").first();
+  await expect(
+    guidePokemon.locator(".compact-status .status-symbol"),
+  ).toHaveText("❌");
+  await expect(guidePokemon.locator(".compact-status .icon")).toHaveCount(0);
+  await expect(
+    guidePokemon.locator(".guide-pokemon-identity .icon"),
+  ).toHaveCount(1);
+  await expect(guidePokemon.locator(".type-mark")).toHaveCount(2);
+  await expect(guidePokemon.locator(".grade-badge")).toHaveText("F");
   await expect(page.locator("#mode-select option")).toHaveCount(5);
   await expect(page.locator("tbody .icon").first()).toHaveCSS("width", "40px");
   await expect(page.getByAltText("Route 1 numbered grass map")).toBeVisible();
@@ -44,6 +66,7 @@ test("updates matching controls and preserves progress across modes", async ({
     "Caught",
     "Caught",
   ]);
+  await expect(pikipek.first().locator(".status-symbol")).toHaveText("✅");
   await expect(
     page.locator("details.location .location-progress").first(),
   ).toContainText("1 / 23");
@@ -95,6 +118,17 @@ test("tracks forms and validates restore, migration, and reset", async ({
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#forms-toggle").click();
+  await page.locator("#dex-search").fill("37");
+  await page.locator('[data-action="select"][data-species="37"]').click();
+  const alolan = page.locator("#dex-selection .form-detail").filter({
+    has: page.locator('[data-form="37:alolan"]'),
+  });
+  await expect(alolan.locator(".type-mark")).toHaveCount(1);
+  await expect(alolan.locator(".grade-badge")).toHaveText("S");
+  await expect(alolan.locator(".grade-badge")).toHaveAttribute(
+    "title",
+    /Ninetales-Alola.*UUBL/,
+  );
   const form = page.locator('[data-action="form"]').first();
   const formKey = await form.getAttribute("data-form");
   await form.click();

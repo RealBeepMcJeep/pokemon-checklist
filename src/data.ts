@@ -1,13 +1,20 @@
 import pokemonJson from "../data/pokemon.json";
+import pokedexDetailsJson from "../data/pokedex-details.json";
 import prismaticJson from "../data/encounters.json";
 import sunJson from "../data/encounters-sun.json";
 import moonJson from "../data/encounters-moon.json";
 import ultraSunJson from "../data/encounters-ultra-sun.json";
 import ultraMoonJson from "../data/encounters-ultra-moon.json";
 import atlasUrl from "../assets/gen7-icons.png?url";
-import type { EncounterData, GameMode, Pokemon } from "./types";
+import type {
+  EncounterData,
+  GameMode,
+  PokedexDetailsData,
+  Pokemon,
+} from "./types";
 
 export const POKEMON = pokemonJson as Pokemon[];
+export const POKEDEX_DETAILS = pokedexDetailsJson as PokedexDetailsData;
 export const ENCOUNTERS_BY_MODE = {
   "photonic-prismatic": prismaticJson as EncounterData,
   sun: sunJson as EncounterData,
@@ -35,3 +42,7 @@ export const ATLAS = {
 } as const;
 
 export const byDex = new Map(POKEMON.map((pokemon) => [pokemon.id, pokemon]));
+export const detailsByDex = new Map(
+  POKEDEX_DETAILS.species.map((details) => [details.id, details]),
+);
+export const formDetails = new Map(Object.entries(POKEDEX_DETAILS.forms));

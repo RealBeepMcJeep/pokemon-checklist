@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
+POKEDEX_DETAILS_PATH = ROOT / "data" / "pokedex-details.json"
 ENCOUNTERS_PATH = ROOT / "data" / "encounters.json"
 VANILLA_ENCOUNTERS = {
     "sun": (ROOT / "data" / "encounters-sun.json", 57),
@@ -22,6 +23,44 @@ ATLAS_PATH = ROOT / "assets" / "gen7-icons.png"
 ATLAS_WIDTH = 1280
 ATLAS_HEIGHT = 780
 ATLAS_COLUMNS = 32
+GRADES = {"SSS", "S", "A", "B", "C", "D", "F"}
+TIERS = {
+    "AG",
+    "Uber",
+    "OU",
+    "UUBL",
+    "UU",
+    "RUBL",
+    "RU",
+    "NUBL",
+    "NU",
+    "PUBL",
+    "PU",
+    "(PU)",
+    "LC",
+    "LC Uber",
+    "NFE",
+}
+POKEMON_TYPES = {
+    "Normal",
+    "Fire",
+    "Water",
+    "Electric",
+    "Grass",
+    "Ice",
+    "Fighting",
+    "Poison",
+    "Ground",
+    "Flying",
+    "Psychic",
+    "Bug",
+    "Rock",
+    "Ghost",
+    "Dragon",
+    "Dark",
+    "Steel",
+    "Fairy",
+}
 REQUIRED_GRASS_MAPS = {
     "Route 1": "assets/locations/route-1-map.png",
     "Hau'oli City": "assets/locations/hau-oli-city-map.jpg",
@@ -229,10 +268,63 @@ def validate_inputs(
     return errors
 
 
+def validate_pokedex_details(details: object) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(details, dict) or details.get("schemaVersion") != 1:
+        return ["pokedex-details.json schemaVersion must be 1"]
+    source = details.get("source")
+    if (
+        not isinstance(source, dict)
+        or source.get("showdownCommit") != "e7aee8d9ccc983c59c5608929773249adca16b8f"
+    ):
+        errors.append("pokedex-details.json must use the pinned Gen VII source")
+    species = details.get("species")
+    if not isinstance(species, list) or len(species) != 807:
+        errors.append("pokedex-details.json must contain exactly 807 species")
+        species = species if isinstance(species, list) else []
+    if [item.get("id") if isinstance(item, dict) else None for item in species] != list(
+        range(1, 808)
+    ):
+        errors.append("pokedex detail IDs must be ordered 1..807")
+    forms = details.get("forms")
+    if not isinstance(forms, dict) or len(forms) != 54:
+        errors.append("pokedex-details.json must contain exactly 54 tracked forms")
+        forms = forms if isinstance(forms, dict) else {}
+    for label, item in [
+        *((f"Pokémon {index}", value) for index, value in enumerate(species, 1)),
+        *((f"form {key}", value) for key, value in forms.items()),
+    ]:
+        if not isinstance(item, dict):
+            errors.append(f"{label} details must be an object")
+            continue
+        types = item.get("types")
+        if (
+            not isinstance(types, list)
+            or not 1 <= len(types) <= 2
+            or any(value not in POKEMON_TYPES for value in types)
+        ):
+            errors.append(f"{label} has invalid types")
+        if item.get("grade") not in GRADES:
+            errors.append(f"{label} has an invalid grade")
+        if (
+            not isinstance(item.get("source"), str)
+            or item.get("tier") not in TIERS
+            or item.get("ownTier") not in TIERS
+        ):
+            errors.append(f"{label} has invalid grade source information")
+        usage = item.get("usage")
+        if usage is not None and (
+            not isinstance(usage, (int, float)) or not 0 < usage <= 100
+        ):
+            errors.append(f"{label} has invalid usage")
+    return errors
+
+
 def validate_all() -> list[str]:
     pokemon = read_json(POKEMON_PATH)
     encounters = read_json(ENCOUNTERS_PATH)
     errors = validate_inputs(pokemon, encounters)
+    errors.extend(validate_pokedex_details(read_json(POKEDEX_DETAILS_PATH)))
     for mode, (path, expected_locations) in VANILLA_ENCOUNTERS.items():
         errors.extend(
             f"{path.name}: {error}"

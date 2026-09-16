@@ -16,6 +16,24 @@ export interface Pokemon {
   slug: string;
 }
 
+export type Grade = "SSS" | "S" | "A" | "B" | "C" | "D" | "F";
+
+export interface PokemonDetails {
+  types: string[];
+  grade: Grade;
+  source: string;
+  tier: string;
+  ownTier: string;
+  usage?: number;
+}
+
+export interface PokedexDetailsData {
+  schemaVersion: 1;
+  source: { showdownCommit: string; usage: string };
+  species: (PokemonDetails & { id: number })[];
+  forms: Record<string, PokemonDetails>;
+}
+
 export interface Rates {
   single?: number;
   day?: number;

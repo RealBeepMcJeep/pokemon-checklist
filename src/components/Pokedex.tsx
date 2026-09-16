@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { POKEMON, byDex } from "../data";
+import { POKEMON, byDex, detailsByDex, formDetails } from "../data";
 import { getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
@@ -13,6 +13,7 @@ import {
   sidebarHidden,
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo } from "../ui";
+import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
 
 function DexCount({ filtered }: { filtered: number }) {
@@ -36,6 +37,7 @@ function Selection() {
   const pokemon = byDex.get(selected);
   if (!pokemon) return null;
   const occurrences = getOccurrences(activeEncounters.value, selected);
+  const details = detailsByDex.get(selected);
   const forms = [...formDefinitions.values()].filter(
     (form) => form.speciesId === selected,
   );
@@ -48,13 +50,26 @@ function Selection() {
         </span>
         <StatusButton id={selected} context="selected" />
       </div>
+      {details && <PokemonFacts details={details} name={pokemon.name} labels />}
       {formsTracked.value && forms.length > 0 && (
         <div class="form-summary">
           <strong>Tracked forms (separate from location progress)</strong>
-          <div class="form-list">
-            {forms.map((form) => (
-              <FormStatusButton key={form.key} formKey={form.key} />
-            ))}
+          <div class="form-detail-list">
+            {forms.map((form) => {
+              const details = formDetails.get(form.key);
+              return (
+                <div class="form-detail" key={form.key}>
+                  <FormStatusButton formKey={form.key} />
+                  {details && (
+                    <PokemonFacts
+                      details={details}
+                      name={pokemon.name}
+                      labels
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -98,6 +113,7 @@ function Selection() {
 
 function DexRow({ id, name }: { id: number; name: string }) {
   const selected = selectedDex.value === id;
+  const details = detailsByDex.get(id);
   return (
     <div class="dex-row">
       <button
@@ -119,6 +135,7 @@ function DexRow({ id, name }: { id: number; name: string }) {
         <span class="dex-name">
           {String(id).padStart(3, "0")} · {name}
         </span>
+        {details && <PokemonFacts details={details} name={name} />}
       </button>
       <StatusButton id={id} context="Pokédex" />
     </div>
@@ -184,6 +201,16 @@ export function Pokedex() {
             }}
           />
           <DexCount filtered={filtered.length} />
+          <details class="type-legend">
+            <summary>Type colors</summary>
+            <div>
+              {TYPES.map((type) => (
+                <span key={type}>
+                  <TypeMarks types={[type]} /> {type}
+                </span>
+              ))}
+            </div>
+          </details>
         </div>
         <div class="dex-content">
           <div

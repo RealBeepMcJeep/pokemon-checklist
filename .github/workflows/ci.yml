@@ -31,6 +31,7 @@ jobs:
           python -m py_compile
           tools/validate_data.py
           tools/build_vanilla_encounters.py
+          tools/build_pokedex_details.py
           tools/extract_reference.py
           tools/build_icons.py
       - run: npm run check
