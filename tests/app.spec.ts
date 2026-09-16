@@ -49,6 +49,10 @@ test("renders the complete responsive checklist", async ({
   ).toHaveCount(1);
   await expect(guidePokemon.locator(".type-mark")).toHaveCount(2);
   await expect(guidePokemon.locator(".grade-badge")).toHaveText("F");
+  await guidePokemon.locator(".guide-pokemon-link").click();
+  await expect(page.locator("#dex-selection .selected-title")).toContainText(
+    "Pikipek",
+  );
   await expect(page.locator("#mode-select option")).toHaveCount(5);
   await expect(page.locator("tbody .icon").first()).toHaveCSS("width", "40px");
   await expect(page.getByAltText("Route 1 numbered grass map")).toBeVisible();
@@ -227,8 +231,11 @@ test("opens the Pokédex drawer without mobile overflow", async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openApp(page, testInfo.project.name);
-  await page.locator("#sidebar-toggle").click();
+  await page.locator("tbody .guide-pokemon-link").first().click();
   await expect(page.locator("#pokedex")).toHaveClass(/drawer-open/);
+  await expect(page.locator("#dex-selection .selected-title")).toContainText(
+    "Pikipek",
+  );
   await expect(page.locator("#pokedex")).toHaveAttribute(
     "aria-hidden",
     "false",

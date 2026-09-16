@@ -14,6 +14,7 @@ import type {
   Island as IslandData,
   Location as LocationData,
 } from "../types";
+import { openPokemon } from "../ui";
 import { PokemonFacts } from "./PokemonFacts";
 import {
   AllyForms,
@@ -46,7 +47,13 @@ function GuidePokemon({
       <StatusButton id={id} context={context} compact />
       <span class="guide-pokemon-identity">
         <PokemonIcon id={id} />
-        <span>{name}</span>
+        <button
+          class="guide-pokemon-link"
+          type="button"
+          onClick={() => openPokemon(id)}
+        >
+          {name}
+        </button>
         {details && <PokemonFacts details={details} name={name} />}
       </span>
     </span>

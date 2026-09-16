@@ -722,12 +722,14 @@ tbody tr:hover {
   color: var(--muted);
   font-size: 0.7rem;
 }
-.evolution-link {
+.evolution-link,
+.guide-pokemon-link {
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--accent-dark);
   font: inherit;
+  text-align: left;
   text-decoration: underline;
 }
 .dex-list {

@@ -8,6 +8,7 @@ import {
   resetState,
   restoreState,
   savedNotice,
+  selectedDex,
   setMode,
   showNotice,
   sidebarHidden,
@@ -64,6 +65,22 @@ export function jumpTo(hash: string): void {
   target.scrollIntoView({ block: "center" });
   target.focus({ preventScroll: true });
   closeDrawer();
+}
+
+export function openPokemon(id: number): void {
+  selectedDex.value = id;
+  if (window.innerWidth < DRAWER_BREAKPOINT) {
+    if (!drawerOpen.value)
+      previousFocus = document.activeElement as HTMLElement | null;
+    drawerOpen.value = true;
+  } else {
+    sidebarHidden.value = false;
+  }
+  requestAnimationFrame(() => {
+    document.querySelector<HTMLElement>("#dex-selection")?.focus({
+      preventScroll: true,
+    });
+  });
 }
 
 export function closeDrawer(): void {

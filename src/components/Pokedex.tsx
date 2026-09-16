@@ -12,7 +12,7 @@ import {
   selectedDex,
   sidebarHidden,
 } from "../state";
-import { DRAWER_BREAKPOINT, closeDrawer, jumpTo } from "../ui";
+import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
 
@@ -22,15 +22,6 @@ const evolutionIds = new Map(
     [normalize(pokemon.slug), pokemon.id] as const,
   ]),
 );
-
-function selectPokemon(id: number) {
-  selectedDex.value = id;
-  requestAnimationFrame(() => {
-    document.querySelector<HTMLElement>("#dex-selection")?.focus({
-      preventScroll: true,
-    });
-  });
-}
 
 function DexCount({ filtered }: { filtered: number }) {
   return (
@@ -144,7 +135,7 @@ function Selection() {
                       <button
                         class="evolution-link"
                         type="button"
-                        onClick={() => selectPokemon(id)}
+                        onClick={() => openPokemon(id)}
                       >
                         {step.name}
                       </button>
@@ -177,7 +168,7 @@ function DexRow({ id, name }: { id: number; name: string }) {
         data-action="select"
         data-species={id}
         aria-current={selected}
-        onClick={() => selectPokemon(id)}
+        onClick={() => openPokemon(id)}
       >
         <PokemonIcon id={id} />
         <span class="dex-name">

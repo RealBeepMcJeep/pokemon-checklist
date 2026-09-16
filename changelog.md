@@ -68,3 +68,4 @@
 - Expanded inherited-grade tooltips to show the Pokémon's own non-inherited tier alongside the evolution source and historical usage.
 - Added a direct Bulbapedia link to each selected Pokédex entry.
 - Added clickable Generation VII evolution paths with level, item, trade, friendship, move, and special-condition methods for Pokémon without a direct encounter in the selected game mode.
+- Made Pokémon names in guide and SOS rows open their Pokédex details, revealing the desktop sidebar or mobile drawer automatically.
