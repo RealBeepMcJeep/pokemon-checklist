@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
+import { hasStamp, normalizeStamp } from "./version.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist");
@@ -30,6 +31,7 @@ const failures = [
   [/__(?:VITE|POKEMON|ENCOUNTERS|ASSETS|ATLAS)_/i, "unresolved build token"],
 ].filter(([pattern]) => pattern.test(html));
 if (!/^<!doctype html>/i.test(html)) failures.push([/./, "HTML doctype"]);
+if (!hasStamp(html)) failures.push([/./, "build version stamp"]);
 if ((html.match(/data:image\//g) || []).length < 72)
   failures.push([/./, "embedded images"]);
 if (failures.length) {
@@ -39,7 +41,10 @@ if (failures.length) {
 }
 
 if (check) {
-  if (readFileSync(published, "utf8") !== html) {
+  // The stamped commit is necessarily the parent commit, so a rebuild can never
+  // reproduce the committed hash exactly. Normalize the stamp (and only the stamp)
+  // so the freshness gate still fails on any other difference.
+  if (normalizeStamp(readFileSync(published, "utf8")) !== normalizeStamp(html)) {
     throw new Error("index.html is stale; run npm run build");
   }
   console.log("OK: one-file artifact is complete and index.html is fresh");

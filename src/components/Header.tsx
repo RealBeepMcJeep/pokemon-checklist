@@ -13,6 +13,7 @@ import {
 } from "../state";
 import { GAME_MODES } from "../types";
 import type { GameMode } from "../types";
+import { BUILD_LABEL } from "../version";
 import {
   DRAWER_BREAKPOINT,
   changeMode,
@@ -49,6 +50,13 @@ export function Header() {
                 {MODE_LABELS[currentMode]} · Alola locations in story order ·
                 National Pokédex 001–807
               </div>
+              <span
+                class="build-stamp"
+                id="build-version"
+                title="Release version and commit this build came from"
+              >
+                {BUILD_LABEL}
+              </span>
             </div>
           </div>
           <div class="actions" aria-label="Checklist actions">

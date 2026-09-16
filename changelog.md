@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-16
+
+- Added a build version stamp to the application header, rendered as `v<version> - <short commit>` (for example `v1.0.0 - 8d7c12`).
+- Sourced the release number from `package.json` and the commit from the checked-out `HEAD` at build time, so the stamp is never hand-maintained.
+- Injected the stamp as a single Vite/Vitest `define` through `tools/version.mjs`, so the application, the unit tests, and the publisher all read one definition.
+- Made the publisher reject any build without a version stamp and normalize the stamp during `--check`, because a commit cannot contain its own hash and therefore the committed artifact always carries the parent commit.
+
 ## 2026-09-14
 
 - Initialized the Git repository with `main` as the default branch.

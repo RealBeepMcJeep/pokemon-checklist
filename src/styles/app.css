@@ -93,6 +93,18 @@ h3 {
   color: var(--muted);
   font-size: 0.86rem;
 }
+.build-stamp {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.42rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
 .title-row {
   justify-content: space-between;
   flex-wrap: wrap;
