@@ -102,6 +102,11 @@ describe("checklist domain", () => {
       tier: "RU",
       ownTier: "LC",
     });
+    expect(detailsByDex.get(6)?.evolution).toEqual([
+      { name: "Charmander" },
+      { name: "Charmeleon", method: "Level 16" },
+      { name: "Charizard", method: "Level 36" },
+    ]);
     expect(formDetails.get("37:alolan")).toMatchObject({
       types: ["Ice"],
       grade: "S",

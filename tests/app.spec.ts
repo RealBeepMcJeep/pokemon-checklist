@@ -100,6 +100,25 @@ test("searches, selects, and navigates to known locations", async ({
   await page.locator("#dex-search").fill("807");
   await expect(page.locator(".dex-row")).toHaveCount(1);
   await expect(page.locator(".dex-name")).toContainText("Zeraora");
+  await page.locator("#dex-search").fill("6");
+  await page.locator('[data-action="select"][data-species="6"]').click();
+  await expect(page.locator("#dex-selection .location-links")).toContainText(
+    "No direct wild location in this mode",
+  );
+  await expect(
+    page.locator("#dex-selection .evolution-path .evolution-link"),
+  ).toHaveText(["Charmander", "Charmeleon", "Charizard"]);
+  await expect(
+    page.locator("#dex-selection .evolution-path .evolution-method"),
+  ).toHaveText(["Level 16 →", "Level 36 →"]);
+  await page
+    .locator("#dex-selection .evolution-path")
+    .getByRole("button", { name: "Charmander", exact: true })
+    .click();
+  await expect(page.locator("#dex-selection .selected-title")).toContainText(
+    "#004 Charmander",
+  );
+
   await page.locator("#dex-search").fill("731");
   await page.locator('[data-action="select"][data-species="731"]').click();
   await expect(page.locator("#dex-selection")).toContainText("Pikipek");

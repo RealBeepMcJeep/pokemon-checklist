@@ -698,6 +698,38 @@ tbody tr:hover {
 .location-links p {
   margin: 0.3rem 0 0;
 }
+.evolution-path {
+  margin-top: 0.35rem;
+}
+.evolution-path > span {
+  color: var(--muted);
+  font-weight: 700;
+}
+.evolution-path ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.3rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.evolution-path li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.evolution-method {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.evolution-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  font: inherit;
+  text-decoration: underline;
+}
 .dex-list {
   padding: 0.35rem;
 }

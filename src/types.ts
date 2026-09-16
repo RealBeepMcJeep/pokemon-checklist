@@ -18,6 +18,11 @@ export interface Pokemon {
 
 export type Grade = "SSS" | "S" | "A" | "B" | "C" | "D" | "F";
 
+interface EvolutionStep {
+  name: string;
+  method?: string;
+}
+
 export interface PokemonDetails {
   types: string[];
   grade: Grade;
@@ -25,6 +30,7 @@ export interface PokemonDetails {
   tier: string;
   ownTier: string;
   usage?: number;
+  evolution?: EvolutionStep[];
 }
 
 export interface PokedexDetailsData {

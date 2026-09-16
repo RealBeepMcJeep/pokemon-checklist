@@ -27,7 +27,16 @@
       "source": "Venusaur",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 1.61719
+      "usage": 1.61719,
+      "evolution": [
+        {
+          "name": "Bulbasaur"
+        },
+        {
+          "name": "Ivysaur",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 3,
@@ -39,7 +48,20 @@
       "source": "Venusaur",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 1.61719
+      "usage": 1.61719,
+      "evolution": [
+        {
+          "name": "Bulbasaur"
+        },
+        {
+          "name": "Ivysaur",
+          "method": "Level 16"
+        },
+        {
+          "name": "Venusaur",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 4,
@@ -61,7 +83,16 @@
       "source": "Charizard",
       "tier": "PUBL",
       "ownTier": "NFE",
-      "usage": 0.03075
+      "usage": 0.03075,
+      "evolution": [
+        {
+          "name": "Charmander"
+        },
+        {
+          "name": "Charmeleon",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 6,
@@ -73,7 +104,20 @@
       "source": "Charizard",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.03075
+      "usage": 0.03075,
+      "evolution": [
+        {
+          "name": "Charmander"
+        },
+        {
+          "name": "Charmeleon",
+          "method": "Level 16"
+        },
+        {
+          "name": "Charizard",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 7,
@@ -95,7 +139,16 @@
       "source": "Blastoise",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.18078
+      "usage": 0.18078,
+      "evolution": [
+        {
+          "name": "Squirtle"
+        },
+        {
+          "name": "Wartortle",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 9,
@@ -106,7 +159,20 @@
       "source": "Blastoise",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.18078
+      "usage": 0.18078,
+      "evolution": [
+        {
+          "name": "Squirtle"
+        },
+        {
+          "name": "Wartortle",
+          "method": "Level 16"
+        },
+        {
+          "name": "Blastoise",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 10,
@@ -128,7 +194,16 @@
       "source": "Butterfree",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.02498
+      "usage": 0.02498,
+      "evolution": [
+        {
+          "name": "Caterpie"
+        },
+        {
+          "name": "Metapod",
+          "method": "Level 7"
+        }
+      ]
     },
     {
       "id": 12,
@@ -140,7 +215,20 @@
       "source": "Butterfree",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02498
+      "usage": 0.02498,
+      "evolution": [
+        {
+          "name": "Caterpie"
+        },
+        {
+          "name": "Metapod",
+          "method": "Level 7"
+        },
+        {
+          "name": "Butterfree",
+          "method": "Level 10"
+        }
+      ]
     },
     {
       "id": 13,
@@ -164,7 +252,16 @@
       "source": "Beedrill",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.0001
+      "usage": 0.0001,
+      "evolution": [
+        {
+          "name": "Weedle"
+        },
+        {
+          "name": "Kakuna",
+          "method": "Level 7"
+        }
+      ]
     },
     {
       "id": 15,
@@ -176,7 +273,20 @@
       "source": "Beedrill",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0001
+      "usage": 0.0001,
+      "evolution": [
+        {
+          "name": "Weedle"
+        },
+        {
+          "name": "Kakuna",
+          "method": "Level 7"
+        },
+        {
+          "name": "Beedrill",
+          "method": "Level 10"
+        }
+      ]
     },
     {
       "id": 16,
@@ -200,7 +310,16 @@
       "source": "Pidgeot",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00147
+      "usage": 0.00147,
+      "evolution": [
+        {
+          "name": "Pidgey"
+        },
+        {
+          "name": "Pidgeotto",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 18,
@@ -212,7 +331,20 @@
       "source": "Pidgeot",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00147
+      "usage": 0.00147,
+      "evolution": [
+        {
+          "name": "Pidgey"
+        },
+        {
+          "name": "Pidgeotto",
+          "method": "Level 18"
+        },
+        {
+          "name": "Pidgeot",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 19,
@@ -234,7 +366,16 @@
       "source": "Raticate",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00234
+      "usage": 0.00234,
+      "evolution": [
+        {
+          "name": "Rattata"
+        },
+        {
+          "name": "Raticate",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 21,
@@ -258,7 +399,16 @@
       "source": "Fearow",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01394
+      "usage": 0.01394,
+      "evolution": [
+        {
+          "name": "Spearow"
+        },
+        {
+          "name": "Fearow",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 23,
@@ -280,7 +430,16 @@
       "source": "Arbok",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00447
+      "usage": 0.00447,
+      "evolution": [
+        {
+          "name": "Ekans"
+        },
+        {
+          "name": "Arbok",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 25,
@@ -291,7 +450,16 @@
       "source": "Raichu",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00603
+      "usage": 0.00603,
+      "evolution": [
+        {
+          "name": "Pichu"
+        },
+        {
+          "name": "Pikachu",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 26,
@@ -302,7 +470,20 @@
       "source": "Raichu",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00603
+      "usage": 0.00603,
+      "evolution": [
+        {
+          "name": "Pichu"
+        },
+        {
+          "name": "Pikachu",
+          "method": "Level up with high friendship"
+        },
+        {
+          "name": "Raichu",
+          "method": "Use Thunder Stone"
+        }
+      ]
     },
     {
       "id": 27,
@@ -324,7 +505,16 @@
       "source": "Sandslash",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01046
+      "usage": 0.01046,
+      "evolution": [
+        {
+          "name": "Sandshrew"
+        },
+        {
+          "name": "Sandslash",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 29,
@@ -346,7 +536,16 @@
       "source": "Nidoqueen",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.08858
+      "usage": 0.08858,
+      "evolution": [
+        {
+          "name": "Nidoran-F"
+        },
+        {
+          "name": "Nidorina",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 31,
@@ -358,7 +557,20 @@
       "source": "Nidoqueen",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.08858
+      "usage": 0.08858,
+      "evolution": [
+        {
+          "name": "Nidoran-F"
+        },
+        {
+          "name": "Nidorina",
+          "method": "Level 16"
+        },
+        {
+          "name": "Nidoqueen",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 32,
@@ -380,7 +592,16 @@
       "source": "Nidoking",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.62857
+      "usage": 0.62857,
+      "evolution": [
+        {
+          "name": "Nidoran-M"
+        },
+        {
+          "name": "Nidorino",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 34,
@@ -392,7 +613,20 @@
       "source": "Nidoking",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.62857
+      "usage": 0.62857,
+      "evolution": [
+        {
+          "name": "Nidoran-M"
+        },
+        {
+          "name": "Nidorino",
+          "method": "Level 16"
+        },
+        {
+          "name": "Nidoking",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 35,
@@ -403,7 +637,16 @@
       "source": "Clefable",
       "tier": "OU",
       "ownTier": "PU",
-      "usage": 8.55002
+      "usage": 8.55002,
+      "evolution": [
+        {
+          "name": "Cleffa"
+        },
+        {
+          "name": "Clefairy",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 36,
@@ -414,7 +657,20 @@
       "source": "Clefable",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 8.55002
+      "usage": 8.55002,
+      "evolution": [
+        {
+          "name": "Cleffa"
+        },
+        {
+          "name": "Clefairy",
+          "method": "Level up with high friendship"
+        },
+        {
+          "name": "Clefable",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 37,
@@ -436,7 +692,16 @@
       "source": "Ninetales",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.06405
+      "usage": 0.06405,
+      "evolution": [
+        {
+          "name": "Vulpix"
+        },
+        {
+          "name": "Ninetales",
+          "method": "Use Fire Stone"
+        }
+      ]
     },
     {
       "id": 39,
@@ -448,7 +713,16 @@
       "source": "Wigglytuff",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00317
+      "usage": 0.00317,
+      "evolution": [
+        {
+          "name": "Igglybuff"
+        },
+        {
+          "name": "Jigglypuff",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 40,
@@ -460,7 +734,20 @@
       "source": "Wigglytuff",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00317
+      "usage": 0.00317,
+      "evolution": [
+        {
+          "name": "Igglybuff"
+        },
+        {
+          "name": "Jigglypuff",
+          "method": "Level up with high friendship"
+        },
+        {
+          "name": "Wigglytuff",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 41,
@@ -484,7 +771,16 @@
       "source": "Crobat",
       "tier": "UU",
       "ownTier": "NU",
-      "usage": 0.18293
+      "usage": 0.18293,
+      "evolution": [
+        {
+          "name": "Zubat"
+        },
+        {
+          "name": "Golbat",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 43,
@@ -508,7 +804,16 @@
       "source": "Vileplume",
       "tier": "NUBL",
       "ownTier": "NFE",
-      "usage": 0.02668
+      "usage": 0.02668,
+      "evolution": [
+        {
+          "name": "Oddish"
+        },
+        {
+          "name": "Gloom",
+          "method": "Level 21"
+        }
+      ]
     },
     {
       "id": 45,
@@ -520,7 +825,20 @@
       "source": "Vileplume",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.02668
+      "usage": 0.02668,
+      "evolution": [
+        {
+          "name": "Oddish"
+        },
+        {
+          "name": "Gloom",
+          "method": "Level 21"
+        },
+        {
+          "name": "Vileplume",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 46,
@@ -544,7 +862,16 @@
       "source": "Parasect",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00188
+      "usage": 0.00188,
+      "evolution": [
+        {
+          "name": "Paras"
+        },
+        {
+          "name": "Parasect",
+          "method": "Level 24"
+        }
+      ]
     },
     {
       "id": 48,
@@ -568,7 +895,16 @@
       "source": "Venomoth",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.0533
+      "usage": 0.0533,
+      "evolution": [
+        {
+          "name": "Venonat"
+        },
+        {
+          "name": "Venomoth",
+          "method": "Level 31"
+        }
+      ]
     },
     {
       "id": 50,
@@ -590,7 +926,16 @@
       "source": "Dugtrio",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00672
+      "usage": 0.00672,
+      "evolution": [
+        {
+          "name": "Diglett"
+        },
+        {
+          "name": "Dugtrio",
+          "method": "Level 26"
+        }
+      ]
     },
     {
       "id": 52,
@@ -612,7 +957,16 @@
       "source": "Persian",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00345
+      "usage": 0.00345,
+      "evolution": [
+        {
+          "name": "Meowth"
+        },
+        {
+          "name": "Persian",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 54,
@@ -634,7 +988,16 @@
       "source": "Golduck",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01242
+      "usage": 0.01242,
+      "evolution": [
+        {
+          "name": "Psyduck"
+        },
+        {
+          "name": "Golduck",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 56,
@@ -656,7 +1019,16 @@
       "source": "Primeape",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.01315
+      "usage": 0.01315,
+      "evolution": [
+        {
+          "name": "Mankey"
+        },
+        {
+          "name": "Primeape",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 58,
@@ -678,7 +1050,16 @@
       "source": "Arcanine",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.1577
+      "usage": 0.1577,
+      "evolution": [
+        {
+          "name": "Growlithe"
+        },
+        {
+          "name": "Arcanine",
+          "method": "Use Fire Stone"
+        }
+      ]
     },
     {
       "id": 60,
@@ -700,7 +1081,16 @@
       "source": "Poliwrath",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.1042
+      "usage": 0.1042,
+      "evolution": [
+        {
+          "name": "Poliwag"
+        },
+        {
+          "name": "Poliwhirl",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 62,
@@ -712,7 +1102,20 @@
       "source": "Poliwrath",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.1042
+      "usage": 0.1042,
+      "evolution": [
+        {
+          "name": "Poliwag"
+        },
+        {
+          "name": "Poliwhirl",
+          "method": "Level 25"
+        },
+        {
+          "name": "Poliwrath",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 63,
@@ -734,7 +1137,16 @@
       "source": "Alakazam",
       "tier": "UUBL",
       "ownTier": "NFE",
-      "usage": 1.13097
+      "usage": 1.13097,
+      "evolution": [
+        {
+          "name": "Abra"
+        },
+        {
+          "name": "Kadabra",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 65,
@@ -745,7 +1157,20 @@
       "source": "Alakazam",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 1.13097
+      "usage": 1.13097,
+      "evolution": [
+        {
+          "name": "Abra"
+        },
+        {
+          "name": "Kadabra",
+          "method": "Level 16"
+        },
+        {
+          "name": "Alakazam",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 66,
@@ -767,7 +1192,16 @@
       "source": "Machamp",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.05218
+      "usage": 0.05218,
+      "evolution": [
+        {
+          "name": "Machop"
+        },
+        {
+          "name": "Machoke",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 68,
@@ -778,7 +1212,20 @@
       "source": "Machamp",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.05218
+      "usage": 0.05218,
+      "evolution": [
+        {
+          "name": "Machop"
+        },
+        {
+          "name": "Machoke",
+          "method": "Level 28"
+        },
+        {
+          "name": "Machamp",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 69,
@@ -802,7 +1249,16 @@
       "source": "Victreebel",
       "tier": "PU",
       "ownTier": "NFE",
-      "usage": 0.08939
+      "usage": 0.08939,
+      "evolution": [
+        {
+          "name": "Bellsprout"
+        },
+        {
+          "name": "Weepinbell",
+          "method": "Level 21"
+        }
+      ]
     },
     {
       "id": 71,
@@ -814,7 +1270,20 @@
       "source": "Victreebel",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.08939
+      "usage": 0.08939,
+      "evolution": [
+        {
+          "name": "Bellsprout"
+        },
+        {
+          "name": "Weepinbell",
+          "method": "Level 21"
+        },
+        {
+          "name": "Victreebel",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 72,
@@ -838,7 +1307,16 @@
       "source": "Tentacruel",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.40087
+      "usage": 0.40087,
+      "evolution": [
+        {
+          "name": "Tentacool"
+        },
+        {
+          "name": "Tentacruel",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 74,
@@ -862,7 +1340,16 @@
       "source": "Golem",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.0077
+      "usage": 0.0077,
+      "evolution": [
+        {
+          "name": "Geodude"
+        },
+        {
+          "name": "Graveler",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 76,
@@ -874,7 +1361,20 @@
       "source": "Golem",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0077
+      "usage": 0.0077,
+      "evolution": [
+        {
+          "name": "Geodude"
+        },
+        {
+          "name": "Graveler",
+          "method": "Level 25"
+        },
+        {
+          "name": "Golem",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 77,
@@ -896,7 +1396,16 @@
       "source": "Rapidash",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01272
+      "usage": 0.01272,
+      "evolution": [
+        {
+          "name": "Ponyta"
+        },
+        {
+          "name": "Rapidash",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 79,
@@ -920,7 +1429,16 @@
       "source": "Slowbro",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 1.71628
+      "usage": 1.71628,
+      "evolution": [
+        {
+          "name": "Slowpoke"
+        },
+        {
+          "name": "Slowbro",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 81,
@@ -944,7 +1462,16 @@
       "source": "Magnezone",
       "tier": "OU",
       "ownTier": "UU",
-      "usage": 6.21469
+      "usage": 6.21469,
+      "evolution": [
+        {
+          "name": "Magnemite"
+        },
+        {
+          "name": "Magneton",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 83,
@@ -980,7 +1507,16 @@
       "source": "Dodrio",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.03181
+      "usage": 0.03181,
+      "evolution": [
+        {
+          "name": "Doduo"
+        },
+        {
+          "name": "Dodrio",
+          "method": "Level 31"
+        }
+      ]
     },
     {
       "id": 86,
@@ -1003,7 +1539,16 @@
       "source": "Dewgong",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0127
+      "usage": 0.0127,
+      "evolution": [
+        {
+          "name": "Seel"
+        },
+        {
+          "name": "Dewgong",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 88,
@@ -1025,7 +1570,16 @@
       "source": "Muk",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00175
+      "usage": 0.00175,
+      "evolution": [
+        {
+          "name": "Grimer"
+        },
+        {
+          "name": "Muk",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 90,
@@ -1048,7 +1602,16 @@
       "source": "Cloyster",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.77504
+      "usage": 0.77504,
+      "evolution": [
+        {
+          "name": "Shellder"
+        },
+        {
+          "name": "Cloyster",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 92,
@@ -1072,7 +1635,16 @@
       "source": "Gengar",
       "tier": "UU",
       "ownTier": "PU",
-      "usage": 1.08825
+      "usage": 1.08825,
+      "evolution": [
+        {
+          "name": "Gastly"
+        },
+        {
+          "name": "Haunter",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 94,
@@ -1084,7 +1656,20 @@
       "source": "Gengar",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.08825
+      "usage": 1.08825,
+      "evolution": [
+        {
+          "name": "Gastly"
+        },
+        {
+          "name": "Haunter",
+          "method": "Level 25"
+        },
+        {
+          "name": "Gengar",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 95,
@@ -1118,7 +1703,16 @@
       "source": "Hypno",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00179
+      "usage": 0.00179,
+      "evolution": [
+        {
+          "name": "Drowzee"
+        },
+        {
+          "name": "Hypno",
+          "method": "Level 26"
+        }
+      ]
     },
     {
       "id": 98,
@@ -1140,7 +1734,16 @@
       "source": "Kingler",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.01895
+      "usage": 0.01895,
+      "evolution": [
+        {
+          "name": "Krabby"
+        },
+        {
+          "name": "Kingler",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 100,
@@ -1162,7 +1765,16 @@
       "source": "Electrode",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.03659
+      "usage": 0.03659,
+      "evolution": [
+        {
+          "name": "Voltorb"
+        },
+        {
+          "name": "Electrode",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 102,
@@ -1186,7 +1798,16 @@
       "source": "Exeggutor",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02636
+      "usage": 0.02636,
+      "evolution": [
+        {
+          "name": "Exeggcute"
+        },
+        {
+          "name": "Exeggutor",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 104,
@@ -1208,7 +1829,16 @@
       "source": "Marowak",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00562
+      "usage": 0.00562,
+      "evolution": [
+        {
+          "name": "Cubone"
+        },
+        {
+          "name": "Marowak",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 106,
@@ -1219,7 +1849,16 @@
       "source": "Hitmonlee",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.08242
+      "usage": 0.08242,
+      "evolution": [
+        {
+          "name": "Tyrogue"
+        },
+        {
+          "name": "Hitmonlee",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 107,
@@ -1230,7 +1869,16 @@
       "source": "Hitmonchan",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.0073
+      "usage": 0.0073,
+      "evolution": [
+        {
+          "name": "Tyrogue"
+        },
+        {
+          "name": "Hitmonchan",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 108,
@@ -1263,7 +1911,16 @@
       "source": "Weezing",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.03031
+      "usage": 0.03031,
+      "evolution": [
+        {
+          "name": "Koffing"
+        },
+        {
+          "name": "Weezing",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 111,
@@ -1287,7 +1944,16 @@
       "source": "Rhyperior",
       "tier": "RU",
       "ownTier": "NU",
-      "usage": 0.11976
+      "usage": 0.11976,
+      "evolution": [
+        {
+          "name": "Rhyhorn"
+        },
+        {
+          "name": "Rhydon",
+          "method": "Level 42"
+        }
+      ]
     },
     {
       "id": 113,
@@ -1298,7 +1964,16 @@
       "source": "Blissey",
       "tier": "UU",
       "ownTier": "OU",
-      "usage": 0.57079
+      "usage": 0.57079,
+      "evolution": [
+        {
+          "name": "Happiny"
+        },
+        {
+          "name": "Chansey",
+          "method": "Level up holding Oval Stone during the day"
+        }
+      ]
     },
     {
       "id": 114,
@@ -1342,7 +2017,16 @@
       "source": "Kingdra",
       "tier": "NUBL",
       "ownTier": "NFE",
-      "usage": 1.97156
+      "usage": 1.97156,
+      "evolution": [
+        {
+          "name": "Horsea"
+        },
+        {
+          "name": "Seadra",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 118,
@@ -1364,7 +2048,16 @@
       "source": "Seaking",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00318
+      "usage": 0.00318,
+      "evolution": [
+        {
+          "name": "Goldeen"
+        },
+        {
+          "name": "Seaking",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 120,
@@ -1387,7 +2080,16 @@
       "source": "Starmie",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.54161
+      "usage": 0.54161,
+      "evolution": [
+        {
+          "name": "Staryu"
+        },
+        {
+          "name": "Starmie",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 122,
@@ -1399,7 +2101,16 @@
       "source": "Mr. Mime",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01739
+      "usage": 0.01739,
+      "evolution": [
+        {
+          "name": "Mime Jr."
+        },
+        {
+          "name": "Mr. Mime",
+          "method": "Level up knowing Mimic"
+        }
+      ]
     },
     {
       "id": 123,
@@ -1423,7 +2134,16 @@
       "source": "Jynx",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0154
+      "usage": 0.0154,
+      "evolution": [
+        {
+          "name": "Smoochum"
+        },
+        {
+          "name": "Jynx",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 125,
@@ -1434,7 +2154,16 @@
       "source": "Electivire",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.03921
+      "usage": 0.03921,
+      "evolution": [
+        {
+          "name": "Elekid"
+        },
+        {
+          "name": "Electabuzz",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 126,
@@ -1445,7 +2174,16 @@
       "source": "Magmortar",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.07582
+      "usage": 0.07582,
+      "evolution": [
+        {
+          "name": "Magby"
+        },
+        {
+          "name": "Magmar",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 127,
@@ -1490,7 +2228,16 @@
       "source": "Gyarados",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 2.09355
+      "usage": 2.09355,
+      "evolution": [
+        {
+          "name": "Magikarp"
+        },
+        {
+          "name": "Gyarados",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 131,
@@ -1535,7 +2282,16 @@
       "source": "Vaporeon",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.09684
+      "usage": 0.09684,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Vaporeon",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 135,
@@ -1546,7 +2302,16 @@
       "source": "Jolteon",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.07565
+      "usage": 0.07565,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Jolteon",
+          "method": "Use Thunder Stone"
+        }
+      ]
     },
     {
       "id": 136,
@@ -1557,7 +2322,16 @@
       "source": "Flareon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00947
+      "usage": 0.00947,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Flareon",
+          "method": "Use Fire Stone"
+        }
+      ]
     },
     {
       "id": 137,
@@ -1592,7 +2366,16 @@
       "source": "Omastar",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.32026
+      "usage": 0.32026,
+      "evolution": [
+        {
+          "name": "Omanyte"
+        },
+        {
+          "name": "Omastar",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 140,
@@ -1616,7 +2399,16 @@
       "source": "Kabutops",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.16341
+      "usage": 0.16341,
+      "evolution": [
+        {
+          "name": "Kabuto"
+        },
+        {
+          "name": "Kabutops",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 142,
@@ -1639,7 +2431,16 @@
       "source": "Snorlax",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.78272
+      "usage": 0.78272,
+      "evolution": [
+        {
+          "name": "Munchlax"
+        },
+        {
+          "name": "Snorlax",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 144,
@@ -1697,7 +2498,16 @@
       "source": "Dragonite",
       "tier": "UUBL",
       "ownTier": "NFE",
-      "usage": 3.91696
+      "usage": 3.91696,
+      "evolution": [
+        {
+          "name": "Dratini"
+        },
+        {
+          "name": "Dragonair",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 149,
@@ -1709,7 +2519,20 @@
       "source": "Dragonite",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 3.91696
+      "usage": 3.91696,
+      "evolution": [
+        {
+          "name": "Dratini"
+        },
+        {
+          "name": "Dragonair",
+          "method": "Level 30"
+        },
+        {
+          "name": "Dragonite",
+          "method": "Level 55"
+        }
+      ]
     },
     {
       "id": 150,
@@ -1752,7 +2575,16 @@
       "source": "Meganium",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00916
+      "usage": 0.00916,
+      "evolution": [
+        {
+          "name": "Chikorita"
+        },
+        {
+          "name": "Bayleef",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 154,
@@ -1763,7 +2595,20 @@
       "source": "Meganium",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00916
+      "usage": 0.00916,
+      "evolution": [
+        {
+          "name": "Chikorita"
+        },
+        {
+          "name": "Bayleef",
+          "method": "Level 16"
+        },
+        {
+          "name": "Meganium",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 155,
@@ -1785,7 +2630,16 @@
       "source": "Typhlosion",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.086
+      "usage": 0.086,
+      "evolution": [
+        {
+          "name": "Cyndaquil"
+        },
+        {
+          "name": "Quilava",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 157,
@@ -1796,7 +2650,20 @@
       "source": "Typhlosion",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.086
+      "usage": 0.086,
+      "evolution": [
+        {
+          "name": "Cyndaquil"
+        },
+        {
+          "name": "Quilava",
+          "method": "Level 14"
+        },
+        {
+          "name": "Typhlosion",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 158,
@@ -1818,7 +2685,16 @@
       "source": "Feraligatr",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.13306
+      "usage": 0.13306,
+      "evolution": [
+        {
+          "name": "Totodile"
+        },
+        {
+          "name": "Croconaw",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 160,
@@ -1829,7 +2705,20 @@
       "source": "Feraligatr",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.13306
+      "usage": 0.13306,
+      "evolution": [
+        {
+          "name": "Totodile"
+        },
+        {
+          "name": "Croconaw",
+          "method": "Level 18"
+        },
+        {
+          "name": "Feraligatr",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 161,
@@ -1851,7 +2740,16 @@
       "source": "Furret",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00083
+      "usage": 0.00083,
+      "evolution": [
+        {
+          "name": "Sentret"
+        },
+        {
+          "name": "Furret",
+          "method": "Level 15"
+        }
+      ]
     },
     {
       "id": 163,
@@ -1875,7 +2773,16 @@
       "source": "Noctowl",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0117
+      "usage": 0.0117,
+      "evolution": [
+        {
+          "name": "Hoothoot"
+        },
+        {
+          "name": "Noctowl",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 165,
@@ -1899,7 +2806,16 @@
       "source": "Ledian",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00155
+      "usage": 0.00155,
+      "evolution": [
+        {
+          "name": "Ledyba"
+        },
+        {
+          "name": "Ledian",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 167,
@@ -1923,7 +2839,16 @@
       "source": "Ariados",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00312
+      "usage": 0.00312,
+      "evolution": [
+        {
+          "name": "Spinarak"
+        },
+        {
+          "name": "Ariados",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 169,
@@ -1935,7 +2860,20 @@
       "source": "Crobat",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.18293
+      "usage": 0.18293,
+      "evolution": [
+        {
+          "name": "Zubat"
+        },
+        {
+          "name": "Golbat",
+          "method": "Level 22"
+        },
+        {
+          "name": "Crobat",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 170,
@@ -1959,7 +2897,16 @@
       "source": "Lanturn",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.10744
+      "usage": 0.10744,
+      "evolution": [
+        {
+          "name": "Chinchou"
+        },
+        {
+          "name": "Lanturn",
+          "method": "Level 27"
+        }
+      ]
     },
     {
       "id": 172,
@@ -2016,7 +2963,16 @@
       "source": "Togekiss",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.68953
+      "usage": 0.68953,
+      "evolution": [
+        {
+          "name": "Togepi"
+        },
+        {
+          "name": "Togetic",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 177,
@@ -2040,7 +2996,16 @@
       "source": "Xatu",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.13801
+      "usage": 0.13801,
+      "evolution": [
+        {
+          "name": "Natu"
+        },
+        {
+          "name": "Xatu",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 179,
@@ -2062,7 +3027,16 @@
       "source": "Ampharos",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00281
+      "usage": 0.00281,
+      "evolution": [
+        {
+          "name": "Mareep"
+        },
+        {
+          "name": "Flaaffy",
+          "method": "Level 15"
+        }
+      ]
     },
     {
       "id": 181,
@@ -2073,7 +3047,20 @@
       "source": "Ampharos",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00281
+      "usage": 0.00281,
+      "evolution": [
+        {
+          "name": "Mareep"
+        },
+        {
+          "name": "Flaaffy",
+          "method": "Level 15"
+        },
+        {
+          "name": "Ampharos",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 182,
@@ -2084,7 +3071,20 @@
       "source": "Bellossom",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02945
+      "usage": 0.02945,
+      "evolution": [
+        {
+          "name": "Oddish"
+        },
+        {
+          "name": "Gloom",
+          "method": "Level 21"
+        },
+        {
+          "name": "Bellossom",
+          "method": "Use Sun Stone"
+        }
+      ]
     },
     {
       "id": 183,
@@ -2096,7 +3096,16 @@
       "source": "Azumarill",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 4.44377
+      "usage": 4.44377,
+      "evolution": [
+        {
+          "name": "Azurill"
+        },
+        {
+          "name": "Marill",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 184,
@@ -2108,7 +3117,20 @@
       "source": "Azumarill",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 4.44377
+      "usage": 4.44377,
+      "evolution": [
+        {
+          "name": "Azurill"
+        },
+        {
+          "name": "Marill",
+          "method": "Level up with high friendship"
+        },
+        {
+          "name": "Azumarill",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 185,
@@ -2119,7 +3141,16 @@
       "source": "Sudowoodo",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01115
+      "usage": 0.01115,
+      "evolution": [
+        {
+          "name": "Bonsly"
+        },
+        {
+          "name": "Sudowoodo",
+          "method": "Level up knowing Mimic"
+        }
+      ]
     },
     {
       "id": 186,
@@ -2130,7 +3161,20 @@
       "source": "Politoed",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.55963
+      "usage": 0.55963,
+      "evolution": [
+        {
+          "name": "Poliwag"
+        },
+        {
+          "name": "Poliwhirl",
+          "method": "Level 25"
+        },
+        {
+          "name": "Politoed",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 187,
@@ -2154,7 +3198,16 @@
       "source": "Jumpluff",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.02606
+      "usage": 0.02606,
+      "evolution": [
+        {
+          "name": "Hoppip"
+        },
+        {
+          "name": "Skiploom",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 189,
@@ -2166,7 +3219,20 @@
       "source": "Jumpluff",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02606
+      "usage": 0.02606,
+      "evolution": [
+        {
+          "name": "Hoppip"
+        },
+        {
+          "name": "Skiploom",
+          "method": "Level 18"
+        },
+        {
+          "name": "Jumpluff",
+          "method": "Level 27"
+        }
+      ]
     },
     {
       "id": 190,
@@ -2199,7 +3265,16 @@
       "source": "Sunflora",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00776
+      "usage": 0.00776,
+      "evolution": [
+        {
+          "name": "Sunkern"
+        },
+        {
+          "name": "Sunflora",
+          "method": "Use Sun Stone"
+        }
+      ]
     },
     {
       "id": 193,
@@ -2235,7 +3310,16 @@
       "source": "Quagsire",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.33506
+      "usage": 1.33506,
+      "evolution": [
+        {
+          "name": "Wooper"
+        },
+        {
+          "name": "Quagsire",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 196,
@@ -2246,7 +3330,16 @@
       "source": "Espeon",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.3808
+      "usage": 0.3808,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Espeon",
+          "method": "Level up with high friendship during the day"
+        }
+      ]
     },
     {
       "id": 197,
@@ -2257,7 +3350,16 @@
       "source": "Umbreon",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.59171
+      "usage": 0.59171,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Umbreon",
+          "method": "Level up with high friendship at night"
+        }
+      ]
     },
     {
       "id": 198,
@@ -2281,7 +3383,16 @@
       "source": "Slowking",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.07533
+      "usage": 0.07533,
+      "evolution": [
+        {
+          "name": "Slowpoke"
+        },
+        {
+          "name": "Slowking",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 200,
@@ -2314,7 +3425,16 @@
       "source": "Wobbuffet",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0028
+      "usage": 0.0028,
+      "evolution": [
+        {
+          "name": "Wynaut"
+        },
+        {
+          "name": "Wobbuffet",
+          "method": "Level 15"
+        }
+      ]
     },
     {
       "id": 203,
@@ -2349,7 +3469,16 @@
       "source": "Forretress",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.17597
+      "usage": 0.17597,
+      "evolution": [
+        {
+          "name": "Pineco"
+        },
+        {
+          "name": "Forretress",
+          "method": "Level 31"
+        }
+      ]
     },
     {
       "id": 206,
@@ -2384,7 +3513,16 @@
       "source": "Steelix",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.02946
+      "usage": 0.02946,
+      "evolution": [
+        {
+          "name": "Onix"
+        },
+        {
+          "name": "Steelix",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 209,
@@ -2406,7 +3544,16 @@
       "source": "Granbull",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02796
+      "usage": 0.02796,
+      "evolution": [
+        {
+          "name": "Snubbull"
+        },
+        {
+          "name": "Granbull",
+          "method": "Level 23"
+        }
+      ]
     },
     {
       "id": 211,
@@ -2430,7 +3577,16 @@
       "source": "Scizor",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.89993
+      "usage": 0.89993,
+      "evolution": [
+        {
+          "name": "Scyther"
+        },
+        {
+          "name": "Scizor",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 213,
@@ -2488,7 +3644,16 @@
       "source": "Ursaring",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.27444
+      "usage": 0.27444,
+      "evolution": [
+        {
+          "name": "Teddiursa"
+        },
+        {
+          "name": "Ursaring",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 218,
@@ -2511,7 +3676,16 @@
       "source": "Magcargo",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00393
+      "usage": 0.00393,
+      "evolution": [
+        {
+          "name": "Slugma"
+        },
+        {
+          "name": "Magcargo",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 220,
@@ -2535,7 +3709,16 @@
       "source": "Mamoswine",
       "tier": "UU",
       "ownTier": "NU",
-      "usage": 1.83692
+      "usage": 1.83692,
+      "evolution": [
+        {
+          "name": "Swinub"
+        },
+        {
+          "name": "Piloswine",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 222,
@@ -2569,7 +3752,16 @@
       "source": "Octillery",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00378
+      "usage": 0.00378,
+      "evolution": [
+        {
+          "name": "Remoraid"
+        },
+        {
+          "name": "Octillery",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 225,
@@ -2593,7 +3785,16 @@
       "source": "Mantine",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.32279
+      "usage": 0.32279,
+      "evolution": [
+        {
+          "name": "Mantyke"
+        },
+        {
+          "name": "Mantine",
+          "method": "Level up with a Remoraid in party"
+        }
+      ]
     },
     {
       "id": 227,
@@ -2629,7 +3830,16 @@
       "source": "Houndoom",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.00673
+      "usage": 0.00673,
+      "evolution": [
+        {
+          "name": "Houndour"
+        },
+        {
+          "name": "Houndoom",
+          "method": "Level 24"
+        }
+      ]
     },
     {
       "id": 230,
@@ -2641,7 +3851,20 @@
       "source": "Kingdra",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 1.97156
+      "usage": 1.97156,
+      "evolution": [
+        {
+          "name": "Horsea"
+        },
+        {
+          "name": "Seadra",
+          "method": "Level 32"
+        },
+        {
+          "name": "Kingdra",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 231,
@@ -2663,7 +3886,16 @@
       "source": "Donphan",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.23191
+      "usage": 0.23191,
+      "evolution": [
+        {
+          "name": "Phanpy"
+        },
+        {
+          "name": "Donphan",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 233,
@@ -2674,7 +3906,16 @@
       "source": "Porygon-Z",
       "tier": "UUBL",
       "ownTier": "RU",
-      "usage": 0.57161
+      "usage": 0.57161,
+      "evolution": [
+        {
+          "name": "Porygon"
+        },
+        {
+          "name": "Porygon2",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 234,
@@ -2718,7 +3959,16 @@
       "source": "Hitmontop",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.02057
+      "usage": 0.02057,
+      "evolution": [
+        {
+          "name": "Tyrogue"
+        },
+        {
+          "name": "Hitmontop",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 238,
@@ -2774,7 +4024,20 @@
       "source": "Blissey",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.57079
+      "usage": 0.57079,
+      "evolution": [
+        {
+          "name": "Happiny"
+        },
+        {
+          "name": "Chansey",
+          "method": "Level up holding Oval Stone during the day"
+        },
+        {
+          "name": "Blissey",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 243,
@@ -2831,7 +4094,16 @@
       "source": "Tyranitar",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 5.0313
+      "usage": 5.0313,
+      "evolution": [
+        {
+          "name": "Larvitar"
+        },
+        {
+          "name": "Pupitar",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 248,
@@ -2843,7 +4115,20 @@
       "source": "Tyranitar",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 5.0313
+      "usage": 5.0313,
+      "evolution": [
+        {
+          "name": "Larvitar"
+        },
+        {
+          "name": "Pupitar",
+          "method": "Level 30"
+        },
+        {
+          "name": "Tyranitar",
+          "method": "Level 55"
+        }
+      ]
     },
     {
       "id": 249,
@@ -2899,7 +4184,16 @@
       "source": "Sceptile",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.14002
+      "usage": 0.14002,
+      "evolution": [
+        {
+          "name": "Treecko"
+        },
+        {
+          "name": "Grovyle",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 254,
@@ -2910,7 +4204,20 @@
       "source": "Sceptile",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.14002
+      "usage": 0.14002,
+      "evolution": [
+        {
+          "name": "Treecko"
+        },
+        {
+          "name": "Grovyle",
+          "method": "Level 16"
+        },
+        {
+          "name": "Sceptile",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 255,
@@ -2931,7 +4238,16 @@
       "grade": "SSS",
       "source": "Blaziken",
       "tier": "Uber",
-      "ownTier": "NFE"
+      "ownTier": "NFE",
+      "evolution": [
+        {
+          "name": "Torchic"
+        },
+        {
+          "name": "Combusken",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 257,
@@ -2942,7 +4258,20 @@
       "grade": "SSS",
       "source": "Blaziken",
       "tier": "Uber",
-      "ownTier": "Uber"
+      "ownTier": "Uber",
+      "evolution": [
+        {
+          "name": "Torchic"
+        },
+        {
+          "name": "Combusken",
+          "method": "Level 16"
+        },
+        {
+          "name": "Blaziken",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 258,
@@ -2965,7 +4294,16 @@
       "source": "Swampert",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.56674
+      "usage": 0.56674,
+      "evolution": [
+        {
+          "name": "Mudkip"
+        },
+        {
+          "name": "Marshtomp",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 260,
@@ -2977,7 +4315,20 @@
       "source": "Swampert",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.56674
+      "usage": 0.56674,
+      "evolution": [
+        {
+          "name": "Mudkip"
+        },
+        {
+          "name": "Marshtomp",
+          "method": "Level 16"
+        },
+        {
+          "name": "Swampert",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 261,
@@ -2999,7 +4350,16 @@
       "source": "Mightyena",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00104
+      "usage": 0.00104,
+      "evolution": [
+        {
+          "name": "Poochyena"
+        },
+        {
+          "name": "Mightyena",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 263,
@@ -3021,7 +4381,16 @@
       "source": "Linoone",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.13302
+      "usage": 0.13302,
+      "evolution": [
+        {
+          "name": "Zigzagoon"
+        },
+        {
+          "name": "Linoone",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 265,
@@ -3043,7 +4412,16 @@
       "source": "Beautifly",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00288
+      "usage": 0.00288,
+      "evolution": [
+        {
+          "name": "Wurmple"
+        },
+        {
+          "name": "Silcoon",
+          "method": "Level 7"
+        }
+      ]
     },
     {
       "id": 267,
@@ -3055,7 +4433,20 @@
       "source": "Beautifly",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00288
+      "usage": 0.00288,
+      "evolution": [
+        {
+          "name": "Wurmple"
+        },
+        {
+          "name": "Silcoon",
+          "method": "Level 7"
+        },
+        {
+          "name": "Beautifly",
+          "method": "Level 10"
+        }
+      ]
     },
     {
       "id": 268,
@@ -3066,7 +4457,16 @@
       "source": "Dustox",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.0014
+      "usage": 0.0014,
+      "evolution": [
+        {
+          "name": "Wurmple"
+        },
+        {
+          "name": "Cascoon",
+          "method": "Level 7"
+        }
+      ]
     },
     {
       "id": 269,
@@ -3078,7 +4478,20 @@
       "source": "Dustox",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0014
+      "usage": 0.0014,
+      "evolution": [
+        {
+          "name": "Wurmple"
+        },
+        {
+          "name": "Cascoon",
+          "method": "Level 7"
+        },
+        {
+          "name": "Dustox",
+          "method": "Level 10"
+        }
+      ]
     },
     {
       "id": 270,
@@ -3102,7 +4515,16 @@
       "source": "Ludicolo",
       "tier": "PU",
       "ownTier": "NFE",
-      "usage": 0.17634
+      "usage": 0.17634,
+      "evolution": [
+        {
+          "name": "Lotad"
+        },
+        {
+          "name": "Lombre",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 272,
@@ -3114,7 +4536,20 @@
       "source": "Ludicolo",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.17634
+      "usage": 0.17634,
+      "evolution": [
+        {
+          "name": "Lotad"
+        },
+        {
+          "name": "Lombre",
+          "method": "Level 14"
+        },
+        {
+          "name": "Ludicolo",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 273,
@@ -3137,7 +4572,16 @@
       "source": "Shiftry",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.01257
+      "usage": 0.01257,
+      "evolution": [
+        {
+          "name": "Seedot"
+        },
+        {
+          "name": "Nuzleaf",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 275,
@@ -3149,7 +4593,20 @@
       "source": "Shiftry",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01257
+      "usage": 0.01257,
+      "evolution": [
+        {
+          "name": "Seedot"
+        },
+        {
+          "name": "Nuzleaf",
+          "method": "Level 14"
+        },
+        {
+          "name": "Shiftry",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 276,
@@ -3173,7 +4630,16 @@
       "source": "Swellow",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.11572
+      "usage": 0.11572,
+      "evolution": [
+        {
+          "name": "Taillow"
+        },
+        {
+          "name": "Swellow",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 278,
@@ -3197,7 +4663,16 @@
       "source": "Pelipper",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 6.9682
+      "usage": 6.9682,
+      "evolution": [
+        {
+          "name": "Wingull"
+        },
+        {
+          "name": "Pelipper",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 280,
@@ -3221,7 +4696,16 @@
       "source": "Gardevoir",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.17532
+      "usage": 0.17532,
+      "evolution": [
+        {
+          "name": "Ralts"
+        },
+        {
+          "name": "Kirlia",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 282,
@@ -3233,7 +4717,20 @@
       "source": "Gardevoir",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.17532
+      "usage": 0.17532,
+      "evolution": [
+        {
+          "name": "Ralts"
+        },
+        {
+          "name": "Kirlia",
+          "method": "Level 20"
+        },
+        {
+          "name": "Gardevoir",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 283,
@@ -3257,7 +4754,16 @@
       "source": "Masquerain",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01295
+      "usage": 0.01295,
+      "evolution": [
+        {
+          "name": "Surskit"
+        },
+        {
+          "name": "Masquerain",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 285,
@@ -3280,7 +4786,16 @@
       "source": "Breloom",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 1.40735
+      "usage": 1.40735,
+      "evolution": [
+        {
+          "name": "Shroomish"
+        },
+        {
+          "name": "Breloom",
+          "method": "Level 23"
+        }
+      ]
     },
     {
       "id": 287,
@@ -3302,7 +4817,16 @@
       "source": "Slaking",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.04633
+      "usage": 0.04633,
+      "evolution": [
+        {
+          "name": "Slakoth"
+        },
+        {
+          "name": "Vigoroth",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 289,
@@ -3313,7 +4837,20 @@
       "source": "Slaking",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.04633
+      "usage": 0.04633,
+      "evolution": [
+        {
+          "name": "Slakoth"
+        },
+        {
+          "name": "Vigoroth",
+          "method": "Level 18"
+        },
+        {
+          "name": "Slaking",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 290,
@@ -3337,7 +4874,16 @@
       "source": "Ninjask",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01286
+      "usage": 0.01286,
+      "evolution": [
+        {
+          "name": "Nincada"
+        },
+        {
+          "name": "Ninjask",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 292,
@@ -3349,7 +4895,16 @@
       "source": "Shedinja",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.39811
+      "usage": 0.39811,
+      "evolution": [
+        {
+          "name": "Nincada"
+        },
+        {
+          "name": "Shedinja",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 293,
@@ -3371,7 +4926,16 @@
       "source": "Exploud",
       "tier": "NUBL",
       "ownTier": "NFE",
-      "usage": 0.07775
+      "usage": 0.07775,
+      "evolution": [
+        {
+          "name": "Whismur"
+        },
+        {
+          "name": "Loudred",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 295,
@@ -3382,7 +4946,20 @@
       "source": "Exploud",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.07775
+      "usage": 0.07775,
+      "evolution": [
+        {
+          "name": "Whismur"
+        },
+        {
+          "name": "Loudred",
+          "method": "Level 20"
+        },
+        {
+          "name": "Exploud",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 296,
@@ -3404,7 +4981,16 @@
       "source": "Hariyama",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.00598
+      "usage": 0.00598,
+      "evolution": [
+        {
+          "name": "Makuhita"
+        },
+        {
+          "name": "Hariyama",
+          "method": "Level 24"
+        }
+      ]
     },
     {
       "id": 298,
@@ -3449,7 +5035,16 @@
       "source": "Delcatty",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00074
+      "usage": 0.00074,
+      "evolution": [
+        {
+          "name": "Skitty"
+        },
+        {
+          "name": "Delcatty",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 302,
@@ -3497,7 +5092,16 @@
       "source": "Aggron",
       "tier": "PU",
       "ownTier": "NFE",
-      "usage": 0.04553
+      "usage": 0.04553,
+      "evolution": [
+        {
+          "name": "Aron"
+        },
+        {
+          "name": "Lairon",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 306,
@@ -3509,7 +5113,20 @@
       "source": "Aggron",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.04553
+      "usage": 0.04553,
+      "evolution": [
+        {
+          "name": "Aron"
+        },
+        {
+          "name": "Lairon",
+          "method": "Level 32"
+        },
+        {
+          "name": "Aggron",
+          "method": "Level 42"
+        }
+      ]
     },
     {
       "id": 307,
@@ -3533,7 +5150,16 @@
       "source": "Medicham",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01159
+      "usage": 0.01159,
+      "evolution": [
+        {
+          "name": "Meditite"
+        },
+        {
+          "name": "Medicham",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 309,
@@ -3555,7 +5181,16 @@
       "source": "Manectric",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.00365
+      "usage": 0.00365,
+      "evolution": [
+        {
+          "name": "Electrike"
+        },
+        {
+          "name": "Manectric",
+          "method": "Level 26"
+        }
+      ]
     },
     {
       "id": 311,
@@ -3611,7 +5246,16 @@
       "source": "Roserade",
       "tier": "RU",
       "ownTier": "PU",
-      "usage": 0.15881
+      "usage": 0.15881,
+      "evolution": [
+        {
+          "name": "Budew"
+        },
+        {
+          "name": "Roselia",
+          "method": "Level up with high friendship during the day"
+        }
+      ]
     },
     {
       "id": 316,
@@ -3633,7 +5277,16 @@
       "source": "Swalot",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01173
+      "usage": 0.01173,
+      "evolution": [
+        {
+          "name": "Gulpin"
+        },
+        {
+          "name": "Swalot",
+          "method": "Level 26"
+        }
+      ]
     },
     {
       "id": 318,
@@ -3657,7 +5310,16 @@
       "source": "Sharpedo",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.04103
+      "usage": 0.04103,
+      "evolution": [
+        {
+          "name": "Carvanha"
+        },
+        {
+          "name": "Sharpedo",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 320,
@@ -3679,7 +5341,16 @@
       "source": "Wailord",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01079
+      "usage": 0.01079,
+      "evolution": [
+        {
+          "name": "Wailmer"
+        },
+        {
+          "name": "Wailord",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 322,
@@ -3703,7 +5374,16 @@
       "source": "Camerupt",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00929
+      "usage": 0.00929,
+      "evolution": [
+        {
+          "name": "Numel"
+        },
+        {
+          "name": "Camerupt",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 324,
@@ -3736,7 +5416,16 @@
       "source": "Grumpig",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00014
+      "usage": 0.00014,
+      "evolution": [
+        {
+          "name": "Spoink"
+        },
+        {
+          "name": "Grumpig",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 327,
@@ -3770,7 +5459,16 @@
       "source": "Flygon",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.0772
+      "usage": 0.0772,
+      "evolution": [
+        {
+          "name": "Trapinch"
+        },
+        {
+          "name": "Vibrava",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 330,
@@ -3782,7 +5480,20 @@
       "source": "Flygon",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.0772
+      "usage": 0.0772,
+      "evolution": [
+        {
+          "name": "Trapinch"
+        },
+        {
+          "name": "Vibrava",
+          "method": "Level 35"
+        },
+        {
+          "name": "Flygon",
+          "method": "Level 45"
+        }
+      ]
     },
     {
       "id": 331,
@@ -3805,7 +5516,16 @@
       "source": "Cacturne",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00849
+      "usage": 0.00849,
+      "evolution": [
+        {
+          "name": "Cacnea"
+        },
+        {
+          "name": "Cacturne",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 333,
@@ -3829,7 +5549,16 @@
       "source": "Altaria",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00457
+      "usage": 0.00457,
+      "evolution": [
+        {
+          "name": "Swablu"
+        },
+        {
+          "name": "Altaria",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 335,
@@ -3899,7 +5628,16 @@
       "source": "Whiscash",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00253
+      "usage": 0.00253,
+      "evolution": [
+        {
+          "name": "Barboach"
+        },
+        {
+          "name": "Whiscash",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 341,
@@ -3922,7 +5660,16 @@
       "source": "Crawdaunt",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 2.21252
+      "usage": 2.21252,
+      "evolution": [
+        {
+          "name": "Corphish"
+        },
+        {
+          "name": "Crawdaunt",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 343,
@@ -3946,7 +5693,16 @@
       "source": "Claydol",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.19857
+      "usage": 0.19857,
+      "evolution": [
+        {
+          "name": "Baltoy"
+        },
+        {
+          "name": "Claydol",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 345,
@@ -3970,7 +5726,16 @@
       "source": "Cradily",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.03011
+      "usage": 0.03011,
+      "evolution": [
+        {
+          "name": "Lileep"
+        },
+        {
+          "name": "Cradily",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 347,
@@ -3994,7 +5759,16 @@
       "source": "Armaldo",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.04043
+      "usage": 0.04043,
+      "evolution": [
+        {
+          "name": "Anorith"
+        },
+        {
+          "name": "Armaldo",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 349,
@@ -4016,7 +5790,16 @@
       "source": "Milotic",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.4282
+      "usage": 0.4282,
+      "evolution": [
+        {
+          "name": "Feebas"
+        },
+        {
+          "name": "Milotic",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 351,
@@ -4060,7 +5843,16 @@
       "source": "Banette",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 3e-05
+      "usage": 3e-05,
+      "evolution": [
+        {
+          "name": "Shuppet"
+        },
+        {
+          "name": "Banette",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 355,
@@ -4082,7 +5874,16 @@
       "source": "Dusknoir",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.01296
+      "usage": 0.01296,
+      "evolution": [
+        {
+          "name": "Duskull"
+        },
+        {
+          "name": "Dusclops",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 357,
@@ -4105,7 +5906,16 @@
       "source": "Chimecho",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00203
+      "usage": 0.00203,
+      "evolution": [
+        {
+          "name": "Chingling"
+        },
+        {
+          "name": "Chimecho",
+          "method": "Level up with high friendship at night"
+        }
+      ]
     },
     {
       "id": 359,
@@ -4149,7 +5959,16 @@
       "source": "Glalie",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 4e-05
+      "usage": 4e-05,
+      "evolution": [
+        {
+          "name": "Snorunt"
+        },
+        {
+          "name": "Glalie",
+          "method": "Level 42"
+        }
+      ]
     },
     {
       "id": 363,
@@ -4173,7 +5992,16 @@
       "source": "Walrein",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00683
+      "usage": 0.00683,
+      "evolution": [
+        {
+          "name": "Spheal"
+        },
+        {
+          "name": "Sealeo",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 365,
@@ -4185,7 +6013,20 @@
       "source": "Walrein",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00683
+      "usage": 0.00683,
+      "evolution": [
+        {
+          "name": "Spheal"
+        },
+        {
+          "name": "Sealeo",
+          "method": "Level 32"
+        },
+        {
+          "name": "Walrein",
+          "method": "Level 44"
+        }
+      ]
     },
     {
       "id": 366,
@@ -4207,7 +6048,16 @@
       "source": "Huntail",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00013
+      "usage": 0.00013,
+      "evolution": [
+        {
+          "name": "Clamperl"
+        },
+        {
+          "name": "Huntail",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 368,
@@ -4218,7 +6068,16 @@
       "source": "Gorebyss",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0146
+      "usage": 0.0146,
+      "evolution": [
+        {
+          "name": "Clamperl"
+        },
+        {
+          "name": "Gorebyss",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 369,
@@ -4263,7 +6122,16 @@
       "source": "Salamence",
       "tier": "UUBL",
       "ownTier": "NFE",
-      "usage": 1.52872
+      "usage": 1.52872,
+      "evolution": [
+        {
+          "name": "Bagon"
+        },
+        {
+          "name": "Shelgon",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 373,
@@ -4275,7 +6143,20 @@
       "source": "Salamence",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 1.52872
+      "usage": 1.52872,
+      "evolution": [
+        {
+          "name": "Bagon"
+        },
+        {
+          "name": "Shelgon",
+          "method": "Level 30"
+        },
+        {
+          "name": "Salamence",
+          "method": "Level 50"
+        }
+      ]
     },
     {
       "id": 374,
@@ -4299,7 +6180,16 @@
       "source": "Metagross",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.31682
+      "usage": 0.31682,
+      "evolution": [
+        {
+          "name": "Beldum"
+        },
+        {
+          "name": "Metang",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 376,
@@ -4311,7 +6201,20 @@
       "source": "Metagross",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.31682
+      "usage": 0.31682,
+      "evolution": [
+        {
+          "name": "Beldum"
+        },
+        {
+          "name": "Metang",
+          "method": "Level 20"
+        },
+        {
+          "name": "Metagross",
+          "method": "Level 45"
+        }
+      ]
     },
     {
       "id": 377,
@@ -4443,7 +6346,16 @@
       "source": "Torterra",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.03428
+      "usage": 0.03428,
+      "evolution": [
+        {
+          "name": "Turtwig"
+        },
+        {
+          "name": "Grotle",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 389,
@@ -4455,7 +6367,20 @@
       "source": "Torterra",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.03428
+      "usage": 0.03428,
+      "evolution": [
+        {
+          "name": "Turtwig"
+        },
+        {
+          "name": "Grotle",
+          "method": "Level 18"
+        },
+        {
+          "name": "Torterra",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 390,
@@ -4478,7 +6403,16 @@
       "source": "Infernape",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.82687
+      "usage": 0.82687,
+      "evolution": [
+        {
+          "name": "Chimchar"
+        },
+        {
+          "name": "Monferno",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 392,
@@ -4490,7 +6424,20 @@
       "source": "Infernape",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.82687
+      "usage": 0.82687,
+      "evolution": [
+        {
+          "name": "Chimchar"
+        },
+        {
+          "name": "Monferno",
+          "method": "Level 14"
+        },
+        {
+          "name": "Infernape",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 393,
@@ -4512,7 +6459,16 @@
       "source": "Empoleon",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.40637
+      "usage": 0.40637,
+      "evolution": [
+        {
+          "name": "Piplup"
+        },
+        {
+          "name": "Prinplup",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 395,
@@ -4524,7 +6480,20 @@
       "source": "Empoleon",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.40637
+      "usage": 0.40637,
+      "evolution": [
+        {
+          "name": "Piplup"
+        },
+        {
+          "name": "Prinplup",
+          "method": "Level 16"
+        },
+        {
+          "name": "Empoleon",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 396,
@@ -4548,7 +6517,16 @@
       "source": "Staraptor",
       "tier": "UUBL",
       "ownTier": "NFE",
-      "usage": 0.65644
+      "usage": 0.65644,
+      "evolution": [
+        {
+          "name": "Starly"
+        },
+        {
+          "name": "Staravia",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 398,
@@ -4560,7 +6538,20 @@
       "source": "Staraptor",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 0.65644
+      "usage": 0.65644,
+      "evolution": [
+        {
+          "name": "Starly"
+        },
+        {
+          "name": "Staravia",
+          "method": "Level 14"
+        },
+        {
+          "name": "Staraptor",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 399,
@@ -4583,7 +6574,16 @@
       "source": "Bibarel",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00967
+      "usage": 0.00967,
+      "evolution": [
+        {
+          "name": "Bidoof"
+        },
+        {
+          "name": "Bibarel",
+          "method": "Level 15"
+        }
+      ]
     },
     {
       "id": 401,
@@ -4605,7 +6605,16 @@
       "source": "Kricketune",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00028
+      "usage": 0.00028,
+      "evolution": [
+        {
+          "name": "Kricketot"
+        },
+        {
+          "name": "Kricketune",
+          "method": "Level 10"
+        }
+      ]
     },
     {
       "id": 403,
@@ -4627,7 +6636,16 @@
       "source": "Luxray",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00715
+      "usage": 0.00715,
+      "evolution": [
+        {
+          "name": "Shinx"
+        },
+        {
+          "name": "Luxio",
+          "method": "Level 15"
+        }
+      ]
     },
     {
       "id": 405,
@@ -4638,7 +6656,20 @@
       "source": "Luxray",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00715
+      "usage": 0.00715,
+      "evolution": [
+        {
+          "name": "Shinx"
+        },
+        {
+          "name": "Luxio",
+          "method": "Level 15"
+        },
+        {
+          "name": "Luxray",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 406,
@@ -4662,7 +6693,20 @@
       "source": "Roserade",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.15881
+      "usage": 0.15881,
+      "evolution": [
+        {
+          "name": "Budew"
+        },
+        {
+          "name": "Roselia",
+          "method": "Level up with high friendship during the day"
+        },
+        {
+          "name": "Roserade",
+          "method": "Use Shiny Stone"
+        }
+      ]
     },
     {
       "id": 408,
@@ -4684,7 +6728,16 @@
       "source": "Rampardos",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.10577
+      "usage": 0.10577,
+      "evolution": [
+        {
+          "name": "Cranidos"
+        },
+        {
+          "name": "Rampardos",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 410,
@@ -4708,7 +6761,16 @@
       "source": "Bastiodon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00877
+      "usage": 0.00877,
+      "evolution": [
+        {
+          "name": "Shieldon"
+        },
+        {
+          "name": "Bastiodon",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 412,
@@ -4731,7 +6793,16 @@
       "source": "Wormadam",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00084
+      "usage": 0.00084,
+      "evolution": [
+        {
+          "name": "Burmy"
+        },
+        {
+          "name": "Wormadam",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 414,
@@ -4743,7 +6814,16 @@
       "source": "Mothim",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00044
+      "usage": 0.00044,
+      "evolution": [
+        {
+          "name": "Burmy"
+        },
+        {
+          "name": "Mothim",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 415,
@@ -4767,7 +6847,16 @@
       "source": "Vespiquen",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00106
+      "usage": 0.00106,
+      "evolution": [
+        {
+          "name": "Combee"
+        },
+        {
+          "name": "Vespiquen",
+          "method": "Level 21"
+        }
+      ]
     },
     {
       "id": 417,
@@ -4800,7 +6889,16 @@
       "source": "Floatzel",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02294
+      "usage": 0.02294,
+      "evolution": [
+        {
+          "name": "Buizel"
+        },
+        {
+          "name": "Floatzel",
+          "method": "Level 26"
+        }
+      ]
     },
     {
       "id": 420,
@@ -4822,7 +6920,16 @@
       "source": "Cherrim",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00055
+      "usage": 0.00055,
+      "evolution": [
+        {
+          "name": "Cherubi"
+        },
+        {
+          "name": "Cherrim",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 422,
@@ -4845,7 +6952,16 @@
       "source": "Gastrodon",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 2.28646
+      "usage": 2.28646,
+      "evolution": [
+        {
+          "name": "Shellos"
+        },
+        {
+          "name": "Gastrodon",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 424,
@@ -4856,7 +6972,16 @@
       "source": "Ambipom",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.02325
+      "usage": 0.02325,
+      "evolution": [
+        {
+          "name": "Aipom"
+        },
+        {
+          "name": "Ambipom",
+          "method": "Level up knowing Double Hit"
+        }
+      ]
     },
     {
       "id": 425,
@@ -4880,7 +7005,16 @@
       "source": "Drifblim",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00983
+      "usage": 0.00983,
+      "evolution": [
+        {
+          "name": "Drifloon"
+        },
+        {
+          "name": "Drifblim",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 427,
@@ -4902,7 +7036,16 @@
       "source": "Lopunny",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0038
+      "usage": 0.0038,
+      "evolution": [
+        {
+          "name": "Buneary"
+        },
+        {
+          "name": "Lopunny",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 429,
@@ -4913,7 +7056,16 @@
       "source": "Mismagius",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.0209
+      "usage": 0.0209,
+      "evolution": [
+        {
+          "name": "Misdreavus"
+        },
+        {
+          "name": "Mismagius",
+          "method": "Use Dusk Stone"
+        }
+      ]
     },
     {
       "id": 430,
@@ -4925,7 +7077,16 @@
       "source": "Honchkrow",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.06191
+      "usage": 0.06191,
+      "evolution": [
+        {
+          "name": "Murkrow"
+        },
+        {
+          "name": "Honchkrow",
+          "method": "Use Dusk Stone"
+        }
+      ]
     },
     {
       "id": 431,
@@ -4947,7 +7108,16 @@
       "source": "Purugly",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00706
+      "usage": 0.00706,
+      "evolution": [
+        {
+          "name": "Glameow"
+        },
+        {
+          "name": "Purugly",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 433,
@@ -4982,7 +7152,16 @@
       "source": "Skuntank",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.0019
+      "usage": 0.0019,
+      "evolution": [
+        {
+          "name": "Stunky"
+        },
+        {
+          "name": "Skuntank",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 436,
@@ -5006,7 +7185,16 @@
       "source": "Bronzong",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.46405
+      "usage": 0.46405,
+      "evolution": [
+        {
+          "name": "Bronzor"
+        },
+        {
+          "name": "Bronzong",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 438,
@@ -5088,7 +7276,16 @@
       "source": "Garchomp",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 9.82083
+      "usage": 9.82083,
+      "evolution": [
+        {
+          "name": "Gible"
+        },
+        {
+          "name": "Gabite",
+          "method": "Level 24"
+        }
+      ]
     },
     {
       "id": 445,
@@ -5100,7 +7297,20 @@
       "source": "Garchomp",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 9.82083
+      "usage": 9.82083,
+      "evolution": [
+        {
+          "name": "Gible"
+        },
+        {
+          "name": "Gabite",
+          "method": "Level 24"
+        },
+        {
+          "name": "Garchomp",
+          "method": "Level 48"
+        }
+      ]
     },
     {
       "id": 446,
@@ -5134,7 +7344,16 @@
       "source": "Lucario",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.1945
+      "usage": 0.1945,
+      "evolution": [
+        {
+          "name": "Riolu"
+        },
+        {
+          "name": "Lucario",
+          "method": "Level up with high friendship during the day"
+        }
+      ]
     },
     {
       "id": 449,
@@ -5156,7 +7375,16 @@
       "source": "Hippowdon",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.72073
+      "usage": 1.72073,
+      "evolution": [
+        {
+          "name": "Hippopotas"
+        },
+        {
+          "name": "Hippowdon",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 451,
@@ -5180,7 +7408,16 @@
       "source": "Drapion",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.04405
+      "usage": 0.04405,
+      "evolution": [
+        {
+          "name": "Skorupi"
+        },
+        {
+          "name": "Drapion",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 453,
@@ -5204,7 +7441,16 @@
       "source": "Toxicroak",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.1023
+      "usage": 0.1023,
+      "evolution": [
+        {
+          "name": "Croagunk"
+        },
+        {
+          "name": "Toxicroak",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 455,
@@ -5237,7 +7483,16 @@
       "source": "Lumineon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01727
+      "usage": 0.01727,
+      "evolution": [
+        {
+          "name": "Finneon"
+        },
+        {
+          "name": "Lumineon",
+          "method": "Level 31"
+        }
+      ]
     },
     {
       "id": 458,
@@ -5273,7 +7528,16 @@
       "source": "Abomasnow",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.01235
+      "usage": 0.01235,
+      "evolution": [
+        {
+          "name": "Snover"
+        },
+        {
+          "name": "Abomasnow",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 461,
@@ -5285,7 +7549,16 @@
       "source": "Weavile",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 2.17381
+      "usage": 2.17381,
+      "evolution": [
+        {
+          "name": "Sneasel"
+        },
+        {
+          "name": "Weavile",
+          "method": "Level up holding Razor Claw"
+        }
+      ]
     },
     {
       "id": 462,
@@ -5297,7 +7570,20 @@
       "source": "Magnezone",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 6.21469
+      "usage": 6.21469,
+      "evolution": [
+        {
+          "name": "Magnemite"
+        },
+        {
+          "name": "Magneton",
+          "method": "Level 30"
+        },
+        {
+          "name": "Magnezone",
+          "method": "Level up in a special magnetic field"
+        }
+      ]
     },
     {
       "id": 463,
@@ -5308,7 +7594,16 @@
       "source": "Lickilicky",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0049
+      "usage": 0.0049,
+      "evolution": [
+        {
+          "name": "Lickitung"
+        },
+        {
+          "name": "Lickilicky",
+          "method": "Level up knowing Rollout"
+        }
+      ]
     },
     {
       "id": 464,
@@ -5320,7 +7615,20 @@
       "source": "Rhyperior",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.11976
+      "usage": 0.11976,
+      "evolution": [
+        {
+          "name": "Rhyhorn"
+        },
+        {
+          "name": "Rhydon",
+          "method": "Level 42"
+        },
+        {
+          "name": "Rhyperior",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 465,
@@ -5331,7 +7639,16 @@
       "source": "Tangrowth",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 4.99822
+      "usage": 4.99822,
+      "evolution": [
+        {
+          "name": "Tangela"
+        },
+        {
+          "name": "Tangrowth",
+          "method": "Level up knowing Ancient Power"
+        }
+      ]
     },
     {
       "id": 466,
@@ -5342,7 +7659,20 @@
       "source": "Electivire",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.03921
+      "usage": 0.03921,
+      "evolution": [
+        {
+          "name": "Elekid"
+        },
+        {
+          "name": "Electabuzz",
+          "method": "Level 30"
+        },
+        {
+          "name": "Electivire",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 467,
@@ -5353,7 +7683,20 @@
       "source": "Magmortar",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.07582
+      "usage": 0.07582,
+      "evolution": [
+        {
+          "name": "Magby"
+        },
+        {
+          "name": "Magmar",
+          "method": "Level 30"
+        },
+        {
+          "name": "Magmortar",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 468,
@@ -5365,7 +7708,20 @@
       "source": "Togekiss",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.68953
+      "usage": 0.68953,
+      "evolution": [
+        {
+          "name": "Togepi"
+        },
+        {
+          "name": "Togetic",
+          "method": "Level up with high friendship"
+        },
+        {
+          "name": "Togekiss",
+          "method": "Use Shiny Stone"
+        }
+      ]
     },
     {
       "id": 469,
@@ -5377,7 +7733,16 @@
       "source": "Yanmega",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.04657
+      "usage": 0.04657,
+      "evolution": [
+        {
+          "name": "Yanma"
+        },
+        {
+          "name": "Yanmega",
+          "method": "Level up knowing Ancient Power"
+        }
+      ]
     },
     {
       "id": 470,
@@ -5388,7 +7753,16 @@
       "source": "Leafeon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02896
+      "usage": 0.02896,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Leafeon",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 471,
@@ -5399,7 +7773,16 @@
       "source": "Glaceon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01915
+      "usage": 0.01915,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Glaceon",
+          "method": "Use Ice Stone"
+        }
+      ]
     },
     {
       "id": 472,
@@ -5411,7 +7794,16 @@
       "source": "Gliscor",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 7.40315
+      "usage": 7.40315,
+      "evolution": [
+        {
+          "name": "Gligar"
+        },
+        {
+          "name": "Gliscor",
+          "method": "Level up holding Razor Fang at night"
+        }
+      ]
     },
     {
       "id": 473,
@@ -5423,7 +7815,20 @@
       "source": "Mamoswine",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.83692
+      "usage": 1.83692,
+      "evolution": [
+        {
+          "name": "Swinub"
+        },
+        {
+          "name": "Piloswine",
+          "method": "Level 33"
+        },
+        {
+          "name": "Mamoswine",
+          "method": "Level up knowing Ancient Power"
+        }
+      ]
     },
     {
       "id": 474,
@@ -5434,7 +7839,20 @@
       "source": "Porygon-Z",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 0.57161
+      "usage": 0.57161,
+      "evolution": [
+        {
+          "name": "Porygon"
+        },
+        {
+          "name": "Porygon2",
+          "method": "Trade"
+        },
+        {
+          "name": "Porygon-Z",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 475,
@@ -5446,7 +7864,20 @@
       "source": "Gallade",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.00771
+      "usage": 0.00771,
+      "evolution": [
+        {
+          "name": "Ralts"
+        },
+        {
+          "name": "Kirlia",
+          "method": "Level 20"
+        },
+        {
+          "name": "Gallade",
+          "method": "Use Dawn Stone"
+        }
+      ]
     },
     {
       "id": 476,
@@ -5458,7 +7889,16 @@
       "source": "Probopass",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00118
+      "usage": 0.00118,
+      "evolution": [
+        {
+          "name": "Nosepass"
+        },
+        {
+          "name": "Probopass",
+          "method": "Level up near a special magnetic field"
+        }
+      ]
     },
     {
       "id": 477,
@@ -5469,7 +7909,20 @@
       "source": "Dusknoir",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01296
+      "usage": 0.01296,
+      "evolution": [
+        {
+          "name": "Duskull"
+        },
+        {
+          "name": "Dusclops",
+          "method": "Level 37"
+        },
+        {
+          "name": "Dusknoir",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 478,
@@ -5481,7 +7934,16 @@
       "source": "Froslass",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.07602
+      "usage": 0.07602,
+      "evolution": [
+        {
+          "name": "Snorunt"
+        },
+        {
+          "name": "Froslass",
+          "method": "Use Dawn Stone"
+        }
+      ]
     },
     {
       "id": 479,
@@ -5680,7 +8142,16 @@
       "source": "Serperior",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 9.25664
+      "usage": 9.25664,
+      "evolution": [
+        {
+          "name": "Snivy"
+        },
+        {
+          "name": "Servine",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 497,
@@ -5691,7 +8162,20 @@
       "source": "Serperior",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 9.25664
+      "usage": 9.25664,
+      "evolution": [
+        {
+          "name": "Snivy"
+        },
+        {
+          "name": "Servine",
+          "method": "Level 17"
+        },
+        {
+          "name": "Serperior",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 498,
@@ -5714,7 +8198,16 @@
       "source": "Emboar",
       "tier": "NUBL",
       "ownTier": "NFE",
-      "usage": 0.02712
+      "usage": 0.02712,
+      "evolution": [
+        {
+          "name": "Tepig"
+        },
+        {
+          "name": "Pignite",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 500,
@@ -5726,7 +8219,20 @@
       "source": "Emboar",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.02712
+      "usage": 0.02712,
+      "evolution": [
+        {
+          "name": "Tepig"
+        },
+        {
+          "name": "Pignite",
+          "method": "Level 17"
+        },
+        {
+          "name": "Emboar",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 501,
@@ -5748,7 +8254,16 @@
       "source": "Samurott",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.01792
+      "usage": 0.01792,
+      "evolution": [
+        {
+          "name": "Oshawott"
+        },
+        {
+          "name": "Dewott",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 503,
@@ -5759,7 +8274,20 @@
       "source": "Samurott",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01792
+      "usage": 0.01792,
+      "evolution": [
+        {
+          "name": "Oshawott"
+        },
+        {
+          "name": "Dewott",
+          "method": "Level 17"
+        },
+        {
+          "name": "Samurott",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 504,
@@ -5781,7 +8309,16 @@
       "source": "Watchog",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00019
+      "usage": 0.00019,
+      "evolution": [
+        {
+          "name": "Patrat"
+        },
+        {
+          "name": "Watchog",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 506,
@@ -5803,7 +8340,16 @@
       "source": "Stoutland",
       "tier": "PU",
       "ownTier": "NFE",
-      "usage": 0.04038
+      "usage": 0.04038,
+      "evolution": [
+        {
+          "name": "Lillipup"
+        },
+        {
+          "name": "Herdier",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 508,
@@ -5814,7 +8360,20 @@
       "source": "Stoutland",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.04038
+      "usage": 0.04038,
+      "evolution": [
+        {
+          "name": "Lillipup"
+        },
+        {
+          "name": "Herdier",
+          "method": "Level 16"
+        },
+        {
+          "name": "Stoutland",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 509,
@@ -5836,7 +8395,16 @@
       "source": "Liepard",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.00929
+      "usage": 0.00929,
+      "evolution": [
+        {
+          "name": "Purrloin"
+        },
+        {
+          "name": "Liepard",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 511,
@@ -5858,7 +8426,16 @@
       "source": "Simisage",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00166
+      "usage": 0.00166,
+      "evolution": [
+        {
+          "name": "Pansage"
+        },
+        {
+          "name": "Simisage",
+          "method": "Use Leaf Stone"
+        }
+      ]
     },
     {
       "id": 513,
@@ -5880,7 +8457,16 @@
       "source": "Simisear",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00162
+      "usage": 0.00162,
+      "evolution": [
+        {
+          "name": "Pansear"
+        },
+        {
+          "name": "Simisear",
+          "method": "Use Fire Stone"
+        }
+      ]
     },
     {
       "id": 515,
@@ -5902,7 +8488,16 @@
       "source": "Simipour",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00173
+      "usage": 0.00173,
+      "evolution": [
+        {
+          "name": "Panpour"
+        },
+        {
+          "name": "Simipour",
+          "method": "Use Water Stone"
+        }
+      ]
     },
     {
       "id": 517,
@@ -5924,7 +8519,16 @@
       "source": "Musharna",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.00701
+      "usage": 0.00701,
+      "evolution": [
+        {
+          "name": "Munna"
+        },
+        {
+          "name": "Musharna",
+          "method": "Use Moon Stone"
+        }
+      ]
     },
     {
       "id": 519,
@@ -5948,7 +8552,16 @@
       "source": "Unfezant",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.0012
+      "usage": 0.0012,
+      "evolution": [
+        {
+          "name": "Pidove"
+        },
+        {
+          "name": "Tranquill",
+          "method": "Level 21"
+        }
+      ]
     },
     {
       "id": 521,
@@ -5960,7 +8573,20 @@
       "source": "Unfezant",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0012
+      "usage": 0.0012,
+      "evolution": [
+        {
+          "name": "Pidove"
+        },
+        {
+          "name": "Tranquill",
+          "method": "Level 21"
+        },
+        {
+          "name": "Unfezant",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 522,
@@ -5982,7 +8608,16 @@
       "source": "Zebstrika",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00966
+      "usage": 0.00966,
+      "evolution": [
+        {
+          "name": "Blitzle"
+        },
+        {
+          "name": "Zebstrika",
+          "method": "Level 27"
+        }
+      ]
     },
     {
       "id": 524,
@@ -6004,7 +8639,16 @@
       "source": "Gigalith",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.13203
+      "usage": 0.13203,
+      "evolution": [
+        {
+          "name": "Roggenrola"
+        },
+        {
+          "name": "Boldore",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 526,
@@ -6015,7 +8659,20 @@
       "source": "Gigalith",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.13203
+      "usage": 0.13203,
+      "evolution": [
+        {
+          "name": "Roggenrola"
+        },
+        {
+          "name": "Boldore",
+          "method": "Level 25"
+        },
+        {
+          "name": "Gigalith",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 527,
@@ -6039,7 +8696,16 @@
       "source": "Swoobat",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0087
+      "usage": 0.0087,
+      "evolution": [
+        {
+          "name": "Woobat"
+        },
+        {
+          "name": "Swoobat",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 529,
@@ -6062,7 +8728,16 @@
       "source": "Excadrill",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 10.16736
+      "usage": 10.16736,
+      "evolution": [
+        {
+          "name": "Drilbur"
+        },
+        {
+          "name": "Excadrill",
+          "method": "Level 31"
+        }
+      ]
     },
     {
       "id": 531,
@@ -6095,7 +8770,16 @@
       "source": "Conkeldurr",
       "tier": "UUBL",
       "ownTier": "PU",
-      "usage": 0.61013
+      "usage": 0.61013,
+      "evolution": [
+        {
+          "name": "Timburr"
+        },
+        {
+          "name": "Gurdurr",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 534,
@@ -6106,7 +8790,20 @@
       "source": "Conkeldurr",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 0.61013
+      "usage": 0.61013,
+      "evolution": [
+        {
+          "name": "Timburr"
+        },
+        {
+          "name": "Gurdurr",
+          "method": "Level 25"
+        },
+        {
+          "name": "Conkeldurr",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 535,
@@ -6129,7 +8826,16 @@
       "source": "Seismitoad",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 1.65445
+      "usage": 1.65445,
+      "evolution": [
+        {
+          "name": "Tympole"
+        },
+        {
+          "name": "Palpitoad",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 537,
@@ -6141,7 +8847,20 @@
       "source": "Seismitoad",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 1.65445
+      "usage": 1.65445,
+      "evolution": [
+        {
+          "name": "Tympole"
+        },
+        {
+          "name": "Palpitoad",
+          "method": "Level 25"
+        },
+        {
+          "name": "Seismitoad",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 538,
@@ -6187,7 +8906,16 @@
       "source": "Leavanny",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.01506
+      "usage": 0.01506,
+      "evolution": [
+        {
+          "name": "Sewaddle"
+        },
+        {
+          "name": "Swadloon",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 542,
@@ -6199,7 +8927,20 @@
       "source": "Leavanny",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01506
+      "usage": 0.01506,
+      "evolution": [
+        {
+          "name": "Sewaddle"
+        },
+        {
+          "name": "Swadloon",
+          "method": "Level 20"
+        },
+        {
+          "name": "Leavanny",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 543,
@@ -6223,7 +8964,16 @@
       "source": "Scolipede",
       "tier": "UUBL",
       "ownTier": "NFE",
-      "usage": 0.89258
+      "usage": 0.89258,
+      "evolution": [
+        {
+          "name": "Venipede"
+        },
+        {
+          "name": "Whirlipede",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 545,
@@ -6235,7 +8985,20 @@
       "source": "Scolipede",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 0.89258
+      "usage": 0.89258,
+      "evolution": [
+        {
+          "name": "Venipede"
+        },
+        {
+          "name": "Whirlipede",
+          "method": "Level 22"
+        },
+        {
+          "name": "Scolipede",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 546,
@@ -6259,7 +9022,16 @@
       "source": "Whimsicott",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.62995
+      "usage": 0.62995,
+      "evolution": [
+        {
+          "name": "Cottonee"
+        },
+        {
+          "name": "Whimsicott",
+          "method": "Use Sun Stone"
+        }
+      ]
     },
     {
       "id": 548,
@@ -6281,7 +9053,16 @@
       "source": "Lilligant",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.03203
+      "usage": 0.03203,
+      "evolution": [
+        {
+          "name": "Petilil"
+        },
+        {
+          "name": "Lilligant",
+          "method": "Use Sun Stone"
+        }
+      ]
     },
     {
       "id": 550,
@@ -6316,7 +9097,16 @@
       "source": "Krookodile",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.39675
+      "usage": 0.39675,
+      "evolution": [
+        {
+          "name": "Sandile"
+        },
+        {
+          "name": "Krokorok",
+          "method": "Level 29"
+        }
+      ]
     },
     {
       "id": 553,
@@ -6328,7 +9118,20 @@
       "source": "Krookodile",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.39675
+      "usage": 0.39675,
+      "evolution": [
+        {
+          "name": "Sandile"
+        },
+        {
+          "name": "Krokorok",
+          "method": "Level 29"
+        },
+        {
+          "name": "Krookodile",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 554,
@@ -6350,7 +9153,16 @@
       "source": "Darmanitan",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.68993
+      "usage": 0.68993,
+      "evolution": [
+        {
+          "name": "Darumaka"
+        },
+        {
+          "name": "Darmanitan",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 556,
@@ -6385,7 +9197,16 @@
       "source": "Crustle",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01706
+      "usage": 0.01706,
+      "evolution": [
+        {
+          "name": "Dwebble"
+        },
+        {
+          "name": "Crustle",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 559,
@@ -6409,7 +9230,16 @@
       "source": "Scrafty",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.03221
+      "usage": 0.03221,
+      "evolution": [
+        {
+          "name": "Scraggy"
+        },
+        {
+          "name": "Scrafty",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 561,
@@ -6443,7 +9273,16 @@
       "source": "Cofagrigus",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.48205
+      "usage": 0.48205,
+      "evolution": [
+        {
+          "name": "Yamask"
+        },
+        {
+          "name": "Cofagrigus",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 564,
@@ -6467,7 +9306,16 @@
       "source": "Carracosta",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.00604
+      "usage": 0.00604,
+      "evolution": [
+        {
+          "name": "Tirtouga"
+        },
+        {
+          "name": "Carracosta",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 566,
@@ -6491,7 +9339,16 @@
       "source": "Archeops",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.02165
+      "usage": 0.02165,
+      "evolution": [
+        {
+          "name": "Archen"
+        },
+        {
+          "name": "Archeops",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 568,
@@ -6513,7 +9370,16 @@
       "source": "Garbodor",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01357
+      "usage": 0.01357,
+      "evolution": [
+        {
+          "name": "Trubbish"
+        },
+        {
+          "name": "Garbodor",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 570,
@@ -6535,7 +9401,16 @@
       "source": "Zoroark",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.1156
+      "usage": 0.1156,
+      "evolution": [
+        {
+          "name": "Zorua"
+        },
+        {
+          "name": "Zoroark",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 572,
@@ -6557,7 +9432,16 @@
       "source": "Cinccino",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.01951
+      "usage": 0.01951,
+      "evolution": [
+        {
+          "name": "Minccino"
+        },
+        {
+          "name": "Cinccino",
+          "method": "Use Shiny Stone"
+        }
+      ]
     },
     {
       "id": 574,
@@ -6579,7 +9463,16 @@
       "source": "Gothitelle",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.00236
+      "usage": 0.00236,
+      "evolution": [
+        {
+          "name": "Gothita"
+        },
+        {
+          "name": "Gothorita",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 576,
@@ -6590,7 +9483,20 @@
       "source": "Gothitelle",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00236
+      "usage": 0.00236,
+      "evolution": [
+        {
+          "name": "Gothita"
+        },
+        {
+          "name": "Gothorita",
+          "method": "Level 32"
+        },
+        {
+          "name": "Gothitelle",
+          "method": "Level 41"
+        }
+      ]
     },
     {
       "id": 577,
@@ -6612,7 +9518,16 @@
       "source": "Reuniclus",
       "tier": "RUBL",
       "ownTier": "NFE",
-      "usage": 2.25231
+      "usage": 2.25231,
+      "evolution": [
+        {
+          "name": "Solosis"
+        },
+        {
+          "name": "Duosion",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 579,
@@ -6623,7 +9538,20 @@
       "source": "Reuniclus",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 2.25231
+      "usage": 2.25231,
+      "evolution": [
+        {
+          "name": "Solosis"
+        },
+        {
+          "name": "Duosion",
+          "method": "Level 32"
+        },
+        {
+          "name": "Reuniclus",
+          "method": "Level 41"
+        }
+      ]
     },
     {
       "id": 580,
@@ -6647,7 +9575,16 @@
       "source": "Swanna",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00203
+      "usage": 0.00203,
+      "evolution": [
+        {
+          "name": "Ducklett"
+        },
+        {
+          "name": "Swanna",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 582,
@@ -6669,7 +9606,16 @@
       "source": "Vanilluxe",
       "tier": "NUBL",
       "ownTier": "NFE",
-      "usage": 0.06442
+      "usage": 0.06442,
+      "evolution": [
+        {
+          "name": "Vanillite"
+        },
+        {
+          "name": "Vanillish",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 584,
@@ -6680,7 +9626,20 @@
       "source": "Vanilluxe",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.06442
+      "usage": 0.06442,
+      "evolution": [
+        {
+          "name": "Vanillite"
+        },
+        {
+          "name": "Vanillish",
+          "method": "Level 35"
+        },
+        {
+          "name": "Vanilluxe",
+          "method": "Level 47"
+        }
+      ]
     },
     {
       "id": 585,
@@ -6704,7 +9663,16 @@
       "source": "Sawsbuck",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.05291
+      "usage": 0.05291,
+      "evolution": [
+        {
+          "name": "Deerling"
+        },
+        {
+          "name": "Sawsbuck",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 587,
@@ -6739,7 +9707,16 @@
       "source": "Escavalier",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.01183
+      "usage": 0.01183,
+      "evolution": [
+        {
+          "name": "Karrablast"
+        },
+        {
+          "name": "Escavalier",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 590,
@@ -6763,7 +9740,16 @@
       "source": "Amoonguss",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.14223
+      "usage": 1.14223,
+      "evolution": [
+        {
+          "name": "Foongus"
+        },
+        {
+          "name": "Amoonguss",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 592,
@@ -6787,7 +9773,16 @@
       "source": "Jellicent",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.02417
+      "usage": 0.02417,
+      "evolution": [
+        {
+          "name": "Frillish"
+        },
+        {
+          "name": "Jellicent",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 594,
@@ -6822,7 +9817,16 @@
       "source": "Galvantula",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.26887
+      "usage": 0.26887,
+      "evolution": [
+        {
+          "name": "Joltik"
+        },
+        {
+          "name": "Galvantula",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 597,
@@ -6846,7 +9850,16 @@
       "source": "Ferrothorn",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 16.6296
+      "usage": 16.6296,
+      "evolution": [
+        {
+          "name": "Ferroseed"
+        },
+        {
+          "name": "Ferrothorn",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 599,
@@ -6868,7 +9881,16 @@
       "source": "Klinklang",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.01599
+      "usage": 0.01599,
+      "evolution": [
+        {
+          "name": "Klink"
+        },
+        {
+          "name": "Klang",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 601,
@@ -6879,7 +9901,20 @@
       "source": "Klinklang",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01599
+      "usage": 0.01599,
+      "evolution": [
+        {
+          "name": "Klink"
+        },
+        {
+          "name": "Klang",
+          "method": "Level 38"
+        },
+        {
+          "name": "Klinklang",
+          "method": "Level 49"
+        }
+      ]
     },
     {
       "id": 602,
@@ -6901,7 +9936,16 @@
       "source": "Eelektross",
       "tier": "PU",
       "ownTier": "NFE",
-      "usage": 0.03984
+      "usage": 0.03984,
+      "evolution": [
+        {
+          "name": "Tynamo"
+        },
+        {
+          "name": "Eelektrik",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 604,
@@ -6912,7 +9956,20 @@
       "source": "Eelektross",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.03984
+      "usage": 0.03984,
+      "evolution": [
+        {
+          "name": "Tynamo"
+        },
+        {
+          "name": "Eelektrik",
+          "method": "Level 39"
+        },
+        {
+          "name": "Eelektross",
+          "method": "Use Thunder Stone"
+        }
+      ]
     },
     {
       "id": 605,
@@ -6934,7 +9991,16 @@
       "source": "Beheeyem",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00074
+      "usage": 0.00074,
+      "evolution": [
+        {
+          "name": "Elgyem"
+        },
+        {
+          "name": "Beheeyem",
+          "method": "Level 42"
+        }
+      ]
     },
     {
       "id": 607,
@@ -6958,7 +10024,16 @@
       "source": "Chandelure",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.21866
+      "usage": 0.21866,
+      "evolution": [
+        {
+          "name": "Litwick"
+        },
+        {
+          "name": "Lampent",
+          "method": "Level 41"
+        }
+      ]
     },
     {
       "id": 609,
@@ -6970,7 +10045,20 @@
       "source": "Chandelure",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.21866
+      "usage": 0.21866,
+      "evolution": [
+        {
+          "name": "Litwick"
+        },
+        {
+          "name": "Lampent",
+          "method": "Level 41"
+        },
+        {
+          "name": "Chandelure",
+          "method": "Use Dusk Stone"
+        }
+      ]
     },
     {
       "id": 610,
@@ -6992,7 +10080,16 @@
       "source": "Haxorus",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.13326
+      "usage": 0.13326,
+      "evolution": [
+        {
+          "name": "Axew"
+        },
+        {
+          "name": "Fraxure",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 612,
@@ -7003,7 +10100,20 @@
       "source": "Haxorus",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.13326
+      "usage": 0.13326,
+      "evolution": [
+        {
+          "name": "Axew"
+        },
+        {
+          "name": "Fraxure",
+          "method": "Level 38"
+        },
+        {
+          "name": "Haxorus",
+          "method": "Level 48"
+        }
+      ]
     },
     {
       "id": 613,
@@ -7025,7 +10135,16 @@
       "source": "Beartic",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.01672
+      "usage": 0.01672,
+      "evolution": [
+        {
+          "name": "Cubchoo"
+        },
+        {
+          "name": "Beartic",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 615,
@@ -7058,7 +10177,16 @@
       "source": "Accelgor",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.1579
+      "usage": 0.1579,
+      "evolution": [
+        {
+          "name": "Shelmet"
+        },
+        {
+          "name": "Accelgor",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 618,
@@ -7092,7 +10220,16 @@
       "source": "Mienshao",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.16827
+      "usage": 0.16827,
+      "evolution": [
+        {
+          "name": "Mienfoo"
+        },
+        {
+          "name": "Mienshao",
+          "method": "Level 50"
+        }
+      ]
     },
     {
       "id": 621,
@@ -7127,7 +10264,16 @@
       "source": "Golurk",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.02208
+      "usage": 0.02208,
+      "evolution": [
+        {
+          "name": "Golett"
+        },
+        {
+          "name": "Golurk",
+          "method": "Level 43"
+        }
+      ]
     },
     {
       "id": 624,
@@ -7151,7 +10297,16 @@
       "source": "Bisharp",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 2.74235
+      "usage": 2.74235,
+      "evolution": [
+        {
+          "name": "Pawniard"
+        },
+        {
+          "name": "Bisharp",
+          "method": "Level 52"
+        }
+      ]
     },
     {
       "id": 626,
@@ -7186,7 +10341,16 @@
       "source": "Braviary",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.03435
+      "usage": 0.03435,
+      "evolution": [
+        {
+          "name": "Rufflet"
+        },
+        {
+          "name": "Braviary",
+          "method": "Level 54"
+        }
+      ]
     },
     {
       "id": 629,
@@ -7210,7 +10374,16 @@
       "source": "Mandibuzz",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.3858
+      "usage": 0.3858,
+      "evolution": [
+        {
+          "name": "Vullaby"
+        },
+        {
+          "name": "Mandibuzz",
+          "method": "Level 54"
+        }
+      ]
     },
     {
       "id": 631,
@@ -7257,7 +10430,16 @@
       "source": "Hydreigon",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 1.59194
+      "usage": 1.59194,
+      "evolution": [
+        {
+          "name": "Deino"
+        },
+        {
+          "name": "Zweilous",
+          "method": "Level 50"
+        }
+      ]
     },
     {
       "id": 635,
@@ -7269,7 +10451,20 @@
       "source": "Hydreigon",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 1.59194
+      "usage": 1.59194,
+      "evolution": [
+        {
+          "name": "Deino"
+        },
+        {
+          "name": "Zweilous",
+          "method": "Level 50"
+        },
+        {
+          "name": "Hydreigon",
+          "method": "Level 64"
+        }
+      ]
     },
     {
       "id": 636,
@@ -7293,7 +10488,16 @@
       "source": "Volcarona",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 5.71252
+      "usage": 5.71252,
+      "evolution": [
+        {
+          "name": "Larvesta"
+        },
+        {
+          "name": "Volcarona",
+          "method": "Level 59"
+        }
+      ]
     },
     {
       "id": 638,
@@ -7454,7 +10658,16 @@
       "source": "Chesnaught",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.12988
+      "usage": 0.12988,
+      "evolution": [
+        {
+          "name": "Chespin"
+        },
+        {
+          "name": "Quilladin",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 652,
@@ -7466,7 +10679,20 @@
       "source": "Chesnaught",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.12988
+      "usage": 0.12988,
+      "evolution": [
+        {
+          "name": "Chespin"
+        },
+        {
+          "name": "Quilladin",
+          "method": "Level 16"
+        },
+        {
+          "name": "Chesnaught",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 653,
@@ -7488,7 +10714,16 @@
       "source": "Delphox",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.02574
+      "usage": 0.02574,
+      "evolution": [
+        {
+          "name": "Fennekin"
+        },
+        {
+          "name": "Braixen",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 655,
@@ -7500,7 +10735,20 @@
       "source": "Delphox",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.02574
+      "usage": 0.02574,
+      "evolution": [
+        {
+          "name": "Fennekin"
+        },
+        {
+          "name": "Braixen",
+          "method": "Level 16"
+        },
+        {
+          "name": "Delphox",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 656,
@@ -7522,7 +10770,16 @@
       "source": "Greninja",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 9.59262
+      "usage": 9.59262,
+      "evolution": [
+        {
+          "name": "Froakie"
+        },
+        {
+          "name": "Frogadier",
+          "method": "Level 16"
+        }
+      ]
     },
     {
       "id": 658,
@@ -7534,7 +10791,20 @@
       "source": "Greninja",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 9.59262
+      "usage": 9.59262,
+      "evolution": [
+        {
+          "name": "Froakie"
+        },
+        {
+          "name": "Frogadier",
+          "method": "Level 16"
+        },
+        {
+          "name": "Greninja",
+          "method": "Level 36"
+        }
+      ]
     },
     {
       "id": 659,
@@ -7557,7 +10827,16 @@
       "source": "Diggersby",
       "tier": "UUBL",
       "ownTier": "UUBL",
-      "usage": 0.75115
+      "usage": 0.75115,
+      "evolution": [
+        {
+          "name": "Bunnelby"
+        },
+        {
+          "name": "Diggersby",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 661,
@@ -7581,7 +10860,16 @@
       "source": "Talonflame",
       "tier": "RUBL",
       "ownTier": "NFE",
-      "usage": 0.11422
+      "usage": 0.11422,
+      "evolution": [
+        {
+          "name": "Fletchling"
+        },
+        {
+          "name": "Fletchinder",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 663,
@@ -7593,7 +10881,20 @@
       "source": "Talonflame",
       "tier": "RUBL",
       "ownTier": "RUBL",
-      "usage": 0.11422
+      "usage": 0.11422,
+      "evolution": [
+        {
+          "name": "Fletchling"
+        },
+        {
+          "name": "Fletchinder",
+          "method": "Level 17"
+        },
+        {
+          "name": "Talonflame",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 664,
@@ -7615,7 +10916,16 @@
       "source": "Vivillon",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.01944
+      "usage": 0.01944,
+      "evolution": [
+        {
+          "name": "Scatterbug"
+        },
+        {
+          "name": "Spewpa",
+          "method": "Level 9"
+        }
+      ]
     },
     {
       "id": 666,
@@ -7627,7 +10937,20 @@
       "source": "Vivillon",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01944
+      "usage": 0.01944,
+      "evolution": [
+        {
+          "name": "Scatterbug"
+        },
+        {
+          "name": "Spewpa",
+          "method": "Level 9"
+        },
+        {
+          "name": "Vivillon",
+          "method": "Level 12"
+        }
+      ]
     },
     {
       "id": 667,
@@ -7651,7 +10974,16 @@
       "source": "Pyroar",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.00153
+      "usage": 0.00153,
+      "evolution": [
+        {
+          "name": "Litleo"
+        },
+        {
+          "name": "Pyroar",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 669,
@@ -7673,7 +11005,16 @@
       "source": "Florges",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.05675
+      "usage": 0.05675,
+      "evolution": [
+        {
+          "name": "Flabe\\u0301be\\u0301"
+        },
+        {
+          "name": "Floette",
+          "method": "Level 19"
+        }
+      ]
     },
     {
       "id": 671,
@@ -7684,7 +11025,20 @@
       "source": "Florges",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.05675
+      "usage": 0.05675,
+      "evolution": [
+        {
+          "name": "Flabe\\u0301be\\u0301"
+        },
+        {
+          "name": "Floette",
+          "method": "Level 19"
+        },
+        {
+          "name": "Florges",
+          "method": "Use Shiny Stone"
+        }
+      ]
     },
     {
       "id": 672,
@@ -7706,7 +11060,16 @@
       "source": "Gogoat",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00301
+      "usage": 0.00301,
+      "evolution": [
+        {
+          "name": "Skiddo"
+        },
+        {
+          "name": "Gogoat",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 674,
@@ -7729,7 +11092,16 @@
       "source": "Pangoro",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.01505
+      "usage": 0.01505,
+      "evolution": [
+        {
+          "name": "Pancham"
+        },
+        {
+          "name": "Pangoro",
+          "method": "Level 32"
+        }
+      ]
     },
     {
       "id": 676,
@@ -7762,7 +11134,16 @@
       "source": "Meowstic",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.09873
+      "usage": 0.09873,
+      "evolution": [
+        {
+          "name": "Espurr"
+        },
+        {
+          "name": "Meowstic",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 679,
@@ -7784,7 +11165,16 @@
       "grade": "SSS",
       "source": "Aegislash",
       "tier": "Uber",
-      "ownTier": "UU"
+      "ownTier": "UU",
+      "evolution": [
+        {
+          "name": "Honedge"
+        },
+        {
+          "name": "Doublade",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 681,
@@ -7795,7 +11185,20 @@
       "grade": "SSS",
       "source": "Aegislash",
       "tier": "Uber",
-      "ownTier": "Uber"
+      "ownTier": "Uber",
+      "evolution": [
+        {
+          "name": "Honedge"
+        },
+        {
+          "name": "Doublade",
+          "method": "Level 35"
+        },
+        {
+          "name": "Aegislash",
+          "method": "Use Dusk Stone"
+        }
+      ]
     },
     {
       "id": 682,
@@ -7817,7 +11220,16 @@
       "source": "Aromatisse",
       "tier": "PUBL",
       "ownTier": "PUBL",
-      "usage": 0.00189
+      "usage": 0.00189,
+      "evolution": [
+        {
+          "name": "Spritzee"
+        },
+        {
+          "name": "Aromatisse",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 684,
@@ -7839,7 +11251,16 @@
       "source": "Slurpuff",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.19901
+      "usage": 0.19901,
+      "evolution": [
+        {
+          "name": "Swirlix"
+        },
+        {
+          "name": "Slurpuff",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 686,
@@ -7863,7 +11284,16 @@
       "source": "Malamar",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.0727
+      "usage": 0.0727,
+      "evolution": [
+        {
+          "name": "Inkay"
+        },
+        {
+          "name": "Malamar",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 688,
@@ -7887,7 +11317,16 @@
       "source": "Barbaracle",
       "tier": "NUBL",
       "ownTier": "NUBL",
-      "usage": 0.07362
+      "usage": 0.07362,
+      "evolution": [
+        {
+          "name": "Binacle"
+        },
+        {
+          "name": "Barbaracle",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 690,
@@ -7911,7 +11350,16 @@
       "source": "Dragalge",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.03205
+      "usage": 0.03205,
+      "evolution": [
+        {
+          "name": "Skrelp"
+        },
+        {
+          "name": "Dragalge",
+          "method": "Level 48"
+        }
+      ]
     },
     {
       "id": 692,
@@ -7933,7 +11381,16 @@
       "source": "Clawitzer",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.00545
+      "usage": 0.00545,
+      "evolution": [
+        {
+          "name": "Clauncher"
+        },
+        {
+          "name": "Clawitzer",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 694,
@@ -7957,7 +11414,16 @@
       "source": "Heliolisk",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.0898
+      "usage": 0.0898,
+      "evolution": [
+        {
+          "name": "Helioptile"
+        },
+        {
+          "name": "Heliolisk",
+          "method": "Use Sun Stone"
+        }
+      ]
     },
     {
       "id": 696,
@@ -7981,7 +11447,16 @@
       "source": "Tyrantrum",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.06873
+      "usage": 0.06873,
+      "evolution": [
+        {
+          "name": "Tyrunt"
+        },
+        {
+          "name": "Tyrantrum",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 698,
@@ -8005,7 +11480,16 @@
       "source": "Aurorus",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.0071
+      "usage": 0.0071,
+      "evolution": [
+        {
+          "name": "Amaura"
+        },
+        {
+          "name": "Aurorus",
+          "method": "Level 39"
+        }
+      ]
     },
     {
       "id": 700,
@@ -8016,7 +11500,16 @@
       "source": "Sylveon",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.10694
+      "usage": 0.10694,
+      "evolution": [
+        {
+          "name": "Eevee"
+        },
+        {
+          "name": "Sylveon",
+          "method": "Level up with a Fairy-type move and two levels of Affection"
+        }
+      ]
     },
     {
       "id": 701,
@@ -8074,7 +11567,16 @@
       "source": "Goodra",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.28837
+      "usage": 0.28837,
+      "evolution": [
+        {
+          "name": "Goomy"
+        },
+        {
+          "name": "Sliggoo",
+          "method": "Level 40"
+        }
+      ]
     },
     {
       "id": 706,
@@ -8085,7 +11587,20 @@
       "source": "Goodra",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.28837
+      "usage": 0.28837,
+      "evolution": [
+        {
+          "name": "Goomy"
+        },
+        {
+          "name": "Sliggoo",
+          "method": "Level 40"
+        },
+        {
+          "name": "Goodra",
+          "method": "Level 50"
+        }
+      ]
     },
     {
       "id": 707,
@@ -8121,7 +11636,16 @@
       "source": "Trevenant",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.03888
+      "usage": 0.03888,
+      "evolution": [
+        {
+          "name": "Phantump"
+        },
+        {
+          "name": "Trevenant",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 710,
@@ -8145,7 +11669,16 @@
       "source": "Gourgeist",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.00033
+      "usage": 0.00033,
+      "evolution": [
+        {
+          "name": "Pumpkaboo"
+        },
+        {
+          "name": "Gourgeist",
+          "method": "Trade"
+        }
+      ]
     },
     {
       "id": 712,
@@ -8167,7 +11700,16 @@
       "source": "Avalugg",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.24737
+      "usage": 0.24737,
+      "evolution": [
+        {
+          "name": "Bergmite"
+        },
+        {
+          "name": "Avalugg",
+          "method": "Level 37"
+        }
+      ]
     },
     {
       "id": 714,
@@ -8191,7 +11733,16 @@
       "source": "Noivern",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.53392
+      "usage": 0.53392,
+      "evolution": [
+        {
+          "name": "Noibat"
+        },
+        {
+          "name": "Noivern",
+          "method": "Level 48"
+        }
+      ]
     },
     {
       "id": 716,
@@ -8283,7 +11834,16 @@
       "source": "Decidueye",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.17376
+      "usage": 0.17376,
+      "evolution": [
+        {
+          "name": "Rowlet"
+        },
+        {
+          "name": "Dartrix",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 724,
@@ -8295,7 +11855,20 @@
       "source": "Decidueye",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.17376
+      "usage": 0.17376,
+      "evolution": [
+        {
+          "name": "Rowlet"
+        },
+        {
+          "name": "Dartrix",
+          "method": "Level 17"
+        },
+        {
+          "name": "Decidueye",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 725,
@@ -8317,7 +11890,16 @@
       "source": "Incineroar",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.22895
+      "usage": 0.22895,
+      "evolution": [
+        {
+          "name": "Litten"
+        },
+        {
+          "name": "Torracat",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 727,
@@ -8329,7 +11911,20 @@
       "source": "Incineroar",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.22895
+      "usage": 0.22895,
+      "evolution": [
+        {
+          "name": "Litten"
+        },
+        {
+          "name": "Torracat",
+          "method": "Level 17"
+        },
+        {
+          "name": "Incineroar",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 728,
@@ -8351,7 +11946,16 @@
       "source": "Primarina",
       "tier": "UU",
       "ownTier": "NFE",
-      "usage": 0.21997
+      "usage": 0.21997,
+      "evolution": [
+        {
+          "name": "Popplio"
+        },
+        {
+          "name": "Brionne",
+          "method": "Level 17"
+        }
+      ]
     },
     {
       "id": 730,
@@ -8363,7 +11967,20 @@
       "source": "Primarina",
       "tier": "UU",
       "ownTier": "UU",
-      "usage": 0.21997
+      "usage": 0.21997,
+      "evolution": [
+        {
+          "name": "Popplio"
+        },
+        {
+          "name": "Brionne",
+          "method": "Level 17"
+        },
+        {
+          "name": "Primarina",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 731,
@@ -8387,7 +12004,16 @@
       "source": "Toucannon",
       "tier": "(PU)",
       "ownTier": "NFE",
-      "usage": 0.02521
+      "usage": 0.02521,
+      "evolution": [
+        {
+          "name": "Pikipek"
+        },
+        {
+          "name": "Trumbeak",
+          "method": "Level 14"
+        }
+      ]
     },
     {
       "id": 733,
@@ -8399,7 +12025,20 @@
       "source": "Toucannon",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.02521
+      "usage": 0.02521,
+      "evolution": [
+        {
+          "name": "Pikipek"
+        },
+        {
+          "name": "Trumbeak",
+          "method": "Level 14"
+        },
+        {
+          "name": "Toucannon",
+          "method": "Level 28"
+        }
+      ]
     },
     {
       "id": 734,
@@ -8421,7 +12060,16 @@
       "source": "Gumshoos",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0198
+      "usage": 0.0198,
+      "evolution": [
+        {
+          "name": "Yungoos"
+        },
+        {
+          "name": "Gumshoos",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 736,
@@ -8444,7 +12092,16 @@
       "source": "Vikavolt",
       "tier": "NU",
       "ownTier": "NFE",
-      "usage": 0.12294
+      "usage": 0.12294,
+      "evolution": [
+        {
+          "name": "Grubbin"
+        },
+        {
+          "name": "Charjabug",
+          "method": "Level 20"
+        }
+      ]
     },
     {
       "id": 738,
@@ -8456,7 +12113,20 @@
       "source": "Vikavolt",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.12294
+      "usage": 0.12294,
+      "evolution": [
+        {
+          "name": "Grubbin"
+        },
+        {
+          "name": "Charjabug",
+          "method": "Level 20"
+        },
+        {
+          "name": "Vikavolt",
+          "method": "Use None Thunder Stone"
+        }
+      ]
     },
     {
       "id": 739,
@@ -8479,7 +12149,16 @@
       "source": "Crabominable",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.09988
+      "usage": 0.09988,
+      "evolution": [
+        {
+          "name": "Crabrawler"
+        },
+        {
+          "name": "Crabominable",
+          "method": "Level up at Mount Lanakila"
+        }
+      ]
     },
     {
       "id": 741,
@@ -8515,7 +12194,16 @@
       "source": "Ribombee",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 1.40772
+      "usage": 1.40772,
+      "evolution": [
+        {
+          "name": "Cutiefly"
+        },
+        {
+          "name": "Ribombee",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 744,
@@ -8537,7 +12225,16 @@
       "source": "Lycanroc",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.06393
+      "usage": 0.06393,
+      "evolution": [
+        {
+          "name": "Rockruff"
+        },
+        {
+          "name": "Lycanroc",
+          "method": "Level 25"
+        }
+      ]
     },
     {
       "id": 746,
@@ -8572,7 +12269,16 @@
       "source": "Toxapex",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 11.58262
+      "usage": 11.58262,
+      "evolution": [
+        {
+          "name": "Mareanie"
+        },
+        {
+          "name": "Toxapex",
+          "method": "Level 38"
+        }
+      ]
     },
     {
       "id": 749,
@@ -8594,7 +12300,16 @@
       "source": "Mudsdale",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.00986
+      "usage": 0.00986,
+      "evolution": [
+        {
+          "name": "Mudbray"
+        },
+        {
+          "name": "Mudsdale",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 751,
@@ -8618,7 +12333,16 @@
       "source": "Araquanid",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 1.6908
+      "usage": 1.6908,
+      "evolution": [
+        {
+          "name": "Dewpider"
+        },
+        {
+          "name": "Araquanid",
+          "method": "Level 22"
+        }
+      ]
     },
     {
       "id": 753,
@@ -8640,7 +12364,16 @@
       "source": "Lurantis",
       "tier": "PU",
       "ownTier": "PU",
-      "usage": 0.01854
+      "usage": 0.01854,
+      "evolution": [
+        {
+          "name": "Fomantis"
+        },
+        {
+          "name": "Lurantis",
+          "method": "Level 34"
+        }
+      ]
     },
     {
       "id": 755,
@@ -8664,7 +12397,16 @@
       "source": "Shiinotic",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0159
+      "usage": 0.0159,
+      "evolution": [
+        {
+          "name": "Morelull"
+        },
+        {
+          "name": "Shiinotic",
+          "method": "Level 24"
+        }
+      ]
     },
     {
       "id": 757,
@@ -8688,7 +12430,16 @@
       "source": "Salazzle",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.30996
+      "usage": 0.30996,
+      "evolution": [
+        {
+          "name": "Salandit"
+        },
+        {
+          "name": "Salazzle",
+          "method": "Level 33"
+        }
+      ]
     },
     {
       "id": 759,
@@ -8712,7 +12463,16 @@
       "source": "Bewear",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.02606
+      "usage": 0.02606,
+      "evolution": [
+        {
+          "name": "Stufful"
+        },
+        {
+          "name": "Bewear",
+          "method": "Level 27"
+        }
+      ]
     },
     {
       "id": 761,
@@ -8734,7 +12494,16 @@
       "source": "Tsareena",
       "tier": "RU",
       "ownTier": "NFE",
-      "usage": 0.44502
+      "usage": 0.44502,
+      "evolution": [
+        {
+          "name": "Bounsweet"
+        },
+        {
+          "name": "Steenee",
+          "method": "Level 18"
+        }
+      ]
     },
     {
       "id": 763,
@@ -8745,7 +12514,20 @@
       "source": "Tsareena",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.44502
+      "usage": 0.44502,
+      "evolution": [
+        {
+          "name": "Bounsweet"
+        },
+        {
+          "name": "Steenee",
+          "method": "Level 18"
+        },
+        {
+          "name": "Tsareena",
+          "method": "Level up knowing Stomp"
+        }
+      ]
     },
     {
       "id": 764,
@@ -8803,7 +12585,16 @@
       "source": "Golisopod",
       "tier": "RU",
       "ownTier": "RU",
-      "usage": 0.96292
+      "usage": 0.96292,
+      "evolution": [
+        {
+          "name": "Wimpod"
+        },
+        {
+          "name": "Golisopod",
+          "method": "Level 30"
+        }
+      ]
     },
     {
       "id": 769,
@@ -8827,7 +12618,16 @@
       "source": "Palossand",
       "tier": "NU",
       "ownTier": "NU",
-      "usage": 0.02566
+      "usage": 0.02566,
+      "evolution": [
+        {
+          "name": "Sandygast"
+        },
+        {
+          "name": "Palossand",
+          "method": "Level 42"
+        }
+      ]
     },
     {
       "id": 771,
@@ -8860,7 +12660,16 @@
       "source": "Silvally",
       "tier": "(PU)",
       "ownTier": "(PU)",
-      "usage": 0.0263
+      "usage": 0.0263,
+      "evolution": [
+        {
+          "name": "Type: Null"
+        },
+        {
+          "name": "Silvally",
+          "method": "Level up with high friendship"
+        }
+      ]
     },
     {
       "id": 774,
@@ -8978,7 +12787,16 @@
       "source": "Kommo-o",
       "tier": "OU",
       "ownTier": "NFE",
-      "usage": 7.97884
+      "usage": 7.97884,
+      "evolution": [
+        {
+          "name": "Jangmo-o"
+        },
+        {
+          "name": "Hakamo-o",
+          "method": "Level 35"
+        }
+      ]
     },
     {
       "id": 784,
@@ -8990,7 +12808,20 @@
       "source": "Kommo-o",
       "tier": "OU",
       "ownTier": "OU",
-      "usage": 7.97884
+      "usage": 7.97884,
+      "evolution": [
+        {
+          "name": "Jangmo-o"
+        },
+        {
+          "name": "Hakamo-o",
+          "method": "Level 35"
+        },
+        {
+          "name": "Kommo-o",
+          "method": "Level 45"
+        }
+      ]
     },
     {
       "id": 785,
@@ -9058,7 +12889,16 @@
       "grade": "SSS",
       "source": "Solgaleo",
       "tier": "Uber",
-      "ownTier": "NFE"
+      "ownTier": "NFE",
+      "evolution": [
+        {
+          "name": "Cosmog"
+        },
+        {
+          "name": "Cosmoem",
+          "method": "Level 43"
+        }
+      ]
     },
     {
       "id": 791,
@@ -9069,7 +12909,20 @@
       "grade": "SSS",
       "source": "Solgaleo",
       "tier": "Uber",
-      "ownTier": "Uber"
+      "ownTier": "Uber",
+      "evolution": [
+        {
+          "name": "Cosmog"
+        },
+        {
+          "name": "Cosmoem",
+          "method": "Level 43"
+        },
+        {
+          "name": "Solgaleo",
+          "method": "Level 53"
+        }
+      ]
     },
     {
       "id": 792,
@@ -9080,7 +12933,20 @@
       "grade": "SSS",
       "source": "Lunala",
       "tier": "Uber",
-      "ownTier": "Uber"
+      "ownTier": "Uber",
+      "evolution": [
+        {
+          "name": "Cosmog"
+        },
+        {
+          "name": "Cosmoem",
+          "method": "Level 43"
+        },
+        {
+          "name": "Lunala",
+          "method": "Level 53"
+        }
+      ]
     },
     {
       "id": 793,
@@ -9217,7 +13083,16 @@
       "grade": "SSS",
       "source": "Naganadel",
       "tier": "Uber",
-      "ownTier": "Uber"
+      "ownTier": "Uber",
+      "evolution": [
+        {
+          "name": "Poipole"
+        },
+        {
+          "name": "Naganadel",
+          "method": "Level up knowing Dragon Pulse"
+        }
+      ]
     },
     {
       "id": 805,

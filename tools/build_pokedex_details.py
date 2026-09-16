@@ -129,6 +129,16 @@ def quoted_field(block: str, field: str) -> str | None:
     return match.group(1) if match else None
 
 
+def integer_field(block: str, field: str) -> int | None:
+    match = re.search(rf"^\t\t{field}: ([0-9]+)", block, re.MULTILINE)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError as error:
+        raise ValueError(f"invalid {field} number in Showdown data") from error
+
+
 def array_field(block: str, field: str) -> list[str]:
     match = re.search(rf"^\t\t{field}: (\[.*?\])", block, re.MULTILINE)
     if not match:
@@ -211,6 +221,12 @@ def build() -> dict[str, object]:
             "base": quoted_field(block, "baseSpecies"),
             "types": array_field(block, "types"),
             "evos": array_field(block, "evos"),
+            "prevo": quoted_field(block, "prevo"),
+            "evoType": quoted_field(block, "evoType"),
+            "evoLevel": integer_field(block, "evoLevel"),
+            "evoItem": quoted_field(block, "evoItem"),
+            "evoMove": quoted_field(block, "evoMove"),
+            "evoCondition": quoted_field(block, "evoCondition"),
         }
         for key, block in pokedex_blocks.items()
     }
@@ -231,6 +247,43 @@ def build() -> dict[str, object]:
     if not isinstance(pokemon, list):
         raise ValueError("data/pokemon.json must contain a list")
     base_keys = {item["id"]: normalize(item["slug"]) for item in pokemon}
+
+    def evolution_method(entry: dict[str, object]) -> str | None:
+        evo_type = entry["evoType"]
+        level = entry["evoLevel"]
+        item = entry["evoItem"]
+        move = entry["evoMove"]
+        condition = entry["evoCondition"]
+        if evo_type == "useItem":
+            method = f"Use {item}"
+        elif evo_type == "trade":
+            method = f"Trade holding {item}" if item else "Trade"
+        elif evo_type == "levelFriendship":
+            method = "Level up with high friendship"
+        elif evo_type == "levelMove":
+            method = f"Level up knowing {move}"
+        elif evo_type == "levelHold":
+            method = f"Level up holding {item}"
+        elif evo_type == "levelExtra":
+            method = "Level up"
+        elif level:
+            method = f"Level {level}"
+        else:
+            return None
+        return f"{method} {condition}" if condition else method
+
+    def evolution_path(key: str) -> list[dict[str, str]]:
+        path: list[dict[str, str]] = []
+        seen: set[str] = set()
+        while key in pokedex and key not in seen:
+            seen.add(key)
+            entry = pokedex[key]
+            step = {"name": entry["name"]}
+            if method := evolution_method(entry):
+                step["method"] = method
+            path.insert(0, step)
+            key = entry["prevo"] or ""
+        return path
 
     def leaves(
         key: str, allow_forms: bool, seen: frozenset[str] = frozenset()
@@ -288,7 +341,11 @@ def build() -> dict[str, object]:
         key = base_keys[item["id"]]
         if key not in pokedex or key not in tiers:
             raise ValueError(f"missing Showdown data for {item['name']}")
-        species.append({"id": item["id"], **details(key, key, False)})
+        entry = {"id": item["id"], **details(key, key, False)}
+        path = evolution_path(key)
+        if len(path) > 1:
+            entry["evolution"] = path
+        species.append(entry)
 
     forms = {}
     form_keys = [(form_key_parts(value)[0], value) for value in encounter_form_keys()]

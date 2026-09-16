@@ -16,6 +16,22 @@ import { DRAWER_BREAKPOINT, closeDrawer, jumpTo } from "../ui";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
 
+const evolutionIds = new Map(
+  POKEMON.flatMap((pokemon) => [
+    [normalize(pokemon.name), pokemon.id] as const,
+    [normalize(pokemon.slug), pokemon.id] as const,
+  ]),
+);
+
+function selectPokemon(id: number) {
+  selectedDex.value = id;
+  requestAnimationFrame(() => {
+    document.querySelector<HTMLElement>("#dex-selection")?.focus({
+      preventScroll: true,
+    });
+  });
+}
+
 function DexCount({ filtered }: { filtered: number }) {
   return (
     <div class="dex-count" id="dex-count">
@@ -113,8 +129,37 @@ function Selection() {
               );
             })}
           </ul>
+        ) : details?.evolution ? (
+          <div class="evolution-path">
+            <span>Evolution path</span>
+            <ol aria-label={`Evolution path to ${pokemon.name}`}>
+              {details.evolution.map((step, index) => {
+                const id = evolutionIds.get(normalize(step.name));
+                return (
+                  <li key={step.name}>
+                    {index > 0 && (
+                      <span class="evolution-method">{step.method} →</span>
+                    )}
+                    {id ? (
+                      <button
+                        class="evolution-link"
+                        type="button"
+                        onClick={() => selectPokemon(id)}
+                      >
+                        {step.name}
+                      </button>
+                    ) : (
+                      step.name
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         ) : (
-          <p class="muted">The source does not include evolution paths.</p>
+          <p class="muted">
+            This Pokémon does not evolve from another Pokémon.
+          </p>
         )}
       </div>
     </>
@@ -132,14 +177,7 @@ function DexRow({ id, name }: { id: number; name: string }) {
         data-action="select"
         data-species={id}
         aria-current={selected}
-        onClick={() => {
-          selectedDex.value = id;
-          requestAnimationFrame(() => {
-            document.querySelector<HTMLElement>("#dex-selection")?.focus({
-              preventScroll: true,
-            });
-          });
-        }}
+        onClick={() => selectPokemon(id)}
       >
         <PokemonIcon id={id} />
         <span class="dex-name">

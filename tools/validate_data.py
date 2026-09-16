@@ -317,6 +317,18 @@ def validate_pokedex_details(details: object) -> list[str]:
             not isinstance(usage, (int, float)) or not 0 < usage <= 100
         ):
             errors.append(f"{label} has invalid usage")
+        evolution = item.get("evolution")
+        if evolution is not None:
+            if not isinstance(evolution, list) or len(evolution) < 2:
+                errors.append(f"{label} has an invalid evolution path")
+            elif any(
+                not isinstance(step, dict)
+                or not isinstance(step.get("name"), str)
+                or not step["name"]
+                or (index > 0 and not isinstance(step.get("method"), str))
+                for index, step in enumerate(evolution)
+            ):
+                errors.append(f"{label} has an invalid evolution step")
     return errors
 
 
