@@ -749,6 +749,11 @@ tbody tr:hover {
 }
 .dex-row {
   gap: 0.3rem;
+  /* Repopulating the list after a search otherwise costs a full style, layout and
+     paint pass over every row. Off-screen rows are skipped instead; the intrinsic
+     size keeps the scrollbar stable while they are skipped. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 2.35rem;
 }
 .star-button {
   flex: 0 0 auto;

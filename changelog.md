@@ -18,6 +18,8 @@
 - Mounted location sections lazily: a section's tables and maps are built the first time it is opened, instead of all 60 sections up front. Also made a location body stay mounted once opened, so anchor jumps and in-page search still find it.
 - Mounted the Pokédex list lazily: on phones the drawer starts closed, so its 807 rows are built on first open rather than during startup.
 - Measured on the built artifact under 4× CPU throttling at a phone viewport: first paint 26,864 → 2,332 ms, blocking long tasks 26,580 → 2,000 ms, DOM nodes 32,924 → 906 at rest.
+- Stopped off-screen Pokédex rows from costing style, layout, and paint work, which removes the stall when the drawer opens or closes and when a search is widened back to the full list.
+- Measured after that change, under the same 4× throttling: the first drawer open fell from ~23,700 ms to ~605 ms and later toggles to ~70 ms, repopulating all 807 rows after clearing a search fell from ~1,030 ms to ~560 ms, and the browser suite's own runtime fell from about two minutes to 26 seconds.
 
 ## 2026-09-14
 
