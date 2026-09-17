@@ -1,5 +1,5 @@
 import { Fragment } from "preact";
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { ASSETS, detailsByDex, formDetails } from "../data";
 import { formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
@@ -227,12 +227,24 @@ function Location({
   location: LocationData;
   open: boolean;
 }) {
+  // Only the focused location is open on first paint, so rendering every other
+  // section's tables and maps means building thousands of nodes and decoding
+  // dozens of images nobody has looked at yet. Mount a section's body the first
+  // time it is actually opened, then keep it so in-page search and anchor jumps
+  // still find it.
+  const [mounted, setMounted] = useState(open);
+  useEffect(() => {
+    if (open) setMounted(true);
+  }, [open]);
   return (
     <details
       class="location"
       id={`location-${safeId(location.id)}`}
       data-location-id={location.id}
       open={open}
+      onToggle={(event) => {
+        if (event.currentTarget.open) setMounted(true);
+      }}
     >
       <summary>
         <span class="location-heading">
@@ -240,38 +252,40 @@ function Location({
           <LocationProgress location={location} />
         </span>
       </summary>
-      <div class="location-body">
-        {!!location.assets?.length && (
-          <div class="map-grid">
-            {location.assets.map((path) => {
-              const numbered = /map/i.test(path);
-              const alt = numbered
-                ? `${location.name} numbered grass map`
-                : `${location.name} location screenshot`;
-              return (
-                <AssetImage
-                  key={path}
-                  path={path}
-                  alt={alt}
-                  caption={
-                    numbered ? `${alt} · numbers match the grass groups` : alt
-                  }
-                />
-              );
-            })}
-          </div>
-        )}
-        {!!location.notes?.length && (
-          <div class="notes">
-            {location.notes.map((note) => (
-              <p key={note}>{note}</p>
-            ))}
-          </div>
-        )}
-        {location.groups.map((group) => (
-          <EncounterGroup key={group.id} group={group} />
-        ))}
-      </div>
+      {mounted && (
+        <div class="location-body">
+          {!!location.assets?.length && (
+            <div class="map-grid">
+              {location.assets.map((path) => {
+                const numbered = /map/i.test(path);
+                const alt = numbered
+                  ? `${location.name} numbered grass map`
+                  : `${location.name} location screenshot`;
+                return (
+                  <AssetImage
+                    key={path}
+                    path={path}
+                    alt={alt}
+                    caption={
+                      numbered ? `${alt} · numbers match the grass groups` : alt
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
+          {!!location.notes?.length && (
+            <div class="notes">
+              {location.notes.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
+            </div>
+          )}
+          {location.groups.map((group) => (
+            <EncounterGroup key={group.id} group={group} />
+          ))}
+        </div>
+      )}
     </details>
   );
 }

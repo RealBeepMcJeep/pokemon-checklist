@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { POKEMON, byDex, detailsByDex, formDetails } from "../data";
 import { getOccurrences, normalize, safeId } from "../domain";
 import {
@@ -225,6 +225,13 @@ export function Pokedex() {
   const open = drawerOpen.value;
   const mobile = window.innerWidth < DRAWER_BREAKPOINT;
   const hidden = mobile ? !open : sidebarHidden.value;
+  // The Pokédex is a closed drawer on phones, so building 807 rows before anyone
+  // has opened it is wasted work. Mount the list the first time it is shown, then
+  // keep it so searching and selecting stay instant.
+  const [mounted, setMounted] = useState(!hidden);
+  useEffect(() => {
+    if (!hidden) setMounted(true);
+  }, [hidden]);
   useEffect(() => {
     if (open) {
       requestAnimationFrame(() =>
@@ -293,11 +300,11 @@ export function Pokedex() {
             <Selection />
           </div>
           <div class="dex-list" id="dex-list">
-            {filtered.length ? (
+            {mounted &&
               filtered.map((pokemon) => (
                 <DexRow key={pokemon.id} id={pokemon.id} name={pokemon.name} />
-              ))
-            ) : (
+              ))}
+            {mounted && !filtered.length && (
               <div class="empty">No Pokémon match that search.</div>
             )}
           </div>
