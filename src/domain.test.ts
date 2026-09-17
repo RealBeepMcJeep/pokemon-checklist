@@ -36,9 +36,10 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       species: { 25: "seen" },
       forms: {},
+      starred: [],
       settings: { forms: true, mode: DEFAULT_MODE },
     });
   });
@@ -61,17 +62,104 @@ describe("checklist domain", () => {
   it("exports statuses deterministically", () => {
     expect(
       canonicalState({
-        schemaVersion: 2,
+        schemaVersion: 3,
         species: { 807: "seen", 1: "caught", 25: "none" },
         forms: { "20:alolan": "seen", "19:alolan": "caught" },
+        starred: [731, 25, 731],
         settings: { forms: false, mode: "ultra-moon" },
       }),
     ).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       species: { 1: "caught", 807: "seen" },
       forms: { "19:alolan": "caught", "20:alolan": "seen" },
+      starred: [25, 731],
       settings: { forms: false, mode: "ultra-moon" },
     });
+  });
+
+  it("migrates v2 saves, keeping progress and starting with nothing starred", () => {
+    expect(
+      validateState(
+        {
+          schemaVersion: 2,
+          species: { 25: "seen", 731: "caught" },
+          forms: { "19:alolan": "caught" },
+          settings: { forms: true, mode: "ultra-sun" },
+        },
+        pokemonIds,
+        formKeys,
+      ),
+    ).toEqual({
+      schemaVersion: 3,
+      species: { 25: "seen", 731: "caught" },
+      forms: { "19:alolan": "caught" },
+      starred: [],
+      settings: { forms: true, mode: "ultra-sun" },
+    });
+  });
+
+  it("normalizes starred numbers to a sorted, unique list", () => {
+    expect(
+      validateState(
+        {
+          schemaVersion: 3,
+          species: {},
+          forms: {},
+          starred: [731, 25, 1],
+          settings: { forms: false, mode: DEFAULT_MODE },
+        },
+        pokemonIds,
+        formKeys,
+      ).starred,
+    ).toEqual([1, 25, 731]);
+  });
+
+  it("rejects starred entries that are unknown, repeated, or not a list", () => {
+    const base = {
+      schemaVersion: 3,
+      species: {},
+      forms: {},
+      settings: { forms: false, mode: DEFAULT_MODE },
+    };
+    expect(() =>
+      validateState({ ...base, starred: [808] }, pokemonIds, formKeys),
+    ).toThrow("Unknown Pokémon number in starred Pokémon");
+    expect(() =>
+      validateState({ ...base, starred: [25, 25] }, pokemonIds, formKeys),
+    ).toThrow("Starred Pokémon must not repeat a number");
+    expect(() =>
+      validateState({ ...base, starred: "25" }, pokemonIds, formKeys),
+    ).toThrow("Starred Pokémon must be a list");
+  });
+
+  it("keeps every schema version's key set exact", () => {
+    // A v2 save may not claim to carry stars...
+    expect(() =>
+      validateState(
+        {
+          schemaVersion: 2,
+          species: {},
+          forms: {},
+          starred: [25],
+          settings: { forms: false, mode: DEFAULT_MODE },
+        },
+        pokemonIds,
+        formKeys,
+      ),
+    ).toThrow("unexpected information");
+    // ...and a v3 save must carry them.
+    expect(() =>
+      validateState(
+        {
+          schemaVersion: 3,
+          species: {},
+          forms: {},
+          settings: { forms: false, mode: DEFAULT_MODE },
+        },
+        pokemonIds,
+        formKeys,
+      ),
+    ).toThrow("unexpected information");
   });
 
   it("advances after every unique regular encounter is caught", () => {

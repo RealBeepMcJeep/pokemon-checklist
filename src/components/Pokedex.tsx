@@ -7,10 +7,13 @@ import {
   drawerOpen,
   formDefinitions,
   formsTracked,
+  isStarred,
   searchTerm,
   seenCount,
   selectedDex,
   sidebarHidden,
+  starred,
+  toggleStar,
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
@@ -157,11 +160,34 @@ function Selection() {
   );
 }
 
+function StarButton({ id, name }: { id: number; name: string }) {
+  const pinned = isStarred(id);
+  return (
+    <button
+      type="button"
+      class="star-button"
+      data-action="star"
+      data-species={id}
+      aria-pressed={pinned}
+      aria-label={
+        pinned
+          ? `Unstar ${name} to return it to its National Dex position`
+          : `Star ${name} to keep it at the top of the list`
+      }
+      title={pinned ? "Unstar" : "Star and keep at the top"}
+      onClick={() => toggleStar(id)}
+    >
+      {pinned ? "★" : "☆"}
+    </button>
+  );
+}
+
 function DexRow({ id, name }: { id: number; name: string }) {
   const selected = selectedDex.value === id;
   const details = detailsByDex.get(id);
   return (
     <div class="dex-row">
+      <StarButton id={id} name={name} />
       <button
         type="button"
         class="dex-select"
@@ -183,12 +209,18 @@ function DexRow({ id, name }: { id: number; name: string }) {
 
 export function Pokedex() {
   const query = normalize(searchTerm.value);
+  const pinned = new Set(starred.value);
+  // Starred species are pinned to the top of whatever set is showing; everything
+  // else keeps National Dex order. The sort is stable for equal ranks.
   const filtered = POKEMON.filter(
     (pokemon) =>
       !query ||
       normalize(pokemon.name).includes(query) ||
       String(pokemon.id).padStart(3, "0").includes(query) ||
       String(pokemon.id) === query,
+  ).sort(
+    (a, b) =>
+      Number(pinned.has(b.id)) - Number(pinned.has(a.id)) || a.id - b.id,
   );
   const open = drawerOpen.value;
   const mobile = window.innerWidth < DRAWER_BREAKPOINT;

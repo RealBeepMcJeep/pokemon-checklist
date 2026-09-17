@@ -275,5 +275,69 @@ test("mirrors progress between two tabs of the same site", async ({
   await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
   await expect(page.locator(pikipek).first()).toContainText("Seen");
 
+  // Stars travel between tabs the same way statuses do.
+  await page.locator('[data-action="star"][data-species="807"]').click();
+  await expect(
+    other.locator("#dex-list .dex-row .dex-name").first(),
+  ).toContainText("807");
+
+  expect(errors).toEqual([]);
+});
+
+test("pins starred Pokémon to the top of the Pokédex list", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const firstRow = page.locator("#dex-list .dex-row .dex-name").first();
+  const starFor = (id: number) =>
+    page.locator(`[data-action="star"][data-species="${id}"]`);
+
+  await expect(firstRow).toContainText("001");
+  await expect(starFor(807)).toHaveAttribute("aria-pressed", "false");
+
+  // Starring the last entry lifts it above everything else.
+  await starFor(807).click();
+  await expect(firstRow).toContainText("807");
+  await expect(starFor(807)).toHaveAttribute("aria-pressed", "true");
+
+  // Starring must not act as row selection.
+  await expect(page.locator("#dex-selection")).toContainText(
+    "Select a Pokémon",
+  );
+
+  // Several starred entries keep National Dex order among themselves.
+  await starFor(25).click();
+  await expect(firstRow).toContainText("025");
+  await expect(
+    page.locator("#dex-list .dex-row .dex-name").nth(1),
+  ).toContainText("807");
+
+  // A starred match still floats above lower-numbered matches in a search.
+  await starFor(6).click();
+  await page.locator("#dex-search").fill("char");
+  await expect(firstRow).toContainText("006");
+
+  // Unstarring everything restores plain National Dex order.
+  await page.locator("#dex-search").fill("");
+  await starFor(6).click();
+  await starFor(25).click();
+  await starFor(807).click();
+  await expect(firstRow).toContainText("001");
+  await expect(starFor(807)).toHaveAttribute("aria-pressed", "false");
+
+  expect(errors).toEqual([]);
+});
+
+test("keeps starred Pokémon across a reload", async ({ page }, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator('[data-action="star"][data-species="807"]').click();
+  await page.reload();
+
+  await expect(
+    page.locator("#dex-list .dex-row .dex-name").first(),
+  ).toContainText("807");
+  await expect(
+    page.locator('[data-action="star"][data-species="807"]'),
+  ).toHaveAttribute("aria-pressed", "true");
   expect(errors).toEqual([]);
 });

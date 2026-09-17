@@ -750,6 +750,25 @@ tbody tr:hover {
 .dex-row {
   gap: 0.3rem;
 }
+.star-button {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.star-button:hover,
+.star-button:focus-visible {
+  border-color: var(--line);
+  color: var(--accent);
+}
+.star-button[aria-pressed="true"] {
+  color: var(--accent);
+}
 .dex-row + .dex-row {
   margin-top: 0.15rem;
 }

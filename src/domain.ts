@@ -12,9 +12,17 @@ import type {
 import { GAME_MODES } from "./types";
 
 export const DEFAULT_MODE: GameMode = "photonic-prismatic";
-export const STATE_VERSION = 2;
-export const STORAGE_KEY = "pokemon-checklist-state-v2";
-export const LEGACY_STORAGE_KEY = "pokemon-checklist-state-v1";
+export const STATE_VERSION = 3;
+export const STORAGE_KEY = "pokemon-checklist-state-v3";
+/**
+ * Checked in order when the current key holds nothing. Each is migrated on read
+ * and rewritten under `STORAGE_KEY`, so an older save upgrades itself and an
+ * older build of the app still finds its own key untouched.
+ */
+export const LEGACY_STORAGE_KEYS = [
+  "pokemon-checklist-state-v2",
+  "pokemon-checklist-state-v1",
+] as const;
 export const STATUS_ORDER: readonly Status[] = ["none", "caught", "seen"];
 export const STATUS_LABEL = {
   none: "None",
@@ -212,27 +220,63 @@ function validateStatusMap(
   return result;
 }
 
+/** Every shipped schema version is still readable and migrates up on load. */
+const isSupportedVersion = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= 1 &&
+  value <= STATE_VERSION;
+
+/**
+ * Starred Pokédex numbers: real species, no duplicates. Order is normalized
+ * rather than rejected so a hand-edited backup loads in a canonical shape.
+ */
+function validateStarred(
+  value: unknown,
+  validPokemon: ReadonlySet<number>,
+): number[] {
+  if (!Array.isArray(value))
+    throw new Error("Starred Pokémon must be a list");
+  const seen = new Set<number>();
+  for (const entry of value) {
+    if (
+      typeof entry !== "number" ||
+      !Number.isInteger(entry) ||
+      !validPokemon.has(entry)
+    ) {
+      throw new Error("Unknown Pokémon number in starred Pokémon");
+    }
+    if (seen.has(entry))
+      throw new Error("Starred Pokémon must not repeat a number");
+    seen.add(entry);
+  }
+  return [...seen].sort((a, b) => a - b);
+}
+
 export function validateState(
   value: unknown,
   validPokemon: ReadonlySet<number>,
   validForms: ReadonlySet<string>,
 ): SavedState {
-  if (
-    !isRecord(value) ||
-    (value.schemaVersion !== 1 && value.schemaVersion !== STATE_VERSION)
-  ) {
+  if (!isRecord(value) || !isSupportedVersion(value.schemaVersion)) {
     throw new Error("This backup format is not supported");
   }
+  const { schemaVersion } = value;
+  // v3 introduced `starred`; each version keeps its own exact key set.
+  const expectedKeys =
+    schemaVersion >= 3
+      ? "forms,schemaVersion,settings,species,starred"
+      : "forms,schemaVersion,settings,species";
   if (
     Object.keys(value)
       .sort((a, b) => a.localeCompare(b))
-      .join(",") !== "forms,schemaVersion,settings,species"
+      .join(",") !== expectedKeys
   ) {
     throw new Error("This backup contains unexpected information");
   }
   if (!isRecord(value.settings))
     throw new Error("This backup has invalid settings");
-  const expectedSettings = value.schemaVersion === 1 ? "forms" : "forms,mode";
+  const expectedSettings = schemaVersion === 1 ? "forms" : "forms,mode";
   if (
     typeof value.settings.forms !== "boolean" ||
     Object.keys(value.settings)
@@ -242,7 +286,7 @@ export function validateState(
     throw new Error("This backup has invalid settings");
   }
   const rawMode =
-    value.schemaVersion === 1 ? DEFAULT_MODE : value.settings.mode;
+    schemaVersion === 1 ? DEFAULT_MODE : value.settings.mode;
   if (!GAME_MODES.includes(rawMode as GameMode)) {
     throw new Error("This backup has an unknown game mode");
   }
@@ -261,6 +305,8 @@ export function validateState(
       validForms,
       "form statuses",
     ),
+    starred:
+      schemaVersion >= 3 ? validateStarred(value.starred, validPokemon) : [],
     settings: { forms: value.settings.forms, mode: rawMode as GameMode },
   };
 }
@@ -282,6 +328,7 @@ export function canonicalState(state: SavedState): SavedState {
     schemaVersion: STATE_VERSION,
     species,
     forms,
+    starred: [...new Set(state.starred)].sort((a, b) => a - b),
     settings: { forms: state.settings.forms, mode: state.settings.mode },
   };
 }

@@ -115,6 +115,15 @@ export interface Settings {
 }
 
 export interface SavedState {
+  schemaVersion: 3;
+  species: StatusMap;
+  forms: StatusMap;
+  /** Dex numbers pinned to the top of the Pokédex list, ascending and unique. */
+  starred: number[];
+  settings: Settings;
+}
+
+export interface V2State {
   schemaVersion: 2;
   species: StatusMap;
   forms: StatusMap;

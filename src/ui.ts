@@ -104,7 +104,7 @@ export function exportJSON(): void {
   });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "pokemon-checklist-state-v2.json";
+  link.download = "pokemon-checklist-state-v3.json";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -133,7 +133,9 @@ export async function importFile(event: Event): Promise<void> {
 
 export function reset(): void {
   if (
-    !confirm("Clear all caught and seen statuses, tracked forms, and settings?")
+    !confirm(
+      "Clear all caught and seen statuses, tracked forms, starred Pokémon, and settings?",
+    )
   )
     return;
   resetState();

@@ -10,6 +10,11 @@
 - Mirrored through the `storage` event, which browsers fire only in tabs that did not write, so a received state can never echo back into a write loop.
 - Kept unreadable stored payloads from replacing progress a tab already holds, while treating a removed save as a cleared checklist.
 - Verified the behavior in both browser suites: over the Vite dev server, and from the committed `file://` artifact with every network request blocked.
+- Added starring to the Pokédex: click the star on a row to pin that species to the top of the list, and click it again to release it.
+- Kept the starred group in National Dex order above everything else, and inside search results too.
+- Moved the save format to schema v3 to carry `starred`; v1 and v2 saves and backups still load, migrate losslessly, and rewrite themselves under the new key while the older key is left intact for older builds.
+- Included starred species in Backup and Restore, and made Reset clear them along with progress.
+- Covered starring with domain, state, and browser tests: pinning, ordering, search interaction, reload persistence, and cross-tab sync.
 
 ## 2026-09-14
 

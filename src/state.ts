@@ -2,7 +2,7 @@ import { batch, computed, signal, type Signal } from "@preact/signals";
 import { ENCOUNTERS_BY_MODE, POKEMON } from "./data";
 import {
   DEFAULT_MODE,
-  LEGACY_STORAGE_KEY,
+  LEGACY_STORAGE_KEYS,
   STATE_VERSION,
   STORAGE_KEY,
   buildFormDefinitions,
@@ -38,6 +38,8 @@ export const drawerOpen = signal(false);
 export const sidebarHidden = signal(false);
 export const notice = signal<Notice>({ message: "", kind: "" });
 export const storageAvailable = signal(true);
+/** Dex numbers pinned to the top of the Pokédex list, ascending. */
+export const starred = signal<number[]>([]);
 
 export const activeEncounters = computed(() => ENCOUNTERS_BY_MODE[mode.value]);
 export const activeLocations = computed(() =>
@@ -79,6 +81,7 @@ export function defaultState(): SavedState {
     schemaVersion: STATE_VERSION,
     species: {},
     forms: {},
+    starred: [],
     settings: { forms: false, mode: DEFAULT_MODE },
   };
 }
@@ -96,6 +99,7 @@ export function exportState(): SavedState {
     schemaVersion: STATE_VERSION,
     species,
     forms,
+    starred: [...starred.value],
     settings: { forms: formsTracked.value, mode: mode.value },
   });
 }
@@ -110,6 +114,7 @@ export function applyState(state: SavedState): void {
     }
     formsTracked.value = state.settings.forms;
     mode.value = state.settings.mode;
+    starred.value = [...state.starred];
   });
 }
 
@@ -130,15 +135,26 @@ export function persist(): void {
   }
 }
 
+/** The most recent save on this origin, whichever schema version wrote it. */
+function readStoredState(): { key: string; raw: string } | null {
+  for (const key of [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) return { key, raw };
+  }
+  return null;
+}
+
 export function initializeState(): void {
   try {
-    const current = localStorage.getItem(STORAGE_KEY);
-    const legacy = current ? null : localStorage.getItem(LEGACY_STORAGE_KEY);
-    const saved = current || legacy;
-    if (saved) {
-      applyState(validateState(JSON.parse(saved), validPokemon, validForms));
+    const stored = readStoredState();
+    if (stored) {
+      applyState(
+        validateState(JSON.parse(stored.raw), validPokemon, validForms),
+      );
+      // An older save rewrites itself under the current key. The legacy entry is
+      // deliberately left behind so an older build still finds its own data.
+      if (stored.key !== STORAGE_KEY) persist();
     }
-    if (!current && legacy) persist();
   } catch {
     applyState(defaultState());
     storageAvailable.value = false;
@@ -178,6 +194,23 @@ export function setMode(nextMode: GameMode): void {
 export function toggleForms(): void {
   formsTracked.value = !formsTracked.value;
   persist();
+}
+
+export function isStarred(id: number): boolean {
+  return starred.value.includes(id);
+}
+
+/** Pin a species to the top of the Pokédex list, or release it again. */
+export function toggleStar(id: number): void {
+  const pinned = isStarred(id);
+  starred.value = pinned
+    ? starred.value.filter((entry) => entry !== id)
+    : [...starred.value, id].sort((a, b) => a - b);
+  persist();
+  showNotice(
+    pinned ? "Unstarred." : "Starred. It stays at the top until you unstar it.",
+    "good",
+  );
 }
 
 export function parseState(text: string): SavedState {
