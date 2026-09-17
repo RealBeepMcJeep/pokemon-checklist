@@ -208,3 +208,51 @@ export function savedNotice(subject: "Status" | "Form status"): void {
     storageAvailable.value ? "good" : "error",
   );
 }
+
+/**
+ * How a value found under the save key should be treated.
+ *
+ * `cleared` is deliberately distinct from `ignore`: a removed save means the
+ * other tab emptied the checklist, while an unreadable one must never replace
+ * progress this tab still holds.
+ */
+export type SyncedState =
+  | { kind: "apply"; state: SavedState }
+  | { kind: "cleared" }
+  | { kind: "ignore" };
+
+export function interpretStoredState(raw: string | null): SyncedState {
+  if (raw === null) return { kind: "cleared" };
+  try {
+    return {
+      kind: "apply",
+      state: validateState(JSON.parse(raw), validPokemon, validForms),
+    };
+  } catch {
+    return { kind: "ignore" };
+  }
+}
+
+/**
+ * Mirror progress written by another tab of the same origin. Browsers fire
+ * `storage` only in the tabs that did not write, so applying a received state
+ * cannot echo back into a write loop — and this never calls persist() itself.
+ * Two tabs of the offline copy share a `file://` origin in Chromium and sync too,
+ * although browsers are free to isolate local files and are not required to.
+ */
+export function syncFromStorage(event: StorageEvent): void {
+  if (event.key !== STORAGE_KEY) return;
+  const synced = interpretStoredState(event.newValue);
+  if (synced.kind === "ignore") return;
+  if (synced.kind === "cleared") {
+    applyState(defaultState());
+    showNotice("Progress was cleared in another tab.");
+    return;
+  }
+  applyState(synced.state);
+  showNotice("Progress updated from another tab.", "good");
+}
+
+export function watchOtherTabs(): void {
+  window.addEventListener("storage", syncFromStorage);
+}

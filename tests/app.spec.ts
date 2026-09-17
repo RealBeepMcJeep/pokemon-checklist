@@ -251,3 +251,29 @@ test("opens the Pokédex drawer without mobile overflow", async ({
   await expect(page.locator("#pokedex")).not.toHaveClass(/drawer-open/);
   expect(errors).toEqual([]);
 });
+
+test("mirrors progress between two tabs of the same site", async ({
+  page,
+  context,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const other = await context.newPage();
+  await openApp(other, testInfo.project.name);
+
+  const pikipek = '[data-action="species"][data-species="731"]';
+
+  // Act in the first tab; the second tab must follow without any user action.
+  await page.locator(pikipek).first().click();
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(other.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(other.locator(pikipek).first()).toContainText("Caught");
+
+  // Act in the second tab; the first must follow in the other direction.
+  // Cycling continues Caught → Seen, so Caught stops counting toward progress.
+  await other.locator(pikipek).first().click();
+  await expect(other.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator(pikipek).first()).toContainText("Seen");
+
+  expect(errors).toEqual([]);
+});

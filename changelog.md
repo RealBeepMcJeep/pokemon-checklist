@@ -6,6 +6,10 @@
 - Sourced the release number from `package.json` and the commit from the checked-out `HEAD` at build time, so the stamp is never hand-maintained.
 - Injected the stamp as a single Vite/Vitest `define` through `tools/version.mjs`, so the application, the unit tests, and the publisher all read one definition.
 - Made the publisher reject any build without a version stamp and normalize the stamp during `--check`, because a commit cannot contain its own hash and therefore the committed artifact always carries the parent commit.
+- Synced progress between tabs: a checklist opened twice now mirrors statuses, forms, and the selected mode instead of diverging silently.
+- Mirrored through the `storage` event, which browsers fire only in tabs that did not write, so a received state can never echo back into a write loop.
+- Kept unreadable stored payloads from replacing progress a tab already holds, while treating a removed save as a cleared checklist.
+- Verified the behavior in both browser suites: over the Vite dev server, and from the committed `file://` artifact with every network request blocked.
 
 ## 2026-09-14
 

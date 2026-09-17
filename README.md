@@ -12,6 +12,8 @@ Select a Pokémon's name in the guide or Pokédex to open its Pokédex details, 
 
 Status buttons cycle **None → Caught → Seen → None**. Only Caught counts toward location and overall progress. The browser saves species statuses, tracked forms, and the selected mode in versioned local storage (`pokemon-checklist-state-v2`). Existing v1 browser saves and backup files migrate without changing progress. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
 
+Opening the checklist in more than one tab keeps them in sync: a change made in one tab appears in the others immediately, with a notice, and without reloading. This covers statuses, tracked forms, the selected mode, Restore, and Reset. Tabs of the `file://` copy share a local-storage origin in Chromium and sync as well, but browsers are free to isolate local files, so treat cross-tab sync as a served-page guarantee rather than a documented offline one.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

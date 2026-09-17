@@ -8,12 +8,14 @@ import {
   initializeState,
   mode,
   speciesStatus,
+  watchOtherTabs,
 } from "./state";
 import "./styles/themes.css";
 import "./styles/app.css";
 import "./styles/responsive.css";
 
 initializeState();
+watchOtherTabs();
 document.documentElement.dataset.mode = mode.value;
 document.documentElement.style.setProperty("--atlas", `url("${ATLAS.url}")`);
 focusedLocation.value =
