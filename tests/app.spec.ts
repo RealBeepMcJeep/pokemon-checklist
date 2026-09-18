@@ -391,6 +391,24 @@ test("attempts no network requests while signed out", async ({
   await mobile.close();
 });
 
+test("offers sign-in without ever prompting for it", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+
+  const signIn = page.locator("#sync-signin");
+  await expect(signIn).toBeVisible();
+  await expect(signIn).toBeEnabled();
+  await expect(signIn).toHaveText("Sign in to sync");
+  // Signed out there is no account line and no sign-out control, and nothing has
+  // opened a provider dialog behind the player's back.
+  await expect(page.locator("#sync-status")).toHaveText("");
+  await expect(page.locator("#sync-signout")).toHaveCount(0);
+  await expect(page.locator("iframe")).toHaveCount(0);
+
+  expect(errors).toEqual([]);
+});
+
 test("keeps the atlas out of computed styles and crops the right frame", async ({
   page,
 }, testInfo) => {

@@ -14,6 +14,7 @@ import {
 import { GAME_MODES } from "../types";
 import type { GameMode } from "../types";
 import { BUILD_LABEL } from "../version";
+import { SyncPanel } from "./SyncPanel";
 import {
   DRAWER_BREAKPOINT,
   changeMode,
@@ -136,6 +137,7 @@ export function Header() {
             >
               Reset
             </button>
+            <SyncPanel />
           </div>
         </div>
         <div class="progress-row">

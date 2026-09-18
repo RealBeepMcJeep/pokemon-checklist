@@ -113,6 +113,16 @@ h3 {
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+.sync-panel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sync-status {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
 .action-button,
 .drawer-close,
 .backdrop,

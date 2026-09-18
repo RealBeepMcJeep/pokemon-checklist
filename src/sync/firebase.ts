@@ -4,6 +4,7 @@ import {
   getAuth,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type Auth,
   type User,
@@ -47,6 +48,15 @@ export async function signInWithGoogle(): Promise<User | null> {
   const { auth: instance } = initFirebase();
   const result = await signInWithPopup(instance, new GoogleAuthProvider());
   return result.user;
+}
+
+/**
+ * The fallback for a browser that refuses the popup. Firebase leaves the page and
+ * comes back, so the caller must not expect a user out of this one.
+ */
+export async function signInWithGoogleRedirect(): Promise<void> {
+  const { auth: instance } = initFirebase();
+  await signInWithRedirect(instance, new GoogleAuthProvider());
 }
 
 export async function signOutOfSync(): Promise<void> {
