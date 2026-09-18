@@ -243,6 +243,32 @@ export function undoableFrom(
   return restorable;
 }
 
+/**
+ * Read a records map exactly as it arrives from the wire. Malformed or unknown
+ * entries are dropped rather than fatal: another device may be running a newer
+ * build, and one bad record must never break this one.
+ */
+export function parseRecordsSnapshot(
+  value: unknown,
+): Record<RecordKey, RecordEntry> {
+  const records: Record<RecordKey, RecordEntry> = {};
+  if (typeof value !== "object" || value === null) return records;
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const candidate = raw as Record<string, unknown>;
+    if (typeof candidate.s !== "string") continue;
+    if (
+      typeof candidate.at !== "number" ||
+      !Number.isFinite(candidate.at) ||
+      typeof candidate.by !== "string"
+    ) {
+      continue;
+    }
+    records[key] = { s: candidate.s, at: candidate.at, by: candidate.by };
+  }
+  return records;
+}
+
 /** The inverse of a single logged `set`, as a new value to write. */
 export function inverseOfSet(entry: LogEntry): [RecordKey, string] | null {
   if (entry.op !== "set" || !entry.key) return null;

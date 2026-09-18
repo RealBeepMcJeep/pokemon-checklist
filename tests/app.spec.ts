@@ -342,6 +342,32 @@ test("keeps starred Pokémon across a reload", async ({ page }, testInfo) => {
   expect(errors).toEqual([]);
 });
 
+test("attempts no network requests while signed out", async ({
+  page,
+}, testInfo) => {
+  // This test is the offline guarantee, not a formality. The artifact bundles a
+  // database SDK whose network code is reachable only after signing in, so the
+  // publisher can no longer assert "no network API exists" — it asserts nothing is
+  // even ATTEMPTED until a player chooses to sign in. If that ever regresses, the
+  // offline-only app starts talking to the network behind the player's back, and
+  // this is the only check that would notice.
+  const attempts: string[] = [];
+  page.on("request", (request) => attempts.push(request.url()));
+  const errors = await openApp(page, testInfo.project.name);
+  await page.click('[data-action="species"][data-species="25"]');
+  await page.waitForTimeout(2000);
+
+  const external = attempts.filter(
+    (url) =>
+      !url.startsWith("data:") &&
+      !url.startsWith("file:") &&
+      !url.startsWith("blob:") &&
+      !/^https?:\/\/(?:127\.0\.0\.1|localhost)\b/.test(url),
+  );
+  expect(external).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("keeps the atlas out of computed styles and crops the right frame", async ({
   page,
 }, testInfo) => {

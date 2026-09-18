@@ -96,7 +96,10 @@ export function setLocalChangeListener(listener: (() => void) | null): void {
  * adopts the progress this device already holds rather than discarding it. The
  * device's own save is never deleted, so signing out returns to it untouched.
  */
-export function setSyncAccount(uid: string | null): void {
+export function setSyncAccount(
+  uid: string | null,
+  { adopt = true }: { adopt?: boolean } = {},
+): void {
   if (uid === activeUid) return;
   activeUid = uid;
   try {
@@ -112,7 +115,13 @@ export function setSyncAccount(uid: string | null): void {
       return;
     }
   } catch {
-    // An unreadable account save falls through to adopting what is in memory.
+    // An unreadable account save falls through to the adoption path.
+  }
+  if (!adopt) {
+    // The account already has a collection elsewhere and this device has never
+    // held it. Starting empty lets the account's own data arrive rather than
+    // pushing stale offline progress over it as a brand-new write.
+    applyState(defaultState());
   }
   persist();
 }
