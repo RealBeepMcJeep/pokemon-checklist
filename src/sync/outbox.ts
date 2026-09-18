@@ -26,6 +26,7 @@ import {
  */
 
 export const SYNC_STORE_KEY = "pokemon-checklist-sync-v1";
+export const SYNC_SESSION_KEY = "pokemon-checklist-sync-session";
 
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -41,6 +42,40 @@ export interface SyncStore {
   email: string | null;
   /** The last document the server confirmed. */
   base: SyncDocument;
+}
+
+/**
+ * Whether this browser is expected to have a signed-in account.
+ *
+ * This exists to protect the offline promise. Initialising Firebase Auth is not
+ * free of network traffic: on mobile user agents the SDK eagerly loads its
+ * sign-in iframe and GAPI helper even for a signed-out visitor. So the app touches
+ * auth on load ONLY when this device has signed in before, and a player who never
+ * signs in is never contacted by anything.
+ */
+export function syncSessionExpected(storage: StorageLike | null): boolean {
+  if (!storage) return false;
+  try {
+    return storage.getItem(SYNC_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function rememberSyncSession(storage: StorageLike | null): void {
+  try {
+    storage?.setItem(SYNC_SESSION_KEY, "1");
+  } catch {
+    // Storage being unavailable only means sync stays off.
+  }
+}
+
+export function forgetSyncSession(storage: StorageLike | null): void {
+  try {
+    storage?.setItem(SYNC_SESSION_KEY, "0");
+  } catch {
+    // Nothing to do: without storage there was no session to remember.
+  }
 }
 
 export function emptyDocument(): SyncDocument {

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, devices, type Page } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
@@ -344,6 +344,7 @@ test("keeps starred Pokémon across a reload", async ({ page }, testInfo) => {
 
 test("attempts no network requests while signed out", async ({
   page,
+  browser,
 }, testInfo) => {
   // This test is the offline guarantee, not a formality. The artifact bundles a
   // database SDK whose network code is reachable only after signing in, so the
@@ -351,21 +352,43 @@ test("attempts no network requests while signed out", async ({
   // even ATTEMPTED until a player chooses to sign in. If that ever regresses, the
   // offline-only app starts talking to the network behind the player's back, and
   // this is the only check that would notice.
-  const attempts: string[] = [];
-  page.on("request", (request) => attempts.push(request.url()));
+  const external = (urls: string[]) =>
+    urls.filter(
+      (url) =>
+        !url.startsWith("data:") &&
+        !url.startsWith("file:") &&
+        !url.startsWith("blob:") &&
+        !/^https?:\/\/(?:127\.0\.0\.1|localhost)\b/.test(url),
+    );
+
+  const desktopAttempts: string[] = [];
+  page.on("request", (request) => desktopAttempts.push(request.url()));
   const errors = await openApp(page, testInfo.project.name);
   await page.click('[data-action="species"][data-species="25"]');
-  await page.waitForTimeout(2000);
-
-  const external = attempts.filter(
-    (url) =>
-      !url.startsWith("data:") &&
-      !url.startsWith("file:") &&
-      !url.startsWith("blob:") &&
-      !/^https?:\/\/(?:127\.0\.0\.1|localhost)\b/.test(url),
-  );
-  expect(external).toEqual([]);
+  await page.waitForTimeout(1500);
+  expect(external(desktopAttempts)).toEqual([]);
   expect(errors).toEqual([]);
+
+  // A mobile profile has to be covered separately. Firebase Auth eagerly loads its
+  // sign-in iframe and GAPI helper for MOBILE user agents even when nobody is
+  // signed in — exactly how this promise was broken once — and desktop-only
+  // coverage passes happily while that happens.
+  const standalone = testInfo.project.name === "standalone-file";
+  const mobile = await browser.newContext({
+    ...devices["Pixel 7"],
+    baseURL: testInfo.project.use.baseURL as string | undefined,
+  });
+  const mobilePage = await mobile.newPage();
+  const mobileAttempts: string[] = [];
+  mobilePage.on("request", (request) => mobileAttempts.push(request.url()));
+  if (standalone) {
+    await mobilePage.route(/^https?:\/\//, (route) => route.abort("blockedbyclient"));
+  }
+  await mobilePage.goto(standalone ? standaloneUrl : "/");
+  await expect(mobilePage.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await mobilePage.waitForTimeout(2500);
+  expect(external(mobileAttempts)).toEqual([]);
+  await mobile.close();
 });
 
 test("keeps the atlas out of computed styles and crops the right frame", async ({

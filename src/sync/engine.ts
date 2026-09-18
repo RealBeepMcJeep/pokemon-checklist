@@ -16,8 +16,10 @@ import {
   persist,
   setLocalChangeListener,
   setSyncAccount,
+  showNotice,
 } from "../state";
-import { initFirebase } from "./firebase";
+import { initFirebase, watchAuth } from "./firebase";
+import type { User } from "firebase/auth";
 import {
   TOMBSTONE,
   mergeDocument,
@@ -27,8 +29,10 @@ import {
 import {
   deviceIdFor,
   emptyDocument,
+  forgetSyncSession,
   loadStore,
   pendingEntries,
+  rememberSyncSession,
   saveFromView,
   saveStore,
   viewWithPending,
@@ -219,6 +223,8 @@ export async function startSync(account: {
   database = db;
   activeUid = account.uid;
   deviceId = deviceIdFor(storage);
+  // From here on this device expects a session, so a reload may touch auth.
+  rememberSyncSession(storage);
   syncAccount.value = { uid: account.uid, email: account.email ?? "" };
   base = readBase(account.uid);
   syncPhase.value = "connecting";
@@ -250,6 +256,35 @@ export async function startSync(account: {
   await publish();
 }
 
+function onAuthState(user: User | null, allowed: boolean): void {
+  if (!user) {
+    stopSync();
+    return;
+  }
+  if (!allowed) {
+    stopSync();
+    showNotice(
+      `${user.email ?? "That account"} is not on the list for the shared checklist.`,
+      "error",
+    );
+    return;
+  }
+  void startSync({ uid: user.uid, email: user.email });
+}
+
+/**
+ * Connect auth state to sync, and the seam the sign-in control uses.
+ *
+ * The app calls this on load ONLY when this device has signed in before, because
+ * initialising Firebase Auth is not traffic-free: on mobile user agents the SDK
+ * eagerly fetches its sign-in iframe and GAPI helper even for a signed-out visitor.
+ * A player who never signs in must be able to say their device never contacted
+ * anyone, and this is what makes that true.
+ */
+export function watchSyncAccount(): void {
+  watchAuth(onAuthState);
+}
+
 export function stopSync(): void {
   unsubscribeValue?.();
   unsubscribeConnection?.();
@@ -267,6 +302,8 @@ export function stopSync(): void {
   database = null;
   base = emptyDocument();
   lastPushed = "";
+  // A signed-out device must go back to touching nothing at all.
+  forgetSyncSession(safeStorage());
   syncAccount.value = null;
   syncPending.value = 0;
   syncPhase.value = "off";
