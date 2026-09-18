@@ -1,35 +1,42 @@
 #!/usr/bin/env python3
 """Rank the owner's Pokemon as catching leads, by how easily they can do the catching job.
 
-The job has two halves: put the target to sleep, and get it to 1 HP without fainting it.
-A good lead does one of those early, for free, by levelling up.
+Catching needs a target asleep and at 1 HP. This scores each family on the catching tools it
+can actually get, on the principle that a tool is worth its benefit times the chance it lands,
+discounted by what it costs to obtain and how long you must wait.
 
-Scoring (per evolution family; the family is scored on its best form):
+MODEL
+  A move belongs to exactly one BENEFIT category, and only the best contribution per category
+  counts. Running two sleep moves is pointless, so two sleep moves must not both score; the
+  same applies to two paralysis moves or a freeze chance plus a freeze move.
 
-  sleep move        base 60 for 100%-accurate sleep (Spore), 40 for a sleep-status move,
-                    25 for Yawn (delayed, two turns), 6 for a damaging move that can freeze
-                    (a 10% roll - a bonus, never a plan)
-  False Swipe       base 25
-  Super Fang        base 8   (halves HP: a good opener before chipping)
-  paralysis         base 6   (x1.5 catch rate, and the safe fallback when sleep misses)
-  anti-Ghost        base 6   (Foresight / Odor Sleuth / Soak: Normal moves hit Ghosts)
-  immunity strip    base 3   (Worry Seed / Gastro Acid: beats Insomnia and Overcoat)
-  trapping          base 2   (Mean Look / Spider Web: nothing you must trap in USUM)
+  category        base  what it is
+  sleep             60  the status the whole plan rests on (Yawn counts half: it is 100%
+                        accurate but lands a turn late and can be switched out of)
+  false swipe       25  the only way to leave the target at exactly 1 HP
+  super fang         8  halves HP: a good opener before the chipping
+  freeze            10  effectively permanent, but see the chance multiplier below
+  paralysis          7  x1.5 catch rate, and the safe fallback when sleep misses
+  anti-ghost         6  Foresight / Odor Sleuth / Soak: Normal moves hit Ghosts
+  immunity strip     3  Worry Seed / Gastro Acid: beats Insomnia and Overcoat
+  trapping           2  Mean Look / Spider Web / Block: nothing to trap in USUM
+  burn / poison      0  they raise the catch rate but damage the target - not a tool
 
-  and every component is multiplied by:
+  every contribution is multiplied by:
+    chance      the move's real land rate: accuracy x the effect's own chance where the
+                status rides on a secondary effect. Ice Beam is 100% x 10%, not 100%, and
+                Body Slam 100% x 30% - this is what keeps a 10% freeze roll out of the plan
+    ability     Compound Eyes / No Guard raise the accuracy of the move (x1.3, capped at
+                100), discounted when the ability is hidden
+    acquisition level-up 1.0 (you get it by playing) | TM 0.8 (found, location not
+                modelled) | tutor 1 - BP/40 | egg 0.5 (breeding) | move reminder 0.2
+                and event 0.2 (both essentially endgame)
+    speed       1 / (1 + max(0, level - 10) / 40): full marks at level 10, decaying after
 
-  accuracy     the move's real accuracy, with an ability boost where the family has one
-               (Compound Eyes x1.3; a hidden ability or a second-slot ability costs more
-               effort to obtain, so those are discounted)
-  acquisition  level-up 1.0 (natural) | move reminder 0.85 (free) | TM 0.8 (free)
-               | tutor 1 - BP/40 (costs Battle Points) | egg 0.5 (breeding) | event 0.2
-  speed        1 / (1 + max(0, level - 10) / 40): full marks at level 10, decaying after
+  Score = sleep + False Swipe + the other categories, the extras dampened by rank (60%, then
+  36%, ...) so a long list of marginal tools cannot outrank one dependable sleeper.
 
-  Score is additive: every core catcher move a family can get adds its own contribution.
-  Contributions decay by rank, so a kit's second-best tool counts 60% of its value, the
-  third 36%, and so on - a long list of marginal tools cannot outrank one reliable sleeper.
-
-Usage: python3 tools/catcher_score.py --uid <uid> [--exclude butterfree] [--top 15]
+Usage: python3 tools/catcher_score.py --uid <uid> [--exclude caterpie,butterfree] [--top 15]
 """
 
 from __future__ import annotations
@@ -46,22 +53,25 @@ REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 import moveline as ml  # noqa: E402  (shared parsing, one source of truth)
 
-SLEEP_MOVES = {"spore", "sleeppowder", "hypnosis", "sing", "lovelykiss", "grasswhistle",
-               "darkvoid", "wickedtorque", "relicsong"}
-BASE_POINTS = {
-    **{m: 40 for m in SLEEP_MOVES},
-    "spore": 60,
-    "yawn": 25,
-    "falseswipe": 25,
-    "superfang": 8,
-    "thunderwave": 6, "glare": 6, "stunspore": 6, "bodyslam": 6, "nuzzle": 6,
-    "odorsleuth": 6, "foresight": 6, "soak": 6,
-    "worryseed": 3, "gastroacid": 3,
-    "meanlook": 2, "spiderweb": 2, "block": 2,
+CATEGORY_BASE = {
+    "sleep": 60, "falseswipe": 25, "superfang": 8, "freeze": 10,
+    "paralysis": 7, "antighost": 6, "immunity": 3, "trapping": 2,
 }
-FREEZE_MOVES = {"icebeam", "blizzard", "icepunch", "freezedry", "powdersnow", "icefang",
-                "frostbreath", "glaciate", "iceball", "iceshard"}
-TUTOR_BP = ml.TUTOR_BP
+STATUS_CATEGORY = {"slp": "sleep", "par": "paralysis", "frz": "freeze",
+                   "brn": None, "psn": None, "tox": None}
+FIXED_CATEGORY = {
+    "falseswipe": "falseswipe", "superfang": "superfang",
+    "odorsleuth": "antighost", "foresight": "antighost", "soak": "antighost",
+    "worryseed": "immunity", "gastroacid": "immunity",
+    "meanlook": "trapping", "spiderweb": "trapping", "block": "trapping",
+}
+# The Move Reminder is in Mount Lanakila's Pokemon Center - the area before the League -
+# so a level-1 move is an ENDGAME move for a playthrough, not a free one. It is scored
+# like an event move for that reason. TMs and tutors still lack a location model.
+ACQ = {"level": 1.0, "reminder": 0.2, "TM": 0.8, "egg": 0.5, "event": 0.2}
+LABEL = {"sleep": "sleep", "falseswipe": "False Swipe", "superfang": "Super Fang",
+         "freeze": "freeze chance", "paralysis": "paralysis", "antighost": "anti-Ghost",
+         "immunity": "immunity strip", "trapping": "trapping"}
 
 
 def field(body: str, name: str) -> str | None:
@@ -77,6 +87,41 @@ def ability_slots(body: str) -> dict[str, str]:
             re.findall(r"[\'\"]?([01H])[\'\"]?: [\'\"]?([^\'\",]+)[\'\"]?", m.group(1))}
 
 
+def accuracy(body: str) -> float:
+    """Accuracy is a NUMBER in this data (60, 75, 90); only `true` means never miss."""
+    if re.search(r"\baccuracy: true", body):
+        return 100.0
+    found = re.search(r"\baccuracy: (\d+)", body)
+    return float(found.group(1)) if found else 100.0
+
+
+def benefit(move: str, body: str) -> tuple[str, float] | None:
+    """The category a move contributes to, and the chance that contribution actually lands."""
+    if move == "yawn":
+        return ("sleep", accuracy(body) / 100 * 0.5)  # lands, but a turn late
+    if move in FIXED_CATEGORY:
+        return (FIXED_CATEGORY[move], accuracy(body) / 100)
+
+    chance = accuracy(body) / 100
+    primary = re.search(r"status: [\'\"]([a-z]+)[\'\"]", body)
+    secondary_at = re.search(r"secondaries?:", body)
+    if primary and (not secondary_at or primary.start() < secondary_at.start()):
+        category = STATUS_CATEGORY.get(primary.group(1))
+        return (category, chance) if category else None
+
+    # A status riding on a secondary effect only lands on that effect's own roll, so a 10%
+    # freeze is worth a tenth of a freeze move - not the value of one.
+    best: tuple[str, float] | None = None
+    for roll, status in re.findall(r"chance: (\d+)[^}]*?status: [\'\"]([a-z]+)[\'\"]", body, re.S):
+        category = STATUS_CATEGORY.get(status)
+        if not category:
+            continue
+        candidate = (category, chance * int(roll) / 100)
+        if best is None or candidate[1] > best[1]:
+            best = candidate
+    return best
+
+
 def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
     """The cheapest way this family gets the move: (label, factor, level)."""
     options = []
@@ -86,7 +131,7 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
             options.append((f"L{level}" if level > 1 else "reminder",
                             ACQ["reminder"] if level == 1 else ACQ["level"], level))
         elif gate == "tutor":
-            cost = TUTOR_BP.get(move, 8)
+            cost = ml.TUTOR_BP.get(move, 8)
             options.append((f"tutor {cost} BP", 1 - cost / 40, 60))
         elif gate == "TM":
             options.append(("TM", ACQ["TM"], 40))
@@ -97,37 +142,20 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
     return min(options, key=lambda t: (-t[1], t[2]))
 
 
-ACQ = {"level": 1.0, "reminder": 0.85, "TM": 0.8, "egg": 0.5, "event": 0.2}
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Rank Pokemon as catching leads.")
     parser.add_argument("--uid", help="read this account's caught and starred species")
     parser.add_argument("--species", help="comma-separated slugs instead of an account")
     parser.add_argument("--cache", default="/opt/data/poke-data")
     parser.add_argument("--top", type=int, default=15)
-    parser.add_argument("--exclude", default="", help="slugs to leave out")
+    parser.add_argument("--exclude", default="", help="slugs to leave out (matches whole families)")
     args = parser.parse_args()
 
     cache = Path(args.cache)
     learned = dict(ml.top_blocks((cache / "learnsets.ts").read_text(errors="replace")))
     dex = dict(ml.top_blocks((cache / "pokedex.ts").read_text(errors="replace")))
     moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
-
-    def move_name(key: str) -> str:
-        return field(moves.get(key, ""), "name") or key
-
-    def accuracy(key: str) -> float:
-        """Accuracy is a NUMBER in the data (60, 75, 55); only "true" is never-miss.
-
-        Reading it as a quoted string silently made every move 100% accurate, which scored
-        Hypnosis and Sing as if they could not miss and put a 60% sleeper at the top.
-        """
-        body = moves.get(key, "")
-        if re.search(r"\baccuracy: true", body):
-            return 100.0
-        found = re.search(r"\baccuracy: (\d+)", body)
-        return float(found.group(1)) if found else 100.0
+    move_name = lambda key: field(moves.get(key, ""), "name") or key  # noqa: E731
 
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
     rows = rows if isinstance(rows, list) else list(rows.values())
@@ -159,62 +187,51 @@ def main() -> int:
             continue
         best: dict[str, tuple[float, str]] = {}
         for form in family:
-            body = learned.get(form)
-            if not body:
+            body_text = learned.get(form)
+            if not body_text:
                 continue
-            slots = ability_slots(dex.get(form, ""))
-            boost_factor, boost_note = 1.0, ""
-            for slot, ability in slots.items():
+            boost, boost_note = 1.0, ""
+            for slot, ability in ability_slots(dex.get(form, "")).items():
                 if ability == "Compound Eyes":
-                    boost_factor = 1.3
-                    boost_note = (f"{ability} (hidden - needs the HA)" if slot == "H"
-                                  else f"{ability}" + (" (2nd ability slot)" if slot == "1" else ""))
-                    if slot == "H":
-                        boost_factor = 1.3 * 0.7
+                    boost = 1.3 * (0.7 if slot == "H" else 1.0)
+                    boost_note = ability + (" (hidden ability)" if slot == "H" else "")
                 elif ability == "No Guard":
-                    boost_factor = 1.3
-                    boost_note = f"{ability} (never misses)"
-            for move, gates in ml.gen7_moves(body).items():
-                base = BASE_POINTS.get(move)
-                if base is None and move in FREEZE_MOVES:
-                    base = 6
-                if base is None:
+                    boost, boost_note = 1.3, ability
+            for move, gates in ml.gen7_moves(body_text).items():
+                found = benefit(move, moves.get(move, ""))
+                if not found or found[0] not in CATEGORY_BASE:
                     continue
+                category, land = found
                 label, factor, level = easiest(gates, move)
-                hit = min(100.0, accuracy(move) * boost_factor)
+                hit = min(1.0, land * boost)
                 speed = 1 / (1 + max(0, level - 10) / 40)
-                value = base * (hit / 100) * factor * speed
+                value = CATEGORY_BASE[category] * hit * factor * speed
                 if value <= 0:
                     continue
-                kind = ("sleep" if move in SLEEP_MOVES | {"yawn"}
-                        else "other:" + move)
-                note = f"{move_name(move)} via {name_of.get(form, form)} {label}"
-                if move in SLEEP_MOVES | {"yawn"} and boost_note and boost_factor > 1:
-                    note += f"  [{boost_note}]"
-                if value > best.get(kind, (0.0, ""))[0]:
-                    best[kind] = (value, note)
+                note = (f"{move_name(move)} via {name_of.get(form, form)} {label} "
+                        f"[{hit * 100:.0f}%]")
+                if boost_note and hit > land:
+                    note += f" *{boost_note}*"
+                # One contribution per benefit: a second sleep move adds nothing.
+                if value > best.get(category, (0.0, ""))[0]:
+                    best[category] = (value, note)
         if not best:
             continue
         sleep_value = best.get("sleep", (0.0, ""))[0]
-        swipe_value = best.get("other:falseswipe", (0.0, ""))[0]
-        extras = sorted((value for kind, (value, _) in best.items()
-                         if kind not in ("sleep", "other:falseswipe")), reverse=True)
-        # Every core catcher move adds score, and every contribution is already dampened by
-        # how long it takes and what it costs. The one extra rule: the second-best tool in a
-        # kit is worth less than the first, so a long list of marginal tools (Ice Beam's 10%
-        # freeze, a trapping move) cannot outrank one dependable sleeper. Rank decay, not a
-        # hard cap, keeps the sum additive and the ranking honest.
-        extras_total = sum(value * (0.6 ** rank) for rank, value in enumerate(extras))
-        total = sleep_value + swipe_value + extras_total
-        parts = sorted(best.values(), reverse=True)
-        scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"), parts))
+        swipe_value = best.get("falseswipe", (0.0, ""))[0]
+        extras = sorted((v for c, (v, _) in best.items()
+                         if c not in ("sleep", "falseswipe")), reverse=True)
+        total = sleep_value + swipe_value + sum(v * 0.6 ** rank for rank, v in enumerate(extras))
+        parts = sorted(best.items(), key=lambda kv: -kv[1][0])
+        scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"),
+                       [(LABEL[c], value, note) for c, (value, note) in parts]))
 
-    scored.sort(reverse=True)
-    print(f"{'score':>6}  {'pokemon':16} {'tier':8} best tool")
+    scored.sort(key=lambda t: (-t[0], t[1]))
+    print(f"{'score':>6}  {'pokemon':14} {'tier':7} best tool")
     for total, name, tier, parts in scored[: args.top]:
-        print(f"{total:6.0f}  {name:16} {tier:8} {parts[0][1]}")
-        for value, label in parts[1:6]:
-            print(f"{'':6}  {'':16} {'':8} + {value:4.0f}  {label}")
+        print(f"{total:6.1f}  {name:14} {tier:7} [{parts[0][0]}] {parts[0][2]}")
+        for label, value, note in parts[1:4]:
+            print(f"{'':6}  {'':14} {'':7} +{value:5.1f} [{label}] {note}")
     if len(scored) > args.top:
         print(f"\n  ... {len(scored) - args.top} more from {len(roster)} candidates")
     return 0
