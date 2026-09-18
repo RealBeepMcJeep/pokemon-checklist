@@ -69,6 +69,20 @@ FIXED_CATEGORY = {
 # so a level-1 move is an ENDGAME move for a playthrough, not a free one. It is scored
 # like an event move for that reason. TMs and tutors still lack a location model.
 ACQ = {"level": 1.0, "reminder": 0.2, "TM": 0.8, "egg": 0.5, "event": 0.2}
+# Where each tutor move is taught, from Serebii's USUM Move Tutors page - parsed, not typed.
+# This is the axis that was missing: a Battle Tree move is late-game, so it must be dampened
+# like one, while a Big Wave Beach move is available at the end of the first island.
+TUTOR_LOCATION = {
+    **{m: 0.80 for m in ['snore', 'healbell', 'electroweb', 'defog', 'lowkick', 'uproar', 'bind', 'helpinghand', 'shockwave', 'block', 'lastresort', 'worryseed', 'covet', 'bugbite', 'snatch', 'recycle']},   # Big Wave Beach, Melemele
+    **{m: 0.65 for m in ['irontail', 'spite', 'afteryou', 'gigadrain', 'synthesis', 'allyswitch', 'signalbeam', 'gravity', 'stealthrock', 'irondefense', 'telekinesis', 'magnetrise', 'bounce', 'roleplay', 'firepunch', 'waterpulse']},   # Heahea Beach, Akala
+    **{m: 0.55 for m in ['ironhead', 'aquatail', 'painsplit', 'tailwind', 'thunderpunch', 'endeavor', 'focuspunch', 'icywind', 'zenheadbutt', 'seedbomb', 'laserfocus', 'trick', 'drillrun', 'magiccoat', 'icepunch', 'wonderroom', 'magicroom']},   # Ula'ula Beach
+    **{m: 0.25 for m in ['liquidation', 'gastroacid', 'foulplay', 'superfang', 'outrage', 'skyattack', 'throatchop', 'stompingtantrum', 'skillswap', 'earthpower', 'gunkshot', 'dualchop', 'drainpunch', 'heatwave', 'hypervoice', 'superpower', 'knockoff', 'dragonpulse']},   # Battle Tree, Poni - late
+}
+# Where the TM is found. Reported, deliberately NOT dampened: turning a location into a
+# progress factor needs a verified route-to-island table first, and guessing one would be
+# the same error as scoring the Move Reminder as free.
+TM_LOCATION = {'workup': 'Route 1 - Trainer School', 'dragonclaw': 'Vast Poni Canyon', 'psyshock': 'Lake of the Moone/Lake of the Sunne', 'calmmind': 'Seafolk Village Pok�Mart', 'roar': "Kala'e Bay", 'toxic': 'Aether Paradise', 'hail': 'Royal Avenue - Pok�Mart', 'bulkup': 'Royal Avenue', 'venoshock': 'Konikoni City Pok�Mart', 'hiddenpower': 'Paniola Ranch', 'sunnyday': 'Royal Avenue - Pok�Mart', 'taunt': 'Route 13', 'icebeam': 'Mount Lanakila', 'blizzard': 'Seafolk Village Pok�Mart', 'hyperbeam': 'Seafolk Village Pok�Mart', 'lightscreen': 'Heahea City Pok�Mart', 'protect': 'Heahea City Pok�Mart', 'raindance': 'Royal Avenue - Pok�Mart', 'roost': 'Route 3', 'safeguard': 'Heahea City Pok�Mart', 'frustration': 'Malie City', 'solarbeam': 'Seafolk Village Pok�Mart', 'smackdown': 'Ten Carat Hill', 'thunderbolt': 'Sandy Cave', 'thunder': 'Seafolk Village Pok�Mart', 'earthquake': 'Resolution Cave', 'return': 'Malie City', 'leechlife': 'Akala Outskirts', 'psychic': 'Aether Paradise', 'shadowball': 'Route 14', 'brickbreak': 'Verdant Cavern', 'doubleteam': 'Route 7', 'reflect': 'Heahea City Pok�Mart', 'sludgewave': 'Seafolk Village Pok�Mart', 'flamethrower': 'Vast Poni Canyon', 'sludgebomb': 'Shady House', 'sandstorm': 'Royal Avenue - Pok�Mart', 'fireblast': 'Seafolk Village Pok�Mart', 'rocktomb': 'Wela Volcano Park', 'aerialace': 'Konikoni City Pok�Mart', 'torment': 'Route 5', 'facade': 'Malie City Pok�Mart', 'flamecharge': 'Route 8', 'rest': 'Royal Avenue - Thrifty Megamart', 'attract': 'Hano Grand Resort', 'thief': 'Verdant Cavern', 'lowsweep': 'Konikoni City Pok�Mart', 'round': "Hau'oli City", 'echoedvoice': "Hau'oli City", 'overheat': 'Poni Meadow', 'steelwing': 'Konikoni City Pok�Mart', 'focusblast': 'Seafolk Village Pok�Mart', 'energyball': 'Route 8', 'falseswipe': 'Iki Town', 'scald': 'Ancient Poni Path', 'fling': "Hau'oli Cemetery", 'chargebeam': 'Brooklet Hill', 'skydrop': 'Route 8', 'brutalswing': 'Route 5', 'quash': 'Poni Plains', 'will-o-wisp': 'Konikoni City', 'acrobatics': 'Route 15', 'embargo': 'Blush Mountain', 'explosion': 'Ten Carat Hill', 'shadowclaw': 'Malie City Pok�Mart', 'payback': 'Route 11', 'smartstrike': 'Lush Jungle', 'gigaimpact': 'Seafolk Village Pok�Mart', 'rockpolish': 'Malie City Pok�Mart', 'auroraveil': 'Heahea City Pok�Mart', 'stoneedge': 'Seafolk Village Pok�Mart', 'voltswitch': 'Mount Hokulani', 'thunderwave': 'Malie Garden', 'gyroball': 'Route 11', 'swordsdance': 'Poni Meadow', 'fly': 'Malie City', 'psychup': 'Malie City Pok�Mart', 'bulldoze': 'Konikoni City Pok�Mart', 'frostbreath': 'Seaward Cave', 'rockslide': 'Route 17', 'x-scissor': 'Route 16', 'dragontail': 'Route 12', 'infestation': 'Route 3', 'poisonjab': 'Mount Lanakila', 'dreameater': 'Haina Desert', 'grassknot': 'Lush Jungle', 'swagger': 'Route 2', 'sleeptalk': 'Paniola Town', 'u-turn': 'Malie City Pok�Mart', 'substitute': 'Route 1', 'flashcannon': 'Seafolk Village', 'trickroom': 'Hano Grand Resort', 'wildcharge': 'Vast Poni Canyon', 'surf': 'Poni Breaker Coast', 'snarl': 'Mount Hokulani', 'naturepower': 'Route 5', 'darkpulse': 'Poni Coast', 'waterfall': 'Poni Breaker Coast', 'dazzlinggleam': 'Vast Poni Canyon', 'confide': "Hau'oli Cemetery"}
+
 LABEL = {"sleep": "sleep", "falseswipe": "False Swipe", "superfang": "Super Fang",
          "freeze": "freeze chance", "paralysis": "paralysis", "antighost": "anti-Ghost",
          "immunity": "immunity strip", "trapping": "trapping"}
@@ -132,9 +146,13 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
                             ACQ["reminder"] if level == 1 else ACQ["level"], level))
         elif gate == "tutor":
             cost = ml.TUTOR_BP.get(move, 8)
-            options.append((f"tutor {cost} BP", 1 - cost / 40, 60))
+            # Location first, price second: the Battle Tree is post-game, Big Wave Beach is
+            # the first island. Where it is matters far more than what it costs.
+            place = TUTOR_LOCATION.get(move, 0.4)
+            options.append((f"tutor {cost} BP", place * (1 - cost / 100), 60))
         elif gate == "TM":
-            options.append(("TM", ACQ["TM"], 40))
+            where = TM_LOCATION.get(move)
+            options.append((f"TM at {where}" if where else "TM", ACQ["TM"], 40))
         elif gate == "egg":
             options.append(("egg", ACQ["egg"], 60))
         else:
