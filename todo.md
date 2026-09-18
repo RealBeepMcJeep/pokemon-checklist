@@ -91,3 +91,13 @@ built and deployed; Stage 2 (chat control) follows it.
 
 - [x] Rebuild the self-contained `index.html` and repeat desktop, tablet, and phone smoke checks.
 - [x] Run final source, build, diagnostics, and repository checks.
+
+## Movelists and game variants (2026-09-18)
+
+- Split the `photonic-prismatic` mode into Prismatic Moon **Standard** vs **Rebalanced**.
+  The encounters data assumes one variant; Rebalanced changes base stats, types, abilities,
+  learnsets and TM compatibility, so vanilla Gen 7 competitive advice would be wrong there.
+- Optional feature: ship a sliced movelist (evolution chain + legal Gen 7 moves by method +
+  the top usage moves per final evolution) in `data/`, so the dex can show "best moves" in-app
+  instead of answering in chat. Dataset, sizes and refresh commands:
+  `docs/favorite-lines-movesets.md`.
