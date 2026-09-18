@@ -247,13 +247,17 @@ def card_html(
     # One block per evolution edge, so the level or item that causes it sits next to the
     # arrow. A branching family reads "Ralts L20-> Kirlia" then "Kirlia L30-> Gardevoir"
     # and "Kirlia Dawn Stone-> Gallade", which is unambiguous where a flat list was not.
+    # Each edge is one unbreakable unit: a wrapped arrow with its level stranded at the end
+    # of the previous line read badly on the branching cards.
     chain = '<span class="sep">|</span>'.join(
-        f'<span class="node"><span class="mini" style="{sprite_style(from_dex, atlas_b64, 2)}"></span>'
-        f"{html_escape.escape(from_name)}</span>"
+        "<span class=\"edge\">"
+        f'<span class="mini" style="{sprite_style(from_dex, atlas_b64, 2)}"></span>'
+        f"{html_escape.escape(from_name)}"
         f'<span class="evo">{html_escape.escape(method)}</span>'
-        f'<span class="arrow">&rarr;</span>'
-        f'<span class="node"><span class="mini" style="{sprite_style(to_dex, atlas_b64, 2)}"></span>'
-        f"{html_escape.escape(to_name)}</span>"
+        '<span class="arrow">&rarr;</span>'
+        f'<span class="mini" style="{sprite_style(to_dex, atlas_b64, 2)}"></span>'
+        f"{html_escape.escape(to_name)}"
+        "</span>"
         for from_name, from_dex, method, to_name, to_dex in edges
     )
     blocks = []
@@ -293,12 +297,15 @@ def card_html(
                 f'<div class="bp">{"" if bp in ("0", "-") else html_escape.escape(str(bp)) + " BP"}</div>'
                 f'<div class="gates">{" ".join(chips)}</div>'
             )
+        stats = (f"Grade {html_escape.escape(str(section.get('grade', '?')))} &middot; "
+                 f"{html_escape.escape(str(section.get('smogon_tier', '?')))} &middot; "
+                 f"{(section.get('usage') or 0):.2f}% usage")
         blocks.append(
             f'<section>'
             f'<header>'
             f'<span class="hero" style="{sprite_style(section["dex"], atlas_b64, 4)}"></span>'
             f'<span class="titles"><b>{html_escape.escape(section["name"])}</b>'
-            f'<em>{" &middot; ".join(t for t in [section.get("tier")] if t) or "no usage data"}</em></span>'
+            f"<em>{stats}</em></span>"
             f"</header>"
             f'<div class="grid">{"".join(rows)}</div>'
             f"</section>"
@@ -316,7 +323,7 @@ def card_html(
   h1 {{ margin:0 0 4px; font-size:26px; letter-spacing:.2px; }}
   .lineage {{ color:#8b93a7; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }}
   .mini {{ width:52px; height:39px; display:inline-block; vertical-align:middle; }}
-  .node {{ display:inline-flex; align-items:center; gap:3px; }}
+  .edge {{ display:inline-flex; align-items:center; gap:3px; white-space:nowrap; }}
   .evo {{ background:#243043; color:#8fd0ff; border-radius:8px; padding:2px 8px;
           font-size:11.5px; font-weight:700; margin:0 5px; }}
   .sep {{ color:#333c4e; margin:0 10px; }}
@@ -343,9 +350,10 @@ def card_html(
   <div class="lineage">{chain}</div>
   {"".join(blocks)}
   <footer>{legend}<br>
-    Usage = share of that Pok&eacute;mon's competitive sets running the move
-    (Smogon November 2019, Gen 7). Sprites from the app's own gen7-icons atlas.
-    Tutor costs are the USUM Battle Point prices.
+    Usage = share of that Pok&eacute;mon's competitive sets running the move, from
+    Smogon's {html_escape.escape(str(sections[0].get("tier", "")))}  moveset file
+    (November 2019, Gen 7). Grade and tier are the app's own dex fields.
+    Sprites from the app's gen7-icons atlas; tutor costs are the USUM Battle Point prices.
   </footer>
 </body></html>"""
 
@@ -390,6 +398,7 @@ def main() -> int:
     learned = dict(top_blocks(ls_text))
     details = json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]
     tier_of = {int(d["id"]): (d.get("tier") or "") for d in details}
+    details_by_id = {int(d["id"]): d for d in details}
     id_of = {normalize(r["slug"]): int(r["id"]) for r in rows}
     # How each species is reached, from the app's own evolution data ("Level 25",
     # "Use Dawn Stone"). Keyed by the species that is reached.
@@ -435,7 +444,10 @@ def main() -> int:
                 usage, label = got, f"gen7{tier}-{cutoff}"
                 break
 
-        print(f"## {nice.get(final, final)}" + (f"   [{label}]" if label else "   [no usage data]"))
+        detail = details_by_id.get(id_of.get(final, -1)) or {}
+        print(f"## {nice.get(final, final)}")
+        print(f"   grade {detail.get('grade', '?')} · Smogon {detail.get('tier', '?')} · "
+              f"{(detail.get('usage') or 0):.2f}% usage" + (f"   [{label}]" if label else ""))
         print(f"   {LEGEND}")
         card_rows: list[tuple[float, str, str, str, list[tuple[str, str]]]] = []
         scored = []
@@ -485,6 +497,9 @@ def main() -> int:
                 card_rows.append((pct, shown, kind, bp, gates))
         print()
         sections.append({"name": nice.get(final, final), "tier": label,
+                         "grade": detail.get("grade") or "?",
+                         "smogon_tier": detail.get("tier") or "?",
+                         "usage": detail.get("usage"),
                          "dex": id_of.get(final), "rows": card_rows})
 
     if args.png:
