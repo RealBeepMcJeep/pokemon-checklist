@@ -70,7 +70,10 @@ FIXED_CATEGORY = {
 # The Move Reminder is in Mount Lanakila's Pokemon Center - the area before the League -
 # so a level-1 move is an ENDGAME move for a playthrough, not a free one. It is scored
 # like an event move for that reason. TMs and tutors still lack a location model.
-ACQ = {"level": 1.0, "reminder": 0.2, "TM": 0.8, "egg": 0.5, "event": 0.2}
+# Egg moves are 0.9, not 0.5: Prismatic Moon (Standard) makes Pokemon learn egg moves by
+# simply levelling up, so in this game they are nearly a level-up move. The level the
+# hack assigns is unknown, so the timing stays neutral rather than guessed.
+ACQ = {"level": 1.0, "reminder": 0.2, "TM": 0.8, "egg": 0.9, "event": 0.2}
 # Where each tutor move is taught, from Serebii's USUM Move Tutors page - parsed, not typed.
 # This is the axis that was missing: a Battle Tree move is late-game, so it must be dampened
 # like one, while a Big Wave Beach move is available at the end of the first island.
@@ -184,7 +187,7 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
             level = ISLAND_LEVEL.get(island or 0, 40)
             options.append((f"TM at {where}" if where else "TM", factor, level))
         elif gate == "egg":
-            options.append(("egg", ACQ["egg"], 60))
+            options.append(("egg", ACQ["egg"], 30))  # level unknown in the hack
         else:
             options.append((gate, ACQ["event"], 60))
     return min(options, key=lambda t: (-t[1], t[2]))
@@ -198,6 +201,8 @@ def main() -> int:
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="slugs to leave out (matches whole families)")
     parser.add_argument("--explain", help="print every arithmetic step for one slug")
+    parser.add_argument("--with-tier", action="store_true",
+                        help="add a bonus for the final evolution's competitive tier")
     parser.add_argument("--fleeing", action="store_true",
                         help="score for a target that leaves this turn (Teleport etc.)")
     args = parser.parse_args()
@@ -240,6 +245,12 @@ def main() -> int:
     bases = dict(CATEGORY_BASE)
     if args.fleeing:
         bases = {"sleep": 60, "falseswipe": 25, "trapping": 45}
+
+    # Tier bonus, for when the catcher should also pull its weight in battle. Scaled so that
+    # a genuinely competitive Pokemon (OU/UU/RU) can outweigh a mediocre but slightly earlier
+    # catcher, without letting tier alone decide it.
+    TIER_BONUS = {"OU": 26, "UUBL": 22, "UU": 19, "RUBL": 16, "RU": 13, "NUBL": 10,
+                  "NU": 8, "PUBL": 6, "PU": 3, "(PU)": 3, "LC Uber": 2, "LC": 1}
 
     excluded = {s.strip().lower() for s in args.exclude.split(",") if s.strip()}
     scored = []
@@ -301,6 +312,12 @@ def main() -> int:
         total = sleep_value + swipe_value + sum(v * 0.6 ** (rank + 1)
                                                 for rank, v in enumerate(extras))
         parts = sorted(best.items(), key=lambda kv: -kv[1][0])
+        bonus = 0.0
+        if args.with_tier:
+            final = family[-1] if len(family) == 1 else family[-1]
+            tier_name = tier_of.get(slug, "?")
+            bonus = float(TIER_BONUS.get(tier_name, 0))
+            total += bonus
         scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"),
                        [(LABEL[c], value, note) for c, (value, note) in parts]))
 
