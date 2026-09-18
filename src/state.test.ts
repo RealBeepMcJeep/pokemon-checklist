@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  activeSaveKey,
+  applyState,
+  cycleSpecies,
   exportState,
   initializeState,
   interpretStoredState,
   isStarred,
   resetState,
+  setLocalChangeListener,
+  setSyncAccount,
   starred,
   toggleStar,
 } from "./state";
+import { STORAGE_KEY } from "./domain";
 
 const current = JSON.stringify({
   schemaVersion: 3,
@@ -27,6 +33,98 @@ function installStorage(seed: Record<string, string> = {}): Map<string, string> 
   };
   return store;
 }
+
+describe("account saves", () => {
+  let store: Map<string, string>;
+
+  beforeEach(() => {
+    store = installStorage();
+    setSyncAccount(null);
+    resetState();
+  });
+
+  it("keeps the device's own key while signed out", () => {
+    expect(activeSaveKey()).toBe(STORAGE_KEY);
+    cycleSpecies(25);
+    expect(exportState().species["25"]).toBe("caught");
+  });
+
+  it("namespaces the save per account and adopts what the device holds", () => {
+    cycleSpecies(25);
+    const deviceSave = store.get(STORAGE_KEY);
+    expect(deviceSave).toContain("caught");
+
+    setSyncAccount("uid-dad");
+
+    expect(activeSaveKey()).toBe(`${STORAGE_KEY}:uid-dad`);
+    // Adopted: the account now holds the progress this device already had.
+    expect(store.get(`${STORAGE_KEY}:uid-dad`)).toBe(deviceSave);
+    // And the device's own save is untouched, so signing out returns to it.
+    expect(store.get(STORAGE_KEY)).toBe(deviceSave);
+    expect(exportState().species["25"]).toBe("caught");
+  });
+
+  it("shows an account's existing save instead of adopting over it", () => {
+    const accountSave = JSON.stringify({
+      schemaVersion: 3,
+      species: { "1": "caught" },
+      forms: {},
+      starred: [],
+      settings: { forms: false, mode: "photonic-prismatic" },
+    });
+    store.set(`${STORAGE_KEY}:uid-dad`, accountSave);
+    cycleSpecies(25);
+
+    setSyncAccount("uid-dad");
+
+    expect(exportState().species["1"]).toBe("caught");
+    expect(exportState().species["25"]).toBeUndefined();
+    expect(store.get(`${STORAGE_KEY}:uid-dad`)).toBe(accountSave);
+  });
+
+  it("returns to the device's save when signing out", () => {
+    cycleSpecies(25);
+    setSyncAccount("uid-dad");
+    cycleSpecies(1);
+    expect(exportState().species["1"]).toBe("caught");
+
+    setSyncAccount(null);
+
+    expect(activeSaveKey()).toBe(STORAGE_KEY);
+    expect(exportState().species["25"]).toBe("caught");
+    expect(exportState().species["1"]).toBeUndefined();
+  });
+
+  it("does not reload from storage when the same account is set twice", () => {
+    setSyncAccount("uid-dad");
+    cycleSpecies(1);
+    setSyncAccount("uid-dad");
+    expect(exportState().species["1"]).toBe("caught");
+  });
+
+  it("tells the listener about local changes, never about a remote apply", () => {
+    let calls = 0;
+    setLocalChangeListener(() => {
+      calls += 1;
+    });
+
+    cycleSpecies(25);
+    expect(calls).toBe(1);
+
+    // A state that arrived from elsewhere is not a local change, so publishing
+    // must not be triggered by applying it.
+    applyState({
+      schemaVersion: 3,
+      species: { "150": "caught" },
+      forms: {},
+      starred: [],
+      settings: { forms: false, mode: "moon" },
+    });
+    expect(calls).toBe(1);
+
+    setLocalChangeListener(null);
+  });
+});
 
 describe("cross-tab state", () => {
   it("applies a state another tab saved", () => {

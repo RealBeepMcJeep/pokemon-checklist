@@ -11,6 +11,7 @@ import {
   validateState,
 } from "./domain";
 import type { GameMode, SavedState, Status } from "./types";
+import { saveKeyFor } from "./sync/outbox";
 
 export interface Notice {
   message: string;
@@ -60,6 +61,61 @@ export const formsCaught = computed(
     [...formSignals.values()].filter((status) => status.value === "caught")
       .length,
 );
+
+// --- accounts ---------------------------------------------------------------
+//
+// An offline-only player never sets any of this: `activeUid` stays null, the save
+// key stays the familiar one, and behaviour is exactly what it has always been.
+// Sync is the only subscriber to the change listener.
+
+let activeUid: string | null = null;
+let localChangeListener: (() => void) | null = null;
+
+/** The localStorage key the player's save belongs to right now. */
+export function activeSaveKey(): string {
+  return saveKeyFor(activeUid);
+}
+
+export function currentAccountUid(): string | null {
+  return activeUid;
+}
+
+/**
+ * Called after a local change has been written to storage. Publishing rides on
+ * this, so nothing in the app has to know that sync exists.
+ */
+export function setLocalChangeListener(listener: (() => void) | null): void {
+  localChangeListener = listener;
+}
+
+/**
+ * Point the app at a signed-in account's save, or back at the device's own.
+ *
+ * When that account already has a save here, it becomes what you see. When it has
+ * none, whatever is in memory is written under the account's key: first sign-in
+ * adopts the progress this device already holds rather than discarding it. The
+ * device's own save is never deleted, so signing out returns to it untouched.
+ */
+export function setSyncAccount(uid: string | null): void {
+  if (uid === activeUid) return;
+  activeUid = uid;
+  try {
+    const raw = localStorage.getItem(saveKeyFor(uid));
+    if (raw !== null) {
+      applyState(validateState(JSON.parse(raw), validPokemon, validForms));
+      showNotice(
+        uid
+          ? "Signed in: showing this account's checklist."
+          : "Signed out: showing this device's checklist.",
+        "good",
+      );
+      return;
+    }
+  } catch {
+    // An unreadable account save falls through to adopting what is in memory.
+  }
+  persist();
+}
 
 export function speciesSignal(id: number): Signal<Status> {
   const result = speciesSignals.get(id);
@@ -125,7 +181,8 @@ export function showNotice(message: string, kind: Notice["kind"] = ""): void {
 export function persist(): void {
   if (!storageAvailable.value) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(exportState()));
+    localStorage.setItem(activeSaveKey(), JSON.stringify(exportState()));
+    localChangeListener?.();
   } catch {
     storageAvailable.value = false;
     showNotice(
@@ -137,7 +194,12 @@ export function persist(): void {
 
 /** The most recent save on this origin, whichever schema version wrote it. */
 function readStoredState(): { key: string; raw: string } | null {
-  for (const key of [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
+  // Signed in, an account has exactly one save: its own. Signed out, an older
+  // build's key is still migrated on read.
+  const candidates: string[] = activeUid
+    ? [activeSaveKey()]
+    : [STORAGE_KEY, ...LEGACY_STORAGE_KEYS];
+  for (const key of candidates) {
     const raw = localStorage.getItem(key);
     if (raw !== null) return { key, raw };
   }
@@ -153,7 +215,7 @@ export function initializeState(): void {
       );
       // An older save rewrites itself under the current key. The legacy entry is
       // deliberately left behind so an older build still finds its own data.
-      if (stored.key !== STORAGE_KEY) persist();
+      if (stored.key !== activeSaveKey()) persist();
     }
   } catch {
     applyState(defaultState());
@@ -274,7 +336,7 @@ export function interpretStoredState(raw: string | null): SyncedState {
  * although browsers are free to isolate local files and are not required to.
  */
 export function syncFromStorage(event: StorageEvent): void {
-  if (event.key !== STORAGE_KEY) return;
+  if (event.key !== activeSaveKey()) return;
   const synced = interpretStoredState(event.newValue);
   if (synced.kind === "ignore") return;
   if (synced.kind === "cleared") {
