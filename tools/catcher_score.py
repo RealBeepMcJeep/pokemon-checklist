@@ -201,8 +201,6 @@ def main() -> int:
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="slugs to leave out (matches whole families)")
     parser.add_argument("--explain", help="print every arithmetic step for one slug")
-    parser.add_argument("--with-tier", action="store_true",
-                        help="add a bonus for the final evolution's competitive tier")
     parser.add_argument("--fleeing", action="store_true",
                         help="score for a target that leaves this turn (Teleport etc.)")
     args = parser.parse_args()
@@ -306,8 +304,9 @@ def main() -> int:
         total = sleep_value + swipe_value + sum(v * 0.6 ** (rank + 1)
                                                 for rank, v in enumerate(extras))
         parts = sorted(best.items(), key=lambda kv: -kv[1][0])
-        # NOT scored here on purpose: tier and bulk say nothing about catching utility, so
-        # --with-tier only reports them next to the score for weighing by hand.
+        # NOT scored here on purpose: tier and bulk say nothing about catching utility. Run
+        # tools/roster_lens.py to weigh them, which joins this result to the app's own data
+        # without touching the score.
         scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"),
                        [(LABEL[c], value, note) for c, (value, note) in parts]))
 
