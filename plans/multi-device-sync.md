@@ -33,6 +33,33 @@ below are answered; the grilling rounds that resolve them are recorded at the bo
 - **Anything the player accumulates is migration-sensitive**: statuses, form progress, stars and the
   selected mode all round-trip through export/import today, and must keep doing so.
 
+## Decisions taken (2026-09-18)
+
+Owner's answers to the first grilling round, recorded as settled:
+
+- **One artifact, not two.** A single build ships. It stays offline-first with localStorage as the
+  source of truth exactly as today, and sync happens only after the player signs in. A player who
+  never signs in must never touch the network — so the publisher's rule gets restated (below) rather
+  than the app getting a second file.
+- **Merge by record, ordered by the server.** Per-record timestamps merged field by field, with the
+  provider's own server-side ordering as the tie-break, so device clock skew cannot silently pick a
+  winner.
+- **The chat channel is the agent, not a bot.** No second bot and no webhook: the owner talks to
+  Hermes in the existing session and a skill performs the change. That removes the public endpoint
+  requirement, and with it the whole "which free tier can host a webhook" question — the backend only
+  has to do auth, storage and sync.
+- **`trade` is sugar for seen.** It puts the species back to Seen and does nothing else. No fourth
+  status, no schema change beyond sync metadata.
+- **Family use is in scope, not a single account.** A seven-year-old son will use it on his own tablet
+  with his own Google account, so the design is multi-account from the start and the merge model has
+  to survive two people editing at once.
+
+The event-log question the owner raised (append-only operations ordered by the database, converging
+like a CRDT, without bloating storage) is being answered with numbers rather than opinion. The
+relevant constraint is not storage size — an event at ~80 bytes a few times a day is under a
+megabyte a year — but **per-document read billing**: a design that reads a long log on every device
+open spends reads linearly, which Firestore charges for and Postgres-style backends do not.
+
 ## Recommended architecture
 
 A static SPA plus a managed backend-as-a-service, with one small serverless function for the chat
