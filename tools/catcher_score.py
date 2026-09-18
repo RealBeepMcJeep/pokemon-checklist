@@ -246,12 +246,6 @@ def main() -> int:
     if args.fleeing:
         bases = {"sleep": 60, "falseswipe": 25, "trapping": 45}
 
-    # Tier bonus, for when the catcher should also pull its weight in battle. Scaled so that
-    # a genuinely competitive Pokemon (OU/UU/RU) can outweigh a mediocre but slightly earlier
-    # catcher, without letting tier alone decide it.
-    TIER_BONUS = {"OU": 26, "UUBL": 22, "UU": 19, "RUBL": 16, "RU": 13, "NUBL": 10,
-                  "NU": 8, "PUBL": 6, "PU": 3, "(PU)": 3, "LC Uber": 2, "LC": 1}
-
     excluded = {s.strip().lower() for s in args.exclude.split(",") if s.strip()}
     scored = []
     for slug in roster:
@@ -312,12 +306,8 @@ def main() -> int:
         total = sleep_value + swipe_value + sum(v * 0.6 ** (rank + 1)
                                                 for rank, v in enumerate(extras))
         parts = sorted(best.items(), key=lambda kv: -kv[1][0])
-        bonus = 0.0
-        if args.with_tier:
-            final = family[-1] if len(family) == 1 else family[-1]
-            tier_name = tier_of.get(slug, "?")
-            bonus = float(TIER_BONUS.get(tier_name, 0))
-            total += bonus
+        # NOT scored here on purpose: tier and bulk say nothing about catching utility, so
+        # --with-tier only reports them next to the score for weighing by hand.
         scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"),
                        [(LABEL[c], value, note) for c, (value, note) in parts]))
 
