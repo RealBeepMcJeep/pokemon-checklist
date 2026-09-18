@@ -22,8 +22,7 @@ Completed items move to `changelog.md`.
 
 ### Mobile performance
 
-- [ ] Profile startup, mode-switch, and restore costs on representative phones.
-- [ ] Reduce initial DOM work with measured lazy mounting or Pokédex virtualization while preserving search, accessibility, location links, and offline behavior.
+- [ ] Repeat the startup, mode-switch, and restore profiling on real phone hardware; the current numbers come from 4× CPU throttling at a phone viewport.
 
 ### Game modes
 
