@@ -12,7 +12,7 @@
         "log": {
           "$eventId": {
             ".validate": "newData.hasChildren(['op', 'at', 'by'])",
-            ".write": "!data.exists() || newData.child('op').val() === 'undo'"
+            ".write": "auth != null && auth.uid === $uid && !data.exists()"
           }
         }
       }
