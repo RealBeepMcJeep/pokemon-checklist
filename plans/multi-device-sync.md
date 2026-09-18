@@ -149,6 +149,41 @@ messages, so the common actions can be taps rather than typed commands, with com
 fallback. Guidance is one message per second per chat. A second bot is entirely normal — each token
 is independent — and the sender's `User.id` is the stable key that a one-time linking code binds to.
 
+## Research verdicts (2026-09-18)
+
+**What the community actually uses** (`plans/research/community-sync-2026.md`): Firebase is the
+obvious turnkey answer for Google sign-in plus realtime plus offline in one dependency; Supabase is
+the strong open/SQL alternative; PocketBase is well liked but is a server to run; Appwrite is
+credible with more operational weight; the local-first engines (PowerSync, Electric, InstantDB,
+Convex, Jazz, TinyBase) have real interest but less traction and usually another service to run;
+Cloudflare's primitives are cheap but not turnkey. Recurring complaints: Firebase billing anxiety and
+GCP coupling, Supabase's free-tier pausing, self-hosting burden, and unsolved conflict,
+authorization and revocation questions in the sync engines.
+
+**What the numbers say** (`plans/research/backends-free-tiers-2026.md`): Firebase **Realtime Database**
+plus Auth on Spark is the only surveyed option that is genuinely zero cost, needs no server code,
+requires no card, and — decisively for the ledger idea — **does not bill per document read**.
+Firestore on the same plan does bill reads, which is exactly what would penalise replaying a log.
+Supabase Free is the strongest SQL alternative but pauses a project after about a week without
+activity.
+
+**Three findings that shape the design:**
+
+- **The son's sign-in is a gate, not a detail.** Google does not document a guarantee that an
+  under-13 Family Link (supervised) account can complete an arbitrary third-party OAuth flow; it
+  documents parental control of third-party access, and user reports exist of supervised accounts
+  being refused. This must be tested with the real account, and the design needs a fallback identity
+  for him that is not Google. The gate applies to every Google-based option including Drive, so
+  Drive is not an escape from it.
+- **Google Drive as the database is viable but weak.** A normal shared Drive file (not
+  `appDataFolder`, which cannot be shared at all) can back a family checklist, using the file
+  revision as a conditional-write precondition. But cross-device notification needs push, push needs
+  a webhook, and a static SPA has none — so the app would poll, and Drive revisions must never be
+  used as the event log. A fallback, not the recommended path.
+- **A full CRDT is not justified.** Versioned records with server-assigned ordering cover a handful
+  of users and occasional conflicts; the research advice is explicitly not to adopt Automerge or Yjs
+  merely because the app is offline-first.
+
 ## Staged plan
 
 - **Stage 1 — one save, several devices.** Schema v4 with sync metadata, provider choice, Google
@@ -166,3 +201,7 @@ allowlist. Round 1b, asked alongside it now that the numbers are in: which provi
 which migration and backup story), and whether the chat is taps, typed commands, or both. Later:
 what `Reset` means when the data lives in two places, how the offline artifact advertises the synced
 one, and what undo looks like through a bot.
+
+Superseded by the owner's answers: the chat is the agent, not a bot; `trade` is sugar for seen; the
+publisher rule is restated rather than a second build added; the provider decision narrowed to
+Realtime Database versus Supabase once the son's sign-in path is settled.
