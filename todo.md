@@ -70,6 +70,20 @@ Completed items move to `changelog.md`.
 - [x] Make `data/encounters.json` the canonical dataset and remove its duplicate Python transcription.
 - [x] Retain only the source-image extraction, data validation, and optional Pokémon-name refresh tooling.
 
+### Multi-device sync and control from chat
+
+Spec and options: `plans/multi-device-sync.md`. Nothing here is scheduled; the open decisions in
+that file come first.
+
+- [ ] Settle the artifact question: whether sync rides in a second opt-in build or the network-free publisher rule changes.
+- [ ] Settle the conflict model: per-record timestamps merged field by field, tombstones for cleared statuses.
+- [ ] Choose a backend once the free-tier and Google sign-in facts are verified, and record the migration and backup story for it.
+- [ ] Extend the save to schema v4 carrying sync metadata, migrating v1-v3 saves losslessly.
+- [ ] Sign in with Google restricted to the owner's account, with the checklist stored per account.
+- [ ] Sync statuses, form progress, stars and mode across phone, tablet and PC, merging offline edits on reconnect.
+- [ ] Add a Telegram command channel: caught, seen, trade, star, unstar, status, team, linked to the account by a one-time code.
+- [ ] Keep export/import and Reset semantics correct once the data lives in two places.
+
 ### Verification
 
 - [x] Rebuild the self-contained `index.html` and repeat desktop, tablet, and phone smoke checks.
