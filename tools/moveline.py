@@ -116,6 +116,14 @@ def top_blocks(text: str) -> Iterator[tuple[str, str]]:
                     break
 
 
+def short_method(method: str | None) -> str:
+    """"Level 25" -> "L25", "Use Dawn Stone" -> "Dawn Stone"."""
+    if not method:
+        return ""
+    found = re.match(r"Level (\d+)", method)
+    return f"L{found.group(1)}" if found else method.removeprefix("Use ")
+
+
 def normalize(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", name.lower())
 
@@ -230,11 +238,23 @@ def sprite_style(dex: int | None, atlas_b64: str, scale: int = 3) -> str:
     )
 
 
-def card_html(base_name: str, lineage: list[tuple[str, int | None]], sections: list[dict]) -> str:
+def card_html(
+    base_name: str,
+    edges: list[tuple[str, int | None, str, str, int | None]],
+    sections: list[dict],
+) -> str:
     atlas_b64 = base64.b64encode((REPO / "assets" / "gen7-icons.png").read_bytes()).decode()
-    chain = " <span class=\"arrow\">&rarr;</span> ".join(
-        f'<span class="mini" style="{sprite_style(dex, atlas_b64, 2)}"></span> {html_escape.escape(name)}'
-        for name, dex in lineage
+    # One block per evolution edge, so the level or item that causes it sits next to the
+    # arrow. A branching family reads "Ralts L20-> Kirlia" then "Kirlia L30-> Gardevoir"
+    # and "Kirlia Dawn Stone-> Gallade", which is unambiguous where a flat list was not.
+    chain = '<span class="sep">|</span>'.join(
+        f'<span class="node"><span class="mini" style="{sprite_style(from_dex, atlas_b64, 2)}"></span>'
+        f"{html_escape.escape(from_name)}</span>"
+        f'<span class="evo">{html_escape.escape(method)}</span>'
+        f'<span class="arrow">&rarr;</span>'
+        f'<span class="node"><span class="mini" style="{sprite_style(to_dex, atlas_b64, 2)}"></span>'
+        f"{html_escape.escape(to_name)}</span>"
+        for from_name, from_dex, method, to_name, to_dex in edges
     )
     blocks = []
     for section in sections:
@@ -296,6 +316,10 @@ def card_html(base_name: str, lineage: list[tuple[str, int | None]], sections: l
   h1 {{ margin:0 0 4px; font-size:26px; letter-spacing:.2px; }}
   .lineage {{ color:#8b93a7; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }}
   .mini {{ width:52px; height:39px; display:inline-block; vertical-align:middle; }}
+  .node {{ display:inline-flex; align-items:center; gap:3px; }}
+  .evo {{ background:#243043; color:#8fd0ff; border-radius:8px; padding:2px 8px;
+          font-size:11.5px; font-weight:700; margin:0 5px; }}
+  .sep {{ color:#333c4e; margin:0 10px; }}
   .arrow {{ color:#4a5266; margin:0 4px; }}
   section {{ margin-top:20px; padding-top:14px; border-top:1px solid #232735; }}
   header {{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }}
@@ -367,6 +391,18 @@ def main() -> int:
     details = json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]
     tier_of = {int(d["id"]): (d.get("tier") or "") for d in details}
     id_of = {normalize(r["slug"]): int(r["id"]) for r in rows}
+    # How each species is reached, from the app's own evolution data ("Level 25",
+    # "Use Dawn Stone"). Keyed by the species that is reached.
+    evo_method: dict[str, str] = {}
+    for detail in details:
+        for step in detail.get("evolution") or []:
+            method = str(step.get("method") or "").strip()
+            if method and method != "?":
+                evo_method[normalize(str(step.get("name", "")))] = method
+    parent_of = {
+        key: (scalar(body, "prevo") or "").lower().replace(" ", "")
+        for key, body in dex.items()
+    }
 
     family = lineage(entry["slug"].lower(), dex)
     print(f"# {entry['name']} — lineage: {' -> '.join(nice.get(s, s) for s in family)}\n", file=sys.stderr)
@@ -453,7 +489,16 @@ def main() -> int:
 
     if args.png:
         out = Path(args.png)
-        chain = [(nice.get(f, f), id_of.get(f)) for f in family]
+        chain = [
+            (
+                nice.get(parent_of.get(member, ""), parent_of.get(member, "")),
+                id_of.get(parent_of.get(member, "")),
+                short_method(evo_method.get(member)),
+                nice.get(member, member),
+                id_of.get(member),
+            )
+            for member in family[1:]
+        ]
         for section in sections:
             # One image per Pokemon: a family with two finals (Gardevoir and Gallade) gets
             # two cards rather than one image nobody can read.
