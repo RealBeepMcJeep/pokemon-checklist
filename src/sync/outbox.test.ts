@@ -6,6 +6,7 @@ import {
   adoptionEntries,
   deviceIdFor,
   emptyStore,
+  isWholeAccountClear,
   loadStore,
   pendingEntries,
   saveFromView,
@@ -223,5 +224,60 @@ describe("first sign-in adopts offline progress", () => {
     expect(adopted["setting:mode"]).toEqual(entry("ultra-sun", 1_000));
     // And it is pending by definition: the confirmed document is still empty.
     expect(Object.keys(pendingEntries(document({}), offline, 1_000, "uid-a"))).toHaveLength(5);
+  });
+});
+
+describe("the fail-safe against emptying an account", () => {
+  const full = () =>
+    document({
+      [speciesKey(1)]: entry("caught", 100),
+      [speciesKey(25)]: entry("caught", 100),
+      [speciesKey(150)]: entry("caught", 100),
+      [speciesKey(151)]: entry("caught", 100),
+      [speciesKey(152)]: entry("caught", 100),
+      [speciesKey(153)]: entry("caught", 100),
+      ...SETTINGS,
+    });
+
+  it("notices an empty save about to tombstone a full account", () => {
+    const base = full();
+    const pending = pendingEntries(base, save(), 9_000, "uid-a");
+    expect(isWholeAccountClear(base, pending)).toBe(true);
+  });
+
+  it("does not fire for an ordinary edit", () => {
+    const base = full();
+    const pending = pendingEntries(
+      base,
+      save({ species: { "25": "seen" } }),
+      9_000,
+      "uid-a",
+    );
+    expect(isWholeAccountClear(base, pending)).toBe(false);
+  });
+
+  it("does not fire for a small account, where clearing it is plausible", () => {
+    const base = document({
+      [speciesKey(1)]: entry("caught", 100),
+      ...SETTINGS,
+    });
+    expect(isWholeAccountClear(base, pendingEntries(base, save(), 9_000, "uid-a"))).toBe(
+      false,
+    );
+  });
+
+  it("does not fire when there is nothing substantial left to clear", () => {
+    const base = document({
+      [speciesKey(1)]: entry(TOMBSTONE, 100),
+      [speciesKey(25)]: entry(TOMBSTONE, 100),
+      [speciesKey(150)]: entry(TOMBSTONE, 100),
+      [speciesKey(151)]: entry(TOMBSTONE, 100),
+      [speciesKey(152)]: entry(TOMBSTONE, 100),
+      [speciesKey(153)]: entry(TOMBSTONE, 100),
+      ...SETTINGS,
+    });
+    expect(isWholeAccountClear(base, pendingEntries(base, save(), 9_000, "uid-a"))).toBe(
+      false,
+    );
   });
 });

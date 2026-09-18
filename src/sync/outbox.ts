@@ -5,6 +5,7 @@ import {
   entriesFromState,
   mergeDocument,
   stateFromDocument,
+  TOMBSTONE,
   type RecordEntry,
   type RecordKey,
   type SyncDocument,
@@ -210,4 +211,28 @@ export function adoptionEntries(
   by: string,
 ): Record<RecordKey, RecordEntry> {
   return entriesFromState(save, at, by);
+}
+
+/**
+ * Would this publish clear everything the account holds?
+ *
+ * A fail-safe, not a policy. An empty local save meeting a full confirmed document
+ * is far more likely to be a bug than a player deleting a whole collection, and the
+ * cost of guessing wrong is their data — which is what happened once: a device that
+ * started from empty against a full account published tombstones for every record.
+ * The deliberate path (Reset) writes its own log entry and must not come through here.
+ */
+export function isWholeAccountClear(
+  base: SyncDocument,
+  pending: Record<RecordKey, RecordEntry>,
+): boolean {
+  const live = Object.values(base.records).filter(
+    (entry) => entry.s !== TOMBSTONE,
+  );
+  if (live.length < 5) return false;
+  const clearing = Object.entries(pending).filter(
+    ([key, entry]) =>
+      entry.s === TOMBSTONE && base.records[key]?.s !== TOMBSTONE,
+  );
+  return clearing.length >= live.length;
 }

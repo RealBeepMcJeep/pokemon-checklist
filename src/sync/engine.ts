@@ -31,6 +31,7 @@ import {
   deviceIdFor,
   emptyDocument,
   forgetSyncSession,
+  isWholeAccountClear,
   loadStore,
   pendingEntries,
   rememberSyncSession,
@@ -119,6 +120,17 @@ async function publish(): Promise<void> {
   if (keys.length === 0) {
     lastPushed = "";
     syncPhase.value = "ready";
+    return;
+  }
+
+  // Refuse to be the reason an account empties itself. This guards the bug that
+  // wiped a real account: a device that had not yet adopted the account's data
+  // published the difference between "empty" and "everything".
+  if (isWholeAccountClear(base, pending)) {
+    lastPushed = "";
+    syncPhase.value = "error";
+    syncMessage.value =
+      "Refused to send a change that would clear the whole checklist. Nothing was sent.";
     return;
   }
 
@@ -262,6 +274,14 @@ export async function startSync(account: {
 
   // Adopt the device's offline progress only into an account that is empty.
   setSyncAccount(account.uid, { adopt: !serverHasRecords });
+
+  if (serverHasRecords) {
+    // Start from what the account holds. Leaving the save empty against a full
+    // document reads as "the player cleared everything", so the first publish would
+    // tombstone the whole account; the guard above would refuse it, but the right fix
+    // is to never reach that state.
+    applyState(saveFromView(base, validPokemon, validForms));
+  }
 
   subscribe(account.uid);
   setLocalChangeListener(() => {
