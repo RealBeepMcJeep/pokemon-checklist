@@ -44,7 +44,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True, help="account uid holding the roster")
-    parser.add_argument("--cache", default="/opt/data/poke-moves", help="Showdown data cache")
+    parser.add_argument("--cache", default="/opt/data/poke-data", help="Showdown data cache")
     parser.add_argument("--top", type=int, default=12, help="how many rows to show")
     parser.add_argument("--fleeing", action="store_true", help="pass through to the score")
     parser.add_argument("--exclude", default="", help="pass through to the score")
