@@ -20,10 +20,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
+import html as html_escape
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import urllib.request
 from pathlib import Path
 from typing import Iterator
@@ -57,6 +61,31 @@ LEGEND = ("\U0001F7E2 level-up · \U0001F501 move reminder · \U0001F4C0 TM · "
 # banned from a tier (BL) is used in the tier above, which is the file that holds its stats.
 TIER_FILE = {"OU": "ou", "UUBL": "ou", "UU": "uu", "RUBL": "uu", "RU": "ru", "NUBL": "ru",
              "NU": "nu", "PUBL": "nu", "PU": "pu", "LC": "lc", "LC Uber": "lc"}
+
+# Battle Points charged by the USUM move tutors, for the tutor-only moves. Costs verified
+# against Serebii's Move Tutors page (ultrasunultramoon/movetutors.shtml): Big Wave Beach,
+# Ula'ula Beach and the Battle Tree. A move absent here is still a tutor move, cost unknown.
+TUTOR_BP = {
+    "bind": 4, "snore": 4, "waterpulse": 4,
+    "bounce": 8, "defog": 8, "electroweb": 8, "firepunch": 8, "healbell": 8, "ironhead": 8,
+    "knockoff": 12, "lowkick": 8, "magiccoat": 8, "magicroom": 8, "painsplit": 8,
+    "roleplay": 8, "tailwind": 8, "thunderpunch": 8, "trick": 8, "uproar": 8,
+    "wonderroom": 8, "zenheadbutt": 8, "drillrun": 8, "icepunch": 8, "drainpunch": 8,
+    "gastroacid": 8, "skillswap": 8, "seedbomb": 12, "icywind": 12, "laserfocus": 12,
+    "foulplay": 12, "superfang": 12, "earthpower": 12, "dualchop": 12, "heatwave": 12,
+    "hypervoice": 12, "stompingtantrum": 12, "dragonpulse": 12,
+    "aquatail": 12, "endeavor": 16, "focuspunch": 16, "liquidation": 16, "outrage": 16,
+    "skyattack": 16, "throatchop": 16, "gunkshot": 16, "superpower": 16,
+}
+
+# Chip colours, keyed by how a move is obtained, then by type.
+GATE_COLOR = {"level": "#2e7d32", "reminder": "#00796b", "TM": "#1565c0", "tutor": "#6a1b9a",
+              "egg": "#e65100", "event": "#ad1457", "unavailable": "#b71c1c"}
+TYPE_COLOR = {"Normal": "#9e9e9e", "Fire": "#e64a19", "Water": "#1976d2", "Electric": "#f9a825",
+              "Grass": "#388e3c", "Ice": "#0097a7", "Fighting": "#c2185b", "Poison": "#7b1fa2",
+              "Ground": "#8d6e63", "Flying": "#5c6bc0", "Psychic": "#d81b60", "Bug": "#689f38",
+              "Rock": "#a1887f", "Ghost": "#512da8", "Dragon": "#303f9f", "Dark": "#455a64",
+              "Steel": "#607d8b", "Fairy": "#ec407a"}
 
 
 def fetch(url: str, dest: Path) -> Path:
@@ -183,11 +212,128 @@ def usage_rows(text: str, species: str) -> dict[str, float]:
     return rows
 
 
+def sprite_style(dex: int | None, atlas_b64: str, scale: int = 3) -> str:
+    """Crop one frame out of the app's own icon atlas.
+
+    Geometry comes from src/data.ts (ATLAS): 32 columns of 40x30 frames in a 1280x780 sheet,
+    and frame n is at index dex-1 - the same formula the app's sprite <img> uses.
+    """
+    if not dex:
+        return ""
+    index = dex - 1
+    col, row = index % 32, index // 32
+    return (
+        f"background-image:url(data:image/png;base64,{atlas_b64});"
+        f"background-size:{1280 * scale}px {780 * scale}px;"
+        f"background-position:-{40 * scale * col}px -{30 * scale * row}px;"
+        "image-rendering:pixelated;"
+    )
+
+
+def card_html(base_name: str, lineage: list[tuple[str, int | None]], sections: list[dict]) -> str:
+    atlas_b64 = base64.b64encode((REPO / "assets" / "gen7-icons.png").read_bytes()).decode()
+    chain = " <span class=\"arrow\">&rarr;</span> ".join(
+        f'<span class="mini" style="{sprite_style(dex, atlas_b64, 2)}"></span> {html_escape.escape(name)}'
+        for name, dex in lineage
+    )
+    blocks = []
+    for section in sections:
+        rows = []
+        for pct, shown, kind, bp, gates in section["rows"]:
+            chips = []
+            seen_chips: set[str] = set()
+            for gate, where in gates:
+                if gate in ("level", "reminder"):
+                    text = where
+                elif gate == "tutor":
+                    cost = TUTOR_BP.get(canon(shown))
+                    text = f"TUTOR {cost} BP" if cost else "TUTOR"
+                elif gate == "unavailable":
+                    text = "NOT IN GEN 7"
+                else:
+                    text = gate.upper()
+                if canon(shown) == "hiddenpower" and gate == "TM":
+                    text = "TM10 (IVs)"
+                # One chip per way of getting it. Without this a move learnable by TM in
+                # three forms printed three identical TM chips.
+                key = f"{gate}:{text if gate in ('level', 'reminder') else ''}"
+                if key in seen_chips:
+                    continue
+                seen_chips.add(key)
+                chips.append(
+                    f'<span class="chip" style="background:{GATE_COLOR.get(gate, "#455a64")}">'
+                    f"{html_escape.escape(text)}</span>"
+                )
+            rows.append(
+                f'<div class="bar"><i style="width:{max(pct, 0.4):.1f}%"></i></div>'
+                f'<div class="pct">{pct:4.1f}%</div>'
+                f'<div class="move">{html_escape.escape(shown)}</div>'
+                f'<div><span class="chip" style="background:{TYPE_COLOR.get(kind, "#455a64")}">'
+                f"{html_escape.escape(kind)}</span></div>"
+                f'<div class="bp">{"" if bp in ("0", "-") else html_escape.escape(str(bp)) + " BP"}</div>'
+                f'<div class="gates">{" ".join(chips)}</div>'
+            )
+        blocks.append(
+            f'<section>'
+            f'<header>'
+            f'<span class="hero" style="{sprite_style(section["dex"], atlas_b64, 4)}"></span>'
+            f'<span class="titles"><b>{html_escape.escape(section["name"])}</b>'
+            f'<em>{" &middot; ".join(t for t in [section.get("tier")] if t) or "no usage data"}</em></span>'
+            f"</header>"
+            f'<div class="grid">{"".join(rows)}</div>'
+            f"</section>"
+        )
+    legend = " ".join(
+        f'<span class="chip" style="background:{GATE_COLOR[g]}">{label}</span>'
+        for g, label in (("level", "LEVEL UP"), ("reminder", "MOVE REMINDER (FREE)"),
+                         ("TM", "TM"), ("tutor", "TUTOR (BP)"), ("egg", "EGG MOVE"),
+                         ("event", "EVENT"), ("unavailable", "NOT LEGAL IN GEN 7"))
+    )
+    return f"""<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body {{ margin:0; padding:26px 30px 22px; background:#0f1117; color:#e9ecf3;
+         font-family:"DejaVu Sans",system-ui,sans-serif; font-size:14px; }}
+  h1 {{ margin:0 0 4px; font-size:26px; letter-spacing:.2px; }}
+  .lineage {{ color:#8b93a7; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }}
+  .mini {{ width:52px; height:39px; display:inline-block; vertical-align:middle; }}
+  .arrow {{ color:#4a5266; margin:0 4px; }}
+  section {{ margin-top:20px; padding-top:14px; border-top:1px solid #232735; }}
+  header {{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }}
+  .hero {{ width:160px; height:120px; flex:0 0 auto; }}
+  .titles b {{ font-size:21px; display:block; }}
+  .titles em {{ color:#8b93a7; font-style:normal; font-size:12px; }}
+  .grid {{ display:grid; grid-template-columns:170px 56px 152px 78px 62px 1fr;
+           gap:5px 10px; align-items:center; }}
+  .bar {{ background:#1c212e; height:9px; border-radius:5px; overflow:hidden; }}
+  .bar i {{ display:block; height:100%; background:linear-gradient(90deg,#3d6fd6,#59c1e8); }}
+  .pct {{ text-align:right; color:#aeb6c8; font-variant-numeric:tabular-nums; }}
+  .move {{ font-weight:600; }}
+  .bp {{ color:#8b93a7; font-size:12px; }}
+  .gates {{ display:flex; flex-wrap:wrap; gap:4px; }}
+  .chip {{ display:inline-block; padding:2px 7px; border-radius:9px; color:#fff;
+           font-size:11px; font-weight:600; letter-spacing:.2px; white-space:nowrap; }}
+  footer {{ margin-top:18px; padding-top:12px; border-top:1px solid #232735;
+            color:#8b93a7; font-size:11.5px; line-height:1.7; }}
+</style></head><body>
+  <h1>{html_escape.escape(base_name)}</h1>
+  <div class="lineage">{chain}</div>
+  {"".join(blocks)}
+  <footer>{legend}<br>
+    Usage = share of that Pok&eacute;mon's competitive sets running the move
+    (Smogon November 2019, Gen 7). Sprites from the app's own gen7-icons atlas.
+    Tutor costs are the USUM Battle Point prices.
+  </footer>
+</body></html>"""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Move report for a Pokemon family.")
     parser.add_argument("species", help="any member of the family: name, slug or dex number")
     parser.add_argument("--cache", default=os.environ.get("POKE_DATA_CACHE", "/opt/data/poke-data"))
     parser.add_argument("--top", type=int, default=25, help="moves to list per final evolution (default 25)")
+    parser.add_argument("--png", help="also render the report to this PNG path")
+    parser.add_argument("--all", action="store_true",
+                        help="include moves nothing runs (0%%) in the rendered card")
     args = parser.parse_args()
 
     cache = Path(args.cache)
@@ -235,6 +381,7 @@ def main() -> int:
 
     evos_of = {k: list_field(b, "evos") for k, b in dex.items()}
     finals = [f for f in family if not [c for c in evos_of.get(f, []) if c in family]] or [family[-1]]
+    sections: list[dict] = []
 
     for final in finals:
         usage: dict[str, float] = {}
@@ -254,6 +401,7 @@ def main() -> int:
 
         print(f"## {nice.get(final, final)}" + (f"   [{label}]" if label else "   [no usage data]"))
         print(f"   {LEGEND}")
+        card_rows: list[tuple[float, str, str, str, list[tuple[str, str]]]] = []
         scored = []
         for move, forms in union.items():
             shown, kind, bp = move_meta.get(move, (move, "?", "-"))
@@ -292,9 +440,31 @@ def main() -> int:
                 elif canon(shown) == "hiddenpower":
                     tags.append(f"{ICON[gate]} TM10 (type comes from IVs)")
                 else:
-                    tags.append(f"{ICON[gate]} {gate}")
+                    cost = TUTOR_BP.get(canon(shown)) if gate == "tutor" else None
+                    tags.append(f"{ICON[gate]} {gate}{f' {cost} BP' if cost else ''}")
             print(f"   {pct:5.1f}%  {shown:18} {kind:8} {bp:>4} BP   {' · '.join(dict.fromkeys(tags))}")
+            # The card is for reading on a phone, so it carries the shortlist. The text
+            # output keeps the 0% rows, which answer "what else can it even learn".
+            if pct > 0 or args.all:
+                card_rows.append((pct, shown, kind, bp, gates))
         print()
+        sections.append({"name": nice.get(final, final), "tier": label,
+                         "dex": id_of.get(final), "rows": card_rows})
+
+    if args.png:
+        out = Path(args.png)
+        chain = [(nice.get(f, f), id_of.get(f)) for f in family]
+        for section in sections:
+            # One image per Pokemon: a family with two finals (Gardevoir and Gallade) gets
+            # two cards rather than one image nobody can read.
+            target = out if len(sections) == 1 else out.with_name(f"{out.stem}-{normalize(section['name'])}.png")
+            html_path = Path(tempfile.gettempdir()) / f"moveline-{target.stem}.html"
+            html_path.write_text(card_html(entry["name"], chain, [section]))
+            subprocess.run(
+                ["node", str(REPO / "tools" / "render-png.mjs"), str(html_path), str(target)],
+                check=True,
+            )
+            print(f"wrote {target}", file=sys.stderr)
     return 0
 
 
