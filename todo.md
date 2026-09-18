@@ -73,18 +73,18 @@ Completed items move to `changelog.md`.
 ### Multi-device sync and control from chat
 
 Spec, decisions and research: `plans/multi-device-sync.md` and `plans/research/`. Stage 1 (sync) is
-designed; Stage 2 (chat control) follows it.
+built and deployed; Stage 2 (chat control) follows it.
 
-- [ ] Create the Firebase project on Spark with billing off, add a Realtime Database, enable Google sign-in, set the authorized domains — owner action, checklist in the spec.
-- [ ] Restate the publisher's network rule as "no request unless signed in", and keep a test proving the file stays silent while signed out.
-- [ ] Extend the save to schema v4 with per-record sync metadata and an event log, migrating v1-v3 saves losslessly.
-- [ ] Add the durable outbox: local writes first, queued operations flushed on reconnect, nothing blocking on the network.
-- [ ] Merge incoming changes per record with server-assigned ordering so one account on several devices converges.
-- [ ] Namespace local data per account, adopting whatever is already on the device the first time an account signs in.
-- [ ] Sign in with Google (One Tap plus a fallback button) with the email allowlist enforced in the security rules.
-- [ ] Implement undo as the inverse of a logged operation, Reset included, with the before-image carried in the log entry.
-- [ ] Keep export/import, Reset and offline-only mode correct once the data lives in two places.
-- [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend.
+- [x] Create the Firebase project on Spark with billing off, add a Realtime Database, enable Google sign-in, set the authorized domains.
+- [x] Restate the publisher's network rule as "no request unless signed in", with a browser test recording every request and failing on anything but data:/file:/localhost while signed out — desktop *and* mobile user agents.
+- [x] Keep the player's save untouched and put sync bookkeeping in its own document, with saves namespaced per account.
+- [x] Derive pending work from the confirmed document rather than queueing operations, so retrying is idempotent and a server-side change can never be mistaken for an unpublished local edit.
+- [x] Merge incoming changes per record with server-assigned ordering, and adopt the device's existing progress only into an empty account.
+- [x] Sign in with Google (popup with a redirect fallback) with the email allowlist enforced in the security rules, and a control that never prompts on its own.
+- [ ] Write a Reset to the log with its before-image, and give the player a single-step undo of any logged change.
+- [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
+- [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend. Blocked on an agent credential the owner creates: either a dedicated allowlisted user's refresh token or a service-account key, kept in `/opt/data/.env`.
+- [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
 
 ### Verification
 

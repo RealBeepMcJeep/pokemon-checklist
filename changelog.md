@@ -7,6 +7,12 @@
 - Draws each sprite from an image cropped by its icon box instead, which keeps the atlas out of computed styles entirely, and removed the document-wide custom property that held it.
 - Kept every sprite, frame and mode theme identical: the same atlas is used, with the same crop per species, so nothing looks different.
 - Added a browser check that fails if the atlas returns to a computed style, and that verifies the crop for a species on a lower atlas row.
+- Added optional sign-in with Google so the same checklist follows you between your phone, tablet and PC. The app still works entirely offline and contacts nobody until you press **Sign in to sync**.
+- Changes made on one signed-in device appear on the others on their own, without a reload.
+- A change made while offline is kept and sent when the connection comes back. If two devices change the same species, the one that reaches the server later is the one that stays.
+- Signing in adopts the progress already on that device instead of discarding it, and signing out returns that device to its own checklist without deleting anything.
+- Each signed-in account keeps its own separate checklist; nothing is shared between accounts.
+- Added undo data to every synced change: a change records what it replaced, so it can be reversed — including a full Reset, which is logged with everything it cleared.
 
 ## 2026-09-16
 
