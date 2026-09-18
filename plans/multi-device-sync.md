@@ -90,11 +90,37 @@ The self-hosted row is the one that matches the owner's local-first instincts, a
 problem is solvable (a tunnel, or a remote-access overlay) — but it is the only option where "the
 NAS is down" or "the tunnel expired" is a real failure mode for the app.
 
-**Facts still being verified** (dispatch in flight, not assumptions): current free-tier limits and
-Google sign-in support for each managed option, whether the free tiers need a credit card, PocketBase's
-current OAuth and realtime support, the rules for exposing a home service as a public webhook, and the
-Telegram Bot API's webhook, rate-limit and identity behaviour. The provider decision stays open until
-those come back.
+## Verified facts (checked 2026-09-18)
+
+As published today, which is what the provider decision rests on:
+
+| | Firebase (Spark) | Supabase (Free) | PocketBase self-hosted |
+| --- | --- | --- | --- |
+| Cost | $0, and no payment method is required | $0; the card requirement is not explicitly documented, so treat it as unverified | $0 for the software, plus his hardware and power |
+| Identity | Firebase Auth with Google sign-in from the client SDK, 50,000 MAU free | Supabase Auth with `signInWithOAuth({ provider: 'google' })`, 50,000 MAU free | OAuth2 providers including Google, configured on an auth collection |
+| Data | Firestore: 1 GiB, 50,000 reads/day, 20,000 writes/day, 10 GiB/month egress | Postgres: 500 MB, 5 GB/month egress | SQLite under `pb_data`, bounded by the NAS |
+| Realtime | Firestore listeners | 200 concurrent connections, 2M messages/month, 256 KB per message | SSE on `/api/realtime` |
+| Server code for the chat webhook | **Cloud Functions require Blaze** — billing enabled, though free within 2M invocations/month | **Edge Functions are included on Free** — 500,000 invocations/month | Something must run on the NAS |
+| Who owns it | Nobody | Nobody | Patching, TLS, uptime and backups are all his |
+| Sharp edge | The webhook cannot be free without enabling billing | Free projects pause after roughly seven days of inactivity, so sync would silently stop until unpaused | Pre-1.0 (v0.40.4) with no compatibility promise across releases, and no official Docker image |
+
+Two consequences worth stating plainly:
+
+- **No option removes server-side code from the chat feature.** Telegram requires an HTTPS webhook,
+  so a small function exists in every design. What is optional is *billing* (Supabase Edge Functions
+  on the free plan, or a free worker elsewhere) and *ownership*.
+- **A hybrid is legitimate**: Firestore plus Firebase Auth on Spark, with the Telegram webhook on a
+  free worker outside Firebase, keeps the whole thing at zero cost without enabling billing.
+
+Exposure, if the self-hosted route is chosen: Tailscale Funnel is free on all plans (still labelled
+beta) and publishes an HTTPS URL on ports 443, 8443 or 10000, which covers the port Telegram wants.
+Cloudflare Tunnel is the alternative and needs a domain. Only the webhook must be public, but the app
+needs a reachable URL when the owner is away from home, and a tunnel or access overlay covers both.
+
+Telegram interactivity improves the chat design: bots can attach inline keyboards and edit their own
+messages, so the common actions can be taps rather than typed commands, with command text as the
+fallback. Guidance is one message per second per chat. A second bot is entirely normal — each token
+is independent — and the sender's `User.id` is the stable key that a one-time linking code binds to.
 
 ## Staged plan
 
@@ -109,6 +135,7 @@ those come back.
 ## Open decisions (grilling rounds)
 
 Round 1, asked: artifact shape, conflict model, chat channel identity, trade semantics, sign-in
-allowlist. Round 2 (blocked on the verification above): which provider, and therefore which
-migration and backup story. Later: what `Reset` means when data is in two places, and how the
-offline artifact advertises the synced one.
+allowlist. Round 1b, asked alongside it now that the numbers are in: which provider (and therefore
+which migration and backup story), and whether the chat is taps, typed commands, or both. Later:
+what `Reset` means when the data lives in two places, how the offline artifact advertises the synced
+one, and what undo looks like through a bot.
