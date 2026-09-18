@@ -51,7 +51,7 @@ def main() -> int:
     args = parser.parse_args()
 
     cmd = [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", args.uid,
-           "--cache", args.cache, "--top", str(args.top), "--plain"]
+           "--cache", args.cache, "--top", str(args.top)]
     if args.fleeing:
         cmd.append("--fleeing")
     if args.exclude:
