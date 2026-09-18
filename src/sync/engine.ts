@@ -24,6 +24,7 @@ import {
   TOMBSTONE,
   mergeDocument,
   parseRecordsSnapshot,
+  type RecordEntry,
   type SyncDocument,
 } from "./records";
 import {
@@ -164,18 +165,31 @@ async function publish(): Promise<void> {
 }
 
 function applyRemote(uid: string, incoming: unknown): void {
+  // Judge what this device still owes the server against the document it had
+  // confirmed BEFORE this message arrived. Diffing against the freshly merged
+  // document instead would classify the server's own update as a local edit this
+  // device had not published — which is how a cleared species, or a whole reset,
+  // comes back from the dead and gets pushed to every other device.
+  const owedBefore = pendingEntries(base, exportState(), Date.now(), uid);
+
   base = mergeDocument(base, {
     schema: 1,
     records: parseRecordsSnapshot(incoming),
     updatedAt: Date.now(),
   });
   writeBase(uid);
-  const pending = pendingEntries(base, exportState(), Date.now(), uid);
-  syncPending.value = Object.keys(pending).length;
-  // Applying is not a local change: persist() would notify the publisher, and the
-  // view already equals what the server holds plus anything still unpublished.
-  applyState(saveFromView(viewWithPending(base, pending), validPokemon, validForms));
-  if (Object.keys(pending).length === 0) {
+
+  const owed: Record<string, RecordEntry> = {};
+  for (const [key, entry] of Object.entries(owedBefore)) {
+    // Still worth sending only if the server's own value does not already say it.
+    if (base.records[key]?.s !== entry.s) owed[key] = entry;
+  }
+
+  applyState(
+    saveFromView(viewWithPending(base, owed), validPokemon, validForms),
+  );
+  syncPending.value = Object.keys(owed).length;
+  if (Object.keys(owed).length === 0) {
     lastPushed = "";
     syncPhase.value = "ready";
   } else {
