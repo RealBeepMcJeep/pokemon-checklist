@@ -139,6 +139,18 @@ h3 {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.sync-fallback {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-dark);
+  font: inherit;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
 .action-button,
 .drawer-close,
 .backdrop,

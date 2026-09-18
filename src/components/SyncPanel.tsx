@@ -1,11 +1,24 @@
 import { useState } from "preact/hooks";
 import {
+  beginSignIn,
   syncAccount,
   syncMessage,
   syncPending,
   syncPhase,
-  watchSyncAccount,
 } from "../sync/engine";
+
+/**
+ * Popup failures worth retrying as a full page. A script blocker is the common
+ * cause and cannot be detected, so these are the codes that mean "the window did
+ * not work" rather than "the player said no".
+ */
+const RETRY_FULL_PAGE = new Set([
+  "auth/popup-blocked",
+  "auth/cancelled-popup-request",
+  "auth/operation-not-supported-in-this-environment",
+  "auth/internal-error",
+  "auth/web-storage-unsupported",
+]);
 import {
   signInWithGoogle,
   signInWithGoogleRedirect,
@@ -48,13 +61,13 @@ function describeSignIn(error: unknown): string {
     case "auth/popup-blocked":
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "The sign-in window was blocked; trying a full-page sign-in.";
+      return "The sign-in window was blocked, so it is being tried as a full page instead.";
     case "auth/network-request-failed":
       return "No connection right now. Keep playing — your progress is saved here.";
     case "auth/operation-not-allowed":
       return "Google sign-in is not enabled for this project yet.";
     default:
-      return "Sign-in did not complete. Your checklist here is untouched.";
+      return "Sign-in did not complete. Your checklist here is untouched — try “Full-page sign-in”, which does not need a popup.";
   }
 }
 
@@ -63,12 +76,16 @@ export function SyncPanel() {
   const phase = syncPhase.value;
   const [busy, setBusy] = useState(false);
 
-  async function signIn(): Promise<void> {
+  async function signIn(fullPage = false): Promise<void> {
     setBusy(true);
-    // Registering the handler before signing in means the account is picked up the
-    // moment the provider hands one back.
-    watchSyncAccount();
+    // Before anything else: a full-page round trip reloads the page, and the flag
+    // telling it to look for a session has to be in place by then.
+    beginSignIn();
     try {
+      if (fullPage) {
+        await signInWithGoogleRedirect();
+        return;
+      }
       await signInWithGoogle();
       showNotice(
         "Signed in. This checklist now syncs across your devices.",
@@ -80,7 +97,7 @@ export function SyncPanel() {
         typeof error === "object" && error !== null && "code" in error
           ? String((error as { code: unknown }).code)
           : "";
-      if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+      if (RETRY_FULL_PAGE.has(code)) {
         await signInWithGoogleRedirect().catch(() => undefined);
       }
     } finally {
@@ -129,15 +146,29 @@ export function SyncPanel() {
           Sign out
         </button>
       ) : (
-        <button
-          class="action-button"
-          id="sync-signin"
-          type="button"
-          disabled={busy || phase === "connecting"}
-          onClick={signIn}
-        >
-          {busy ? "Signing in…" : "Sign in to sync"}
-        </button>
+        <>
+          <button
+            class="action-button"
+            id="sync-signin"
+            type="button"
+            disabled={busy || phase === "connecting"}
+            onClick={() => void signIn()}
+          >
+            {busy ? "Signing in…" : "Sign in to sync"}
+          </button>
+          {/* The popup needs scripts in a window the player cannot fix; a full-page
+              sign-in is an ordinary navigation, so script blockers can allow it. */}
+          <button
+            class="sync-fallback"
+            id="sync-signin-full"
+            type="button"
+            disabled={busy || phase === "connecting"}
+            title="Sign in on a normal page instead of a popup. Use this if a script blocker stops the window."
+            onClick={() => void signIn(true)}
+          >
+            Full-page sign-in
+          </button>
+        </>
       )}
     </span>
   );

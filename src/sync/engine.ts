@@ -299,6 +299,19 @@ export function watchSyncAccount(): void {
   watchAuth(onAuthState);
 }
 
+/**
+ * Prepare for a sign-in, called BEFORE the provider is invoked.
+ *
+ * The full-page flow leaves the page and comes back as a fresh load, so the
+ * "this device has signed in before" flag has to be set first. Otherwise the
+ * reload decides there is no session to look for, auth is never initialised, and
+ * a successful sign-in comes back looking signed out.
+ */
+export function beginSignIn(): void {
+  rememberSyncSession(safeStorage());
+  watchSyncAccount();
+}
+
 export function stopSync(): void {
   unsubscribeValue?.();
   unsubscribeConnection?.();
