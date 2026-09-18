@@ -72,17 +72,19 @@ Completed items move to `changelog.md`.
 
 ### Multi-device sync and control from chat
 
-Spec and options: `plans/multi-device-sync.md`. Nothing here is scheduled; the open decisions in
-that file come first.
+Spec, decisions and research: `plans/multi-device-sync.md` and `plans/research/`. Stage 1 (sync) is
+designed; Stage 2 (chat control) follows it.
 
-- [ ] Settle the artifact question: whether sync rides in a second opt-in build or the network-free publisher rule changes.
-- [ ] Settle the conflict model: per-record timestamps merged field by field, tombstones for cleared statuses.
-- [ ] Choose a backend once the free-tier and Google sign-in facts are verified, and record the migration and backup story for it.
-- [ ] Extend the save to schema v4 carrying sync metadata, migrating v1-v3 saves losslessly.
-- [ ] Sign in with Google restricted to the owner's account, with the checklist stored per account.
-- [ ] Sync statuses, form progress, stars and mode across phone, tablet and PC, merging offline edits on reconnect.
-- [ ] Add a Telegram command channel: caught, seen, trade, star, unstar, status, team, linked to the account by a one-time code.
-- [ ] Keep export/import and Reset semantics correct once the data lives in two places.
+- [ ] Create the Firebase project on Spark with billing off, add a Realtime Database, enable Google sign-in, set the authorized domains — owner action, checklist in the spec.
+- [ ] Restate the publisher's network rule as "no request unless signed in", and keep a test proving the file stays silent while signed out.
+- [ ] Extend the save to schema v4 with per-record sync metadata and an event log, migrating v1-v3 saves losslessly.
+- [ ] Add the durable outbox: local writes first, queued operations flushed on reconnect, nothing blocking on the network.
+- [ ] Merge incoming changes per record with server-assigned ordering so one account on several devices converges.
+- [ ] Namespace local data per account, adopting whatever is already on the device the first time an account signs in.
+- [ ] Sign in with Google (One Tap plus a fallback button) with the email allowlist enforced in the security rules.
+- [ ] Implement undo as the inverse of a logged operation, Reset included, with the before-image carried in the log entry.
+- [ ] Keep export/import, Reset and offline-only mode correct once the data lives in two places.
+- [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend.
 
 ### Verification
 

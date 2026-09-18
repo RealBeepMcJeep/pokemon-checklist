@@ -166,6 +166,48 @@ Second batch of answers, same day:
   tablet just runs the offline app — so offline-only stays a first-class mode, not a degraded one,
   and export/import remains the only backup for that device.
 
+Third batch of answers, same day:
+
+- **The log records progress only** — status, form and star changes, each with actor, device, time and
+  before→after — capped at roughly 500 events or 90 days and compacted into the records as it ages.
+  Preferences such as the selected mode are not logged. Single-step undo ships in v1 on top of it.
+- **Local data is namespaced per account.** A device's existing data is adopted into the account the
+  first time one signs in; a different account signing in later gets its own separate space and never
+  sees or overwrites the first one's.
+- **The backend is Firebase Realtime Database plus Auth on Spark**, with the app owning the durable
+  state and the outbox.
+
+### Undo, including undo of a Reset
+
+The owner asked whether undo should store a full pre-reset snapshot locally instead of pushing one to
+the database, and whether undo could instead roll back using log entries. Measured sizes for the real
+shape (807 species, 412 caught, 180 seen, 25 forms, 5 starred):
+
+```
+full save, compact             8,990 B
+full save, pretty             12,747 B
+a reset's before-image         8,413 B   (the records the reset actually clears)
+one ordinary log entry           115 B
+500-entry log (the cap)        ~56 KB
+Realtime Database Spark: 1 GB stored = 119,437x the full save
+```
+
+The snapshot is therefore not "a large amount of data" — but the log-based approach is still the
+better design, for reasons of correctness rather than size:
+
+- **A snapshot restore is blunt.** Undoing a reset by restoring the old state would also erase
+  anything caught on another device *after* the reset. Applying the inverse per record, under the same
+  merge rule, restores only records untouched since the reset and leaves new catches alone.
+- **A local-only undo snapshot fails exactly when it is needed.** Clearing site data, switching
+  devices or a lost tablet takes the undo data with it. Carried in the log entry, the before-image is
+  durable and *any* device can undo, not only the one that pressed Reset.
+- **The cost is one larger log entry, not a parallel copy of the state** — about 8 KB once, against
+  merging a second full snapshot on every reset.
+
+So: a Reset is logged like any other operation, its entry carries the before-image of what it cleared,
+and undo is the inverse of a logged operation. The undo window therefore equals the log retention
+window (500 events or 90 days), and an undone record is re-armed by the newer operation that follows.
+
 ## Research verdicts (2026-09-18)
 
 **What the community actually uses** (`plans/research/community-sync-2026.md`): Firebase is the
@@ -230,6 +272,27 @@ Checked against official documentation, because the provider recommendation rest
   and Auth accounts export through the CLI with UIDs preserved on re-import; the rules, claims and
   sync behaviour would all have to be rebuilt by hand elsewhere.
 
+## Owner setup checklist (Firebase)
+
+What has to exist before Stage 1 can be built or tested, all inside the free Spark plan. Nothing here
+needs a payment method, and billing must stay **off** — enabling Blaze would also enable Cloud
+Functions, which this design deliberately does not use.
+
+1. Create a Firebase project. Decline analytics; keep billing off.
+2. Create a **Realtime Database** (the region cannot be changed later, so pick it deliberately).
+3. Add a **Web app** to the project and copy its config object. This config is public by design — it
+   ships inside the artifact either way — so it is not a secret and can live in the repository.
+4. Enable **Google** as a sign-in provider. Optionally also email/password, which is how the agent
+   would authenticate in Stage 2.
+5. Add the authorised domains: the GitHub Pages host and the local dev host, or sign-in fails in both.
+6. Paste the security rules (written during Stage 1) containing the email allowlist.
+7. Tell me the allowlist emails and the database URL.
+
+Credential handling: the web config is not a secret. The only secret is whatever the agent uses in
+Stage 2 — either a dedicated allowlisted user whose refresh token sits in `/opt/data/.env`, or a
+service-account key file. Both belong in `.env` or at a path I name, never in chat, and Stage 1 does
+not need either one.
+
 ## Staged plan
 
 - **Stage 1 — one save, several devices.** Schema v4 with sync metadata, provider choice, Google
@@ -251,3 +314,12 @@ one, and what undo looks like through a bot.
 Superseded by the owner's answers: the chat is the agent, not a bot; `trade` is sugar for seen; the
 publisher rule is restated rather than a second build added; the provider decision narrowed to
 Realtime Database versus Supabase once the son's sign-in path is settled.
+All questions raised have been answered. Settled: one artifact with the SDK bundled and sign-in as
+the sync switch; per-person checklists with multi-device live sync; allowlist by email with One Tap
+plus a fallback; records plus a bounded log; the son offline-only; log-derived undo including undo of
+a Reset; Firebase Realtime Database plus Auth on Spark. Next step is the Stage 1 build plan rather
+than more questions — the remaining uncertainty is implementation detail (bundle size, merge tests,
+the publisher rule wording), not direction.
+
+Superseded history follows, kept so the reasoning is not lost:
+
