@@ -116,11 +116,27 @@ h3 {
 .sync-panel {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
+  min-width: 0;
 }
 .sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   font-size: 0.78rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sync-account::after {
+  content: " · ";
+}
+/* A button label may never wrap or spill: it is the control, not the detail. */
+.sync-panel .action-button {
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 .action-button,

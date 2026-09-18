@@ -48,6 +48,21 @@
   .backdrop.visible {
     display: block;
   }
+  /* On a phone the account line would push the button off its own frame, so the
+     status word stands alone and the address stays in the title. */
+  .sync-account,
+  .sync-account::after {
+    display: none;
+  }
+  /* Give the row its own line rather than sharing one with six buttons: the status
+     still needs room, and squeezing it clips the very thing it is reporting. */
+  .sync-panel {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  .sync-status {
+    flex: 1 1 auto;
+  }
   .title-row {
     gap: 0.4rem;
   }

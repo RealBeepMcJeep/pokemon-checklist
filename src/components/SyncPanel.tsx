@@ -28,8 +28,8 @@ function statusText(): string {
       return "Syncing…";
     case "pending":
       return syncPending.value === 1
-        ? "1 change to send"
-        : `${syncPending.value} changes to send`;
+        ? "1 to send"
+        : `${syncPending.value} to send`;
     case "ready":
       return "Synced";
     case "error":
@@ -108,9 +108,16 @@ export function SyncPanel() {
         role="status"
         aria-live="polite"
       >
-        {account
-          ? `${account.email || "Signed in"}${statusText() ? ` · ${statusText()}` : ""}`
-          : statusText()}
+        {/*
+          Split in two so a phone can drop the long part. The account is detail
+          (kept in the title for a long press); the status word is the signal.
+        */}
+        {account && (
+          <span class="sync-account" title={account.email || "Signed in"}>
+            {account.email || "Signed in"}
+          </span>
+        )}
+        <span class="sync-phase">{statusText()}</span>
       </span>
       {account ? (
         <button
