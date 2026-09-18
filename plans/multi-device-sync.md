@@ -201,6 +201,35 @@ activity.
   of users and occasional conflicts; the research advice is explicitly not to adopt Automerge or Yjs
   merely because the app is offline-first.
 
+## Verified Firebase behaviour (2026-09-18)
+
+Checked against official documentation, because the provider recommendation rests on it:
+
+- **Writes queue and replay while the tab lives, but the Realtime Database web cache is memory-only.**
+  A write applies locally at once and synchronises on reconnect with no replay code of ours, and
+  `/.info/connected` reports connectivity — but Firebase states the web APIs do not persist data
+  offline outside the session, so a reload or a crash loses anything not yet accepted. Firestore is
+  the opposite: its persistent cache is IndexedDB-backed and survives reloads.
+- **Consequence, and it is not optional: the app owns the durable state *and* the outbox.** The
+  localStorage save stays the source of truth and gains a pending-operations queue flushed on
+  reconnect. This is required with any provider anyway, because the per-record merge is ours, so the
+  SDK is a transport and never the storage of record.
+- **Signing in stays signed in.** Auth's web default (LOCAL) persists across browser restarts, scoped
+  to the origin. Google One Tap provides the near-one-click Chrome path, with a fallback button,
+  because FedCM behaviour depends on browser version, privacy settings and account state.
+- **The allowlist lives in the security rules, not at sign-in.** Rules can read `auth.token.email`,
+  `auth.token.email_verified` and `auth.uid` per path. Blocking authentication itself needs Identity
+  Platform with Cloud Functions, which needs Blaze and is out of scope. So an uninvited Google account
+  can still authenticate; it must then be told, in the UI, that there is no checklist for it here.
+- **Spark is cardless and cannot surprise-bill.** Realtime Database on Spark: 1 GB stored, 10 GB/month
+  download (about 360 MB/day), 100 simultaneous connections — a connection is a tab or a device, so a
+  family is nowhere near the cap. Over-quota is capped rather than converted into charges, and no
+  inactivity pause or deletion is documented. Keep independent exports anyway, because "not
+  documented" is not a guarantee.
+- **Leaving is possible, not painless.** The database exports as JSON from the console or over REST,
+  and Auth accounts export through the CLI with UIDs preserved on re-import; the rules, claims and
+  sync behaviour would all have to be rebuilt by hand elsewhere.
+
 ## Staged plan
 
 - **Stage 1 — one save, several devices.** Schema v4 with sync metadata, provider choice, Google
