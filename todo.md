@@ -84,6 +84,7 @@ built and deployed; Stage 2 (chat control) follows it.
 - [ ] Write a Reset to the log with its before-image, and give the player a single-step undo of any logged change.
 - [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
 - [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend. Blocked on an agent credential the owner creates: either a dedicated allowlisted user's refresh token or a service-account key, kept in `/opt/data/.env`.
+- [ ] Add the chat parser's self-test to CI. The token in use lacks the `workflow` scope GitHub requires to modify `.github/workflows/ci.yml`, so the step is documented in the README instead; grant the scope and it lands in one commit.
 - [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
 
 ### Verification
