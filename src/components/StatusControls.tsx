@@ -18,14 +18,21 @@ const STATUS_SYMBOL = {
 } satisfies Record<Status, string>;
 
 export function PokemonIcon({ id }: { id: number }) {
+        // The atlas is referenced as an <img> rather than as a CSS background on
+        // purpose: a background-image keeps the ~900 KB data URL inside every
+        // icon's computed style, and a full style recalculation over the 807-row
+        // Pokédex then costs about a second on a phone. See references/performance.md.
         return (
-                <span
-                        class="icon"
-                        aria-hidden="true"
-                        style={{
-                                backgroundPosition: `-${((id - 1) % ATLAS.columns) * ATLAS.frameWidth}px -${Math.floor((id - 1) / ATLAS.columns) * ATLAS.frameHeight}px`,
-                        }}
-                />
+                <span class="icon" aria-hidden="true">
+                        <img
+                                class="icon-sprite"
+                                src={ATLAS.url}
+                                alt=""
+                                style={{
+                                        transform: `translate(-${((id - 1) % ATLAS.columns) * ATLAS.frameWidth}px, -${Math.floor((id - 1) / ATLAS.columns) * ATLAS.frameHeight}px)`,
+                                }}
+                        />
+                </span>
         );
 }
 

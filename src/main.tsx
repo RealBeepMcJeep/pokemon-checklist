@@ -1,6 +1,5 @@
 import { render } from "preact";
 import { App } from "./App";
-import { ATLAS } from "./data";
 import { firstIncompleteLocation } from "./domain";
 import {
   activeEncounters,
@@ -17,7 +16,6 @@ import "./styles/responsive.css";
 initializeState();
 watchOtherTabs();
 document.documentElement.dataset.mode = mode.value;
-document.documentElement.style.setProperty("--atlas", `url("${ATLAS.url}")`);
 focusedLocation.value =
   firstIncompleteLocation(activeEncounters.value, speciesStatus)?.id || null;
 

@@ -341,3 +341,69 @@ test("keeps starred Pokémon across a reload", async ({ page }, testInfo) => {
   ).toHaveAttribute("aria-pressed", "true");
   expect(errors).toEqual([]);
 });
+
+test("keeps the atlas out of computed styles and crops the right frame", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await expect(page.locator(".dex-row")).toHaveCount(807);
+
+  // Guard for a measured bug, not a cosmetic detail: while the icons referenced the
+  // ~900 KB atlas as a CSS background, every icon carried that data URL in its
+  // computed style and a full style recalculation over the list blocked the main
+  // thread for about a second when the drawer closed. The sprites must therefore
+  // come from an <img>; a background-image here reintroduces the stall.
+  const backgrounds = await page.evaluate(() =>
+    [...document.querySelectorAll(".dex-row .icon")].map(
+      (icon) => getComputedStyle(icon).backgroundImage,
+    ),
+  );
+  expect(new Set(backgrounds)).toEqual(new Set(["none"]));
+
+  const sprite = await page.evaluate(() => {
+    const image = document.querySelector<HTMLImageElement>(
+      ".dex-row .icon .icon-sprite",
+    );
+    const box = image?.closest(".icon");
+    const boxRect = box?.getBoundingClientRect();
+    const imageRect = image?.getBoundingClientRect();
+    return image && boxRect && imageRect
+      ? {
+          src: image.getAttribute("src"),
+          alt: image.getAttribute("alt"),
+          naturalWidth: image.naturalWidth,
+          box: [boxRect.width, boxRect.height],
+          offset: [
+            boxRect.left - imageRect.left,
+            boxRect.top - imageRect.top,
+          ],
+        }
+      : null;
+  });
+  expect(sprite).not.toBeNull();
+  // In the shipped artifact the atlas is inlined; the dev server serves it as a file.
+  expect(sprite!.src).toMatch(/^(data:image\/|.*gen7-icons)/);
+  expect(sprite!.alt).toBe("");
+  expect(sprite!.box).toEqual([40, 30]);
+  // #001 Bulbasaur is the first frame, so nothing is shifted.
+  expect(sprite!.offset).toEqual([0, 0]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.querySelector<HTMLImageElement>(".dex-row .icon-sprite")
+            ?.naturalWidth,
+      ),
+    )
+    .toBe(1280);
+
+  // A species outside the atlas's first row has to be shifted on both axes.
+  await page.fill("#dex-search", "Mewtwo");
+  await expect(page.locator(".dex-row")).toHaveCount(1);
+  const mewtwo = await page.evaluate(() => {
+    const image = document.querySelector<HTMLImageElement>(".dex-row .icon-sprite")!;
+    return getComputedStyle(image).transform;
+  });
+  expect(mewtwo).toBe("matrix(1, 0, 0, 1, -840, -120)");
+  expect(errors).toEqual([]);
+});

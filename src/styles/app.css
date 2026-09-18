@@ -446,9 +446,17 @@ tbody tr:hover {
   width: 40px;
   height: 30px;
   flex: 0 0 40px;
-  background-image: var(--atlas);
-  background-repeat: no-repeat;
+  /* Crop box for the sprite. The atlas frame is drawn by an oversized <img>
+     inside this box and moved into place with a transform; a background-image
+     would embed the whole atlas in every icon's computed style. */
+  overflow: hidden;
+  contain: paint;
   image-rendering: pixelated;
+}
+.icon-sprite {
+  display: block;
+  max-width: none;
+  transform-origin: 0 0;
 }
 .pokedex {
   position: sticky;

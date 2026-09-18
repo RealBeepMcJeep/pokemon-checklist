@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-18
+
+- Stopped the Pokédex from freezing the page when it closes on a phone: the first close after opening blocked the main thread for about 1.5 seconds and now takes about 70 milliseconds at four-times CPU throttling.
+- Found the cause in the icon sprites: the ~900 KB inlined sprite atlas was referenced as a CSS background, so all 807 Pokédex rows carried the entire atlas inside their computed style, and every full style recalculation over the list had to process it row by row.
+- Draws each sprite from an image cropped by its icon box instead, which keeps the atlas out of computed styles entirely, and removed the document-wide custom property that held it.
+- Kept every sprite, frame and mode theme identical: the same atlas is used, with the same crop per species, so nothing looks different.
+- Added a browser check that fails if the atlas returns to a computed style, and that verifies the crop for a species on a lower atlas row.
+
 ## 2026-09-16
 
 - Added a build version stamp to the application header, rendered as `v<version> - <short commit>` (for example `v1.0.0 - 8d7c12`).
