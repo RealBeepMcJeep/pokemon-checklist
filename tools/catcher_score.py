@@ -25,8 +25,9 @@ Scoring (per evolution family; the family is scored on its best form):
                | tutor 1 - BP/40 (costs Battle Points) | egg 0.5 (breeding) | event 0.2
   speed        1 / (1 + max(0, level - 10) / 40): full marks at level 10, decaying after
 
-  The best sleep option and False Swipe count in full; everything else adds only up
-  to a cap of 12, so a long list of marginal tools cannot outrank a reliable sleeper.
+  Score is additive: every core catcher move a family can get adds its own contribution.
+  Contributions decay by rank, so a kit's second-best tool counts 60% of its value, the
+  third 36%, and so on - a long list of marginal tools cannot outrank one reliable sleeper.
 
 Usage: python3 tools/catcher_score.py --uid <uid> [--exclude butterfree] [--top 15]
 """
@@ -196,12 +197,15 @@ def main() -> int:
             continue
         sleep_value = best.get("sleep", (0.0, ""))[0]
         swipe_value = best.get("other:falseswipe", (0.0, ""))[0]
-        extras = [value for kind, (value, _) in best.items()
-                  if kind not in ("sleep", "other:falseswipe")]
-        # Breadth is capped: without this, a family with many 2-3 point tools (Ice Beam's
-        # 10% freeze, a trapping move, a TM paralysis) outranked a 97%-accurate sleeper,
-        # which inverts the point of the exercise.
-        total = sleep_value + swipe_value + min(sum(extras), 12)
+        extras = sorted((value for kind, (value, _) in best.items()
+                         if kind not in ("sleep", "other:falseswipe")), reverse=True)
+        # Every core catcher move adds score, and every contribution is already dampened by
+        # how long it takes and what it costs. The one extra rule: the second-best tool in a
+        # kit is worth less than the first, so a long list of marginal tools (Ice Beam's 10%
+        # freeze, a trapping move) cannot outrank one dependable sleeper. Rank decay, not a
+        # hard cap, keeps the sum additive and the ranking honest.
+        extras_total = sum(value * (0.6 ** rank) for rank, value in enumerate(extras))
+        total = sleep_value + swipe_value + extras_total
         parts = sorted(best.values(), reverse=True)
         scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"), parts))
 
