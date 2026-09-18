@@ -149,6 +149,23 @@ messages, so the common actions can be taps rather than typed commands, with com
 fallback. Guidance is one message per second per chat. A second bot is entirely normal — each token
 is independent — and the sender's `User.id` is the stable key that a one-time linking code binds to.
 
+Second batch of answers, same day:
+
+- **The SDK ships inside the artifact, and signing in is what turns sync on.** In signed-in mode the
+  app stays offline-first: every change is applied locally and queued, and it syncs when the network
+  returns. Nothing may block on the network — no tap gated behind a request.
+- **One checklist per person, never shared.** The data belongs to the signed-in account; the same
+  account on several devices live-syncs. No cross-account sharing, so there is no membership model,
+  no roles, and no shared-record ownership problem.
+- **Allowlist by email, and Google sign-in has to be near one-click** in the browser. That is a
+  requirement on the provider, not a nicety: a multi-step consent detour is a failure.
+- **Records plus a bounded recent log**, which the owner wants to grow into a progression log, undo,
+  and possibly a social feed later. The log therefore needs a stable event vocabulary from the first
+  release; history added later cannot be retrofitted onto months of unlogged changes.
+- **The son may never sign in at all.** If his supervised account cannot complete Google OAuth, his
+  tablet just runs the offline app — so offline-only stays a first-class mode, not a degraded one,
+  and export/import remains the only backup for that device.
+
 ## Research verdicts (2026-09-18)
 
 **What the community actually uses** (`plans/research/community-sync-2026.md`): Firebase is the
