@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
+        ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
+        "state": {
+          ".validate": "newData.hasChildren(['schema', 'records', 'updatedAt'])"
+        },
+        "log": {
+          "$eventId": {
+            ".validate": "newData.hasChildren(['op', 'at', 'by'])",
+            ".write": "!data.exists() || newData.child('op').val() === 'undo'"
+          }
+        }
+      }
+    }
+  }
+}
