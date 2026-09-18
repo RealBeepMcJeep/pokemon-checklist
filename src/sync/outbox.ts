@@ -226,13 +226,30 @@ export function isWholeAccountClear(
   base: SyncDocument,
   pending: Record<RecordKey, RecordEntry>,
 ): boolean {
-  const live = Object.values(base.records).filter(
-    (entry) => entry.s !== TOMBSTONE,
-  );
-  if (live.length < 5) return false;
-  const clearing = Object.entries(pending).filter(
-    ([key, entry]) =>
-      entry.s === TOMBSTONE && base.records[key]?.s !== TOMBSTONE,
-  );
-  return clearing.length >= live.length;
+  // Only PROGRESS records count. Settings are records too, but they clear by taking
+  // a different value ("off", a mode name) rather than a tombstone, so counting them
+  // as live would make the cleared count unreachable and the guard would stay silent
+  // through the very wipe it exists to stop.
+  const live = Object.entries(base.records).filter(
+    ([key, entry]) => isProgress(key) && isLive(key, entry.s),
+  ).length;
+  if (live < 5) return false;
+  const cleared = Object.entries(pending).filter(
+    ([key, entry]) => isProgress(key) && isCleared(key, entry.s),
+  ).length;
+  return cleared >= live;
+}
+
+function isProgress(key: string): boolean {
+  return key.startsWith("species:") || key.startsWith("star:");
+}
+
+/** A star is live while it is "on"; a species is live at any status but none. */
+function isLive(key: string, status: string): boolean {
+  return key.startsWith("star:") ? status === "on" : status !== TOMBSTONE;
+}
+
+/** A cleared star is "off", not a tombstone: the two keys clear differently. */
+function isCleared(key: string, status: string): boolean {
+  return key.startsWith("star:") ? status === "off" : status === TOMBSTONE;
 }
