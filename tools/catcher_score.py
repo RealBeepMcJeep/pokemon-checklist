@@ -88,6 +88,23 @@ LABEL = {"sleep": "sleep", "falseswipe": "False Swipe", "superfang": "Super Fang
          "immunity": "immunity strip", "trapping": "trapping"}
 
 
+# Progress by island. The app's own encounter data maps every location it knows to an
+# island, and Island.order is the game's progression order, so this needs no outside source.
+ISLAND_FACTOR = {1: 0.85, 2: 0.70, 3: 0.55, 4: 0.30}
+ISLAND_OF: dict[str, int] = {}
+
+
+def load_islands(repo: Path) -> dict[str, int]:
+    data = json.loads((repo / "data" / "encounters.json").read_text())
+    out: dict[str, int] = {}
+    for island in data.get("islands", []):
+        order = int(island.get("order") or 0)
+        for location in island.get("locations", []):
+            if location.get("name"):
+                out[str(location["name"]).lower()] = order
+    return out
+
+
 def field(body: str, name: str) -> str | None:
     m = re.search(rf"\b{name}: [\'\"]([^\'\"]*)[\'\"]", body)
     return m.group(1) if m else None
@@ -152,7 +169,10 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
             options.append((f"tutor {cost} BP", place * (1 - cost / 100), 60))
         elif gate == "TM":
             where = TM_LOCATION.get(move)
-            options.append((f"TM at {where}" if where else "TM", ACQ["TM"], 40))
+            island = ISLAND_OF.get((where or "").lower())
+            # Found on island 1 is nearly free; found at Mount Lanakila is endgame.
+            factor = ACQ["TM"] * ISLAND_FACTOR.get(island or 0, 1.0)
+            options.append((f"TM at {where}" if where else "TM", factor, 40))
         elif gate == "egg":
             options.append(("egg", ACQ["egg"], 60))
         else:
@@ -167,12 +187,15 @@ def main() -> int:
     parser.add_argument("--cache", default="/opt/data/poke-data")
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="slugs to leave out (matches whole families)")
+    parser.add_argument("--explain", help="print every arithmetic step for one slug")
     args = parser.parse_args()
 
     cache = Path(args.cache)
     learned = dict(ml.top_blocks((cache / "learnsets.ts").read_text(errors="replace")))
     dex = dict(ml.top_blocks((cache / "pokedex.ts").read_text(errors="replace")))
     moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
+    global ISLAND_OF
+    ISLAND_OF = load_islands(REPO)
     move_name = lambda key: field(moves.get(key, ""), "name") or key  # noqa: E731
 
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
@@ -204,6 +227,7 @@ def main() -> int:
         if not family or excluded & set(family):
             continue
         best: dict[str, tuple[float, str]] = {}
+        trace: list[tuple] = []
         for form in family:
             body_text = learned.get(form)
             if not body_text:
@@ -230,6 +254,9 @@ def main() -> int:
                         f"[{hit * 100:.0f}%]")
                 if boost_note and hit > land:
                     note += f" *{boost_note}*"
+                if args.explain == slug:
+                    trace.append((category, move_name(move), name_of.get(form, form), label,
+                                  land, boost, factor, level, speed, value))
                 # One contribution per benefit: a second sleep move adds nothing.
                 if value > best.get(category, (0.0, ""))[0]:
                     best[category] = (value, note)
@@ -239,10 +266,38 @@ def main() -> int:
         swipe_value = best.get("falseswipe", (0.0, ""))[0]
         extras = sorted((v for c, (v, _) in best.items()
                          if c not in ("sleep", "falseswipe")), reverse=True)
-        total = sleep_value + swipe_value + sum(v * 0.6 ** rank for rank, v in enumerate(extras))
+        # Sleep and False Swipe count in full; the best of the REST counts 60%, the next
+        # 36%. The first version used 0.6**rank over the extras, which made the first extra
+        # count at full weight, so the ranking disagreed with this document.
+        total = sleep_value + swipe_value + sum(v * 0.6 ** (rank + 1)
+                                                for rank, v in enumerate(extras))
         parts = sorted(best.items(), key=lambda kv: -kv[1][0])
         scored.append((total, name_of.get(slug, slug), tier_of.get(slug, "?"),
                        [(LABEL[c], value, note) for c, (value, note) in parts]))
+
+        if args.explain == slug:
+            print(f"\n=== how {name_of.get(slug, slug)} is scored ===")
+            print(f"{'category':12} {'move':16} {'form':12} how                "
+                  f"{'land':>6} {'ability':>7} {'acq':>5} {'speed':>6} {'= value':>8}")
+            for category, move, form, label, land, boost, factor, level, speed, value in trace:
+                # * marks the option that actually counts; the rest are dropped because
+                # they give the same benefit (you would not run two sleep moves).
+                mark = "*" if abs(best[category][0] - value) < 1e-9 else " "
+                print(f"{mark}{category:12} {move:16} {form:12} {label:18} "
+                      f"{land * 100:5.0f}% {boost:7.2f} {factor:5.2f} {speed:6.2f} {value:8.2f}")
+            print("\n  * = this category's best option; the others are dropped (you would "
+                  "not run two sleep moves)")
+            chosen = sorted(best.items(), key=lambda kv: -kv[1][0])
+            total_check = 0.0
+            for rank, (category, (value, _)) in enumerate(chosen):
+                weight = 1.0 if category in ("sleep", "falseswipe") else 0.6 ** (rank - 0)
+                if category in ("sleep", "falseswipe"):
+                    print(f"  {category:12} {value:7.2f}  x1.00 (counts in full)   = {value:7.2f}")
+                    total_check += value
+                else:
+                    print(f"  {category:12} {value:7.2f}  x{weight:.2f} (rank decay)    = {value * weight:7.2f}")
+                    total_check += value * weight
+            print(f"  {'TOTAL':12} {total_check:7.2f}   (this is the score in the table)\n")
 
     scored.sort(key=lambda t: (-t[0], t[1]))
     print(f"{'score':>6}  {'pokemon':14} {'tier':7} best tool")
