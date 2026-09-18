@@ -19,7 +19,9 @@ MODEL
   paralysis          7  x1.5 catch rate, and the safe fallback when sleep misses
   anti-ghost         6  Foresight / Odor Sleuth / Soak: Normal moves hit Ghosts
   immunity strip     3  Worry Seed / Gastro Acid: beats Insomnia and Overcoat
-  trapping           2  Mean Look / Spider Web / Block: nothing to trap in USUM
+  trapping           2  Mean Look / Spider Web / Block. Near-worthless against ordinary
+                        wild Pokemon, but the answer to anything that flees - see
+                        --fleeing, which re-scores the whole model for that case.
   burn / poison      0  they raise the catch rate but damage the target - not a tool
 
   every contribution is multiplied by:
@@ -196,6 +198,8 @@ def main() -> int:
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="slugs to leave out (matches whole families)")
     parser.add_argument("--explain", help="print every arithmetic step for one slug")
+    parser.add_argument("--fleeing", action="store_true",
+                        help="score for a target that leaves this turn (Teleport etc.)")
     args = parser.parse_args()
 
     cache = Path(args.cache)
@@ -228,6 +232,15 @@ def main() -> int:
                  if k.startswith("star:") and v.get("s") == "on"}
         roster = sorted({ml.normalize(by_id[d]["slug"]) for d in (caught | stars) if d in by_id})
 
+    # A fleeing target changes the whole problem. Teleport is priority -6, so the player
+    # already acts first and SPEED IS IRRELEVANT; what matters is that the turn ends with the
+    # target gone, so you get ONE action. Two things beat that: a sleep reliable enough to
+    # land first try, or a trapping move that prevents the escape outright. Delayed effects
+    # (Yawn) are worth nothing here, nor is anything whose payoff arrives later.
+    bases = dict(CATEGORY_BASE)
+    if args.fleeing:
+        bases = {"sleep": 60, "falseswipe": 25, "trapping": 45}
+
     excluded = {s.strip().lower() for s in args.exclude.split(",") if s.strip()}
     scored = []
     for slug in roster:
@@ -249,13 +262,17 @@ def main() -> int:
                     boost, boost_note = 1.3, ability
             for move, gates in ml.gen7_moves(body_text).items():
                 found = benefit(move, moves.get(move, ""))
-                if not found or found[0] not in CATEGORY_BASE:
+                if not found or found[0] not in bases:
                     continue
+                if args.fleeing and move == "yawn":
+                    continue  # the target is gone before Yawn resolves
                 category, land = found
                 label, factor, level = easiest(gates, move)
                 hit = min(1.0, land * boost)
                 speed = 1 / (1 + max(0, level - 10) / 40)
-                value = CATEGORY_BASE[category] * hit * factor * speed
+                if args.fleeing and category == "sleep":
+                    hit = hit ** 2  # one shot: 98% stays 96%, 60% becomes 36%
+                value = bases[category] * hit * factor * speed
                 if value <= 0:
                     continue
                 note = (f"{move_name(move)} via {name_of.get(form, form)} {label} "
@@ -272,6 +289,10 @@ def main() -> int:
             continue
         sleep_value = best.get("sleep", (0.0, ""))[0]
         swipe_value = best.get("falseswipe", (0.0, ""))[0]
+        if args.fleeing and "trapping" not in best:
+            # You get one action. Living on 1 HP is only useful if a trapping move
+            # bought you the extra turns, so without trapping it barely counts.
+            swipe_value *= 0.3
         extras = sorted((v for c, (v, _) in best.items()
                          if c not in ("sleep", "falseswipe")), reverse=True)
         # Sleep and False Swipe count in full; the best of the REST counts 60%, the next
@@ -307,6 +328,9 @@ def main() -> int:
                     total_check += value * weight
             print(f"  {'TOTAL':12} {total_check:7.2f}   (this is the score in the table)\n")
 
+    if args.fleeing:
+        print("fleeing target: one action before it leaves. Speed is irrelevant "
+              "(Teleport is -6), so this scores a first-try sleep or a trapping move.\n")
     scored.sort(key=lambda t: (-t[0], t[1]))
     print(f"{'score':>6}  {'pokemon':14} {'tier':7} best tool")
     for total, name, tier, parts in scored[: args.top]:
