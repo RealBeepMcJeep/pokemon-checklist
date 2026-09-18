@@ -297,9 +297,15 @@ def card_html(
                 f'<div class="bp">{"" if bp in ("0", "-") else html_escape.escape(str(bp)) + " BP"}</div>'
                 f'<div class="gates">{" ".join(chips)}</div>'
             )
-        stats = (f"Grade {html_escape.escape(str(section.get('grade', '?')))} &middot; "
+        type_chips = " ".join(
+            f'<span class="chip" style="background:{TYPE_COLOR.get(str(kind), "#455a64")}">'
+            f"{html_escape.escape(str(kind))}</span>"
+            for kind in (section.get("types") or [])
+        )
+        stats = (f'{type_chips} <span class="tierline">Grade '
+                 f"{html_escape.escape(str(section.get('grade', '?')))} &middot; "
                  f"{html_escape.escape(str(section.get('smogon_tier', '?')))} &middot; "
-                 f"{(section.get('usage') or 0):.2f}% usage")
+                 f"{(section.get('usage') or 0):.2f}% usage</span>")
         blocks.append(
             f'<section>'
             f'<header>'
@@ -333,6 +339,7 @@ def card_html(
   .hero {{ width:160px; height:120px; flex:0 0 auto; }}
   .titles b {{ font-size:21px; display:block; }}
   .titles em {{ color:#8b93a7; font-style:normal; font-size:12px; }}
+  .tierline {{ color:#8b93a7; }}
   .grid {{ display:grid; grid-template-columns:170px 56px 152px 78px 62px 1fr;
            gap:5px 10px; align-items:center; }}
   .bar {{ background:#1c212e; height:9px; border-radius:5px; overflow:hidden; }}
@@ -446,7 +453,8 @@ def main() -> int:
 
         detail = details_by_id.get(id_of.get(final, -1)) or {}
         print(f"## {nice.get(final, final)}")
-        print(f"   grade {detail.get('grade', '?')} · Smogon {detail.get('tier', '?')} · "
+        types = "/".join(str(t) for t in (detail.get("types") or [])) or "?"
+        print(f"   {types} · grade {detail.get('grade', '?')} · Smogon {detail.get('tier', '?')} · "
               f"{(detail.get('usage') or 0):.2f}% usage" + (f"   [{label}]" if label else ""))
         print(f"   {LEGEND}")
         card_rows: list[tuple[float, str, str, str, list[tuple[str, str]]]] = []
@@ -497,6 +505,7 @@ def main() -> int:
                 card_rows.append((pct, shown, kind, bp, gates))
         print()
         sections.append({"name": nice.get(final, final), "tier": label,
+                         "types": detail.get("types") or [],
                          "grade": detail.get("grade") or "?",
                          "smogon_tier": detail.get("tier") or "?",
                          "usage": detail.get("usage"),
