@@ -293,6 +293,32 @@ Stage 2 — either a dedicated allowlisted user whose refresh token sits in `/op
 service-account key file. Both belong in `.env` or at a path I name, never in chat, and Stage 1 does
 not need either one.
 
+## How the client keeps state (built 2026-09-18)
+
+The player's save is untouched, so sync needed no schema bump: per-record ordering is replica
+bookkeeping, rebuildable by construction, and it would turn an 8.8 KB backup into 25 KB of uids and
+timestamps. Sync gets its own localStorage document (`pokemon-checklist-sync-v1`) holding the device
+id, the signed-in account and `base` — the last document the server confirmed.
+
+**There is no operation queue, deliberately.** Pending work is *derived*:
+`diff(base, entriesFromState(save))`. Retrying a failed publish is therefore idempotent, a reload
+loses nothing, and the server's own echo empties the diff — there is no acknowledgement bookkeeping
+to get wrong, and no queue that can drift out of step with the save.
+
+What a device shows is `base` with unpublished local edits layered on top. That layering is not
+cosmetic: a local edit waiting to be published will be stamped by the server *later* than anything
+already there, so dropping it because a remote change arrived first would discard a change that has
+legitimately won.
+
+Undo follows the same shape. A `set` inverts through its own `from` value; a `reset` carries the
+before-image of what it cleared, and undo restores only the records the reset still owns — a catch
+made on another device after the reset survives the undo instead of being silently deleted.
+
+Built and tested so far (`src/sync/`): the merge layer (`records.ts`, 19 tests) and the store plus
+derived pending (`outbox.ts`, 14 tests). Next: the engine that wires them to the database, per-account
+save namespacing in `state.ts`, and the sign-in affordance. The Firebase SDK stays unimported until
+that lands, so the deployed artifact is still byte-identical to the offline-only build.
+
 ## Staged plan
 
 - **Stage 1 — one save, several devices.** Schema v4 with sync metadata, provider choice, Google
