@@ -91,6 +91,9 @@ LABEL = {"sleep": "sleep", "falseswipe": "False Swipe", "superfang": "Super Fang
 # Progress by island. The app's own encounter data maps every location it knows to an
 # island, and Island.order is the game's progression order, so this needs no outside source.
 ISLAND_FACTOR = {1: 0.85, 2: 0.70, 3: 0.55, 4: 0.30}
+# An island also says roughly how far in you are, which is what the speed factor needs:
+# a TM found on island 1 is usable almost immediately, one at Mount Lanakila is not.
+ISLAND_LEVEL = {1: 15, 2: 25, 3: 35, 4: 50}
 ISLAND_OF: dict[str, int] = {}
 
 
@@ -102,6 +105,10 @@ def load_islands(repo: Path) -> dict[str, int]:
         for location in island.get("locations", []):
             if location.get("name"):
                 out[str(location["name"]).lower()] = order
+    # Places with no wild Pokemon are absent from the encounter data. Of the 18 TM locations
+    # this leaves unplaced, only False Swipe's matters - every other one teaches a move this
+    # scoring does not consider. Iki Town is Melemele, the starting town.
+    out.setdefault("iki town", 1)
     return out
 
 
@@ -172,7 +179,8 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
             island = ISLAND_OF.get((where or "").lower())
             # Found on island 1 is nearly free; found at Mount Lanakila is endgame.
             factor = ACQ["TM"] * ISLAND_FACTOR.get(island or 0, 1.0)
-            options.append((f"TM at {where}" if where else "TM", factor, 40))
+            level = ISLAND_LEVEL.get(island or 0, 40)
+            options.append((f"TM at {where}" if where else "TM", factor, level))
         elif gate == "egg":
             options.append(("egg", ACQ["egg"], 60))
         else:
