@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 node_modules/
+# The database service-account key is a real secret and must never be committed;
+# it lives in the retained dataset at /opt/data/firebase/service-account.json.
+service-account*.json
+*adminsdk*.json
 dist/
 test-results/
 playwright-report/

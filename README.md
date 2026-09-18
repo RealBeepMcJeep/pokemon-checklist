@@ -40,7 +40,8 @@ npx playwright install chromium
 npm run test:e2e
 python tools/extract_reference.py --validate
 python tools/build_vanilla_encounters.py --check
-python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py
+python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py tools/pokemon_chat.py
+python tools/pokemon_chat.py --self-test
 ```
 
 Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external references (scripts, stylesheets, images, source maps, unresolved build tokens), and copies it to the tracked root `index.html`. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. The no-network guarantee is behavioural and enforced by a browser test rather than by that check: while signed out the artifact may not so much as *attempt* a request to anything other than `data:`, `file:` or localhost, on a desktop or a mobile user agent. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
