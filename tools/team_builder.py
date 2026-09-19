@@ -82,6 +82,45 @@ def evo_of(dex: str, name: str) -> str:
     return ", ".join(bits) or "-"
 
 
+def load_world(cache: Path):
+    """Everything the row description needs: the app's dex, the Showdown dex, and the forms."""
+    details = json.loads((REPO / "data" / "pokedex-details.json").read_text())
+    det = {int(e["id"]): e for e in details["species"]}
+    rows = json.load(open(REPO / "data" / "pokemon.json"))
+    rows = rows if isinstance(rows, list) else list(rows.values())
+    by_id = {int(r["id"]): r for r in rows}          # id -> the whole record
+    dex = (cache / "pokedex.ts").read_text(errors="replace")
+    # forms: dedupe by source name, preferring the row with the more complete type list
+    form_row: dict[str, dict] = {}
+    for entry in details.get("forms", {}).values():
+        if not isinstance(entry, dict) or not entry.get("source"):
+            continue
+        name = entry["source"]
+        if name not in form_row or len(entry.get("types") or []) > len(form_row[name].get("types") or []):
+            form_row[name] = entry
+    return det, by_id, form_row, dex
+
+
+def describe_line(dex_id: int, det: dict, by_id: dict, form_row: dict, dex: str) -> dict:
+    """The row matching what he actually owns, preferring the regional form the game gives."""
+    base = det.get(dex_id) or {}
+    final = base.get("source") or by_id[dex_id]["name"]
+    row, alolan = base, False
+    alt = form_row.get(f"{final}-Alola")
+    if alt:
+        row, final, alolan = alt, alt["source"], True
+    # The app's species row carries the BASE form's typing (Bunnelby is Normal, Diggersby is
+    # Normal/Ground; Rowlet is Grass/Flying, Decidueye is Grass/Ghost). Always take typing from
+    # the final evolution and only fall back to the app's row.
+    types = types_of(dex, final) or row.get("types") or []
+    return {"id": dex_id, "as": by_id[dex_id]["name"], "slug": by_id[dex_id].get("slug", ""),
+            "final": final, "types": types, "grade": row.get("grade"),
+            "tier": row.get("tier"), "usage": row.get("usage") or 0, "alolan": alolan,
+            "stats": stats_of(dex, final), "abilities": abilities_of(dex, final),
+            "evo": evo_of(dex, final),
+            "rank": TIER_ORDER.index(row["tier"]) if row.get("tier") in TIER_ORDER else 99}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -94,37 +133,8 @@ def main() -> int:
     args = parser.parse_args()
 
     cache = Path(args.cache)
-    details = json.loads((REPO / "data" / "pokedex-details.json").read_text())
-    det = {int(e["id"]): e for e in details["species"]}
-    rows = json.load(open(REPO / "data" / "pokemon.json"))
-    rows = rows if isinstance(rows, list) else list(rows.values())
-    by_id = {int(r["id"]): r for r in rows}          # id -> the whole record
-    dex = (cache / "pokedex.ts").read_text(errors="replace")
-
-    # forms: dedupe by source name, preferring the row that carries the more complete type list
-    form_row: dict[str, dict] = {}
-    for entry in details.get("forms", {}).values():
-        if not isinstance(entry, dict) or not entry.get("source"):
-            continue
-        name = entry["source"]
-        if name not in form_row or len(entry.get("types") or []) > len(form_row[name].get("types") or []):
-            form_row[name] = entry
-
-    def describe(dex_id: int) -> dict:
-        """The row that matches what he actually owns, preferring the regional form."""
-        base = det.get(dex_id) or {}
-        final = base.get("source") or by_id[dex_id]["name"]
-        row, alolan = base, False
-        alt = form_row.get(f"{final}-Alola")
-        if alt:
-            row, final, alolan = alt, alt["source"], True
-        types = row.get("types") or types_of(dex, final)
-        return {"id": dex_id, "as": by_id[dex_id]["name"], "slug": by_id[dex_id].get("slug", ""),
-                "final": final, "types": types, "grade": row.get("grade"),
-                "tier": row.get("tier"), "usage": row.get("usage") or 0, "alolan": alolan,
-                "stats": stats_of(dex, final), "abilities": abilities_of(dex, final),
-                "evo": evo_of(dex, final),
-                "rank": TIER_ORDER.index(row["tier"]) if row.get("tier") in TIER_ORDER else 99}
+    det, by_id, form_row, dex = load_world(cache)
+    describe = lambda dex_id: describe_line(dex_id, det, by_id, form_row, dex)  # noqa: E731
 
     off = {s.strip().lower() for s in args.off_limits.split(",") if s.strip()}
 
