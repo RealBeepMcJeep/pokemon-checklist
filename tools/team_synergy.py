@@ -208,7 +208,7 @@ def main() -> int:
     movesets = load_movesets(cache)
     mtype = move_info(cache)
 
-    off = {s.strip().lower() for s in args.off_limits.split(",") if s.strip()}
+    off = tb.expand_off_limits({s.strip().lower() for s in args.off_limits.split(",") if s.strip()}, dex)
     records = tb.read_records(args.uid)
     caught = sorted(int(k.split(":")[1]) for k, v in records.items()
                     if k.startswith("species:") and v.get("s") == "caught")
@@ -216,7 +216,8 @@ def main() -> int:
     pool = []
     for dex_id in caught:
         line = tb.describe_line(dex_id, det, by_id, form_row, dex)
-        if {line["as"].lower(), line["slug"].lower(), line["final"].lower()} & off:
+        if {re.sub(r"[^a-z0-9]", "", k.lower())
+                for k in (line["as"], line["slug"], line["final"])} & off:
             continue
         pool.append(profile(line, chart, movesets, mtype))
     if args.no_gen1:

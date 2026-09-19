@@ -82,6 +82,28 @@ def evo_of(dex: str, name: str) -> str:
     return ", ".join(bits) or "-"
 
 
+def expand_off_limits(tokens: set[str], dex: str) -> set[str]:
+    """A token bans its whole family: 'pichu' has to take Pikachu and Raichu with it.
+
+    Matching the base name alone let a son's line leak back in through its evolution, which is
+    the opposite of what the list is for.
+    """
+    seen: set[str] = set()
+    queue = [t for t in tokens if t]
+    while queue:
+        current = re.sub(r"[^a-z0-9]", "", queue.pop().lower())
+        if not current or current in seen:
+            continue
+        seen.add(current)
+        body = block(dex, current)
+        names = [pre.group(1) for pre in [re.search(r'prevo: "([^"]+)"', body)] if pre]
+        evos = re.search(r"evos: \[(.*?)\]", body, re.S)
+        if evos:
+            names += re.findall(r'"([^"]+)"', evos.group(1))
+        queue.extend(names)
+    return seen
+
+
 def load_world(cache: Path):
     """Everything the row description needs: the app's dex, the Showdown dex, and the forms."""
     details = json.loads((REPO / "data" / "pokedex-details.json").read_text())
@@ -136,7 +158,7 @@ def main() -> int:
     det, by_id, form_row, dex = load_world(cache)
     describe = lambda dex_id: describe_line(dex_id, det, by_id, form_row, dex)  # noqa: E731
 
-    off = {s.strip().lower() for s in args.off_limits.split(",") if s.strip()}
+    off = expand_off_limits({s.strip().lower() for s in args.off_limits.split(",") if s.strip()}, dex)
 
     records = read_records(args.uid)
     caught = sorted(int(k.split(":")[1]) for k, v in records.items()
@@ -144,7 +166,8 @@ def main() -> int:
     pool, excluded = [], []
     for dex_id in caught:
         line = describe(dex_id)
-        keys = {line["as"].lower(), line["slug"].lower(), line["final"].lower()}
+        keys = {re.sub(r"[^a-z0-9]", "", k.lower())
+                for k in (line["as"], line["slug"], line["final"])}
         if keys & off:
             excluded.append(line)
         else:
