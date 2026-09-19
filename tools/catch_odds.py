@@ -207,7 +207,7 @@ def calculate_catch_odds(
     rate: int | float,
     ball: str | int | float,
     status: str = "none",
-    roto: int | float = 2,
+    roto: int | float = 1,
     caught_count: int = 0,
     *,
     generation: int = 7,
@@ -298,7 +298,15 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--rate", required=True, type=float, help="species catch rate; no species lookup is performed")
     parser.add_argument("--ball", required=True, help="numeric multiplier or a supported ball name")
     parser.add_argument("--status", default="none", help="none, paralysis, burn, poison, sleep, or freeze")
-    parser.add_argument("--roto", type=float, default=2, help="Roto Catch multiplier (default: 2)")
+    parser.add_argument(
+        "--roto",
+        nargs="?",
+        const=2,
+        type=float,
+        default=1,
+        metavar="MULTIPLIER",
+        help="bare --roto enables USUM Roto Catch x2; default: no active Roto bonus (x1)",
+    )
     parser.add_argument("--caught-count", type=int, default=0, help="number of species registered as caught")
     parser.add_argument("--generation", type=int, choices=(6, 7), default=7)
     parser.add_argument("--context", default="", help="comma-separated ball context, e.g. water,night,caught")
@@ -334,8 +342,10 @@ def main(argv: list[str] | None = None) -> int:
             **result,
             "mechanics": {
                 "source": "Gen VI/VII capture mechanics",
-                "formula": "a=floor(hp_term*4096*rate*ball), then status and Roto; cap at 255*4096; b=floor(65536*(a/(255*4096))^(3/16)); regular=(b/65536)^4; critical=threshold/256 with one-shake success; total is the mixture",
-                "roto_default": 2,
+                "formula": "a=floor(hp_term*4096*rate*ball), then status and Roto; default Roto multiplier is x1, while bare --roto selects USUM Roto Catch x2; cap at 255*4096; b=floor(65536*(a/(255*4096))^(3/16)); regular=(b/65536)^4; critical=threshold/256 with one-shake success; total is the mixture",
+                "roto_default": 1,
+                "roto_active": result["inputs"]["roto"] == 2,
+                "roto_option": "bare --roto enables USUM Roto Catch x2",
             },
         }
         print(json.dumps(payload, indent=2, sort_keys=True))
@@ -347,7 +357,14 @@ def main(argv: list[str] | None = None) -> int:
     print("  a = floor(hp term * 4096 * rate * ball), then status and Roto; capped at 255*4096")
     print("  b = floor(65536 * (a / (255*4096)) ** (3/16)); regular = (b/65536)^4")
     print("  critical threshold = floor(min(a/4096,255) * dex_modifier / 6); critical uses one shake")
-    print(f"  inputs: HP {i['current_hp']}/{i['max_hp']}, rate {i['rate']}, ball x{i['ball_multiplier']}, status {i['status']}, Roto x{i['roto']}, caught {i['caught_count']}")
+    roto = i["roto"]
+    if roto == 1:
+        roto_label = "inactive (x1)"
+    elif roto == 2:
+        roto_label = "active (USUM x2)"
+    else:
+        roto_label = f"custom multiplier (x{roto})"
+    print(f"  inputs: HP {i['current_hp']}/{i['max_hp']}, rate {i['rate']}, ball x{i['ball_multiplier']}, status {i['status']}, Roto Catch: {roto_label}, caught {i['caught_count']}")
     print(f"  intermediates: base a={result['base_a']}, a={result['a']}, b={result['b']}, critical threshold={result['critical_threshold']}")
     print(f"  regular: {p['regular']:.9%}")
     print(f"  critical chance: {p['critical']:.9%}; critical success: {p['critical_success']:.9%}")

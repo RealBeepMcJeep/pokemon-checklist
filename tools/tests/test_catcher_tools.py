@@ -82,6 +82,80 @@ class CatchOddsTests(unittest.TestCase):
         self.assertEqual(payload["a"], 81920)
         self.assertIn("critical", payload["mechanics"]["formula"])
 
+    def test_roto_catch_is_opt_in_and_preserves_both_known_results(self):
+        command = [
+            sys.executable,
+            str(TOOLS / "catch_odds.py"),
+            "--max-hp",
+            "100",
+            "--current-hp",
+            "100",
+            "--rate",
+            "45",
+            "--ball",
+            "poke",
+            "--status",
+            "sleep",
+            "--caught-count",
+            "58",
+            "--json",
+        ]
+        default = json.loads(subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True).stdout)
+        boosted = json.loads(
+            subprocess.run(command[:-1] + ["--roto", "--json"], cwd=ROOT, text=True, capture_output=True, check=True).stdout
+        )
+
+        self.assertEqual(default["inputs"]["roto"], 1)
+        library_default = odds.calculate_catch_odds(100, 100, 45, "poke", "sleep", caught_count=58)
+        self.assertEqual(library_default["inputs"]["roto"], 1)
+        self.assertEqual(library_default["a"], default["a"])
+        self.assertEqual(default["a"], 153600)
+        self.assertEqual(default["b"], 45749)
+        self.assertEqual(default["critical_threshold"], 3)
+        self.assertAlmostEqual(default["total_probability"], 0.24286659789722265)
+        self.assertEqual(default["mechanics"]["roto_default"], 1)
+        self.assertFalse(default["mechanics"]["roto_active"])
+
+        self.assertEqual(boosted["inputs"]["roto"], 2)
+        self.assertEqual(boosted["a"], 307200)
+        self.assertEqual(boosted["b"], 52098)
+        self.assertEqual(boosted["critical_threshold"], 6)
+        self.assertAlmostEqual(boosted["total_probability"], 0.4086316243792341)
+        self.assertTrue(boosted["mechanics"]["roto_active"])
+
+    def test_help_and_plain_output_name_roto_mode(self):
+        help_result = subprocess.run(
+            [sys.executable, str(TOOLS / "catch_odds.py"), "--help"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        help_text = " ".join(help_result.stdout.split())
+        self.assertIn("bare --roto enables USUM Roto Catch x2", help_text)
+        self.assertIn("default: no active Roto bonus (x1)", help_text)
+
+        command = [
+            sys.executable,
+            str(TOOLS / "catch_odds.py"),
+            "--max-hp",
+            "100",
+            "--current-hp",
+            "100",
+            "--rate",
+            "45",
+            "--ball",
+            "poke",
+            "--status",
+            "sleep",
+            "--caught-count",
+            "58",
+        ]
+        default_output = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True).stdout
+        boosted_output = subprocess.run(command + ["--roto"], cwd=ROOT, text=True, capture_output=True, check=True).stdout
+        self.assertIn("Roto Catch: inactive (x1)", default_output)
+        self.assertIn("Roto Catch: active (USUM x2)", boosted_output)
+
 
 class CatcherScoreTests(unittest.TestCase):
     def test_secondary_chance_is_separate_from_accuracy(self):
