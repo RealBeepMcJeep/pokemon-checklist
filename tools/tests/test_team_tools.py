@@ -115,6 +115,61 @@ class TeamSynergyTests(unittest.TestCase):
         best = {typ: (bp, share) for typ, bp, share in result["moves"]}
         self.assertEqual(best["Fire"][0], 110)
 
+    def test_profile_excludes_move_types_below_relative_usage_floor(self):
+        line = {"types": ["Normal"], "stats": "50/100/50/120/50/100", "final": "Testmon",
+                "tier": "OU", "usage": 1.0}
+        movesets = {"testmon": {"tackle": 100, "surf": 14.9}}
+        mtype = {"tackle": ("Normal", 40), "surf": ("Water", 120)}
+
+        result = ts.profile(line, {}, movesets, mtype)
+
+        self.assertEqual(result["attack_types"], ["Normal"])
+        self.assertNotIn("Water", result["attack_types"])
+
+    def test_profile_filters_rare_types_before_collapsing_duplicate_common_moves(self):
+        line = {"types": ["Normal"], "stats": "50/100/50/120/50/100", "final": "Testmon",
+                "tier": "OU", "usage": 1.0}
+        movesets = {"testmon": {"flamethrower": 100, "fireblast": 90,
+                                "icebeam": 15, "surf": 14}}
+        mtype = {"flamethrower": ("Fire", 90), "fireblast": ("Fire", 110),
+                 "icebeam": ("Ice", 90), "surf": ("Water", 120)}
+
+        result = ts.profile(line, {}, movesets, mtype)
+
+        self.assertEqual(set(result["attack_types"]), {"Fire", "Ice"})
+        best = {typ: (bp, share) for typ, bp, share in result["moves"]}
+        self.assertEqual(best["Fire"], (110, 0.9))
+        self.assertEqual(best["Ice"], (90, 0.15))
+        self.assertNotIn("Water", best)
+
+    def test_representative_current_roster_profiles_do_not_saturate_coverage(self):
+        mtype = {
+            "closecombat": ("Fighting", 120), "flareblitz": ("Fire", 120), "uturn": ("Bug", 70),
+            "earthpower": ("Ground", 90), "sludgewave": ("Poison", 95), "icebeam": ("Ice", 90),
+            "thunderbolt": ("Electric", 90), "scald": ("Water", 80), "psychic": ("Psychic", 90),
+            "shadowball": ("Ghost", 80), "dazzlinggleam": ("Fairy", 80), "knockoff": ("Dark", 65),
+        }
+        roster = [
+            ("Infernape", ["Fire", "Fighting"], {"closecombat": 100, "flareblitz": 70, "uturn": 40, "rockslide": 10}),
+            ("Nidoking", ["Poison", "Ground"], {"earthpower": 100, "sludgewave": 70, "icebeam": 20, "thunderbolt": 15, "surf": 5}),
+            ("Slowbro", ["Water", "Psychic"], {"scald": 100, "psychic": 60, "icebeam": 25, "flamethrower": 10}),
+            ("Gardevoir", ["Psychic", "Fairy"], {"psychic": 100, "dazzlinggleam": 60, "shadowball": 20, "thunderbolt": 10}),
+            ("Zoroark", ["Dark"], {"knockoff": 100, "flamethrower": 50, "uturn": 20, "shadowball": 15, "surf": 5}),
+        ]
+        profiles = [ts.profile({"final": name, "types": types, "stats": "80/100/80/100/80/100",
+                                "tier": "UU", "usage": 1.0}, {}, {name.lower(): moves}, mtype)
+                    for name, types, moves in roster]
+
+        self.assertTrue(all(len(member["attack_types"]) <= 4 for member in profiles))
+        chart = {defender.lower(): {} for defender in ts.ALL_TYPES}
+        for attack_type in {attack_type for member in profiles for attack_type in member["attack_types"]}:
+            chart[attack_type.lower()][attack_type.lower()] = 1
+        _, detail = ts.score_team(profiles, chart)
+        self.assertGreater(len(detail["hit"]), 0)
+        self.assertLess(len(detail["hit"]), len(ts.ALL_TYPES))
+        self.assertGreater(detail["coverage"], 0.0)
+        self.assertLess(detail["coverage"], 0.65)
+
     def test_diversity_counts_member_replacements_not_symmetric_difference(self):
         a = ("A", "B", "C", "D", "E")
         two_replaced = ("A", "B", "C", "F", "G")

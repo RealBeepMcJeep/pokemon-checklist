@@ -33,6 +33,7 @@ TIER_TO_CHAOS = {
 }
 CHAOS_FILES = {"OU": "chaos-gen7ou-1695.json", "UU": "chaos-gen7uu-1630.json",
                "RU": "chaos-gen7ru-1630.json", "NU": "chaos-gen7nu-1630.json"}
+RELATIVE_MOVE_USAGE_FLOOR = 0.15
 
 
 def validate_args(teams: int, size: int, pool: int, shortlist: int, diversity: int = 3, **_: object) -> None:
@@ -142,10 +143,14 @@ def profile(line: dict, chart: dict, movesets: dict, mtype: dict, provenance: di
 
     # Keep one strongest contribution per attack type. Taking the first five raw moves used to
     # discard a rare but excellent type whenever a species had several moves of one type.
+    # Restore the per-Pokemon relative usage floor before selecting a best move for each type.
+    # Otherwise every marginally listed move becomes a type and broadens coverage artificially.
     best_by_type: dict[str, tuple[float, str, int, float]] = {}
     for slug, weight in raw.items():
         typ, bp = mtype.get(slug, ("", 0))
         if bp <= 0 or not typ or not best:
+            continue
+        if weight < RELATIVE_MOVE_USAGE_FLOOR * best:
             continue
         share = weight / best
         contribution = share * min(bp, 120) / 120
