@@ -197,6 +197,7 @@ def main() -> int:
     parser.add_argument("--keep-alolan", action="store_true",
                         help="with --no-gen1, keep Alolan forms - they are Gen 7 Pokemon whose "
                              "BASE species happens to be an old dex number")
+    parser.add_argument("--show-all", action="store_true", help="print the whole pool first")
     parser.add_argument("--min-tier", default=None,
                         help="drop lines worse than this tier (e.g. NU bars PU and (PU))")
     args = parser.parse_args()
@@ -227,6 +228,12 @@ def main() -> int:
         pool = [r for r in pool if r["rank"] <= ceiling]
     pool.sort(key=lambda r: (r["rank"], -r["usage"]))
     pool = pool[:args.pool]
+    if args.show_all:
+        print(f"=== pool after the bans ({len(pool)} of the caught lines) ===")
+        for r in pool:
+            print(f"  {r['final']:15} {'/'.join(r['types']):16} {r['tier']:>5} {r['usage']:5.2f}%  "
+                  f"moves bring {'/'.join(r['attack_types'])}")
+        print()
     print(f"searching {len(pool)} lines ({len(caught)} caught, banned lines removed), "
           f"team size {args.size}\n")
 
@@ -255,7 +262,7 @@ def main() -> int:
               f"shared types {detail['shared_types']} · worst shared weakness {detail['shared_weak']})")
         for m in sorted(members, key=lambda m: m["rank"]):
             print(f"   {m['final']:15} {'/'.join(m['types']):16} {m['tier']:>5} {m['usage']:5.2f}%  "
-                  f"moves bring {'/'.join(m['attack_types']):28} ({m['coverage_source']})")
+                  f"evo {m['evo']:6} moves bring {'/'.join(m['attack_types'])}")
         print(f"   reliable super-effective answers for {len(detail['hit'])}/18 types"
               f"{'; thin on: ' + ', '.join(detail['missed']) if detail['missed'] else ''}")
         weak_counts: dict[str, int] = {}
