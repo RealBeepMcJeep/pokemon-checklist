@@ -192,6 +192,11 @@ def main() -> int:
     parser.add_argument("--size", type=int, default=5)
     parser.add_argument("--pool", type=int, default=24, help="how many lines to search over")
     parser.add_argument("--shortlist", type=int, default=400, help="combinations kept for diversity")
+    parser.add_argument("--no-gen1", action="store_true",
+                        help="ban Red/Blue-era dex numbers (1-151); Butterfree is always allowed")
+    parser.add_argument("--keep-alolan", action="store_true",
+                        help="with --no-gen1, keep Alolan forms - they are Gen 7 Pokemon whose "
+                             "BASE species happens to be an old dex number")
     parser.add_argument("--min-tier", default=None,
                         help="drop lines worse than this tier (e.g. NU bars PU and (PU))")
     args = parser.parse_args()
@@ -213,6 +218,10 @@ def main() -> int:
         if {line["as"].lower(), line["slug"].lower(), line["final"].lower()} & off:
             continue
         pool.append(profile(line, chart, movesets, mtype))
+    if args.no_gen1:
+        pool = [r for r in pool
+                if r["id"] > 151 or r["final"] == "Butterfree"
+                or (args.keep_alolan and r["alolan"])]
     if args.min_tier:
         ceiling = tb.TIER_ORDER.index(args.min_tier)
         pool = [r for r in pool if r["rank"] <= ceiling]
