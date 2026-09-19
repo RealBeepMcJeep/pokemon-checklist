@@ -141,6 +141,22 @@ def parse(text: str, species: list[Species]) -> Intent:
     if tokens and tokens[0].startswith("/"):
         tokens[0] = tokens[0].lstrip("/")
 
+    # A two-species transition belongs to pokemon_ops: this parser must never
+    # guess which side of an exchange is FROM or TO and must never emit a
+    # partially-populated mutation record.  Single-target "traded Pikachu"
+    # remains the established shorthand for marking Pikachu seen.
+    multi_match = re.search(r"\b(evolve|evolved|trade|traded)\b", lowered)
+    if multi_match and re.search(r"\b(into|for|to)\b", lowered):
+        operation = "evolve" if multi_match.group(1).startswith("evol") else "trade"
+        return {
+            "intent": "multi_species",
+            "operation": operation,
+            "reply": (
+                f"That {operation} changes two species. Use pokemon_ops {operation} FROM TO "
+                "so both records are resolved and verified together."
+            ),
+        }
+
     verb_index: int | None = None
     verb_word = ""
     intent = "status_query"
@@ -173,12 +189,18 @@ def parse(text: str, species: list[Species]) -> Intent:
     kind = found["kind"]
     if kind == "one":
         target = found["species"]
-        return {
+        result: Intent = {
             "intent": intent,
             "species": target,
-            "record": record_for(intent, int(target["id"])),
             "reply": reply_for(intent, target),
         }
+        # A query describes state; it is never a mutation record.  Keeping the
+        # guard here (rather than only in record_for) makes the output contract
+        # obvious at the one place records are attached.
+        record = record_for(intent, int(target["id"]))
+        if record:
+            result["record"] = record
+        return result
     if kind == "ambiguous":
         names = ", ".join(str(match["name"]) for match in found["matches"])
         return {
@@ -198,6 +220,8 @@ def parse(text: str, species: list[Species]) -> Intent:
 
 def record_for(intent: str, species_id: int) -> dict[str, str]:
     """The record keys the sync engine writes, matching src/sync/records.ts."""
+    if intent in {"status_query", "team", "help"}:
+        return {}
     if intent == "star_on":
         return {f"star:{species_id}": "on"}
     if intent == "star_off":
@@ -206,7 +230,6 @@ def record_for(intent: str, species_id: int) -> dict[str, str]:
         "status_caught": "caught",
         "status_seen": "seen",
         "status_none": "none",
-        "status_query": "query",
     }[intent]
     return {f"species:{species_id}": status}
 
@@ -242,6 +265,8 @@ CASES: list[tuple[str, Intent]] = [
     ("mr mime", {"intent": "status_query", "id": 122}),
     ("status of 445", {"intent": "status_query", "id": 445}),
     ("pikachu please", {"intent": "status_query", "id": 25}),
+    ("evolve pikachu into raichu", {"intent": "multi_species", "operation": "evolve"}),
+    ("trade pikachu for raichu", {"intent": "multi_species", "operation": "trade"}),
     ("caught zzzznope", {"intent": "unknown"}),
     ("caught 999", {"intent": "unknown"}),
     ("reset everything", {"intent": "confirm_required"}),

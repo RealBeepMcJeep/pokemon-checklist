@@ -23,6 +23,10 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATABASE_URL = "https://pokemon-checklist-8c75f-default-rtdb.firebaseio.com";
 const KEY_PATH =
   process.env.FIREBASE_SERVICE_ACCOUNT ?? "/opt/data/firebase/service-account.json";
+const STATUS_VALUES = new Set(["none", "seen", "caught"]);
+const STAR_VALUES = new Set(["on", "off"]);
+const MODE_VALUES = new Set(["photonic-prismatic", "sun", "moon", "ultra-sun", "ultra-moon"]);
+const KEY_RE = /^(species|star):([1-9][0-9]*)$/;
 
 function loadKey() {
   const path = resolve(KEY_PATH);
@@ -103,20 +107,106 @@ export const readPath = (path) => request(path);
  */
 export const SERVER_TIME = { ".sv": "timestamp" };
 
-export function applyRecords(uid, records, { note = "" } = {}) {
-  const payload = { "state/schema": 1, "state/updatedAt": SERVER_TIME };
-  for (const [key, value] of Object.entries(records)) {
-    payload[`state/records/${key}`] = { s: value, at: SERVER_TIME, by: `chat:${uid}` };
+function keyKind(key) {
+  if (typeof key !== "string") throw new Error("record keys must be strings");
+  const match = KEY_RE.exec(key);
+  if (match) return match[1];
+  if (/^form:[^/]+$/.test(key)) return "form";
+  if (key === "setting:mode") return "setting:mode";
+  if (key === "setting:forms") return "setting:forms";
+  throw new Error(`invalid record key: ${key}`);
+}
+
+function allowedValues(kind) {
+  if (kind === "species" || kind === "form") return STATUS_VALUES;
+  if (kind === "star" || kind === "setting:forms") return STAR_VALUES;
+  if (kind === "setting:mode") return MODE_VALUES;
+  throw new Error(`invalid record kind: ${kind}`);
+}
+
+function validateRecordMap(records, { entries = false } = {}) {
+  if (records === null || records === undefined) return {};
+  if (typeof records !== "object" || Array.isArray(records)) {
+    throw new Error("records must be an object or null");
   }
-  payload[`log/chat-${Date.now()}`] = {
-    op: "set",
-    at: SERVER_TIME,
-    by: uid,
-    via: "chat",
-    note,
-    keys: Object.keys(records),
-  };
-  return request(`/users/${uid}`, { method: "PATCH", body: JSON.stringify(payload) });
+  const checked = {};
+  for (const [key, raw] of Object.entries(records)) {
+    const kind = keyKind(key);
+    if (entries) {
+      if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+        throw new Error(`record ${key} must be an object`);
+      }
+      const fields = Object.keys(raw);
+      if (fields.some((field) => !["s", "at", "by"].includes(field))) {
+        throw new Error(`record ${key} has unknown fields`);
+      }
+      if (typeof raw.s !== "string" || !allowedValues(kind).has(raw.s)) {
+        throw new Error(`record ${key} has invalid value`);
+      }
+      if ("at" in raw && typeof raw.at !== "number" &&
+          !(raw.at && raw.at[".sv"] === "timestamp")) {
+        throw new Error(`record ${key} has invalid at`);
+      }
+      if ("by" in raw && typeof raw.by !== "string") {
+        throw new Error(`record ${key} has invalid by`);
+      }
+      checked[key] = raw;
+    } else {
+      if (typeof raw !== "string" || !allowedValues(kind).has(raw)) {
+        throw new Error(`record ${key} has invalid value`);
+      }
+      checked[key] = raw;
+    }
+  }
+  return checked;
+}
+
+function emptyValue(key) {
+  return key.startsWith("star:") || key === "setting:forms" ? "off" : "none";
+}
+
+function validateUid(uid) {
+  if (typeof uid !== "string" || !uid || uid.includes("/")) {
+    throw new Error("uid must be a non-empty Firebase uid without '/'");
+  }
+}
+
+/**
+ * Apply one validated record patch. The current records are read first so
+ * unchanged keys are omitted and every settled log entry has key/from/to.
+ */
+export async function applyRecords(uid, records, { note = "" } = {}) {
+  validateUid(uid);
+  const requested = validateRecordMap(records);
+  const current = validateRecordMap(await readPath(`/users/${uid}/state/records`), { entries: true });
+  const changes = [];
+  for (const [key, to] of Object.entries(requested)) {
+    const from = current[key]?.s ?? emptyValue(key);
+    if (from !== to) changes.push({ key, from, to });
+  }
+  if (!changes.length) return { ok: true, changed: false, changes: [] };
+
+  const payload = { "state/schema": 1, "state/updatedAt": SERVER_TIME };
+  const stamp = Date.now();
+  for (const [index, change] of changes.entries()) {
+    payload[`state/records/${change.key}`] = {
+      s: change.to,
+      at: SERVER_TIME,
+      by: `chat:${uid}`,
+    };
+    payload[`log/chat-${stamp}-${String(index).padStart(3, "0")}`] = {
+      op: "set",
+      at: SERVER_TIME,
+      by: uid,
+      via: "chat",
+      key: change.key,
+      from: change.from,
+      to: change.to,
+      note,
+    };
+  }
+  await request(`/users/${uid}`, { method: "PATCH", body: JSON.stringify(payload) });
+  return { ok: true, changed: true, changes };
 }
 
 export const accounts = async () => Object.keys((await readPath("/users")) ?? {});
@@ -151,7 +241,12 @@ async function main() {
     console.log(JSON.stringify(await readPath(String(args.read)), null, 2));
     return;
   }
+  // Kept only as a gated compatibility escape hatch for an existing operator;
+  // it is not advertised by normal help and cannot be reached accidentally.
   if (args.delete) {
+    if (!args.verified || args["confirm-delete"] !== String(args.delete)) {
+      throw new Error("delete requires --verified and --confirm-delete <same-path>");
+    }
     await request(String(args.delete), { method: "DELETE" });
     console.log(JSON.stringify({ deleted: String(args.delete) }));
     return;
@@ -171,7 +266,6 @@ async function main() {
       "usage:",
       "  --accounts                       list account uids holding a checklist",
       "  --read <path>                    read a database path",
-      "  --delete <path>                  delete a database path",
       "  --apply --uid <uid> --record <json> [--note <text>]",
       "",
       `key: ${KEY_PATH} (must stay outside the repository)`,
