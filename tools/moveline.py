@@ -182,6 +182,42 @@ def evolution_finals(family: list[str], evos_of: Mapping[str, list[str]]) -> lis
     return finals or ([family[-1]] if family else [])
 
 
+def selected_finals(selected: str, family: list[str], evos_of: Mapping[str, list[str]]) -> list[str]:
+    """Select one terminal branch for direct terminal input, otherwise keep all branches."""
+    finals = evolution_finals(family, evos_of)
+    candidate = normalize(selected)
+    return [candidate] if candidate in finals else finals
+
+
+def evolution_edges(
+    final: str,
+    parent_of: Mapping[str, str],
+    evo_method: Mapping[str, str],
+    id_of: Mapping[str, int],
+    nice: Mapping[str, str],
+) -> list[tuple[str, int | None, str, str, int | None]]:
+    """Return only the rendered evolution edges on one final's ancestral path."""
+    path = ancestral_path(final, parent_of)
+    return [
+        (
+            nice.get(parent, parent),
+            id_of.get(parent),
+            short_method(evo_method.get(member)),
+            nice.get(member, member),
+            id_of.get(member),
+        )
+        for parent, member in zip(path, path[1:])
+    ]
+
+
+def lineage_label(finals: list[str], parent_of: Mapping[str, str], nice: Mapping[str, str]) -> str:
+    """Describe each selected final's ancestry without flattening sibling branches."""
+    return " ; ".join(
+        " -> ".join(nice.get(form, form) for form in ancestral_path(final, parent_of))
+        for final in finals
+    )
+
+
 def acquisition_gates(
     final: str,
     path: list[str],
@@ -556,11 +592,11 @@ def main() -> int:
     if not family:
         print(f"no learnset lineage for species: {entry['name']}", file=sys.stderr)
         return 2
-    print(f"# {entry['name']} — lineage: {' -> '.join(nice.get(s, s) for s in family)}\n", file=sys.stderr)
 
     learned_by_form = {form: gen7_moves(learned.get(form, "")) for form in family}
     evos_of = {normalize(k): list_field(b, "evos") for k, b in dex.items()}
-    finals = evolution_finals(family, evos_of)
+    finals = selected_finals(entry["slug"], family, evos_of)
+    print(f"# {entry['name']} — lineage: {lineage_label(finals, parent_of, nice)}\n", file=sys.stderr)
     sections: list[dict] = []
 
     for final in finals:
@@ -634,26 +670,16 @@ def main() -> int:
     if args.png:
         out = Path(args.png).expanduser()
         out.parent.mkdir(parents=True, exist_ok=True)
-        chain = [
-            (
-                nice.get(parent_of.get(member, ""), parent_of.get(member, "")),
-                id_of.get(parent_of.get(member, "")),
-                short_method(evo_method.get(member)),
-                nice.get(member, member),
-                id_of.get(member),
-            )
-            for member in family[1:]
-            if parent_of.get(member)
-        ]
         with tempfile.TemporaryDirectory(prefix="moveline-") as temp_dir:
             temp_root = Path(temp_dir)
-            for section in sections:
+            for section, final in zip(sections, finals):
                 # One image per Pokemon: a family with two finals (Gardevoir and Gallade) gets
                 # two cards rather than one image nobody can read.
                 target = out if len(sections) == 1 else out.with_name(
                     f"{out.stem}-{normalize(section['name'])}{out.suffix}"
                 )
                 html_path = temp_root / f"{normalize(section['name'])}.html"
+                chain = evolution_edges(final, parent_of, evo_method, id_of, nice)
                 html_path.write_text(card_html(entry["name"], chain, [section], args.profile))
                 subprocess.run(
                     ["node", str(REPO / "tools" / "render-png.mjs"), str(html_path), str(target),

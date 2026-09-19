@@ -1,3 +1,5 @@
+import os
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -33,6 +35,79 @@ class MoveLineHardeningTests(unittest.TestCase):
         self.assertNotIn("closecombat", gardevoir_moves)
         self.assertIn("closecombat", gallade_moves)
         self.assertNotIn("moonblast", gallade_moves)
+
+    def test_terminal_selection_keeps_direct_input_on_one_branch(self):
+        family = ["ralts", "kirlia", "gardevoir", "gallade"]
+        evos_of = {"ralts": ["kirlia"], "kirlia": ["gardevoir", "gallade"]}
+
+        self.assertEqual(M.selected_finals("gardevoir", family, evos_of), ["gardevoir"])
+        self.assertEqual(M.selected_finals("gallade", family, evos_of), ["gallade"])
+        self.assertEqual(M.selected_finals("ralts", family, evos_of), ["gardevoir", "gallade"])
+
+    def test_card_header_uses_each_section_path_without_sibling_branch(self):
+        parent_of = {
+            "ralts": "",
+            "kirlia": "ralts",
+            "gardevoir": "kirlia",
+            "gallade": "kirlia",
+        }
+        nice = {key: key.title() for key in parent_of}
+        ids = {"ralts": 280, "kirlia": 281, "gardevoir": 282, "gallade": 475}
+        methods = {"kirlia": "Level 20", "gardevoir": "Level 30", "gallade": "Use Dawn Stone"}
+        section = {"name": "Gardevoir", "tier": "gen7ru-1630", "types": [], "grade": "B",
+                   "smogon_tier": "RU", "usage": 0, "dex": 282, "rows": []}
+        gallade_section = {**section, "name": "Gallade", "dex": 475}
+
+        gardevoir = M.card_html(
+            "Ralts", M.evolution_edges("gardevoir", parent_of, methods, ids, nice), [section]
+        )
+        gallade = M.card_html(
+            "Ralts", M.evolution_edges("gallade", parent_of, methods, ids, nice), [gallade_section]
+        )
+
+        self.assertIn("Ralts", gardevoir)
+        self.assertIn("Gardevoir", gardevoir)
+        self.assertNotIn("Gallade", gardevoir)
+        self.assertIn("Ralts", gallade)
+        self.assertIn("Gallade", gallade)
+        self.assertNotIn("Gardevoir", gallade)
+
+    def _run_cli(self, species: str) -> tuple[str, str]:
+        cache = Path(os.environ.get("POKE_DATA_CACHE", "/opt/data/poke-data"))
+        self.assertTrue(cache.is_dir(), f"move-data cache missing: {cache}")
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "moveline.py"), species,
+             "--cache", str(cache), "--top", "0"],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout, result.stderr
+
+    def test_direct_gardevoir_cli_reports_only_gardevoir_path(self):
+        stdout, stderr = self._run_cli("gardevoir")
+        self.assertEqual(stdout.count("## "), 1)
+        self.assertIn("## Gardevoir", stdout)
+        self.assertNotIn("## Gallade", stdout)
+        self.assertIn("# Gardevoir — lineage: Ralts -> Kirlia -> Gardevoir", stderr)
+        self.assertNotIn("Gallade", stderr)
+
+    def test_direct_gallade_cli_reports_only_gallade_path(self):
+        stdout, stderr = self._run_cli("gallade")
+        self.assertEqual(stdout.count("## "), 1)
+        self.assertIn("## Gallade", stdout)
+        self.assertNotIn("## Gardevoir", stdout)
+        self.assertIn("# Gallade — lineage: Ralts -> Kirlia -> Gallade", stderr)
+        self.assertNotIn("Gardevoir", stderr)
+
+    def test_ralts_cli_keeps_separate_terminal_reports_and_paths(self):
+        stdout, stderr = self._run_cli("ralts")
+        self.assertEqual(stdout.count("## "), 2)
+        self.assertIn("## Gardevoir", stdout)
+        self.assertIn("## Gallade", stdout)
+        self.assertIn(
+            "# Ralts — lineage: Ralts -> Kirlia -> Gardevoir ; Ralts -> Kirlia -> Gallade",
+            stderr,
+        )
 
     def test_pre_evolution_only_gate_is_explicit(self):
         gates = M.acquisition_gates(
