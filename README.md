@@ -40,6 +40,7 @@ npx playwright install chromium
 npm run test:e2e
 python tools/extract_reference.py --validate
 python tools/build_vanilla_encounters.py --check
+python tools/build_icons.py --check
 python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py tools/pokemon_chat.py
 python tools/pokemon_chat.py --self-test
 ```
@@ -50,7 +51,14 @@ Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is t
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`. `python tools/build_pokedex_details.py` regenerates the type, evolution, inherited-grade, form, and usage snapshot from checksum-pinned Pokémon Showdown sources; it requires network access, while normal builds remain offline.
 
-`python tools/build_vanilla_encounters.py` regenerates all four vanilla snapshots from pinned sources and requires network access; normal builds remain fully offline. Direct tables come from the pinned [Pokémon Sun mirror](https://gist.github.com/RichardPaulAstley/42fbabe24250969f22d18fe8b919c520), SciresM's Pokémon Moon Pastebins (`YjNi4Qdk` and `HKEVPUYX`), and the pinned [Ultra Sun](https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2) and [Ultra Moon](https://gist.github.com/SciresM/deecdcf5fc49fc8191a29d111643c6b6) dumps. SHA-256 checks guard every table download. The pinned [PokeAPI repository](https://github.com/PokeAPI/pokeapi/tree/4b82c204ddd19ecb8eda2ea044ccb59e222b721c/data/v2/csv) supplies normalized area, method, SOS, Island Scan, berry-pile, and postgame records.
+The source regenerators are offline by default. Their verified raw inputs live outside the repository in the platform cache directory (`%LOCALAPPDATA%/pokemon-checklist/` on Windows, `$XDG_CACHE_HOME/pokemon-checklist/` or `~/.cache/pokemon-checklist/` elsewhere); use `--cache-dir` to override it. Normal generation and `--check` only read that cache and fail clearly when it is missing or corrupt. The explicit refresh commands are networked and should be run only when inputs need bootstrapping or updating:
+
+```text
+python tools/build_icons.py --refresh
+python tools/build_vanilla_encounters.py --refresh
+```
+
+Both commands accept `--cache-dir PATH`; `build_vanilla_encounters.py --game sun` (repeatable) limits table refresh/build. Direct `--source-dir` and `--tables-dir` overrides remain available for fully local vanilla builds. The icon cache pins the PokéAPI sprites source to commit `6e3e7c43e86db0e1b2277795cfee41b11e8df2a4` and validates all 807 40×30 PNGs plus the license. Vanilla tables come from the pinned [Pokémon Sun mirror](https://gist.github.com/RichardPaulAstley/42fbabe24250969f22d18fe8b919c520), SciresM's Pokémon Moon Pastebins (`YjNi4Qdk` and `HKEVPUYX`), and the pinned [Ultra Sun](https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2) and [Ultra Moon](https://gist.github.com/SciresM/deecdcf5fc49fc8191a29d111643c6b6) dumps. SHA-256 checks guard every table download and cache entry. The pinned [PokeAPI repository](https://github.com/PokeAPI/pokeapi/tree/4b82c204ddd19ecb8eda2ea044ccb59e222b721c/data/v2/csv) supplies normalized area, method, SOS, Island Scan, berry-pile, and postgame records.
 
 ## Attribution and disclaimer
 

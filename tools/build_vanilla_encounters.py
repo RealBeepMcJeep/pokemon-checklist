@@ -9,10 +9,26 @@ import hashlib
 import io
 import json
 import re
+import sys
 import unicodedata
 import urllib.request
 from collections import Counter, defaultdict
 from pathlib import Path
+
+try:
+    from .cache_support import (
+        default_cache_dir,
+        sha256_bytes,
+        staged_directory,
+        write_manifest,
+    )
+except ImportError:  # Running the file directly: python tools/build_vanilla_encounters.py
+    from cache_support import (  # type: ignore[no-redef]
+        default_cache_dir,
+        sha256_bytes,
+        staged_directory,
+        write_manifest,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
@@ -98,6 +114,9 @@ CSV_URL = (
     "https://raw.githubusercontent.com/PokeAPI/pokeapi/"
     f"{POKEAPI_COMMIT}/data/v2/csv/{{name}}"
 )
+DOWNLOAD_TIMEOUT = 30
+CACHE_SCHEMA = 1
+DEFAULT_CACHE_DIR = default_cache_dir("vanilla-encounters-v1")
 ALLOWED_METHODS = {
     "walk",
     "surf",
@@ -384,23 +403,237 @@ def read_json(path: Path) -> object:
         ) from error
 
 
-def download_text(url: str, expected_hash: str | None = None) -> str:
+class CacheError(ValueError):
+    pass
+
+
+def download_bytes(url: str) -> bytes:
     if not url.startswith("https://"):
         raise ValueError("Source URLs must use HTTPS")
+    request = urllib.request.Request(  # noqa: S310 - HTTPS checked above
+        url, headers={"User-Agent": "pokemon-checklist-builder"}
+    )
     try:
-        request = urllib.request.Request(  # noqa: S310 - HTTPS checked above
-            url, headers={"User-Agent": "pokemon-checklist-builder"}
-        )
-        with urllib.request.urlopen(request) as response:  # noqa: S310 - HTTPS checked above
-            raw = response.read()
+        with urllib.request.urlopen(request, timeout=DOWNLOAD_TIMEOUT) as response:  # noqa: S310 - HTTPS checked above
+            if response.status != 200:
+                raise RuntimeError(f"Pinned source failed with HTTP {response.status}: {url}")
+            return response.read()
     except OSError as error:
         raise RuntimeError(f"Could not download pinned source {url}") from error
-    if expected_hash and hashlib.sha256(raw).hexdigest() != expected_hash:
+
+
+def download_text(
+    url: str,
+    expected_hash: str | None = None,
+    downloader=None,
+) -> str:
+    raw = (downloader or download_bytes)(url)
+    if not isinstance(raw, bytes):
+        raise TypeError(f"Downloader returned non-bytes for {url}")
+    if expected_hash and sha256_bytes(raw) != expected_hash:
         raise ValueError(f"Pinned encounter-table source changed: {url}")
     try:
         return raw.decode("utf-8").replace("\r\n", "\n")
     except UnicodeDecodeError as error:
         raise RuntimeError(f"Could not decode pinned source {url}") from error
+
+
+def _cache_command(cache_dir: Path) -> str:
+    return f'python tools/build_vanilla_encounters.py --refresh --cache-dir "{cache_dir}"'
+
+
+def _read_manifest(cache_dir: Path) -> dict[str, object]:
+    path = cache_dir / "manifest.json"
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CacheError(f"Cannot read valid vanilla encounter cache manifest: {path}") from error
+    if not isinstance(value, dict):
+        raise CacheError("Vanilla encounter cache manifest must contain an object")
+    if (
+        value.get("schema") != CACHE_SCHEMA
+        or value.get("kind") != "vanilla-encounters"
+        or value.get("pokeapiCommit") != POKEAPI_COMMIT
+    ):
+        raise CacheError("Vanilla encounter cache is stale or uses a different PokeAPI commit")
+    csv_entries = value.get("csv")
+    tables = value.get("tables")
+    if not isinstance(csv_entries, dict) or set(csv_entries) != set(CSV_FILES):
+        raise CacheError("Vanilla encounter cache does not contain exactly six PokeAPI CSVs")
+    if not isinstance(tables, dict) or not set(tables).issubset(GAME_CONFIGS):
+        raise CacheError("Vanilla encounter cache has invalid game table metadata")
+    expected_files = {"manifest.json"}
+    expected_files.update(f"csv/{name}" for name in CSV_FILES)
+    expected_files.update(f"tables/{game}.txt" for game in tables)
+    actual_files = {
+        path.relative_to(cache_dir).as_posix()
+        for path in cache_dir.rglob("*")
+        if path.is_file()
+    }
+    if actual_files != expected_files:
+        raise CacheError("Vanilla encounter cache has partial, extra, or mixed files")
+    return value
+
+
+def _read_cache_entry(
+    cache_dir: Path, entry: object, expected_path: str, label: str
+) -> bytes:
+    if not isinstance(entry, dict) or entry.get("path") != expected_path:
+        raise CacheError(f"Vanilla encounter cache manifest has invalid {label} metadata")
+    path = cache_dir / expected_path
+    try:
+        raw = path.read_bytes()
+    except OSError as error:
+        raise CacheError(f"Vanilla encounter cache is missing {expected_path}") from error
+    if entry.get("bytes") != len(raw) or entry.get("sha256") != sha256_bytes(raw):
+        raise CacheError(f"Vanilla encounter cache has a corrupted or mixed {expected_path}")
+    return raw
+
+
+def _csv_cache_text(cache_dir: Path, manifest: dict[str, object]) -> dict[str, str]:
+    entries = manifest["csv"]
+    assert isinstance(entries, dict)
+    result = {}
+    for name in CSV_FILES:
+        entry = entries[name]
+        if not isinstance(entry, dict) or entry.get("source") != CSV_URL.format(name=name):
+            raise CacheError(f"Vanilla encounter cache has stale source metadata for {name}")
+        raw = _read_cache_entry(cache_dir, entry, f"csv/{name}", name)
+        if not raw:
+            raise CacheError(f"Vanilla encounter cache CSV {name} is empty")
+        try:
+            result[name] = raw.decode("utf-8").replace("\r\n", "\n")
+        except UnicodeDecodeError as error:
+            raise CacheError(f"Vanilla encounter cache CSV {name} is not valid UTF-8") from error
+    return result
+
+
+def _table_cache_text(cache_dir: Path, manifest: dict[str, object], game: str) -> str:
+    config = GAME_CONFIGS[game]
+    entries = manifest["tables"]
+    assert isinstance(entries, dict)
+    entry = entries.get(game)
+    expected_sources = [
+        {"url": url, "sha256": digest} for url, digest in config["tableSources"]
+    ]
+    if (
+        not isinstance(entry, dict)
+        or entry.get("sourceRevision") != config["tableRevision"]
+        or entry.get("expectedSha256") != config["tableHash"]
+        or entry.get("sources") != expected_sources
+    ):
+        raise CacheError(f"Vanilla encounter cache has stale table metadata for {game}")
+    raw = _read_cache_entry(cache_dir, entry, f"tables/{game}.txt", f"{game} table")
+    if sha256_bytes(raw) != config["tableHash"]:
+        raise CacheError(f"Cached {game} encounter table has the wrong hash")
+    try:
+        return raw.decode("utf-8").replace("\r\n", "\n")
+    except UnicodeDecodeError as error:
+        raise CacheError(f"Cached {game} encounter table is not valid UTF-8") from error
+
+
+def _cache_inputs(cache_dir: Path, games: list[str]) -> tuple[dict[str, str], dict[str, str]]:
+    cache_dir = cache_dir.expanduser()
+    manifest = _read_manifest(cache_dir)
+    csv_text = _csv_cache_text(cache_dir, manifest)
+    tables = {game: _table_cache_text(cache_dir, manifest, game) for game in games}
+    return csv_text, tables
+
+
+def read_cache(
+    cache_dir: Path = DEFAULT_CACHE_DIR, games: list[str] | None = None
+) -> tuple[dict[str, str], dict[str, str]]:
+    selected = list(GAME_CONFIGS) if games is None else games
+    try:
+        return _cache_inputs(cache_dir, selected)
+    except CacheError as error:
+        raise CacheError(f"{error}. Refresh it with {_cache_command(cache_dir)}") from error
+
+
+def _cache_file_entry(path: str, raw: bytes, **metadata: object) -> dict[str, object]:
+    return {"path": path, "bytes": len(raw), "sha256": sha256_bytes(raw), **metadata}
+
+
+def _table_manifest_entry(game: str, raw: bytes) -> dict[str, object]:
+    config = GAME_CONFIGS[game]
+    return _cache_file_entry(
+        f"tables/{game}.txt",
+        raw,
+        sourceRevision=config["tableRevision"],
+        expectedSha256=config["tableHash"],
+        sources=[{"url": url, "sha256": digest} for url, digest in config["tableSources"]],
+    )
+
+
+def refresh_cache(
+    cache_dir: Path = DEFAULT_CACHE_DIR,
+    games: list[str] | None = None,
+    downloader=None,
+) -> None:
+    cache_dir = cache_dir.expanduser()
+    downloader = downloader or download_bytes
+    selected = list(dict.fromkeys(GAME_CONFIGS if games is None else games))
+    csv_raw: dict[str, bytes] = {}
+    for name in CSV_FILES:
+        raw = downloader(CSV_URL.format(name=name))
+        if not isinstance(raw, bytes) or not raw:
+            raise ValueError(f"PokeAPI CSV download was empty: {name}")
+        raw.decode("utf-8")
+        csv_raw[name] = raw
+
+    table_raw: dict[str, bytes] = {}
+    for game in selected:
+        if game not in GAME_CONFIGS:
+            raise ValueError(f"Unknown game: {game}")
+        text = "\n".join(
+            download_text(url, digest, downloader) for url, digest in GAME_CONFIGS[game]["tableSources"]
+        )
+        raw = text.encode("utf-8")
+        if sha256_bytes(raw) != GAME_CONFIGS[game]["tableHash"]:
+            raise ValueError(f"Combined encounter table hash changed: {game}")
+        table_raw[game] = raw
+
+    # A refresh for one game keeps other already-valid pinned tables, but never trusts them blindly.
+    old_tables: dict[str, bytes] = {}
+    if cache_dir.is_dir():
+        try:
+            old_manifest = _read_manifest(cache_dir)
+            old_entries = old_manifest["tables"]
+            assert isinstance(old_entries, dict)
+            for game in GAME_CONFIGS:
+                if game not in selected and game in old_entries:
+                    try:
+                        old_tables[game] = _read_cache_entry(
+                            cache_dir, old_entries[game], f"tables/{game}.txt", f"{game} table"
+                        )
+                        if sha256_bytes(old_tables[game]) != GAME_CONFIGS[game]["tableHash"]:
+                            old_tables.pop(game)
+                    except CacheError:
+                        pass
+        except CacheError:
+            pass
+    table_raw.update(old_tables)
+    manifest = {
+        "schema": CACHE_SCHEMA,
+        "kind": "vanilla-encounters",
+        "pokeapiCommit": POKEAPI_COMMIT,
+        "csv": {
+            name: _cache_file_entry(
+                f"csv/{name}", csv_raw[name], source=CSV_URL.format(name=name)
+            )
+            for name in CSV_FILES
+        },
+        "tables": {game: _table_manifest_entry(game, table_raw[game]) for game in table_raw},
+    }
+    with staged_directory(cache_dir) as staging:
+        (staging / "csv").mkdir()
+        (staging / "tables").mkdir()
+        for name, raw in csv_raw.items():
+            (staging / "csv" / name).write_bytes(raw)
+        for game, raw in table_raw.items():
+            (staging / "tables" / f"{game}.txt").write_bytes(raw)
+        write_manifest(staging / "manifest.json", manifest)
+    read_cache(cache_dir, selected)
 
 
 def form_label(
@@ -630,7 +863,9 @@ def source_prefix(location_slug: str, area_slug: str) -> str:
     return AREA_LABELS.get(area_slug, "")
 
 
-def load_csv_sources(source_dir: Path | None) -> dict[str, str]:
+def load_csv_sources(
+    source_dir: Path | None, cache_dir: Path = DEFAULT_CACHE_DIR
+) -> dict[str, str]:
     if source_dir:
         try:
             return {
@@ -639,10 +874,13 @@ def load_csv_sources(source_dir: Path | None) -> dict[str, str]:
             }
         except OSError as error:
             raise ValueError(f"Could not read local CSV source: {error}") from error
-    return {name: download_text(CSV_URL.format(name=name)) for name in CSV_FILES}
+    csv_text, _ = read_cache(cache_dir, [])
+    return csv_text
 
 
-def load_table(game: str, tables_dir: Path | None) -> str:
+def load_table(
+    game: str, tables_dir: Path | None, cache_dir: Path = DEFAULT_CACHE_DIR
+) -> str:
     config = GAME_CONFIGS[game]
     if tables_dir:
         path = tables_dir / f"{game}.txt"
@@ -655,9 +893,8 @@ def load_table(game: str, tables_dir: Path | None) -> str:
         if hashlib.sha256(raw).hexdigest() != config["tableHash"]:
             raise ValueError(f"Local encounter table has the wrong hash: {path}")
         return raw.decode("utf-8").replace("\r\n", "\n")
-    return "\n".join(
-        download_text(url, digest) for url, digest in config["tableSources"]
-    )
+    _, tables = read_cache(cache_dir, [game])
+    return tables[game]
 
 
 def generate(
@@ -952,28 +1189,58 @@ def validate_generated(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-dir", type=Path, help="Use local PokeAPI CSV files")
     parser.add_argument(
-        "--tables-dir", type=Path, help="Use local <game>.txt encounter-table dumps"
+        "--cache-dir",
+        type=Path,
+        default=DEFAULT_CACHE_DIR,
+        help="external verified raw-input cache (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="NETWORKED: download pinned CSVs and encounter tables into the cache",
+    )
+    parser.add_argument(
+        "--source-dir",
+        type=Path,
+        help="explicit local override for the six PokeAPI CSV files (offline)",
+    )
+    parser.add_argument(
+        "--tables-dir",
+        type=Path,
+        help="explicit local override for <game>.txt tables (offline)",
     )
     parser.add_argument(
         "--game",
         action="append",
         choices=GAME_CONFIGS,
-        help="Build one game (repeatable)",
+        help="build/refresh one game (repeatable; default: all four)",
     )
     parser.add_argument(
-        "--check", action="store_true", help="Fail if canonical JSON is stale"
+        "--check", action="store_true", help="offline: fail if canonical JSON is stale"
     )
     args = parser.parse_args()
-    csv_text = load_csv_sources(args.source_dir)
+    games = args.game or list(GAME_CONFIGS)
+    if args.refresh and (args.source_dir or args.tables_dir):
+        parser.error("--refresh cannot be combined with --source-dir or --tables-dir")
+    try:
+        if args.refresh:
+            refresh_cache(args.cache_dir, games)
+        csv_text = load_csv_sources(args.source_dir, args.cache_dir)
+    except (OSError, RuntimeError, TypeError, ValueError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
     stale = False
-    for game in args.game or GAME_CONFIGS:
-        table_text = load_table(game, args.tables_dir)
-        data, unmatched, direct_groups, matched_groups = generate(
-            csv_text, table_text, game
-        )
-        validate_generated(game, data, unmatched, direct_groups, matched_groups)
+    for game in games:
+        try:
+            table_text = load_table(game, args.tables_dir, args.cache_dir)
+            data, unmatched, direct_groups, matched_groups = generate(
+                csv_text, table_text, game
+            )
+            validate_generated(game, data, unmatched, direct_groups, matched_groups)
+        except (OSError, RuntimeError, TypeError, ValueError) as error:
+            print(f"ERROR: {error}", file=sys.stderr)
+            return 1
         output = ROOT / "data" / f"encounters-{game}.json"
         rendered = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
         if args.check:
