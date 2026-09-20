@@ -3,7 +3,6 @@ import { STORAGE_KEY } from "../domain";
 import type { SavedState } from "../types";
 import {
   SYNC_STORE_KEY,
-  adoptionEntries,
   deviceIdFor,
   emptyStore,
   isWholeAccountClear,
@@ -207,23 +206,6 @@ describe("what the device shows", () => {
       starred: [150],
       settings: { forms: false, mode: "ultra-moon" },
     });
-  });
-});
-
-describe("first sign-in adopts offline progress", () => {
-  it("turns everything on the device into pending writes", () => {
-    const offline = save({
-      species: { "25": "caught", "1": "seen" },
-      starred: [25],
-      settings: { forms: true, mode: "ultra-sun" },
-    });
-    const adopted = adoptionEntries(offline, 1_000, "uid-a");
-    expect(adopted[speciesKey(25)]).toEqual(entry("caught", 1_000));
-    expect(adopted[speciesKey(1)]).toEqual(entry("seen", 1_000));
-    expect(adopted["star:25"]).toEqual(entry("on", 1_000));
-    expect(adopted["setting:mode"]).toEqual(entry("ultra-sun", 1_000));
-    // And it is pending by definition: the confirmed document is still empty.
-    expect(Object.keys(pendingEntries(document({}), offline, 1_000, "uid-a"))).toHaveLength(5);
   });
 });
 

@@ -123,20 +123,6 @@ export interface SavedState {
   settings: Settings;
 }
 
-export interface V2State {
-  schemaVersion: 2;
-  species: StatusMap;
-  forms: StatusMap;
-  settings: Settings;
-}
-
-export interface LegacyState {
-  schemaVersion: 1;
-  species: StatusMap;
-  forms: StatusMap;
-  settings: { forms: boolean };
-}
-
 export interface Occurrence {
   row: EncounterRow;
   group: EncounterGroup;

@@ -8,6 +8,7 @@ import {
   cycleStatus,
   firstIncompleteLocation,
   getOccurrences,
+  locationProgress,
   validateState,
 } from "./domain";
 import type { Status } from "./types";
@@ -160,6 +161,21 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toThrow("unexpected information");
+  });
+
+  it("reuses cached encounter rows while keeping progress dynamic", () => {
+    const location = ENCOUNTERS_BY_MODE[DEFAULT_MODE].islands[0].locations[0];
+    expect(catchNowRows(location)).toBe(catchNowRows(location));
+
+    let caught = false;
+    expect(locationProgress(location, () => (caught ? "caught" : "none"))).toEqual({
+      caught: 0,
+      total: catchNowRows(location).length,
+    });
+    caught = true;
+    expect(locationProgress(location, () => (caught ? "caught" : "none")).caught).toBe(
+      catchNowRows(location).length,
+    );
   });
 
   it("advances after every unique regular encounter is caught", () => {

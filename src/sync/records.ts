@@ -31,20 +31,6 @@ export interface SyncDocument {
   updatedAt: number;
 }
 
-export type LogOp = "set" | "reset" | "undo";
-
-export interface LogEntry {
-  op: LogOp;
-  at: number;
-  by: string;
-  /** For `set`: the record written, and its previous value. */
-  key?: RecordKey;
-  from?: string;
-  to?: string;
-  /** For `reset` and measured `undo`: the before-image of everything it changed. */
-  cleared?: [RecordKey, string][];
-}
-
 export const speciesKey = (id: number): RecordKey => `species:${id}`;
 export const formKey = (key: string): RecordKey => `form:${key}`;
 export const starKey = (id: number): RecordKey => `star:${id}`;
@@ -100,14 +86,6 @@ export function mergeDocument(
     records,
     updatedAt: Math.max(local.updatedAt, remote.updatedAt),
   };
-}
-
-/** The value a key holds in a document, or undefined when absent. */
-export function readEntry(
-  document: SyncDocument,
-  key: RecordKey,
-): RecordEntry | undefined {
-  return document.records[key];
 }
 
 /**
@@ -205,44 +183,6 @@ export function stateFromDocument(
   };
 }
 
-/** The before-image of everything a save holds that a Reset would clear. */
-export function clearedByReset(
-  state: SavedState,
-): [RecordKey, string][] {
-  const cleared: [RecordKey, string][] = [];
-  for (const [id, status] of Object.entries(state.species)) {
-    if (status !== "none") cleared.push([speciesKey(Number(id)), status]);
-  }
-  for (const [key, status] of Object.entries(state.forms)) {
-    if (status !== "none") cleared.push([formKey(key), status]);
-  }
-  for (const id of state.starred) cleared.push([starKey(id), STAR_ON]);
-  return cleared;
-}
-
-/**
- * Which records an undo may restore.
- *
- * Undoing a Reset restores only the records the Reset itself still owns — those
- * whose current entry is the Reset's own write. A species caught on another
- * device after the Reset is a newer fact and must survive the undo; restoring it
- * from the before-image would silently delete that catch.
- */
-export function undoableFrom(
-  document: SyncDocument,
-  entry: LogEntry,
-): [RecordKey, string][] {
-  if (!entry.cleared) return [];
-  const restorable: [RecordKey, string][] = [];
-  for (const [key, value] of entry.cleared) {
-    const current = document.records[key];
-    const untouched =
-      !current || (current.at === entry.at && current.by === entry.by);
-    if (untouched && current?.s !== value) restorable.push([key, value]);
-  }
-  return restorable;
-}
-
 /**
  * Read a records map exactly as it arrives from the wire. Malformed or unknown
  * entries are dropped rather than fatal: another device may be running a newer
@@ -267,10 +207,4 @@ export function parseRecordsSnapshot(
     records[key] = { s: candidate.s, at: candidate.at, by: candidate.by };
   }
   return records;
-}
-
-/** The inverse of a single logged `set`, as a new value to write. */
-export function inverseOfSet(entry: LogEntry): [RecordKey, string] | null {
-  if (entry.op !== "set" || !entry.key) return null;
-  return [entry.key, entry.from ?? TOMBSTONE];
 }
