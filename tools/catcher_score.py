@@ -49,11 +49,14 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Mapping
 
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 import moveline as ml  # noqa: E402  (shared parsing, one source of truth)
+from showdown_data import configured_cache_dir, require_cache  # noqa: E402
+from showdown_text import field, object_after  # noqa: E402
 
 CATEGORY_BASE = {
     "sleep": 60, "falseswipe": 25, "superfang": 8, "freeze": 10,
@@ -128,26 +131,22 @@ def load_islands(repo: Path) -> dict[str, int]:
     return out
 
 
-def island_for_place(place: str | None) -> int | None:
+def island_for_place(place: str | None, islands: Mapping[str, int] | None = None) -> int | None:
     if not place:
         return None
+    islands = islands or ISLAND_OF
     key = normalize_place(place)
-    if key in ISLAND_OF:
-        return ISLAND_OF[key]
+    if key in islands:
+        return islands[key]
     # TM_LOCATION contains sub-area labels such as "Route 1 - Trainer School".
     for part in re.split(r"\s+-\s+|/", place):
         part_key = normalize_place(part)
-        if part_key in ISLAND_OF:
-            return ISLAND_OF[part_key]
-    for location, island in ISLAND_OF.items():
+        if part_key in islands:
+            return islands[part_key]
+    for location, island in islands.items():
         if location and (location in key or key in location):
             return island
     return None
-
-
-def field(body: str, name: str) -> str | None:
-    m = re.search(rf"\b{name}: [\'\"]([^\'\"]*)[\'\"]", body)
-    return m.group(1) if m else None
 
 
 def ability_slots(body: str) -> dict[str, str]:
@@ -166,26 +165,9 @@ def accuracy(body: str) -> float:
     return float(found.group(1)) if found else 100.0
 
 
-def _object_after(body: str, field_name: str) -> str | None:
-    """Extract one balanced ``field: { ... }`` object from Showdown data."""
-    match = re.search(rf"\b{re.escape(field_name)}\s*:\s*\{{", body)
-    if not match:
-        return None
-    start = match.end() - 1
-    depth = 0
-    for index in range(start, len(body)):
-        if body[index] == "{":
-            depth += 1
-        elif body[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return body[start : index + 1]
-    return None
-
-
 def secondary_effect(body: str) -> tuple[int, str] | None:
     """Read the singular Showdown ``secondary`` object only."""
-    secondary = _object_after(body, "secondary")
+    secondary = object_after(body, "secondary")
     if not secondary:
         return None
     chance = re.search(r"\bchance:\s*(\d+)", secondary)
@@ -244,7 +226,9 @@ def hit_chance(move_accuracy: float, effect_chance: float, ability: str | None =
     return min(1.0, accuracy_with_ability(move_accuracy, ability) / 100) * effect_chance
 
 
-def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
+def easiest(
+    gates: dict[str, list[str]], move: str, islands: Mapping[str, int] | None = None
+) -> tuple[str, float, int]:
     """The cheapest way this family gets the move: (label, factor, level)."""
     options = []
     for gate, levels in gates.items():
@@ -260,7 +244,7 @@ def easiest(gates: dict[str, list[str]], move: str) -> tuple[str, float, int]:
             options.append((f"tutor {cost} BP", place * (1 - cost / 100), 60))
         elif gate == "TM":
             where = TM_LOCATION.get(move)
-            island = island_for_place(where)
+            island = island_for_place(where, islands)
             # Found on island 1 is nearly free; found at Mount Lanakila is endgame.
             factor = ACQ["TM"] * ISLAND_FACTOR.get(island or 0, 1.0)
             level = ISLAND_LEVEL.get(island or 0, 40)
@@ -382,6 +366,7 @@ def _score_branch(
     bases: dict[str, float],
     fleeing: bool,
     name_of: dict[str, str],
+    islands: Mapping[str, int] | None = None,
 ) -> dict:
     best_branch = None
     for ability, hidden in _ability_variants(path, dex):
@@ -397,7 +382,7 @@ def _score_branch(
                 if hidden and ability == "Compound Eyes":
                     effective_accuracy = min(100.0, move_accuracy * 100 * 1.3 * 0.7)
                 hit = min(1.0, effective_accuracy / 100) * effect_chance
-                label, factor, level = easiest(gates, move)
+                label, factor, level = easiest(gates, move, islands)
                 speed = 1 / (1 + max(0, level - 10) / 40)
                 if fleeing and category == "sleep":
                     hit = hit ** 2
@@ -452,11 +437,13 @@ def score_parts(
     bases: dict[str, float] | None = None,
     fleeing: bool = False,
     name_of: dict[str, str] | None = None,
+    islands: Mapping[str, int] | None = None,
 ) -> dict:
     """Score each reachable branch independently; return the selected branch and trace."""
     bases = dict(bases or CATEGORY_BASE)
     name_of = name_of or {}
-    branches = [_score_branch(path, learned, dex, moves, bases=bases, fleeing=fleeing, name_of=name_of)
+    branches = [_score_branch(path, learned, dex, moves, bases=bases, fleeing=fleeing, name_of=name_of,
+                              islands=islands)
                 for path in reachable_descendant_paths(slug, dex)]
     selected = max(branches, key=lambda branch: (branch["score"], branch["path"])) if branches else {
         "path": [slug], "constraints": [], "parts": [], "trace": [], "score": 0.0, "explain_total": 0.0,
@@ -471,7 +458,22 @@ def score_parts(
     }
 
 
-def read_account_roster(uid: str, repo: Path) -> list[str]:
+def record_species_ids(records: Mapping[str, object]) -> list[str]:
+    """Return caught and starred species IDs from an already-loaded snapshot."""
+    if not isinstance(records, Mapping):
+        raise RuntimeError("account read failed: records payload is not an object")
+    ids = set()
+    for key, value in records.items():
+        if not isinstance(value, dict):
+            raise RuntimeError(f"account read failed: record {key!r} is not an object")
+        match = re.fullmatch(r"(?:species|star):(\d+)", str(key))
+        if match and ((str(key).startswith("species:") and value.get("s") == "caught") or
+                      (str(key).startswith("star:") and value.get("s") == "on")):
+            ids.add(int(match.group(1)))
+    return sorted(str(item) for item in ids)
+
+
+def read_account_records(uid: str, repo: Path) -> dict:
     command = ["node", str(TOOLS / "firebase-admin-rest.mjs"), "--read", f"/users/{uid}/state/records"]
     try:
         out = subprocess.run(command, capture_output=True, text=True, cwd=repo)
@@ -486,17 +488,88 @@ def read_account_roster(uid: str, repo: Path) -> list[str]:
         raise RuntimeError(f"account read failed: invalid JSON: {exc}") from exc
     if records is None:
         records = {}
-    if not isinstance(records, dict):
-        raise RuntimeError("account read failed: records payload is not an object")
-    ids = set()
-    for key, value in records.items():
-        if not isinstance(value, dict):
-            raise RuntimeError(f"account read failed: record {key!r} is not an object")
-        match = re.fullmatch(r"(?:species|star):(\d+)", str(key))
-        if match and ((str(key).startswith("species:") and value.get("s") == "caught") or
-                      (str(key).startswith("star:") and value.get("s") == "on")):
-            ids.add(int(match.group(1)))
-    return sorted(str(item) for item in ids)
+    record_species_ids(records)
+    return records
+
+
+def read_account_roster(uid: str, repo: Path) -> list[str]:
+    return record_species_ids(read_account_records(uid, repo))
+
+
+def load_rank_data(cache: Path | object, repo: Path = REPO) -> dict:
+    """Load the local ranking inputs once for callers that will rank several snapshots."""
+    store = cache if hasattr(cache, "get_text") else require_cache(Path(cache))
+    learned_text = store.get_text("learnsets")
+    dex_text = store.get_text("pokedex")
+    moves_text = store.get_text("moves")
+    rows = json.loads((repo / "data" / "pokemon.json").read_text())
+    rows = rows if isinstance(rows, list) else list(rows.values())
+    details = {int(item["id"]): item for item in
+               json.loads((repo / "data" / "pokedex-details.json").read_text())["species"]}
+    return {
+        "learned": dict(ml.top_blocks(learned_text)),
+        "dex": dict(ml.top_blocks(dex_text)),
+        "moves": dict(ml.top_blocks(moves_text)),
+        "dex_text": dex_text,
+        "rows": rows,
+        "by_id": {int(row["id"]): row for row in rows},
+        "name_of": {ml.normalize(row["slug"]): row["name"] for row in rows},
+        "tier_of": {ml.normalize(row["slug"]): (details.get(int(row["id"]), {}).get("tier") or "?")
+                    for row in rows},
+        "details": details,
+        "islands": load_islands(repo),
+    }
+
+
+def rank_candidates(
+    records: Mapping[str, object],
+    data: dict,
+    *,
+    species: str | None = None,
+    exclude: str = "",
+    fleeing: bool = False,
+) -> list[dict]:
+    """Rank a provided account snapshot without reading Firebase or starting a process."""
+    rows = data["rows"]
+    if species:
+        roster = normalize_species_list(species, rows)
+    else:
+        ids = record_species_ids(records)
+        roster = [data["by_id"][int(item)]["slug"] for item in ids if int(item) in data["by_id"]]
+    excluded = set(normalize_species_list(exclude, rows))
+    bases = {"sleep": 60, "falseswipe": 25, "trapping": 45} if fleeing else dict(CATEGORY_BASE)
+    candidates = []
+    for slug in roster:
+        if excluded & family_nodes(slug, data["dex"]):
+            continue
+        result = score_parts(slug, data["learned"], data["dex"], data["moves"], bases=bases,
+                             fleeing=fleeing, name_of=data["name_of"], islands=data["islands"])
+        if result["parts"]:
+            candidates.append({**result, "name": data["name_of"].get(slug, slug),
+                               "tier": data["tier_of"].get(slug, "?")})
+    return sorted(candidates, key=lambda item: (-item["score"], item["name"]))
+
+
+def plain_lines(candidates: list[dict], top: int = 15, roster_count: int | None = None,
+                fleeing: bool = False) -> list[str]:
+    """Render the legacy plain score table from structured candidates."""
+    lines = []
+    if fleeing:
+        lines.extend(["fleeing target: one action before it leaves; speed is irrelevant.", ""])
+    lines.append(f"{'score':>6}  {'pokemon':14} {'tier':7} best tool")
+    for candidate in candidates[:top]:
+        parts = candidate["parts"]
+        first = parts[0]
+        constraint_note = (" (" + ", ".join(candidate["selected_branch"]["constraints"]) + ")"
+                           if candidate["selected_branch"]["constraints"] else "")
+        lines.append(f"{candidate['score']:6.1f}  {candidate['name']:14} {candidate['tier']:7}{constraint_note} "
+                     f"[{LABEL[first['category']]}] {first['note']}")
+        for part in parts[1:4]:
+            lines.append(f"{'':6}  {'':14} {'':7} +{part['value']:5.1f} "
+                         f"[{LABEL[part['category']]}] {part['note']}")
+    if len(candidates) > top:
+        lines.append(f"\n  ... {len(candidates) - top} more from {roster_count if roster_count is not None else len(candidates)} candidates")
+    return lines
 
 
 def _print_explanation(candidate: dict) -> None:
@@ -518,7 +591,11 @@ def main() -> int:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--uid", help="read this account's caught and starred species")
     source.add_argument("--species", help="comma-separated names, slugs, or dex numbers")
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="names/slugs to leave out, including their family")
     parser.add_argument("--explain", help="print every arithmetic step for one normalized species")
@@ -531,48 +608,20 @@ def main() -> int:
         parser.error("--explain requires a species name")
 
     try:
-        cache = Path(args.cache)
-        learned = dict(ml.top_blocks((cache / "learnsets.ts").read_text(errors="replace")))
-        dex = dict(ml.top_blocks((cache / "pokedex.ts").read_text(errors="replace")))
-        moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
-        global ISLAND_OF
-        ISLAND_OF = load_islands(REPO)
-        rows = json.loads((REPO / "data" / "pokemon.json").read_text())
-        rows = rows if isinstance(rows, list) else list(rows.values())
-        name_of = {ml.normalize(r["slug"]): r["name"] for r in rows}
-        by_id = {int(r["id"]): r for r in rows}
-        details = {int(d["id"]): d for d in json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]}
-        tier_of = {ml.normalize(r["slug"]): (details.get(int(r["id"]), {}).get("tier") or "?") for r in rows}
+        data = load_rank_data(Path(args.cache))
+        records = {} if args.species else read_account_records(args.uid, REPO)
         if args.species:
-            roster = normalize_species_list(args.species, rows)
+            roster_count = len(normalize_species_list(args.species, data["rows"]))
         else:
-            ids = read_account_roster(args.uid, REPO)
-            roster = [ml.normalize(by_id[int(item)]["slug"]) for item in ids if int(item) in by_id]
-        excluded = set(normalize_species_list(args.exclude, rows))
-        bases = dict(CATEGORY_BASE)
-        if args.fleeing:
-            bases = {"sleep": 60, "falseswipe": 25, "trapping": 45}
-        candidates = []
-        for slug in roster:
-            family_set = family_nodes(slug, dex)
-            if excluded & family_set:
-                continue
-            result = score_parts(slug, learned, dex, moves, bases=bases, fleeing=args.fleeing, name_of=name_of)
-            if not result["parts"]:
-                continue
-            candidates.append({
-                **result,
-                "name": name_of.get(slug, slug),
-                "tier": tier_of.get(slug, "?"),
-            })
+            roster_count = sum(int(item) in data["by_id"] for item in record_species_ids(records))
+        candidates = rank_candidates(records, data, species=args.species, exclude=args.exclude, fleeing=args.fleeing)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    candidates.sort(key=lambda item: (-item["score"], item["name"]))
     if args.explain:
         try:
-            explain_slug = normalize_species_list(args.explain, rows)[0]
+            explain_slug = normalize_species_list(args.explain, data["rows"])[0]
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
@@ -589,19 +638,8 @@ def main() -> int:
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 0
 
-    if args.fleeing:
-        print("fleeing target: one action before it leaves; speed is irrelevant.\n")
-    print(f"{'score':>6}  {'pokemon':14} {'tier':7} best tool")
-    for candidate in candidates[: args.top]:
-        parts = candidate["parts"]
-        first = parts[0]
-        constraint_note = (" (" + ", ".join(candidate["selected_branch"]["constraints"]) + ")"
-                           if candidate["selected_branch"]["constraints"] else "")
-        print(f"{candidate['score']:6.1f}  {candidate['name']:14} {candidate['tier']:7}{constraint_note} [{LABEL[first['category']]}] {first['note']}")
-        for part in parts[1:4]:
-            print(f"{'':6}  {'':14} {'':7} +{part['value']:5.1f} [{LABEL[part['category']]}] {part['note']}")
-    if len(candidates) > args.top:
-        print(f"\n  ... {len(candidates) - args.top} more from {len(roster)} candidates")
+    for line in plain_lines(candidates, args.top, roster_count, args.fleeing):
+        print(line)
     return 0
 
 

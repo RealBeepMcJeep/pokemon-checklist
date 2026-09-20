@@ -8,8 +8,6 @@ import {
   update,
   type Database,
 } from "firebase/database";
-import { ENCOUNTERS_BY_MODE, POKEMON } from "../data";
-import { buildFormDefinitions } from "../domain";
 import {
   applyState,
   exportState,
@@ -18,6 +16,8 @@ import {
   setLocalResetListener,
   setSyncAccount,
   showNotice,
+  validForms,
+  validPokemon,
 } from "../state";
 import { initFirebase, watchAuth } from "./firebase";
 import type { User } from "firebase/auth";
@@ -67,11 +67,6 @@ export const syncPhase = signal<SyncPhase>("off");
 export const syncPending = signal(0);
 export const syncAccount = signal<{ uid: string; email: string } | null>(null);
 export const syncMessage = signal("");
-
-const validPokemon = new Set(POKEMON.map(({ id }) => id));
-const validForms = new Set(
-  buildFormDefinitions(ENCOUNTERS_BY_MODE).keys(),
-);
 
 let database: Database | null = null;
 let activeUid: string | null = null;
@@ -275,7 +270,8 @@ function sameReset(left: ResetImage, right: ResetImage): boolean {
 
 function recordReset(before: SavedState, uid: string): void {
   if (ignoreLocalEvents || !activeUid || activeUid !== uid) return;
-  pendingReset = clearedByReset(before);
+  const cleared = clearedByReset(before);
+  pendingReset = cleared.length > 0 ? cleared : null;
   resetTarget = null;
   resetSent = false;
   sentReset = null;

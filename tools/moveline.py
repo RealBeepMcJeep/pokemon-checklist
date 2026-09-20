@@ -9,7 +9,7 @@ sorted by how often competitive players actually run it.
 Sources are published datasets, never scraped:
   - the commit-pinned, hash-verified Showdown contract (learnsets, moves, pokedex)
   - Smogon's hash-verified monthly Gen 7 stats for November 2019, the last real snapshot for USUM
-Files are cached outside the repository; the first run downloads what it needs.
+Files are cached outside the repository; bootstrap the Showdown contract explicitly before running.
 
 Usage:
   python3 tools/moveline.py ralts
@@ -24,7 +24,6 @@ import base64
 import hashlib
 import html as html_escape
 import json
-import os
 import re
 import subprocess
 import sys
@@ -34,7 +33,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Iterator, Mapping
+from typing import Mapping
 
 try:
     from .acquisition_data import (
@@ -45,7 +44,8 @@ try:
         tm_label,
         tutor_label,
     )
-    from .showdown_data import ShowdownDataError, ShowdownDataStore
+    from . import showdown_text as st
+    from .showdown_data import ShowdownDataError, configured_cache_dir, require_cache
 except ImportError:  # Running the file directly: python tools/moveline.py ...
     from acquisition_data import (  # type: ignore[no-redef]
         MOVE_REMINDER_LOCATION,
@@ -55,7 +55,8 @@ except ImportError:  # Running the file directly: python tools/moveline.py ...
         tm_label,
         tutor_label,
     )
-    from showdown_data import ShowdownDataError, ShowdownDataStore  # type: ignore[no-redef]
+    import showdown_text as st  # type: ignore[no-redef]
+    from showdown_data import ShowdownDataError, configured_cache_dir, require_cache  # type: ignore[no-redef]
 
 REPO = Path(__file__).resolve().parent.parent
 STATS = "https://www.smogon.com/stats/2019-11/moveset/gen7{tier}-{cutoff}.txt"
@@ -104,10 +105,6 @@ TYPE_COLOR = {"Normal": "#9e9e9e", "Fire": "#e64a19", "Water": "#1976d2", "Elect
               "Steel": "#607d8b", "Fairy": "#ec407a"}
 
 
-class ShowdownSourceError(RuntimeError):
-    """The pinned Showdown contract could not be loaded."""
-
-
 class StatsUnavailable(RuntimeError):
     """A published tier file is not available; trying another tier is expected."""
 
@@ -118,16 +115,6 @@ class StatsIntegrityError(RuntimeError):
 
 class StatsDownloadError(RuntimeError):
     """A Smogon request failed for a reason other than an expected 404."""
-
-
-def load_showdown_sources(cache: Path, store_factory=ShowdownDataStore) -> dict[str, str]:
-    """Load the three datasets through the shared manifest/hash contract."""
-    try:
-        store = store_factory(cache)
-        store.bootstrap()
-        return {name: store.get_text(name) for name in ("learnsets", "pokedex", "moves")}
-    except ShowdownDataError as error:
-        raise ShowdownSourceError(f"pinned Showdown cache is unavailable or invalid: {error}") from error
 
 
 def _download_stats(url: str) -> bytes:
@@ -147,7 +134,12 @@ def _download_stats(url: str) -> bytes:
         raise StatsDownloadError(f"cannot download Smogon moveset data: {url}") from error
 
 
-def fetch_stats(url: str, dest: Path, expected_hash: str, downloader=None) -> Path:
+def fetch_stats(
+    url: str,
+    dest: Path,
+    expected_hash: str,
+    downloader=None,
+) -> Path:
     """Read or download one hash-pinned Smogon moveset snapshot."""
     if dest.exists():
         try:
@@ -172,6 +164,8 @@ def fetch_stats(url: str, dest: Path, expected_hash: str, downloader=None) -> Pa
         raise
     except (OSError, urllib.error.URLError) as error:
         raise StatsDownloadError(f"cannot download Smogon moveset data: {url}") from error
+    if not isinstance(raw, bytes):
+        raise StatsDownloadError("Smogon downloader returned non-bytes")
     actual = hashlib.sha256(raw).hexdigest()
     if actual != expected_hash:
         raise StatsIntegrityError(
@@ -184,21 +178,11 @@ def fetch_stats(url: str, dest: Path, expected_hash: str, downloader=None) -> Pa
     return dest
 
 
-def top_blocks(text: str) -> Iterator[tuple[str, str]]:
-    """Yield (key, body) for every top-level `key: { ... }` block in a Showdown data file."""
-    for m in re.finditer(r"\n\t([a-z0-9\-]+): \{", text):
-        key = m.group(1)
-        i = m.end() - 1
-        depth = 0
-        for j in range(i, len(text)):
-            ch = text[j]
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    yield key, text[i : j + 1]
-                    break
+top_blocks = st.top_blocks
+
+
+def list_field(body: str, field: str) -> list[str]:
+    return st.list_field(body, field, normalize)
 
 
 def short_method(method: str | None) -> str:
@@ -365,15 +349,7 @@ def canon(name: str) -> str:
 
 
 def scalar(body: str, field: str) -> str | None:
-    m = re.search(rf'\b{field}: "([^"]*)"', body)
-    return m.group(1) if m else None
-
-
-def list_field(body: str, field: str) -> list[str]:
-    m = re.search(rf"{field}: \[([^\]]*)\]", body)
-    if not m:
-        return []
-    return [normalize(x.strip().strip('"')) for x in m.group(1).split(",") if x.strip()]
+    return st.field(body, field)
 
 
 def lineage(slug: str, dex: dict[str, str]) -> list[str]:
@@ -614,8 +590,11 @@ def card_html(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Move report for a Pokemon family.")
     parser.add_argument("species", help="any member of the family: name, slug or dex number")
-    parser.add_argument("--cache", default=os.environ.get("POKE_DATA_CACHE", "/opt/data/poke-data"),
-                        help="verified Showdown/Smogon cache directory")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=25, help="moves to list per final evolution (default 25)")
     parser.add_argument("--png", help="also render the report to this PNG path")
     parser.add_argument("--all", action="store_true",
@@ -635,13 +614,13 @@ def main() -> int:
 
     nice = {normalize(r["slug"]): r["name"] for r in rows}
     try:
-        sources = load_showdown_sources(cache)
-    except ShowdownSourceError as error:
+        store = require_cache(cache)
+        ls_text = store.get_text("learnsets")
+        dex_text = store.get_text("pokedex")
+        moves_text = store.get_text("moves")
+    except ShowdownDataError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
-    ls_text = sources["learnsets"]
-    dex_text = sources["pokedex"]
-    moves_text = sources["moves"]
 
     dex = dict(top_blocks(dex_text))
     moves = dict(top_blocks(moves_text))
@@ -695,9 +674,11 @@ def main() -> int:
             stats_url = STATS.format(tier=tier, cutoff=cutoff)
             stats_path = cache / f"moveset-gen7{tier}-{cutoff}.txt"
             try:
-                text = fetch_stats(stats_url, stats_path, STATS_SHA256[(tier, cutoff)]).read_text(
-                    encoding="utf-8"
-                )
+                text = fetch_stats(
+                    stats_url,
+                    stats_path,
+                    STATS_SHA256[(tier, cutoff)],
+                ).read_text(encoding="utf-8")
             except StatsUnavailable:
                 continue
             except (StatsIntegrityError, StatsDownloadError) as error:

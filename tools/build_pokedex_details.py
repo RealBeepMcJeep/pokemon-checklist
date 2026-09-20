@@ -8,22 +8,22 @@ import hashlib
 import http.client
 import json
 import re
+import sys
 import unicodedata
 import urllib.parse
 from pathlib import Path
 
+try:
+    from . import showdown_data as sd
+    from .showdown_text import array_field, field, integer_field, top_blocks
+except ImportError:  # Running the file directly: python tools/build_pokedex_details.py ...
+    import showdown_data as sd  # type: ignore[no-redef]
+    from showdown_text import array_field, field, integer_field, top_blocks  # type: ignore[no-redef]
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "pokedex-details.json"
-SHOWDOWN_COMMIT = "e7aee8d9ccc983c59c5608929773249adca16b8f"
+SHOWDOWN_COMMIT = sd.SHOWDOWN_COMMIT
 SOURCES = {
-    "pokedex": (
-        f"https://raw.githubusercontent.com/smogon/pokemon-showdown/{SHOWDOWN_COMMIT}/data/pokedex.js",
-        "3d0f28348380c92cb01e0a9daebeba5ee12b6ed32899f583ed9f2b72029065d0",
-    ),
-    "tiers": (
-        f"https://raw.githubusercontent.com/smogon/pokemon-showdown/{SHOWDOWN_COMMIT}/data/mods/gen7/formats-data.js",
-        "5c6608b6c7b71f13d26ccf01963f16b94db8dfb87ed00420ecfc89708616d8c0",
-    ),
     "usage": (
         "https://www.smogon.com/stats/2019-11/gen7ou-1695.txt",
         "3e5dbb64cd8f5e0bfb01ade6856c3005b34addcfbf56bc32c590ac123b65d322",
@@ -59,13 +59,10 @@ def normalize(value: object) -> str:
     )
 
 
-def download(url: str, expected_hash: str) -> str:
+def download_usage(url: str, expected_hash: str) -> str:
     parsed = urllib.parse.urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in {
-        "raw.githubusercontent.com",
-        "www.smogon.com",
-    }:
-        raise ValueError(f"unapproved source URL: {url}")
+    if parsed.scheme != "https" or parsed.hostname != "www.smogon.com":
+        raise ValueError(f"unapproved usage source URL: {url}")
     connection = http.client.HTTPSConnection(parsed.hostname, timeout=30)
     path = parsed.path + (f"?{parsed.query}" if parsed.query else "")
     try:
@@ -114,44 +111,7 @@ def form_key_parts(value: str) -> tuple[int, str]:
 
 
 def js_entries(text: str) -> dict[str, str]:
-    return {
-        match.group(1): match.group(2)
-        for match in re.finditer(
-            r"^\t([a-z0-9]+): \{\n(.*?)(?=^\t[a-z0-9]+: \{|^\};)",
-            text,
-            re.MULTILINE | re.DOTALL,
-        )
-    }
-
-
-def quoted_field(block: str, field: str) -> str | None:
-    match = re.search(rf'^\t\t{field}: ["\']([^"\']+)', block, re.MULTILINE)
-    return match.group(1) if match else None
-
-
-def integer_field(block: str, field: str) -> int | None:
-    match = re.search(rf"^\t\t{field}: ([0-9]+)", block, re.MULTILINE)
-    if not match:
-        return None
-    try:
-        return int(match.group(1))
-    except ValueError as error:
-        raise ValueError(f"invalid {field} number in Showdown data") from error
-
-
-def array_field(block: str, field: str) -> list[str]:
-    match = re.search(rf"^\t\t{field}: (\[.*?\])", block, re.MULTILINE)
-    if not match:
-        return []
-    try:
-        values = json.loads(match.group(1))
-    except json.JSONDecodeError as error:
-        raise ValueError(f"invalid {field} array in Showdown data") from error
-    if not isinstance(values, list) or not all(
-        isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"invalid {field} values in Showdown data")
-    return values
+    return dict(top_blocks(text))
 
 
 def encounter_form_keys() -> set[str]:
@@ -211,29 +171,34 @@ def form_source(base: str, slug: str) -> tuple[str, bool]:
     return base, False
 
 
-def build() -> dict[str, object]:
-    source = {name: download(*config) for name, config in SOURCES.items()}
+def build(cache_dir: str | Path = sd.DEFAULT_CACHE_DIR) -> dict[str, object]:
+    store = sd.require_cache(cache_dir)
+    source = {
+        "pokedex": store.get_text("pokedex"),
+        "tiers": store.get_text("tiers"),
+        "usage": download_usage(*SOURCES["usage"]),
+    }
     pokedex_blocks = js_entries(source["pokedex"])
     tier_blocks = js_entries(source["tiers"])
     pokedex = {
         key: {
-            "name": quoted_field(block, "species") or key,
-            "base": quoted_field(block, "baseSpecies"),
+            "name": field(block, "species") or key,
+            "base": field(block, "baseSpecies"),
             "types": array_field(block, "types"),
             "evos": array_field(block, "evos"),
-            "prevo": quoted_field(block, "prevo"),
-            "evoType": quoted_field(block, "evoType"),
+            "prevo": field(block, "prevo"),
+            "evoType": field(block, "evoType"),
             "evoLevel": integer_field(block, "evoLevel"),
-            "evoItem": quoted_field(block, "evoItem"),
-            "evoMove": quoted_field(block, "evoMove"),
-            "evoCondition": quoted_field(block, "evoCondition"),
+            "evoItem": field(block, "evoItem"),
+            "evoMove": field(block, "evoMove"),
+            "evoCondition": field(block, "evoCondition"),
         }
         for key, block in pokedex_blocks.items()
     }
     tiers = {
         key: tier
         for key, block in tier_blocks.items()
-        if (tier := quoted_field(block, "tier"))
+        if (tier := field(block, "tier"))
     }
     usage = {
         normalize(name): number(value)
@@ -374,10 +339,20 @@ def output_text(data: dict[str, object]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--cache",
+        type=Path,
+        default=sd.configured_cache_dir(),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
+    parser.add_argument(
         "--check", action="store_true", help="fail if generated data differs"
     )
     args = parser.parse_args()
-    generated = output_text(build())
+    try:
+        generated = output_text(build(args.cache))
+    except (OSError, ValueError, sd.ShowdownDataError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     if args.check:
         if not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != generated:
             print(f"ERROR: {OUTPUT.relative_to(ROOT)} is stale")

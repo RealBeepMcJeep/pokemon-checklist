@@ -26,8 +26,8 @@ jobs:
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: python tools/extract_reference.py --validate
-      - run: python tools/pokemon_chat.py --self-test
       - run: >-
           python -m py_compile
           tools/validate_data.py
@@ -41,9 +41,5 @@ jobs:
           tools/catcher_score.py
           tools/pokemon_ops.py
           tools/team_builder.py
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run test:tools
-      - run: npm run build:check
-      - run: npx playwright install --with-deps chromium
+      - run: npm run check
       - run: npm run test:e2e

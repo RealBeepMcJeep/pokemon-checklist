@@ -19,8 +19,10 @@ export interface Notice {
 }
 
 export const formDefinitions = buildFormDefinitions(ENCOUNTERS_BY_MODE);
-const validPokemon = new Set(POKEMON.map(({ id }) => id));
-const validForms = new Set(formDefinitions.keys());
+export const validPokemon: ReadonlySet<number> = new Set(
+  POKEMON.map(({ id }) => id),
+);
+export const validForms: ReadonlySet<string> = new Set(formDefinitions.keys());
 const speciesSignals = new Map(
   POKEMON.map(({ id }) => [id, signal<Status>("none")] as const),
 );
@@ -75,10 +77,6 @@ let localResetListener: ((before: SavedState) => void) | null = null;
 /** The localStorage key the player's save belongs to right now. */
 export function activeSaveKey(): string {
   return saveKeyFor(activeUid);
-}
-
-export function currentAccountUid(): string | null {
-  return activeUid;
 }
 
 /**

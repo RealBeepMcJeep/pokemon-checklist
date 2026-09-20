@@ -15,6 +15,10 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+import catcher_score as catcher
+from showdown_data import configured_cache_dir, require_cache
+from showdown_text import array_field, block, field, integer_field, list_field, object_after
+
 REPO = Path(__file__).resolve().parent.parent
 TIER_ORDER = ["Uber", "OU", "UUBL", "UU", "RUBL", "RU", "NUBL", "NU", "PUBL", "PU", "(PU)", "LC Uber", "LC"]
 TIER_RANK = {tier: index for index, tier in enumerate(TIER_ORDER)}
@@ -67,46 +71,39 @@ def read_records(uid: str) -> dict:
     return value
 
 
-def block(dex: str, name: str) -> str:
-    key = normalize(name)
-    match = re.search(rf"^\s*{re.escape(key)}: \{{(.*?)^\s*\}},", dex, re.S | re.M)
-    return match.group(1) if match else ""
-
-
 def types_of(dex: str, name: str) -> list[str]:
-    match = re.search(r"types: \[(.*?)\]", block(dex, name))
-    return re.findall(r"\"([A-Z][a-z]+)\"", match.group(1)) if match else []
+    return array_field(block(dex, name), "types")
 
 
 def stats_of(dex: str, name: str) -> str:
-    match = re.search(r"baseStats: \{([^}]*)\}", block(dex, name))
-    if not match:
+    stats = object_after(block(dex, name), "baseStats")
+    if not stats:
         return ""
-    found = dict(re.findall(r"(\w+): (\d+)", match.group(1)))
+    found = dict(re.findall(r"(\w+): (\d+)", stats))
     return "/".join(found.get(key, "?") for key in STAT_KEYS)
 
 
 def abilities_of(dex: str, name: str) -> str:
     """Slots matter: H is the hidden one, which a normal wild catch cannot have."""
-    match = re.search(r"abilities: \{(.*?)\}", block(dex, name), re.S)
-    if not match:
+    abilities = object_after(block(dex, name), "abilities")
+    if not abilities:
         return ""
-    pairs = re.findall(r"[\'\"]?([01H])[\'\"]?: [\'\"]([^\'\"]+)[\'\"]", match.group(1))
+    pairs = re.findall(r"[\'\"]?([01H])[\'\"]?: [\'\"]([^\'\"]+)[\'\"]", abilities)
     return ", ".join(f"{name}(H)" if slot == "H" else name for slot, name in pairs)
 
 
 def evo_of(dex: str, name: str) -> str:
     body = block(dex, name)
     bits = []
-    level = re.search(r"evoLevel: (\d+)", body)
-    item = re.search(r"evoItem: \"([^\"]+)\"", body)
-    kind = re.search(r"evoType: \"([^\"]+)\"", body)
+    level = integer_field(body, "evoLevel")
+    item = field(body, "evoItem")
+    kind = field(body, "evoType")
     if level:
-        bits.append(f"L{level.group(1)}")
+        bits.append(f"L{level}")
     if kind:
-        bits.append(kind.group(1))
+        bits.append(kind)
     if item:
-        bits.append(item.group(1))
+        bits.append(item)
     return ", ".join(bits) or "-"
 
 
@@ -120,23 +117,21 @@ def expand_off_limits(tokens: set[str], dex: str) -> set[str]:
             continue
         seen.add(current)
         body = block(dex, current)
-        previous = re.search(r'prevo: "([^"]+)"', body)
+        previous = field(body, "prevo")
         if previous:
-            queue.append(previous.group(1))
-        evos = re.search(r"evos: \[(.*?)\]", body, re.S)
-        if evos:
-            queue.extend(re.findall(r'"([^"]+)"', evos.group(1)))
+            queue.append(previous)
+        queue.extend(list_field(body, "evos"))
     return seen
 
 
-def load_world(cache: Path):
+def load_world(cache: Path, dex_text: str | None = None):
     """Load the app snapshot and Showdown snapshot used by both team commands."""
     details = json.loads((REPO / "data" / "pokedex-details.json").read_text())
     det = {int(entry["id"]): entry for entry in details["species"]}
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
     rows = rows if isinstance(rows, list) else list(rows.values())
     by_id = {int(row["id"]): row for row in rows}
-    dex = (cache / "pokedex.ts").read_text(errors="replace")
+    dex = dex_text if dex_text is not None else require_cache(cache).get_text("pokedex")
     form_row: dict[str, dict] = {}
     for entry in details.get("forms", {}).values():
         if not isinstance(entry, dict) or not entry.get("source"):
@@ -355,9 +350,10 @@ def load_roster(
     keep_alolan: bool = False,
     min_tier: str | None = None,
     form_overrides: dict[str, str] | None = None,
+    dex_text: str | None = None,
 ) -> dict:
     """Shared account loading, canonicalization, and filtering for both team tools."""
-    det, by_id, form_row, dex = load_world(cache)
+    det, by_id, form_row, dex = load_world(cache, dex_text)
     records = read_records(uid)
     caught_ids = sorted({int(key.split(":", 1)[1]) for key, value in records.items()
                          if key.startswith("species:") and isinstance(value, dict) and value.get("s") == "caught"})
@@ -386,22 +382,14 @@ def load_roster(
     }
 
 
-def _run_catcher(uid: str, cache: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", uid, "--cache", cache, "--top", "3"],
-        capture_output=True,
-        text=True,
-        cwd=REPO,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"catcher_score failed: {(result.stderr or result.stdout).strip()[:300]}")
-    return result.stdout or result.stderr
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True)
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--keep", type=int, default=5)
     parser.add_argument("--min-tier", default=None, help=f"drop lines worse than this tier ({', '.join(TIER_ORDER)})")
     parser.add_argument("--off-limits", default="", help="comma-separated species/slugs to exclude")
@@ -412,10 +400,15 @@ def main() -> int:
         validate_keep(args.keep)
         minimum = normalise_tier(args.min_tier)
         overrides = parse_form_overrides(args.form_override)
-        roster = load_roster(args.uid, Path(args.cache), off_limits=args.off_limits, min_tier=minimum,
-                             form_overrides=overrides)
+        cache = Path(args.cache)
+        catcher_data = catcher.load_rank_data(cache)
+        roster = load_roster(args.uid, cache, off_limits=args.off_limits, min_tier=minimum,
+                             form_overrides=overrides, dex_text=catcher_data["dex_text"])
         pool = sorted(roster["pool"], key=lambda line: (line["rank"], -line["usage"], line["final"]))
-        catcher = _run_catcher(args.uid, args.cache)
+        catcher_candidates = catcher.rank_candidates(roster["records"], catcher_data)
+        catcher_output = catcher.plain_lines(
+            catcher_candidates, top=3, roster_count=len(catcher.record_species_ids(roster["records"]))
+        )
     except (RuntimeError, ValueError, OSError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -449,7 +442,7 @@ def main() -> int:
         print(f"{'':34}abilities: {line['abilities']}")
 
     print("\n=== catcher, from catcher_score.py (utility, tier plays no part) ===")
-    for line in catcher.splitlines()[:6]:
+    for line in catcher_output[:6]:
         print("  " + line.rstrip())
     if roster["excluded"]:
         print(f"\n=== excluded ({len(roster['excluded'])}) ===")

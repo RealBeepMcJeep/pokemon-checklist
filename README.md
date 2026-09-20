@@ -36,22 +36,27 @@ Install the Python tooling dependencies with `python -m pip install -r requireme
 ```text
 npm run build
 npm run check
-npm run test:tools
 npx playwright install chromium
 npm run test:e2e
 python tools/extract_reference.py --validate
+python tools/build_icons.py --check
 python tools/build_vanilla_encounters.py --check
-python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py tools/pokemon_chat.py tools/showdown_data.py tools/moveline.py tools/roster_lens.py tools/catcher_score.py
-python tools/pokemon_chat.py --self-test
 ```
 
 Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external scripts, stylesheets, iframe/object/embed/media/track resources, CSS `url(...)` and `@import` references, source maps, and unresolved build tokens, and copies it to the tracked root `index.html`. Data URLs and fragment-only references remain valid embedded resources. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. The no-network guarantee is behavioural and enforced by a browser test rather than by that check: while signed out the artifact may not so much as *attempt* a request to anything other than `data:`, `file:` or localhost, on a desktop or a mobile user agent. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
 
-`npm run check` runs strict TypeScript checking, Vitest domain tests, canonical Python data validation, and the production build/freshness audit. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. The CI job additionally runs `python tools/pokemon_chat.py --self-test`; manual tool checks should run that command too. GitHub Actions enforces these checks for pull requests and `main`.
+`npm run check` runs strict TypeScript checking, Vitest, the production build/freshness audit, the full Python tool suite plus chat self-test, and deterministic Node tool tests. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. GitHub Actions enforces these checks for pull requests and `main`.
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`. `python tools/build_pokedex_details.py` regenerates the type, evolution, inherited-grade, form, and usage snapshot from checksum-pinned Pokémon Showdown sources; it requires network access, while normal builds remain offline.
 
-`python tools/build_vanilla_encounters.py` regenerates all four vanilla snapshots from pinned sources and requires network access; normal builds and unsigned/offline use remain fully offline. Direct tables come from the pinned [Pokémon Sun mirror](https://gist.github.com/RichardPaulAstley/42fbabe24250969f22d18fe8b919c520), SciresM's Pokémon Moon Pastebins (`YjNi4Qdk` and `HKEVPUYX`), and the pinned [Ultra Sun](https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2) and [Ultra Moon](https://gist.github.com/SciresM/deecdcf5fc49fc8191a29d111643c6b6) dumps. SHA-256 checks guard every table download. The pinned [PokeAPI repository](https://github.com/PokeAPI/pokeapi/tree/4b82c204ddd19ecb8eda2ea044ccb59e222b721c/data/v2/csv) supplies normalized area, method, SOS, Island Scan, berry-pile, and postgame records.
+The source regenerators are offline by default. Their verified raw inputs live outside the repository in the platform cache directory (`%LOCALAPPDATA%/pokemon-checklist/` on Windows, `$XDG_CACHE_HOME/pokemon-checklist/` or `~/.cache/pokemon-checklist/` elsewhere); use `--cache-dir` to override it. Normal generation and `--check` only read that cache and fail clearly when it is missing or corrupt. The explicit refresh commands are networked and should be run only when inputs need bootstrapping or updating:
+
+```text
+python tools/build_icons.py --refresh
+python tools/build_vanilla_encounters.py --refresh
+```
+
+Both commands accept `--cache-dir PATH`; `build_vanilla_encounters.py --game sun` (repeatable) limits table refresh/build. Direct `--source-dir` and `--tables-dir` overrides remain available for fully local vanilla builds. The icon cache pins the PokéAPI sprites source to commit `6e3e7c43e86db0e1b2277795cfee41b11e8df2a4` and validates all 807 40×30 PNGs plus the license. Vanilla tables come from the pinned [Pokémon Sun mirror](https://gist.github.com/RichardPaulAstley/42fbabe24250969f22d18fe8b919c520), SciresM's Pokémon Moon Pastebins (`YjNi4Qdk` and `HKEVPUYX`), and the pinned [Ultra Sun](https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2) and [Ultra Moon](https://gist.github.com/SciresM/deecdcf5fc49fc8191a29d111643c6b6) dumps. SHA-256 checks guard every table download and cache entry. The pinned [PokeAPI repository](https://github.com/PokeAPI/pokeapi/tree/4b82c204ddd19ecb8eda2ea044ccb59e222b721c/data/v2/csv) supplies normalized area, method, SOS, Island Scan, berry-pile, and postgame records.
 
 ## Attribution and disclaimer
 

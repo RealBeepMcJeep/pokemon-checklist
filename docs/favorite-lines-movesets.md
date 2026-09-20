@@ -12,9 +12,9 @@ which is the last meaningful snapshot for those games. No Gen 8/9 data applies.
 
 | Dataset | URL | Size |
 |---|---|---|
-| Learnset per species (move + method + level) | `raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/learnsets.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
-| Move definitions (power/type/accuracy) | `.../e7aee8d9ccc983c59c5608929773249adca16b8f/data/moves.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
-| Base stats + ability slots | `.../e7aee8d9ccc983c59c5608929773249adca16b8f/data/pokedex.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
+| Learnset per species (move + method + level) | shared cache `learnsets.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
+| Move definitions (power/type/accuracy) | shared cache `moves.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
+| Base stats + ability slots | shared cache `pokedex.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
 | Ranking (species usage %) | `smogon.com/stats/2019-11/gen7ou-1695.txt` | 73,934 B |
 | **Per-set detail (what % of sets run a move)** | `smogon.com/stats/2019-11/moveset/gen7ou-1695.txt` | 1,007,136 B |
 | Same, per tier | `.../moveset/gen7uu-1630.txt` / `gen7ru-1630` / `gen7nu-1630` | 889 KB / 746 KB / 726 KB |
@@ -59,7 +59,7 @@ Standard from Rebalanced. Worth splitting if Rebalanced is ever played.
   Stomping Tantrum **95.8%**, Seed Bomb **88.9%**. Ability **Gluttony 98.3%**
   (Figy Berry 82.0%). Spread Adamant 148/248/8/0/88/16.
 - Why Gluttony: it triggers the berry at 50% HP, which is exactly what Belly Drum costs.
-- **Availability (verified in `learnsets.ts`):**
+- **Availability (verified in the shared `learnsets.js` cache):**
   - **Extreme Speed — a Gen 7 EGG MOVE on Zigzagoon** (`["8E","7E","3S1"]`). It is *not* a
     Linoone level-up move and *not* a USUM tutor move (Linoone's own entry lists only the Gen 6
     event code `6S0`). Check the **base form's** learnset, not the evolution's — this was

@@ -18,9 +18,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
+
+import catcher_score as catcher
+import team_builder as roster_data
+from showdown_data import configured_cache_dir
+from showdown_text import block
 
 REPO = Path(__file__).resolve().parent.parent
 STAT_KEYS = ("hp", "atk", "def", "spa", "spd", "spe")
@@ -28,30 +32,10 @@ HEADER = (f"{'pokemon':13}{'caught':>7}  {'final evolution':17}{'grade':>6}{'tie
           f"{'usage':>8}   {'HP/Atk/Def/SpA/SpD/Spe':22}")
 
 
-def parse_candidates(output: str) -> list[tuple[float, str]]:
-    """Read catcher_score's stable JSON seam without reparsing display text."""
-    payload = json.loads(output)
-    candidates = payload.get("candidates") if isinstance(payload, dict) else None
-    if not isinstance(candidates, list):
-        raise ValueError("catcher output has no candidates list")
-    result = []
-    for candidate in candidates:
-        if not isinstance(candidate, dict) or not isinstance(candidate.get("name"), str):
-            raise ValueError("catcher output contains an invalid candidate")
-        try:
-            score = float(candidate["score"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError("catcher output contains an invalid score") from exc
-        result.append((score, candidate["name"]))
-    return result
-
-
 def base_stats(dex_text: str, name: str) -> str:
     """Base stats of one species, from Showdown's pokedex."""
-    block = re.search(rf"^\s*{re.escape(name.lower())}: \{{(.*?)^\s*\}},", dex_text, re.S | re.M)
-    if not block:
-        return ""
-    stats = re.search(r"baseStats: \{([^}]*)\}", block.group(1))
+    body = block(dex_text, name)
+    stats = re.search(r"baseStats: \{([^}]*)\}", body)
     if not stats:
         return ""
     found = dict(re.findall(r"(\w+): (\d+)", stats.group(1)))
@@ -62,44 +46,37 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True, help="account uid holding the roster")
-    parser.add_argument("--cache", default="/opt/data/poke-data", help="Showdown data cache")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=12, help="how many rows to show")
     parser.add_argument("--fleeing", action="store_true", help="pass through to the score")
     parser.add_argument("--exclude", default="", help="pass through to the score")
     args = parser.parse_args()
 
-    cmd = [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", args.uid,
-           "--cache", args.cache, "--top", str(args.top), "--json"]
-    if args.fleeing:
-        cmd.append("--fleeing")
-    if args.exclude:
-        cmd += ["--exclude", args.exclude]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(result.stderr or result.stdout, file=sys.stderr)
-        return result.returncode
-
-    rows = json.load(open(REPO / "data" / "pokemon.json"))
-    rows = rows if isinstance(rows, list) else list(rows.values())
-    id_by_name = {row["name"]: int(row["id"]) for row in rows}
-    details = {entry["id"]: entry for entry in
-               json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]}
-    dex_text = (Path(args.cache) / "pokedex.ts").read_text(errors="replace")
-
     try:
-        candidates = parse_candidates(result.stdout)
-    except (TypeError, ValueError, json.JSONDecodeError) as exc:
-        print(f"error: invalid catcher JSON: {exc}", file=sys.stderr)
+        data = catcher.load_rank_data(Path(args.cache))
+        records = roster_data.read_records(args.uid)
+        candidates = catcher.rank_candidates(records, data, exclude=args.exclude, fleeing=args.fleeing)
+    except (RuntimeError, ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
 
+    rows = data["rows"]
+    id_by_name = {row["name"]: int(row["id"]) for row in rows}
+    details = data["details"]
+
     print(f"{'catch utility':13}{'score':>7}   {'grade':>5} {'tier':>5} {'usage':>7}  stats")
-    for score, name in candidates:
+    for candidate in candidates[:args.top]:
+        score, name = candidate["score"], candidate["name"]
         entry = details.get(id_by_name.get(name, -1), {})
         final = entry.get("source", "?")
         usage = entry.get("usage")
         usage = f"{float(usage):.2f}%" if isinstance(usage, (int, float)) else "n/a"
         print(f"{name:13}{score:7.1f}   {str(entry.get('grade', '?')):>5} "
-              f"{str(entry.get('tier', '?')):>5} {usage:>7}  {base_stats(dex_text, final)}"
+              f"{str(entry.get('tier', '?')):>5} {usage:>7}  {base_stats(data['dex_text'], final)}"
               f"   ({final})")
     return 0
 

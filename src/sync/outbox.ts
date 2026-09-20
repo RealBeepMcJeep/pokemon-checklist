@@ -296,27 +296,15 @@ export function saveFromView(
 }
 
 /**
- * First sign-in on a device that already holds offline progress: everything the
- * local save contains becomes pending, so the account adopts it. This is the
- * deliberate opposite of starting empty, which would silently discard a
- * collection built before the account existed.
- */
-export function adoptionEntries(
-  save: SavedState,
-  at: number,
-  by: string,
-): Record<RecordKey, RecordEntry> {
-  return entriesFromState(save, at, by);
-}
-
-/**
  * Would this publish clear everything the account holds?
  *
- * A fail-safe, not a policy. An empty local save meeting a full confirmed document
- * is far more likely to be a bug than a player deleting a whole collection, and the
- * cost of guessing wrong is their data — which is what happened once: a device that
- * started from empty against a full account published tombstones for every record.
- * The deliberate path (Reset) writes its own log entry and must not come through here.
+ * A substantial whole-account clear is refused by the sync engine unless it is
+ * the explicit Reset path, which writes the clear and its before-image atomically.
+ * This is a fail-safe, not a policy: an empty local save meeting a full confirmed
+ * document is far more likely to be a bug than a player deleting a whole
+ * collection, and the cost of guessing wrong is their data — which is what
+ * happened once: a device that started from empty against a full account
+ * published tombstones for every record.
  */
 export function isWholeAccountClear(
   base: SyncDocument,

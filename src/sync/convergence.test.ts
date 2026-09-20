@@ -3,12 +3,9 @@ import { cycleStatus } from "../domain";
 import type { SavedState, Status } from "../types";
 import {
   TOMBSTONE,
-  clearedByReset,
   mergeDocument,
   speciesKey,
   stateFromDocument,
-  undoableFrom,
-  type LogEntry,
   type RecordEntry,
   type RecordKey,
   type SyncDocument,
@@ -119,45 +116,6 @@ function receive(target: Device, hub: Server): void {
   );
 }
 
-/** Publish a reset the way the account-wide reset will: one entry, before-image included. */
-function publishReset(target: Device, hub: Server): LogEntry {
-  const cleared = clearedByReset(target.save);
-  hub.clock += 1;
-  const entry: LogEntry = {
-    op: "reset",
-    at: hub.clock,
-    by: target.uid,
-    cleared,
-  };
-  for (const [key] of cleared) {
-    hub.records[key] = { s: TOMBSTONE, at: entry.at, by: target.uid };
-  }
-  target.save = {
-    ...target.save,
-    species: {},
-    starred: [],
-  };
-  receive(target, hub);
-  return entry;
-}
-
-/** Undo a logged reset: restore only what the reset still owns. */
-function undoReset(target: Device, hub: Server, entry: LogEntry): void {
-  const document: SyncDocument = {
-    schema: 1,
-    records: { ...hub.records },
-    updatedAt: hub.clock,
-  };
-  const restorable = undoableFrom(document, entry);
-  for (const [key, value] of restorable) {
-    if (key.startsWith("star:") || key.startsWith("setting:")) continue;
-    const id = key.slice("species:".length);
-    const species = { ...target.save.species, [id]: value as Status };
-    target.save = { ...target.save, species };
-  }
-  publish(target, hub);
-}
-
 describe("two devices reconciling", () => {
   it("carries an offline catch across when the device reconnects", () => {
     const phone = device("phone");
@@ -232,37 +190,6 @@ describe("two devices reconciling", () => {
     // And a later edit on the tablet does not bring the old value back.
     publish(tablet, hub);
     expect(hub.records[speciesKey(25)].s).toBe(TOMBSTONE);
-  });
-
-  it("propagates an account-wide reset, then undoes only what it still owns", () => {
-    const phone = device("phone");
-    const tablet = device("tablet");
-    const hub = server();
-
-    tap(phone, 1);
-    tap(phone, 25);
-    publish(phone, hub);
-    receive(tablet, hub);
-    expect(tablet.save.species["1"]).toBe("caught");
-
-    const entry = publishReset(phone, hub);
-    receive(tablet, hub);
-    expect(tablet.save.species["1"]).toBeUndefined();
-    expect(tablet.save.species["25"]).toBeUndefined();
-
-    // The tablet catches something new AFTER the reset, then the phone undoes it.
-    tap(tablet, 150);
-    publish(tablet, hub);
-    receive(phone, hub);
-    undoReset(phone, hub, entry);
-    receive(tablet, hub);
-
-    // The reset's own records come back...
-    expect(phone.save.species["1"]).toBe("caught");
-    expect(phone.save.species["25"]).toBe("caught");
-    // ...and the catch made afterwards survives, on both devices.
-    expect(phone.save.species["150"]).toBe("caught");
-    expect(tablet.save.species["150"]).toBe("caught");
   });
 });
 

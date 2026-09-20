@@ -162,6 +162,23 @@ describe("sync startup lifecycle", () => {
     expect(syncAccount.value?.uid).toBe("uid-b");
   });
 
+  it("does not publish a reset when the default empty checklist is unchanged", async () => {
+    resetState();
+    mocks.get.mockResolvedValue(
+      snapshot({
+        "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
+        "setting:forms": { s: "off", at: 100, by: "uid-a" },
+      }),
+    );
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    mocks.update.mockClear();
+
+    resetState();
+    await Promise.resolve();
+
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
   it("settles a reset echo that arrives before the write promise", async () => {
     resetState();
     mocks.get.mockResolvedValue(
