@@ -221,9 +221,10 @@ describe("the fail-safe against emptying an account", () => {
       ...SETTINGS,
     });
 
-  it("notices an empty save about to tombstone a full account", () => {
+  it("flags the full-account clear produced by a deliberate Reset", () => {
     const base = full();
-    const pending = pendingEntries(base, save(), 9_000, "uid-a");
+    const resetSave = save();
+    const pending = pendingEntries(base, resetSave, 9_000, "uid-a");
     expect(isWholeAccountClear(base, pending)).toBe(true);
   });
 

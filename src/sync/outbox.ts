@@ -202,12 +202,14 @@ export function saveFromView(
 /**
  * Would this publish clear everything the account holds?
  *
- * A fail-safe, not a policy. An empty local save meeting a full confirmed document
- * is far more likely to be a bug than a player deleting a whole collection, and the
- * cost of guessing wrong is their data — which is what happened once: a device that
- * started from empty against a full account published tombstones for every record.
- * A deliberate Reset also becomes ordinary per-record changes through the same
- * derived diff, so this guard only stops an accidental whole-account clear.
+ * A substantial whole-account clear, including the derived diff from a deliberate
+ * Reset, is refused by the sync engine. Reset is therefore local-only today; it
+ * must stay that way until a separately confirmed, safe synced-reset path exists.
+ * This is a fail-safe, not a policy: an empty local save meeting a full confirmed
+ * document is far more likely to be a bug than a player deleting a whole
+ * collection, and the cost of guessing wrong is their data — which is what
+ * happened once: a device that started from empty against a full account
+ * published tombstones for every record.
  */
 export function isWholeAccountClear(
   base: SyncDocument,

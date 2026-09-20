@@ -17,13 +17,13 @@ Records use server-assigned timestamps and deterministic UID tie-breaking. A dev
 
 - Firebase Google authentication, allowed-email handling, and account-specific local save namespaces.
 - Firebase sync engine with realtime subscriptions, server-ordered per-record merging, offline local edits, adoption of an existing device save on first sign-in, and safe sign-out.
-- Per-record `set` logging for app changes and chat changes. Reset uses the normal local save path: clearing the checklist produces ordinary per-record changes and logs, not a separate reset operation.
-- A whole-account-clear guard that refuses a suspicious derived diff before it can tombstone a substantial account.
-- Service-account chat tooling: `tools/pokemon_chat.py` resolves deterministic player commands, and `tools/firebase-admin-rest.mjs` validates and applies record patches without putting credentials in the repository.
+- Per-record `set` logs for ordinary app changes and chat changes. A signed-in Reset currently remains local: `resetState()` produces a derived whole-account-clear diff, and the sync guard rejects publishing it, so Reset is not propagated and does not currently produce and publish ordinary per-record logs.
+- A whole-account-clear guard that refuses any substantial whole-account clear before it can tombstone the account.
+- Service-account chat tooling: `tools/pokemon_chat.py` parses intents, `tools/pokemon_ops.py` resolves and validates operations, and `tools/firebase-admin-rest.mjs` applies validated patches without putting credentials in the repository.
 
 ## Still outstanding
 
-- Decide and implement reset undo, if it is wanted; no reset-specific undo log format is shipped.
+- Define and implement a safe synced-reset path, plus any undo design; neither exists today.
 - Define and implement log retention or compaction.
 - Test reset, reconnect, concurrent edits, account switching, and retention on real Firebase accounts and multiple physical devices.
 
