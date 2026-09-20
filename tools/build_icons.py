@@ -38,6 +38,10 @@ OUT = ROOT / "assets" / "gen7-icons.png"
 LICENSE_OUT = ROOT / "references" / "PokeAPI-sprites-LICENCE.txt"
 
 
+def _normalized_text(raw: bytes) -> str:
+    return raw.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+
+
 class CacheError(ValueError):
     pass
 
@@ -220,7 +224,7 @@ def build(cache_dir: Path = DEFAULT_CACHE_DIR, check: bool = False) -> None:
     if check:
         if not OUT.is_file() or OUT.read_bytes() != rendered:
             raise RuntimeError(f"{OUT.relative_to(ROOT)} is stale")
-        if not LICENSE_OUT.is_file() or LICENSE_OUT.read_bytes() != license_raw:
+        if not LICENSE_OUT.is_file() or _normalized_text(LICENSE_OUT.read_bytes()) != _normalized_text(license_raw):
             raise RuntimeError(f"{LICENSE_OUT.relative_to(ROOT)} is stale")
         print(f"OK: {OUT.relative_to(ROOT)} and {LICENSE_OUT.relative_to(ROOT)} are current")
         return

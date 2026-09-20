@@ -38,6 +38,29 @@ class GeneratorCacheTests(unittest.TestCase):
             with mock.patch.object(icons, "download_bytes", side_effect=AssertionError("network")):
                 icons.read_inputs(cache)
 
+    def test_icon_check_accepts_equivalent_crlf_committed_license(self):
+        raw_icon = self.icon_bytes()
+        license_raw = b"fixture license\nsecond line\n"
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cache = root / "icons"
+            output = root / "assets" / "gen7-icons.png"
+            license_output = root / "references" / "PokeAPI-sprites-LICENCE.txt"
+            icons.refresh_cache(
+                cache,
+                lambda url: license_raw if url == icons.LICENSE_URL else raw_icon,
+            )
+            output.parent.mkdir()
+            output.write_bytes(icons.atlas_bytes({dex: raw_icon for dex in range(1, icons.COUNT + 1)}))
+            license_output.parent.mkdir()
+            license_output.write_bytes(license_raw.replace(b"\n", b"\r\n"))
+
+            with mock.patch.object(icons, "ROOT", root), mock.patch.object(
+                icons, "OUT", output
+            ), mock.patch.object(icons, "LICENSE_OUT", license_output):
+                icons.build(cache, check=True)
+
     def test_icon_cache_rejects_missing_corrupt_and_mixed_inputs(self):
         raw_icon = self.icon_bytes()
 
