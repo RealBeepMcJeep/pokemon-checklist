@@ -1,8 +1,11 @@
+import hashlib
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -12,6 +15,48 @@ from tools import moveline as M
 
 
 class MoveLineHardeningTests(unittest.TestCase):
+    def test_pinned_showdown_loader_uses_injected_local_store(self):
+        class FixtureStore:
+            def __init__(self, cache):
+                self.cache = cache
+
+            def bootstrap(self):
+                return {}
+
+            def get_text(self, name):
+                return f"{name} fixture"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            loaded = M.load_showdown_sources(Path(tmp), FixtureStore)
+        self.assertEqual(loaded, {
+            "learnsets": "learnsets fixture",
+            "pokedex": "pokedex fixture",
+            "moves": "moves fixture",
+        })
+
+    def test_smogon_stats_cache_and_download_are_hash_verified(self):
+        raw = b"fixture stats"
+        digest = hashlib.sha256(raw).hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "moveset.txt"
+            M.fetch_stats("https://www.smogon.com/stats/fixture.txt", path, digest,
+                          downloader=lambda url: raw)
+            self.assertEqual(path.read_bytes(), raw)
+            with self.assertRaises(M.StatsIntegrityError):
+                M.fetch_stats("https://www.smogon.com/stats/fixture.txt", path, "0" * 64)
+            path.unlink()
+            with self.assertRaises(M.StatsIntegrityError):
+                M.fetch_stats("https://www.smogon.com/stats/fixture.txt", path, digest,
+                              downloader=lambda url: b"corrupt")
+
+    def test_unavailable_stats_tier_is_distinct_from_download_failure(self):
+        with mock.patch.object(M, "_download_stats", side_effect=M.StatsUnavailable("404")):
+            with self.assertRaises(M.StatsUnavailable):
+                M.fetch_stats("https://www.smogon.com/stats/missing.txt", Path("missing.txt"), "0" * 64)
+        with mock.patch.object(M, "_download_stats", side_effect=OSError("offline")):
+            with self.assertRaises(M.StatsDownloadError):
+                M.fetch_stats("https://www.smogon.com/stats/error.txt", Path("error.txt"), "0" * 64)
+
     def test_final_evolution_paths_are_branch_specific(self):
         parent_of = {
             "ralts": "",

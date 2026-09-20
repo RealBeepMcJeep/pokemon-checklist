@@ -6,11 +6,14 @@ import {
   exportState,
   initializeState,
   interpretStoredState,
+  notice,
+  persist,
   isStarred,
   resetState,
   setLocalChangeListener,
   setSyncAccount,
   starred,
+  storageAvailable,
   toggleStar,
 } from "./state";
 import { STORAGE_KEY } from "./domain";
@@ -227,6 +230,51 @@ describe("starred species", () => {
     const raw = store.get("pokemon-checklist-state-v3");
     expect(raw).toBeTruthy();
     expect(JSON.parse(raw!).starred).toEqual([25]);
+  });
+});
+
+describe("storage failures", () => {
+  it("still notifies sync of the current state when persistence fails", () => {
+    installStorage();
+    storageAvailable.value = true;
+    setLocalChangeListener(null);
+    resetState();
+
+    let received: ReturnType<typeof exportState> | null = null;
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+      removeItem: () => {},
+    };
+    setLocalChangeListener((state) => {
+      received = state;
+    });
+
+    cycleSpecies(25);
+
+    expect(received).not.toBeNull();
+    expect(received!.species["25"]).toBe("caught");
+    expect(storageAvailable.value).toBe(false);
+    expect(notice.value.kind).toBe("error");
+    expect(notice.value.message).toMatch(/disappear when this tab closes/);
+    setLocalChangeListener(null);
+    storageAvailable.value = true;
+  });
+
+  it("keeps storage errors inside the state boundary", () => {
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+    };
+    expect(() => initializeState()).not.toThrow();
+    expect(() => persist()).not.toThrow();
+    storageAvailable.value = true;
   });
 });
 

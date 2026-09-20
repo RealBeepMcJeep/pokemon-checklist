@@ -242,7 +242,7 @@ class FirebaseClient:
             raise OperationError("firebase wrapper returned invalid JSON") from exc
 
     def read_records(self, uid: str) -> Mapping[str, Any] | None:
-        return self._run(["--read", f"/users/{uid}/state/records"])
+        return self._run(["--read-records", "--uid", uid])
 
     def apply_records(self, uid: str, records: Mapping[str, str], note: str = "") -> Any:
         return self._run([

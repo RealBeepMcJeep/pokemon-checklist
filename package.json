@@ -11,6 +11,7 @@
     "validate:data": "python tools/validate_data.py",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:tools": "node --test tools/tests/firebase-admin-rest.node.test.mjs tools/tests/publish-validator.node.test.mjs",
     "build": "npm run validate:data && vite build && node tools/publish.mjs",
     "build:check": "npm run validate:data && vite build && node tools/publish.mjs --check",
     "test:e2e": "playwright test",

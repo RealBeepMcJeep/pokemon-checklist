@@ -16,6 +16,7 @@ sys.path.insert(0, str(TOOLS))
 
 import catch_odds as odds  # noqa: E402
 import catcher_score as score  # noqa: E402
+import roster_lens  # noqa: E402
 
 
 class CatchOddsTests(unittest.TestCase):
@@ -158,6 +159,28 @@ class CatchOddsTests(unittest.TestCase):
 
 
 class CatcherScoreTests(unittest.TestCase):
+    def test_negative_top_is_a_clean_cli_error(self):
+        result = subprocess.run(
+            [sys.executable, str(TOOLS / "catcher_score.py"), "--species", "pikachu", "--top", "-1"],
+            cwd=ROOT, text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--top must be non-negative", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_empty_explain_is_a_clean_cli_error(self):
+        result = subprocess.run(
+            [sys.executable, str(TOOLS / "catcher_score.py"), "--species", "pikachu", "--explain", "   "],
+            cwd=ROOT, text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--explain requires a species name", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_roster_lens_reads_full_names_from_catcher_json(self):
+        payload = json.dumps({"candidates": [{"name": "Mr. Mime", "score": 12.5}]})
+        self.assertEqual(roster_lens.parse_candidates(payload), [(12.5, "Mr. Mime")])
+
     def test_secondary_chance_is_separate_from_accuracy(self):
         body_slam = "{ accuracy: 100, secondary: { chance: 30, status: 'par' } }"
         ice_beam = "{ accuracy: 100, secondary: { chance: 10, status: 'frz' } }"

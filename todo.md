@@ -81,10 +81,10 @@ built and deployed; Stage 2 (chat control) follows it.
 - [x] Derive pending work from the confirmed document rather than queueing operations, so retrying is idempotent and a server-side change can never be mistaken for an unpublished local edit.
 - [x] Merge incoming changes per record with server-assigned ordering, and adopt the device's existing progress only into an empty account.
 - [x] Sign in with Google (popup with a redirect fallback) with the email allowlist enforced in the security rules, and a control that never prompts on its own.
-- [ ] Write a Reset to the log with its before-image, and give the player a single-step undo of any logged change.
+- [ ] Add a single-step undo of any logged change; Reset before-images are already written to the log, but undo is not built.
 - [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
 - [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend. Blocked on an agent credential the owner creates: either a dedicated allowlisted user's refresh token or a service-account key, kept in `/opt/data/.env`.
-- [ ] Add the chat parser's self-test to CI. The token in use lacks the `workflow` scope GitHub requires to modify `.github/workflows/ci.yml`, so the step is documented in the README instead; grant the scope and it lands in one commit.
+- [x] Add the chat parser's self-test to CI (`python tools/pokemon_chat.py --self-test`).
 - [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
 
 ### Verification

@@ -13,12 +13,19 @@ const htmlPath = resolve(htmlPathArg);
 const pngPath = resolve(pngPathArg);
 const width = Number(widthArg) || 940;
 const assertNoOverflow = flags.includes("--assert-no-overflow");
-const browser = await chromium.launch({ args: ["--no-sandbox"] });
+const browser = await chromium.launch();
+const context = await browser.newContext({
+  javaScriptEnabled: false,
+  viewport: { width, height: 800 },
+  deviceScaleFactor: 2, // crisp text and sprites in the delivered image
+});
+await context.route("**/*", (route) => {
+  const protocol = new URL(route.request().url()).protocol;
+  if (protocol === "file:" || protocol === "data:") return route.continue();
+  return route.abort();
+});
 try {
-  const page = await browser.newPage({
-    viewport: { width, height: 800 },
-    deviceScaleFactor: 2, // crisp text and sprites in the delivered image
-  });
+  const page = await context.newPage();
   await page.goto(pathToFileURL(htmlPath).href);
   // The atlas is a data URL, so there is nothing to fetch; one frame is enough for layout,
   // but wait for fonts so the first paint is not measured short.
@@ -47,5 +54,6 @@ try {
   await page.screenshot({ path: pngPath, fullPage: true });
   console.log(`wrote ${pngPath} (${width}×${height} css px)`);
 } finally {
+  await context.close();
   await browser.close();
 }

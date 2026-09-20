@@ -8,10 +8,13 @@ import {
   emptyStore,
   isWholeAccountClear,
   loadStore,
+  localIntentChanges,
   pendingEntries,
+  pendingWithIntents,
   saveFromView,
   saveKeyFor,
   saveStore,
+  viewWithLocalIntent,
   viewWithPending,
   type StorageLike,
 } from "./outbox";
@@ -51,6 +54,7 @@ function fakeStorage(initial: Record<string, string> = {}) {
   return {
     getItem: (key: string) => (map.has(key) ? map.get(key)! : null),
     setItem: (key: string, value: string) => void map.set(key, value),
+    removeItem: (key: string) => void map.delete(key),
     keys: () => [...map.keys()],
     raw: (key: string) => map.get(key),
   } satisfies StorageLike & { keys: () => string[]; raw: (k: string) => string | undefined };
@@ -135,6 +139,23 @@ describe("store persistence", () => {
     expect(first.startsWith("dev-")).toBe(true);
     expect(calls).toBe(1);
   });
+
+  it("does not let throwing storage escape sync bookkeeping", () => {
+    const throwing: StorageLike = {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+      removeItem: () => {
+        throw new Error("blocked");
+      },
+    };
+    expect(() => loadStore(throwing)).not.toThrow();
+    expect(() => saveStore(throwing, emptyStore())).not.toThrow();
+    expect(() => deviceIdFor(throwing, () => 0.42)).not.toThrow();
+  });
 });
 
 describe("pending work is derived, not queued", () => {
@@ -148,19 +169,29 @@ describe("pending work is derived, not queued", () => {
     expect(pendingEntries(base, current, 9_000, "uid-a")).toEqual({});
   });
 
-  it("publishes what changed, including a tombstone when progress is cleared", () => {
+  it("publishes what changed, including a fresh tombstone when progress is cleared", () => {
     const base = document({
       [speciesKey(25)]: entry("caught", 500),
       [speciesKey(1)]: entry("caught", 500),
       ...SETTINGS,
     });
     const current = save({ species: { "1": "seen" } });
-    const pending = pendingEntries(base, current, 9_000, "uid-a");
-    expect(pending[speciesKey(25)].s).toBe(TOMBSTONE);
+    const pending = pendingEntries(base, current, 9_000, "uid-new");
+    expect(pending[speciesKey(25)]).toEqual(entry(TOMBSTONE, 9_000, "uid-new"));
     expect(pending[speciesKey(1)].s).toBe("seen");
     expect(Object.keys(pending).sort()).toEqual(
       [speciesKey(1), speciesKey(25)].sort(),
     );
+  });
+
+  it("keeps the latest local reversal while the first value is in flight", () => {
+    const caught = save({ species: { "25": "caught" } });
+    const clear = save();
+    const local = localIntentChanges(caught, clear, 9_001, "uid-a");
+    const remote = document({ [speciesKey(25)]: entry("caught", 9_002, "uid-a") });
+    const pending = pendingWithIntents(remote, clear, local, 9_003, "uid-a");
+    expect(pending[speciesKey(25)]).toEqual(entry(TOMBSTONE, 9_001, "uid-a"));
+    expect(saveFromView(viewWithLocalIntent(remote, pending), POKEMON, FORMS).species).toEqual({});
   });
 
   it("empties itself once the server echoes the write back", () => {
@@ -184,6 +215,14 @@ describe("what the device shows", () => {
     const pending = { [speciesKey(25)]: entry("caught", 900, "uid-a") };
     const view = viewWithPending(base, pending);
     expect(view.records[speciesKey(25)].s).toBe("caught");
+  });
+
+  it("lets a pending clear win an exact provisional merge tie", () => {
+    const base = document({ [speciesKey(25)]: entry("caught", 900, "uid-z") });
+    const pending = { [speciesKey(25)]: entry(TOMBSTONE, 900, "uid-a") };
+    expect(viewWithPending(base, pending).records[speciesKey(25)].s).toBe(
+      TOMBSTONE,
+    );
   });
 
   it("still loses to a genuinely newer remote write", () => {

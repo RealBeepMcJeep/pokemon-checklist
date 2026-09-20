@@ -82,6 +82,9 @@ export function mergeEntry(
   if (!local) return remote;
   if (!remote) return local;
   if (remote.at !== local.at) return remote.at > local.at ? remote : local;
+  const localClears = local.s === TOMBSTONE || local.s === STAR_OFF;
+  const remoteClears = remote.s === TOMBSTONE || remote.s === STAR_OFF;
+  if (localClears !== remoteClears) return remoteClears ? remote : local;
   if (remote.by === local.by) return local;
   return remote.by > local.by ? remote : local;
 }
@@ -144,6 +147,8 @@ export function entriesFromState(
 export function diffEntries(
   before: Record<RecordKey, RecordEntry>,
   after: Record<RecordKey, RecordEntry>,
+  at = Date.now(),
+  by = "",
 ): Record<RecordKey, RecordEntry> {
   const changed: Record<RecordKey, RecordEntry> = {};
   for (const [key, entry] of Object.entries(after)) {
@@ -151,7 +156,7 @@ export function diffEntries(
   }
   for (const [key, entry] of Object.entries(before)) {
     if (!(key in after) && entry.s !== TOMBSTONE && entry.s !== STAR_OFF) {
-      changed[key] = { s: clearedValue(key), at: entry.at, by: entry.by };
+      changed[key] = { s: clearedValue(key), at, by };
     }
   }
   return changed;

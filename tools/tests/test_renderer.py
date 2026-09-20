@@ -38,6 +38,13 @@ class RendererSmokeTests(unittest.TestCase):
             [section],
             profile="prismatic-standard",
         )
+        html = html.replace(
+            "</head>",
+            '<script>document.body.innerHTML = "executed";</script>'
+            '<img src="https://invalid.example/remote.png">'
+            '<style>.external { background: url(https://invalid.example/remote.png); }</style>'
+            "</head>",
+        )
         with tempfile.TemporaryDirectory(prefix="render fixture ", dir=ROOT / "tools" / "tests") as raw:
             fixture_dir = Path(raw)
             input_path = fixture_dir / "card input.html"

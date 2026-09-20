@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
 import { hasStamp, normalizeStamp } from "./version.mjs";
+import { standaloneResourceFailures } from "./publish-validator.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist");
@@ -31,12 +32,7 @@ const html = readFileSync(output, "utf8").replace(/\r\n?/g, "\n");
 // Everything below still keeps the artifact self-contained: no external scripts,
 // stylesheets or images, no source maps, no unresolved build tokens.
 const failures = [
-  [/<script\b[^>]*\bsrc\s*=/i, "external script"],
-  [/<link\b[^>]*\brel\s*=\s*["']?stylesheet/i, "external stylesheet"],
-  [
-    /<(?:img|source)\b[^>]*\bsrc(?:set)?\s*=\s*["'](?!data:)/i,
-    "external image",
-  ],
+  ...standaloneResourceFailures(html).map((label) => [/./, label]),
   [/sourceMappingURL/i, "source map"],
   [/__(?:VITE|POKEMON|ENCOUNTERS|ASSETS|ATLAS)_/i, "unresolved build token"],
 ].filter(([pattern]) => pattern.test(html));

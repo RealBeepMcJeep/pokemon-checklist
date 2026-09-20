@@ -51,7 +51,7 @@ def validate_keep(value: int) -> None:
 
 def read_records(uid: str) -> dict:
     out = subprocess.run(
-        ["node", str(REPO / "tools" / "firebase-admin-rest.mjs"), "--read", f"/users/{uid}/state/records"],
+        ["node", str(REPO / "tools" / "firebase-admin-rest.mjs"), "--read-records", "--uid", uid],
         capture_output=True,
         text=True,
         cwd=REPO,

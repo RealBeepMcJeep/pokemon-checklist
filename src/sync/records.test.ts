@@ -67,6 +67,14 @@ describe("mergeEntry", () => {
     expect(merged!.s).toBe(TOMBSTONE);
   });
 
+  it("lets a clear win an exact provisional stamp tie", () => {
+    const merged = mergeEntry(
+      entry("caught", 10, "uid-z"),
+      entry(TOMBSTONE, 10, "uid-a"),
+    );
+    expect(merged!.s).toBe(TOMBSTONE);
+  });
+
   it("returns whichever side exists", () => {
     expect(mergeEntry(undefined, entry("seen", 5))).toEqual(entry("seen", 5));
     expect(mergeEntry(entry("seen", 5), undefined)).toEqual(entry("seen", 5));

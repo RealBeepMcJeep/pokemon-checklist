@@ -28,6 +28,24 @@ HEADER = (f"{'pokemon':13}{'caught':>7}  {'final evolution':17}{'grade':>6}{'tie
           f"{'usage':>8}   {'HP/Atk/Def/SpA/SpD/Spe':22}")
 
 
+def parse_candidates(output: str) -> list[tuple[float, str]]:
+    """Read catcher_score's stable JSON seam without reparsing display text."""
+    payload = json.loads(output)
+    candidates = payload.get("candidates") if isinstance(payload, dict) else None
+    if not isinstance(candidates, list):
+        raise ValueError("catcher output has no candidates list")
+    result = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not isinstance(candidate.get("name"), str):
+            raise ValueError("catcher output contains an invalid candidate")
+        try:
+            score = float(candidate["score"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("catcher output contains an invalid score") from exc
+        result.append((score, candidate["name"]))
+    return result
+
+
 def base_stats(dex_text: str, name: str) -> str:
     """Base stats of one species, from Showdown's pokedex."""
     block = re.search(rf"^\s*{re.escape(name.lower())}: \{{(.*?)^\s*\}},", dex_text, re.S | re.M)
@@ -51,7 +69,7 @@ def main() -> int:
     args = parser.parse_args()
 
     cmd = [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", args.uid,
-           "--cache", args.cache, "--top", str(args.top)]
+           "--cache", args.cache, "--top", str(args.top), "--json"]
     if args.fleeing:
         cmd.append("--fleeing")
     if args.exclude:
@@ -68,12 +86,14 @@ def main() -> int:
                json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]}
     dex_text = (Path(args.cache) / "pokedex.ts").read_text(errors="replace")
 
+    try:
+        candidates = parse_candidates(result.stdout)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"error: invalid catcher JSON: {exc}", file=sys.stderr)
+        return 2
+
     print(f"{'catch utility':13}{'score':>7}   {'grade':>5} {'tier':>5} {'usage':>7}  stats")
-    for line in result.stdout.splitlines():
-        hit = re.match(r"^\s*(\d+\.\d+)\s+(\S+)", line)
-        if not hit:
-            continue
-        score, name = float(hit.group(1)), hit.group(2)
+    for score, name in candidates:
         entry = details.get(id_by_name.get(name, -1), {})
         final = entry.get("source", "?")
         usage = entry.get("usage")

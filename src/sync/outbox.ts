@@ -32,7 +32,10 @@ export const SYNC_SESSION_KEY = "pokemon-checklist-sync-session";
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem(key: string): void;
 }
+
+export type ResetImage = [RecordKey, string][];
 
 export interface SyncStore {
   version: 1;
@@ -43,6 +46,8 @@ export interface SyncStore {
   email: string | null;
   /** The last document the server confirmed. */
   base: SyncDocument;
+  /** An intentional reset waiting for its atomic state-and-log write. */
+  reset?: ResetImage;
 }
 
 /**
@@ -54,6 +59,36 @@ export interface SyncStore {
  * auth on load ONLY when this device has signed in before, and a player who never
  * signs in is never contacted by anything.
  */
+export function availableStorage(): StorageLike | null {
+  const key = "local-storage-probe";
+  let storage: StorageLike | null = null;
+  let previous: string | null = null;
+  let wrote = false;
+  try {
+    storage = globalThis.localStorage;
+    previous = storage.getItem(key);
+    const probe = previous ?? "1";
+    storage.setItem(key, probe);
+    wrote = true;
+    if (storage.getItem(key) !== probe) throw new Error("storage probe did not persist");
+    if (previous === null) storage.removeItem(key);
+    else storage.setItem(key, previous);
+    return storage;
+  } catch {
+    // Best-effort cleanup also runs after a cleanup failure; either way the
+    // probe is not evidence of usable storage unless the write and cleanup pass.
+    if (wrote && storage) {
+      try {
+        if (previous === null) storage.removeItem(key);
+        else storage.setItem(key, previous);
+      } catch {
+        // The storage boundary is already considered unavailable.
+      }
+    }
+    return null;
+  }
+}
+
 export function syncSessionExpected(storage: StorageLike | null): boolean {
   if (!storage) return false;
   try {
@@ -119,7 +154,12 @@ function isEntry(value: unknown): value is RecordEntry {
  * store costs a re-publish, never data.
  */
 export function loadStore(storage: StorageLike): SyncStore {
-  const raw = storage.getItem(SYNC_STORE_KEY);
+  let raw: string | null;
+  try {
+    raw = storage.getItem(SYNC_STORE_KEY);
+  } catch {
+    return emptyStore();
+  }
   if (raw === null) return emptyStore();
   try {
     const parsed = JSON.parse(raw) as Partial<SyncStore>;
@@ -131,12 +171,22 @@ export function loadStore(storage: StorageLike): SyncStore {
         if (isEntry(entry)) records[key] = entry;
       }
     }
+    const reset = Array.isArray(parsed.reset)
+      ? parsed.reset.filter(
+          (entry): entry is [string, string] =>
+            Array.isArray(entry) &&
+            entry.length === 2 &&
+            typeof entry[0] === "string" &&
+            typeof entry[1] === "string",
+        )
+      : [];
     return {
       version: 1,
       deviceId: typeof parsed.deviceId === "string" ? parsed.deviceId : "",
       uid: typeof parsed.uid === "string" ? parsed.uid : null,
       email: typeof parsed.email === "string" ? parsed.email : null,
       base: { schema: 1, records, updatedAt: 0 },
+      ...(reset.length > 0 ? { reset } : {}),
     };
   } catch {
     return emptyStore();
@@ -144,7 +194,11 @@ export function loadStore(storage: StorageLike): SyncStore {
 }
 
 export function saveStore(storage: StorageLike, store: SyncStore): void {
-  storage.setItem(SYNC_STORE_KEY, JSON.stringify(store));
+  try {
+    storage.setItem(SYNC_STORE_KEY, JSON.stringify(store));
+  } catch {
+    // Storage is an optional cache; sync can continue in memory.
+  }
 }
 
 /** A stable identifier for this browser, created once and kept. */
@@ -166,7 +220,37 @@ export function pendingEntries(
   at: number,
   by: string,
 ): Record<RecordKey, RecordEntry> {
-  return diffEntries(base.records, entriesFromState(save, at, by));
+  return diffEntries(base.records, entriesFromState(save, at, by), at, by);
+}
+
+/** The local transition that must survive a server echo arriving mid-edit. */
+export function localIntentChanges(
+  before: SavedState,
+  after: SavedState,
+  at: number,
+  by: string,
+): Record<RecordKey, RecordEntry> {
+  return diffEntries(
+    entriesFromState(before, at, by),
+    entriesFromState(after, at, by),
+    at,
+    by,
+  );
+}
+
+/** Derive pending work while retaining a local intent independently of `base`. */
+export function pendingWithIntents(
+  base: SyncDocument,
+  save: SavedState,
+  intents: Record<RecordKey, RecordEntry>,
+  at: number,
+  by: string,
+): Record<RecordKey, RecordEntry> {
+  const pending = pendingEntries(base, save, at, by);
+  for (const [key, entry] of Object.entries(intents)) {
+    if (base.records[key]?.s !== entry.s) pending[key] = entry;
+  }
+  return pending;
 }
 
 /**
@@ -188,6 +272,18 @@ export function viewWithPending(
     records: pending,
     updatedAt: 0,
   });
+}
+
+/** Overlay the latest local intent until the server has echoed that value. */
+export function viewWithLocalIntent(
+  base: SyncDocument,
+  pending: Record<RecordKey, RecordEntry>,
+): SyncDocument {
+  const view = viewWithPending(base, pending);
+  for (const [key, entry] of Object.entries(pending)) {
+    if (base.records[key]?.s !== entry.s) view.records[key] = entry;
+  }
+  return view;
 }
 
 /** The document a signed-in device should end up showing, as a save. */

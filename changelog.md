@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-19
+
+- Retained the canonical Prismatic Moon references and added a commit-pinned, SHA-256-verified Pokémon Showdown data contract for reproducible move, Pokédex, learnset, and type data.
+- Added and hardened move-card, catcher, roster, team-building, synergy, and chat-checklist tools, including branch-aware move reports, opt-in Roto Catch calculations, and canonical evolution-line selection.
+- Made signed-in sync preserve the latest local edit through server echoes, serialize rapid reversals, retry failed startup reads, ignore stale account starts, and register only one authentication watcher.
+- Made an intentional Reset propagate atomically with its before-image in the sync log while retaining the guard against accidental whole-account clears; single-step undo remains future work.
+- Kept sync changes flowing after a storage write failure, rejected read-only storage at startup, and made all sync cache access non-throwing.
+- Enforced append-only Firebase log events, aligned the client allowlist with database-rule email matching, validated admin UIDs and National Dex IDs, and made admin changes ETag-guarded transactions with collision-resistant log IDs.
+- Sandboxed static HTML rendering, expanded standalone-build checks to every supported external resource form, pinned PokéAPI inputs, and prevented local browser tests from reusing an unrelated server.
+- Added deterministic tool tests and the chat parser self-test to CI, corrected offline/build documentation, and expanded regression coverage for the audited edge cases.
+
 ## 2026-09-18
 
 - Stopped the Pokédex from freezing the page when it closes on a phone: the first close after opening blocked the main thread for about 1.5 seconds and now takes about 70 milliseconds at four-times CPU throttling.
@@ -12,7 +23,7 @@
 - A change made while offline is kept and sent when the connection comes back. If two devices change the same species, the one that reaches the server later is the one that stays.
 - Signing in adopts the progress already on that device instead of discarding it, and signing out returns that device to its own checklist without deleting anything.
 - Each signed-in account keeps its own separate checklist; nothing is shared between accounts.
-- Added undo data to every synced change: a change records what it replaced, so it can be reversed — including a full Reset, which is logged with everything it cleared.
+- Added previous-value metadata to ordinary synced-change logs as the foundation for a future single-step undo feature.
 
 ## 2026-09-16
 

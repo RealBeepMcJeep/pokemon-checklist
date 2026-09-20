@@ -12,17 +12,18 @@ COUNT = 807
 COLUMNS = 32
 FRAME = (40, 30)
 HOST = "raw.githubusercontent.com"
+SPRITES_COMMIT = "6e3e7c43e86db0e1b2277795cfee41b11e8df2a4"
 ICON_PATH = (
-    "/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons/{dex}.png"
+    f"/PokeAPI/sprites/{SPRITES_COMMIT}/sprites/pokemon/versions/generation-vii/icons/{{dex}}.png"
 )
-LICENSE_PATH = "/PokeAPI/sprites/master/LICENCE.txt"
+LICENSE_PATH = f"/PokeAPI/sprites/{SPRITES_COMMIT}/LICENCE.txt"
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "gen7-icons.png"
 LICENSE_OUT = ROOT / "references" / "PokeAPI-sprites-LICENCE.txt"
 
 
 def fetch(path: str) -> bytes:
-    if not path.startswith("/PokeAPI/sprites/master/"):
+    if not path.startswith(f"/PokeAPI/sprites/{SPRITES_COMMIT}/"):
         raise ValueError("Only the pinned asset repository is allowed")
     connection = HTTPSConnection(HOST, timeout=30)
     try:

@@ -525,6 +525,10 @@ def main() -> int:
     parser.add_argument("--fleeing", action="store_true", help="score for a target that leaves this turn")
     parser.add_argument("--json", action="store_true", help="emit structured JSON")
     args = parser.parse_args()
+    if args.top < 0:
+        parser.error("--top must be non-negative")
+    if args.explain is not None and not args.explain.strip():
+        parser.error("--explain requires a species name")
 
     try:
         cache = Path(args.cache)

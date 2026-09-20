@@ -69,7 +69,8 @@ export const formsCaught = computed(
 // Sync is the only subscriber to the change listener.
 
 let activeUid: string | null = null;
-let localChangeListener: (() => void) | null = null;
+let localChangeListener: ((state: SavedState) => void) | null = null;
+let localResetListener: ((before: SavedState) => void) | null = null;
 
 /** The localStorage key the player's save belongs to right now. */
 export function activeSaveKey(): string {
@@ -81,11 +82,19 @@ export function currentAccountUid(): string | null {
 }
 
 /**
- * Called after a local change has been written to storage. Publishing rides on
- * this, so nothing in the app has to know that sync exists.
+ * Called after local persistence is attempted. Publishing rides on this, so
+ * nothing in the app has to know that sync exists.
  */
-export function setLocalChangeListener(listener: (() => void) | null): void {
+export function setLocalChangeListener(
+  listener: ((state: SavedState) => void) | null,
+): void {
   localChangeListener = listener;
+}
+
+export function setLocalResetListener(
+  listener: ((before: SavedState) => void) | null,
+): void {
+  localResetListener = listener;
 }
 
 /**
@@ -99,8 +108,8 @@ export function setLocalChangeListener(listener: (() => void) | null): void {
 export function setSyncAccount(
   uid: string | null,
   { adopt = true }: { adopt?: boolean } = {},
-): void {
-  if (uid === activeUid) return;
+): boolean {
+  if (uid === activeUid) return true;
   activeUid = uid;
   try {
     const raw = localStorage.getItem(saveKeyFor(uid));
@@ -112,7 +121,7 @@ export function setSyncAccount(
           : "Signed out: showing this device's checklist.",
         "good",
       );
-      return;
+      return true;
     }
   } catch {
     // An unreadable account save falls through to the adoption path.
@@ -124,6 +133,7 @@ export function setSyncAccount(
     applyState(defaultState());
   }
   persist();
+  return false;
 }
 
 export function speciesSignal(id: number): Signal<Status> {
@@ -188,17 +198,21 @@ export function showNotice(message: string, kind: Notice["kind"] = ""): void {
 }
 
 export function persist(): void {
-  if (!storageAvailable.value) return;
-  try {
-    localStorage.setItem(activeSaveKey(), JSON.stringify(exportState()));
-    localChangeListener?.();
-  } catch {
-    storageAvailable.value = false;
-    showNotice(
-      "Browser storage is unavailable; changes will disappear when this tab closes.",
-      "error",
-    );
+  const state = exportState();
+  if (storageAvailable.value) {
+    try {
+      localStorage.setItem(activeSaveKey(), JSON.stringify(state));
+    } catch {
+      storageAvailable.value = false;
+      showNotice(
+        "Browser storage is unavailable; changes will disappear when this tab closes.",
+        "error",
+      );
+    }
   }
+  // Sync must still receive an edit that lost local durability. Subsequent edits
+  // also reach it while storageAvailable is false; offline-only has no listener.
+  localChangeListener?.(state);
 }
 
 /** The most recent save on this origin, whichever schema version wrote it. */
@@ -300,7 +314,9 @@ export function restoreState(state: SavedState): void {
 }
 
 export function resetState(): void {
+  const before = exportState();
   applyState(defaultState());
+  localResetListener?.(before);
   persist();
 }
 
