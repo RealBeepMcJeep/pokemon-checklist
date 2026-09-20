@@ -1,28 +1,51 @@
-// Render a self-contained HTML card to PNG using the Chromium that ships in the image.
-// Used by tools/moveline.py --png; kept separate because Python has no rasteriser here.
+import { mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 
-const [htmlPath, pngPath, widthArg] = process.argv.slice(2);
-if (!htmlPath || !pngPath) {
-  console.error("usage: node tools/render-png.mjs <input.html> <output.png> [width]");
+const [htmlPathArg, pngPathArg, widthArg, ...flags] = process.argv.slice(2);
+if (!htmlPathArg || !pngPathArg) {
+  console.error("usage: node tools/render-png.mjs <input.html> <output.png> [width] [--assert-no-overflow]");
   process.exit(2);
 }
 
+const htmlPath = resolve(htmlPathArg);
+const pngPath = resolve(pngPathArg);
 const width = Number(widthArg) || 940;
+const assertNoOverflow = flags.includes("--assert-no-overflow");
 const browser = await chromium.launch({ args: ["--no-sandbox"] });
 try {
   const page = await browser.newPage({
     viewport: { width, height: 800 },
     deviceScaleFactor: 2, // crisp text and sprites in the delivered image
   });
-  await page.goto(`file://${htmlPath}`);
+  await page.goto(pathToFileURL(htmlPath).href);
   // The atlas is a data URL, so there is nothing to fetch; one frame is enough for layout,
   // but wait for fonts so the first paint is not measured short.
   await page.evaluate(() => document.fonts.ready);
-  const height = await page.evaluate(() => document.body.scrollHeight);
-  await page.setViewportSize({ width, height: Math.ceil(height) });
+  const layout = await page.evaluate(() => ({
+    height: document.body.scrollHeight,
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  if (assertNoOverflow && layout.scrollWidth > layout.clientWidth) {
+    const offenders = await page.evaluate(() => [...document.querySelectorAll("*")]
+      .map((element) => ({
+        tag: element.tagName,
+        className: element.className,
+        width: Math.ceil(element.getBoundingClientRect().width),
+        right: Math.ceil(element.getBoundingClientRect().right),
+        text: (element.textContent || "").trim().slice(0, 80),
+      }))
+      .filter((item) => item.right > document.documentElement.clientWidth)
+      .slice(0, 3));
+    throw new Error(`horizontal overflow at ${width}px: ${layout.scrollWidth} > ${layout.clientWidth}; ${JSON.stringify(offenders)}`);
+  }
+  const height = Math.ceil(layout.height);
+  await page.setViewportSize({ width, height });
+  await mkdir(dirname(pngPath), { recursive: true });
   await page.screenshot({ path: pngPath, fullPage: true });
-  console.log(`wrote ${pngPath} (${width}×${Math.ceil(height)} css px)`);
+  console.log(`wrote ${pngPath} (${width}×${height} css px)`);
 } finally {
   await browser.close();
 }

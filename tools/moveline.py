@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Move report for a Pokemon family: sorted by competitive usage, tagged by how you get it.
 
-Walks a species' whole evolution lineage (back to the base form, forward through every
-branch), unions the Gen 7 learnsets, and reports each move with the gate that gets it
+Walks a species' evolution lineage (back to the base form, forward through every branch), then
+reports each terminal evolution from its own ancestral path. Moves are tagged by how you get them
 (level-up and the level, move reminder, TM, tutor, egg, event, or unavailable in Gen 7),
 sorted by how often competitive players actually run it.
 
@@ -28,9 +28,29 @@ import re
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import urllib.request
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Mapping
+
+try:
+    from .acquisition_data import (
+        MOVE_REMINDER_LOCATION,
+        PROFILE_LABELS,
+        PROFILE_NOTES,
+        TUTOR_BP,
+        tm_label,
+        tutor_label,
+    )
+except ImportError:  # Running the file directly: python tools/moveline.py ...
+    from acquisition_data import (  # type: ignore[no-redef]
+        MOVE_REMINDER_LOCATION,
+        PROFILE_LABELS,
+        PROFILE_NOTES,
+        TUTOR_BP,
+        tm_label,
+        tutor_label,
+    )
 
 REPO = Path(__file__).resolve().parent.parent
 SHOWDOWN_RAW = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/{name}.ts"
@@ -54,29 +74,13 @@ ICON = {
     "event": "\U0001F381",
     "unavailable": "\u274C",
 }
-LEGEND = ("\U0001F7E2 level-up · \U0001F501 move reminder · \U0001F4C0 TM · "
+LEGEND = ("\U0001F7E2 level-up · \U0001F501 move reminder (endgame) · \U0001F4C0 TM · "
           "\U0001F393 tutor · \U0001F95A egg · \U0001F381 event")
 
 # Where a species' usage lives, keyed by the tier the app already records for it. A species
 # banned from a tier (BL) is used in the tier above, which is the file that holds its stats.
 TIER_FILE = {"OU": "ou", "UUBL": "ou", "UU": "uu", "RUBL": "uu", "RU": "ru", "NUBL": "ru",
              "NU": "nu", "PUBL": "nu", "PU": "pu", "LC": "lc", "LC Uber": "lc"}
-
-# Battle Points charged by the USUM move tutors, for the tutor-only moves. Costs verified
-# against Serebii's Move Tutors page (ultrasunultramoon/movetutors.shtml): Big Wave Beach,
-# Ula'ula Beach and the Battle Tree. A move absent here is still a tutor move, cost unknown.
-TUTOR_BP = {
-    "bind": 4, "snore": 4, "waterpulse": 4,
-    "bounce": 8, "defog": 8, "electroweb": 8, "firepunch": 8, "healbell": 8, "ironhead": 8,
-    "knockoff": 12, "lowkick": 8, "magiccoat": 8, "magicroom": 8, "painsplit": 8,
-    "roleplay": 8, "tailwind": 8, "thunderpunch": 8, "trick": 8, "uproar": 8,
-    "wonderroom": 8, "zenheadbutt": 8, "drillrun": 8, "icepunch": 8, "drainpunch": 8,
-    "gastroacid": 8, "skillswap": 8, "seedbomb": 12, "icywind": 12, "laserfocus": 12,
-    "foulplay": 12, "superfang": 12, "earthpower": 12, "dualchop": 12, "heatwave": 12,
-    "hypervoice": 12, "stompingtantrum": 12, "dragonpulse": 12,
-    "aquatail": 12, "endeavor": 16, "focuspunch": 16, "liquidation": 16, "outrage": 16,
-    "skyattack": 16, "throatchop": 16, "gunkshot": 16, "superpower": 16,
-}
 
 # Chip colours, keyed by how a move is obtained, then by type.
 GATE_COLOR = {"level": "#2e7d32", "reminder": "#00796b", "TM": "#1565c0", "tutor": "#6a1b9a",
@@ -124,17 +128,157 @@ def short_method(method: str | None) -> str:
     return f"L{found.group(1)}" if found else method.removeprefix("Use ")
 
 
-def normalize(name: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", name.lower())
+class SpeciesInputError(ValueError):
+    """A user-facing species lookup failure, never an indexing/parser failure."""
 
+
+def normalize(name: str) -> str:
+    """Normalize slugs, names, and move labels without losing gender markers."""
+    value = unicodedata.normalize("NFKC", str(name)).lower()
+    value = value.replace("♀", "f").replace("♂", "m")
+    return re.sub(r"[^a-z0-9]", "", value)
+
+
+def resolve_species(raw: str, rows: list[dict]) -> dict:
+    """Resolve a number, slug, or display name with a stable, clean error."""
+    query = str(raw or "").strip()
+    if not query:
+        raise SpeciesInputError("no such species: (empty input)")
+    by_id = {int(row["id"]): row for row in rows}
+    by_slug = {normalize(row.get("slug", "")): row for row in rows}
+    by_name = {normalize(row.get("name", "")): row for row in rows}
+    entry = by_id.get(int(query)) if query.isdigit() else None
+    entry = entry or by_slug.get(normalize(query)) or by_name.get(normalize(query))
+    if not entry:
+        raise SpeciesInputError(f"no such species: {raw}")
+    return entry
+
+
+def ancestral_path(final: str, parent_of: Mapping[str, str]) -> list[str]:
+    """Return only the base-to-final path, even when the family branches."""
+    path: list[str] = []
+    current = normalize(final)
+    seen: set[str] = set()
+    while current and current not in seen:
+        seen.add(current)
+        path.append(current)
+        current = normalize(parent_of.get(current, ""))
+    return list(reversed(path))
+
+
+def path_move_union(path: list[str], learned: Mapping[str, dict]) -> dict[str, dict[str, dict[str, list[str]]]]:
+    """Union learnsets only along one final evolution's ancestral path."""
+    union: dict[str, dict[str, dict[str, list[str]]]] = {}
+    for form in path:
+        for move, gates in (learned.get(form) or {}).items():
+            union.setdefault(move, {})[form] = gates
+    return union
+
+
+def evolution_finals(family: list[str], evos_of: Mapping[str, list[str]]) -> list[str]:
+    """Find terminal members without indexing an empty family."""
+    members = set(family)
+    finals = [form for form in family if not any(child in members for child in evos_of.get(form, []))]
+    return finals or ([family[-1]] if family else [])
+
+
+def selected_finals(selected: str, family: list[str], evos_of: Mapping[str, list[str]]) -> list[str]:
+    """Select one terminal branch for direct terminal input, otherwise keep all branches."""
+    finals = evolution_finals(family, evos_of)
+    candidate = normalize(selected)
+    return [candidate] if candidate in finals else finals
+
+
+def evolution_edges(
+    final: str,
+    parent_of: Mapping[str, str],
+    evo_method: Mapping[str, str],
+    id_of: Mapping[str, int],
+    nice: Mapping[str, str],
+) -> list[tuple[str, int | None, str, str, int | None]]:
+    """Return only the rendered evolution edges on one final's ancestral path."""
+    path = ancestral_path(final, parent_of)
+    return [
+        (
+            nice.get(parent, parent),
+            id_of.get(parent),
+            short_method(evo_method.get(member)),
+            nice.get(member, member),
+            id_of.get(member),
+        )
+        for parent, member in zip(path, path[1:])
+    ]
+
+
+def lineage_label(finals: list[str], parent_of: Mapping[str, str], nice: Mapping[str, str]) -> str:
+    """Describe each selected final's ancestry without flattening sibling branches."""
+    return " ; ".join(
+        " -> ".join(nice.get(form, form) for form in ancestral_path(final, parent_of))
+        for final in finals
+    )
+
+
+def acquisition_gates(
+    final: str,
+    path: list[str],
+    form_gates: Mapping[str, dict[str, list[str]]],
+    nice: Mapping[str, str],
+) -> list[tuple[str, str]]:
+    """Flatten one path's gates and mark moves that must be taught before evolution."""
+    final_gates = form_gates.get(final) or {}
+    output: list[tuple[str, str]] = []
+    for form in path:
+        for gate, levels in (form_gates.get(form) or {}).items():
+            for level in levels or [""]:
+                if gate == "level":
+                    actual_gate = "reminder" if level == "1" else "level"
+                    detail = f"{nice.get(form, form)} L{level}"
+                else:
+                    actual_gate = gate
+                    detail = nice.get(form, form)
+                if form != final and gate not in final_gates:
+                    detail = f"TEACH BEFORE EVOLVING: {detail}"
+                output.append((actual_gate, detail))
+    return output
+
+
+def display_move_for_usage(
+    move_key: str,
+    base_name: str,
+    base_type: str,
+    usage: Mapping[str, float],
+) -> tuple[str, str, str]:
+    """Preserve Hidden Power's set-specific coverage type while retaining its legal key."""
+    if canon(move_key) != "hiddenpower":
+        return base_name, base_type, base_type
+    variant = next((name for name in usage if canon(name) == "hiddenpower"), "")
+    match = re.match(r"Hidden Power\s+(.+)$", variant, re.I)
+    coverage = match.group(1).strip().title() if match else base_type
+    return (f"Hidden Power {coverage}" if match else base_name, coverage, coverage)
+
+
+def acquisition_label(gate: str, move_or_where: str, where: str = "", profile: str = "gen7") -> str:
+    """Human-readable acquisition label; ``where`` is the originating form/provenance."""
+    key = canon(move_or_where)
+    prefix_source = where if where.startswith("TEACH BEFORE EVOLVING:") else move_or_where
+    prefix = f"{prefix_source} · " if prefix_source.startswith("TEACH BEFORE EVOLVING:") else ""
+    if gate in ("level",):
+        return move_or_where
+    if gate == "reminder":
+        return f"{prefix}MOVE REMINDER — {MOVE_REMINDER_LOCATION}"
+    if gate == "TM":
+        return f"{prefix}{tm_label(key)}"
+    if gate == "tutor":
+        return f"{prefix}{tutor_label(key)}"
+    if gate == "egg":
+        note = " — level not specified" if profile == "prismatic-standard" else ""
+        return f"{prefix}EGG MOVE{note}"
+    if gate == "unavailable":
+        return "NOT IN GEN 7"
+    return f"{prefix}{gate.upper()}"
 
 def canon(name: str) -> str:
-    """Match a stats-file move name to a learnset key.
-
-    The per-set stats file spells out the Hidden Power type ("Hidden Power Grass") while the
-    learnset has one entry whose type comes from the Pokemon's IVs, so the two never match
-    literally. Everything else compares by alphanumerics only.
-    """
+    """Match a stats-file move name to a learnset key."""
     key = normalize(name)
     return "hiddenpower" if key.startswith("hiddenpower") else key
 
@@ -148,7 +292,7 @@ def list_field(body: str, field: str) -> list[str]:
     m = re.search(rf"{field}: \[([^\]]*)\]", body)
     if not m:
         return []
-    return [x.strip().strip('"').lower().replace(" ", "") for x in m.group(1).split(",") if x.strip()]
+    return [normalize(x.strip().strip('"')) for x in m.group(1).split(",") if x.strip()]
 
 
 def lineage(slug: str, dex: dict[str, str]) -> list[str]:
@@ -158,11 +302,11 @@ def lineage(slug: str, dex: dict[str, str]) -> list[str]:
     for key, body in ((k, b) for k, b in dex.items()):
         p = scalar(body, "prevo")
         if p:
-            prevo[key] = p.lower().replace(" ", "")
+            prevo[normalize(key)] = normalize(p)
         e = list_field(body, "evos")
         if e:
-            evos[key] = e
-    base = slug
+            evos[normalize(key)] = e
+    base = normalize(slug)
     while base in prevo:
         base = prevo[base]
     order: list[str] = []
@@ -242,6 +386,7 @@ def card_html(
     base_name: str,
     edges: list[tuple[str, int | None, str, str, int | None]],
     sections: list[dict],
+    profile: str = "gen7",
 ) -> str:
     atlas_b64 = base64.b64encode((REPO / "assets" / "gen7-icons.png").read_bytes()).decode()
     # One block per evolution edge, so the level or item that causes it sits next to the
@@ -267,20 +412,11 @@ def card_html(
             chips = []
             seen_chips: set[str] = set()
             for gate, where in gates:
-                if gate in ("level", "reminder"):
-                    text = where
-                elif gate == "tutor":
-                    cost = TUTOR_BP.get(canon(shown))
-                    text = f"TUTOR {cost} BP" if cost else "TUTOR"
-                elif gate == "unavailable":
-                    text = "NOT IN GEN 7"
-                else:
-                    text = gate.upper()
-                if canon(shown) == "hiddenpower" and gate == "TM":
-                    text = "TM10 (IVs)"
+                text = acquisition_label(gate, shown if gate not in ("level", "reminder") else where,
+                                         where, profile)
                 # One chip per way of getting it. Without this a move learnable by TM in
                 # three forms printed three identical TM chips.
-                key = f"{gate}:{text if gate in ('level', 'reminder') else ''}"
+                key = f"{gate}:{text if gate in ('level', 'reminder') else text}"
                 if key in seen_chips:
                     continue
                 seen_chips.add(key)
@@ -288,14 +424,19 @@ def card_html(
                     f'<span class="chip" style="background:{GATE_COLOR.get(gate, "#455a64")}">'
                     f"{html_escape.escape(text)}</span>"
                 )
+            legality = html_escape.escape(canon(shown), quote=True)
+            coverage = html_escape.escape(kind, quote=True)
             rows.append(
+                f'<div class="move-row">'
                 f'<div class="bar"><i style="width:{max(pct, 0.4):.1f}%"></i></div>'
                 f'<div class="pct">{pct:4.1f}%</div>'
-                f'<div class="move">{html_escape.escape(shown)}</div>'
-                f'<div><span class="chip" style="background:{TYPE_COLOR.get(kind, "#455a64")}">'
+                f'<div class="move" data-legality-key="{legality}" '
+                f'data-coverage-type="{coverage}">{html_escape.escape(shown)}</div>'
+                f'<div class="move-type"><span class="chip" style="background:{TYPE_COLOR.get(kind, "#455a64")}">'
                 f"{html_escape.escape(kind)}</span></div>"
                 f'<div class="bp">{"" if bp in ("0", "-") else html_escape.escape(str(bp)) + " BP"}</div>'
                 f'<div class="gates">{" ".join(chips)}</div>'
+                f'</div>'
             )
         type_chips = " ".join(
             f'<span class="chip" style="background:{TYPE_COLOR.get(str(kind), "#455a64")}">'
@@ -318,47 +459,71 @@ def card_html(
         )
     legend = " ".join(
         f'<span class="chip" style="background:{GATE_COLOR[g]}">{label}</span>'
-        for g, label in (("level", "LEVEL UP"), ("reminder", "MOVE REMINDER (FREE)"),
+        for g, label in (("level", "LEVEL UP"), ("reminder", "MOVE REMINDER (ENDGAME)"),
                          ("TM", "TM"), ("tutor", "TUTOR (BP)"), ("egg", "EGG MOVE"),
                          ("event", "EVENT"), ("unavailable", "NOT LEGAL IN GEN 7"))
     )
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><style>
   body {{ margin:0; padding:26px 30px 22px; background:#0f1117; color:#e9ecf3;
-         font-family:"DejaVu Sans",system-ui,sans-serif; font-size:14px; }}
+         font-family:"DejaVu Sans",system-ui,sans-serif; font-size:14px; overflow-x:hidden; }}
+  * {{ box-sizing:border-box; }}
   h1 {{ margin:0 0 4px; font-size:26px; letter-spacing:.2px; }}
-  .lineage {{ color:#8b93a7; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }}
-  .mini {{ width:52px; height:39px; display:inline-block; vertical-align:middle; }}
-  .edge {{ display:inline-flex; align-items:center; gap:3px; white-space:nowrap; }}
+  .lineage {{ color:#8b93a7; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; min-width:0; }}
+  .mini {{ width:52px; height:39px; display:inline-block; vertical-align:middle; flex:0 0 auto; }}
+  .edge {{ display:inline-flex; align-items:center; gap:3px; white-space:nowrap; max-width:100%; }}
   .evo {{ background:#243043; color:#8fd0ff; border-radius:8px; padding:2px 8px;
           font-size:11.5px; font-weight:700; margin:0 5px; }}
   .sep {{ color:#333c4e; margin:0 10px; }}
   .arrow {{ color:#4a5266; margin:0 4px; }}
-  section {{ margin-top:20px; padding-top:14px; border-top:1px solid #232735; }}
-  header {{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }}
+  section {{ margin-top:20px; padding-top:14px; border-top:1px solid #232735; min-width:0; }}
+  header {{ display:flex; align-items:center; gap:14px; margin-bottom:10px; min-width:0; }}
   .hero {{ width:160px; height:120px; flex:0 0 auto; }}
+  .titles {{ min-width:0; }}
   .titles b {{ font-size:21px; display:block; }}
   .titles em {{ color:#8b93a7; font-style:normal; font-size:12px; }}
   .tierline {{ color:#8b93a7; }}
-  .grid {{ display:grid; grid-template-columns:170px 56px 152px 78px 62px 1fr;
-           gap:5px 10px; align-items:center; }}
-  .bar {{ background:#1c212e; height:9px; border-radius:5px; overflow:hidden; }}
+  .grid {{ display:flex; flex-direction:column; gap:5px; min-width:0; }}
+  .move-row {{ display:grid; grid-template-columns:170px 56px 152px 78px 62px minmax(0, 1fr);
+               gap:5px 10px; align-items:center; min-width:0; }}
+  .bar {{ background:#1c212e; height:9px; border-radius:5px; overflow:hidden; min-width:0; }}
   .bar i {{ display:block; height:100%; background:linear-gradient(90deg,#3d6fd6,#59c1e8); }}
   .pct {{ text-align:right; color:#aeb6c8; font-variant-numeric:tabular-nums; }}
-  .move {{ font-weight:600; }}
+  .move {{ font-weight:600; min-width:0; overflow-wrap:anywhere; }}
+  .move-type, .bp, .gates {{ min-width:0; }}
   .bp {{ color:#8b93a7; font-size:12px; }}
   .gates {{ display:flex; flex-wrap:wrap; gap:4px; }}
   .chip {{ display:inline-block; padding:2px 7px; border-radius:9px; color:#fff;
            font-size:11px; font-weight:600; letter-spacing:.2px; white-space:nowrap; }}
+  .gates .chip {{ white-space:normal; overflow-wrap:anywhere; }}
   footer {{ margin-top:18px; padding-top:12px; border-top:1px solid #232735;
-            color:#8b93a7; font-size:11.5px; line-height:1.7; }}
+            color:#8b93a7; font-size:11.5px; line-height:1.7; overflow-wrap:anywhere; }}
+  @media (max-width: 600px) {{
+    body {{ padding:16px 12px 18px; font-size:13px; }}
+    h1 {{ font-size:22px; }}
+    header {{ gap:10px; align-items:flex-start; }}
+    .hero {{ width:96px; height:72px; }}
+    .titles b {{ font-size:18px; }}
+    .titles em {{ font-size:11px; }}
+    .move-row {{ grid-template-columns:minmax(0, 1fr) auto; gap:4px 8px; }}
+    .bar {{ grid-column:1 / -1; }}
+    .move {{ grid-column:1; grid-row:2; }}
+    .pct {{ grid-column:2; grid-row:2; }}
+    .move-type {{ grid-column:1; grid-row:3; justify-self:start; }}
+    .bp {{ grid-column:2; grid-row:3; justify-self:end; }}
+    .gates {{ grid-column:1 / -1; grid-row:4; }}
+    .chip {{ white-space:normal; overflow-wrap:anywhere; }}
+    .mini {{ width:40px; height:30px; }}
+    .sep {{ margin:0 4px; }}
+  }}
 </style></head><body>
   <h1>{html_escape.escape(base_name)}</h1>
   <div class="lineage">{chain}</div>
   {"".join(blocks)}
   <footer>{legend}<br>
+    Profile: {html_escape.escape(PROFILE_LABELS.get(profile, profile))}. {html_escape.escape(PROFILE_NOTES.get(profile, ""))}<br>
     Usage = share of that Pok&eacute;mon's competitive sets running the move, from
-    Smogon's {html_escape.escape(str(sections[0].get("tier", "")))}  moveset file
+    Smogon's {html_escape.escape(str(sections[0].get("tier", "") if sections else ""))} moveset file
     (November 2019, Gen 7). Grade and tier are the app's own dex fields.
     Sprites from the app's gen7-icons atlas; tutor costs are the USUM Battle Point prices.
   </footer>
@@ -373,18 +538,17 @@ def main() -> int:
     parser.add_argument("--png", help="also render the report to this PNG path")
     parser.add_argument("--all", action="store_true",
                         help="include moves nothing runs (0%%) in the rendered card")
+    parser.add_argument("--profile", choices=sorted(PROFILE_LABELS), default="gen7",
+                        help="acquisition profile (default: gen7)")
     args = parser.parse_args()
 
     cache = Path(args.cache)
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
     rows = rows if isinstance(rows, list) else list(rows.values())
-    by_id = {int(r["id"]): r for r in rows}
-    by_slug = {normalize(r["slug"]): r for r in rows}
-    by_name = {normalize(r["name"]): r for r in rows}
-    entry = (by_id.get(int(args.species)) if args.species.isdigit() else None) \
-        or by_slug.get(normalize(args.species)) or by_name.get(normalize(args.species))
-    if not entry:
-        print(f"no such species: {args.species}", file=sys.stderr)
+    try:
+        entry = resolve_species(args.species, rows)
+    except SpeciesInputError as error:
+        print(str(error), file=sys.stderr)
         return 2
 
     nice = {normalize(r["slug"]): r["name"] for r in rows}
@@ -416,23 +580,23 @@ def main() -> int:
             if method and method != "?":
                 evo_method[normalize(str(step.get("name", "")))] = method
     parent_of = {
-        key: (scalar(body, "prevo") or "").lower().replace(" ", "")
+        normalize(key): normalize(scalar(body, "prevo") or "")
         for key, body in dex.items()
     }
 
-    family = lineage(entry["slug"].lower(), dex)
-    print(f"# {entry['name']} — lineage: {' -> '.join(nice.get(s, s) for s in family)}\n", file=sys.stderr)
+    raw_family = lineage(entry["slug"], dex)
+    # The app's checked-in Gen 7 dex is the compatibility boundary. Current Showdown data
+    # can include later regional forms (for example Galar Mr. Mime); do not leak them into a
+    # Gen 7 report just because they share a modern Showdown family block.
+    family = [form for form in raw_family if form in nice]
+    if not family:
+        print(f"no learnset lineage for species: {entry['name']}", file=sys.stderr)
+        return 2
 
-    union: dict[str, dict[str, dict[str, list[str]]]] = {}
-    for form in family:
-        body = learned.get(form)
-        if not body:
-            continue
-        for move, gate_map in gen7_moves(body).items():
-            union.setdefault(move, {})[form] = gate_map
-
-    evos_of = {k: list_field(b, "evos") for k, b in dex.items()}
-    finals = [f for f in family if not [c for c in evos_of.get(f, []) if c in family]] or [family[-1]]
+    learned_by_form = {form: gen7_moves(learned.get(form, "")) for form in family}
+    evos_of = {normalize(k): list_field(b, "evos") for k, b in dex.items()}
+    finals = selected_finals(entry["slug"], family, evos_of)
+    print(f"# {entry['name']} — lineage: {lineage_label(finals, parent_of, nice)}\n", file=sys.stderr)
     sections: list[dict] = []
 
     for final in finals:
@@ -457,20 +621,17 @@ def main() -> int:
         print(f"   {types} · grade {detail.get('grade', '?')} · Smogon {detail.get('tier', '?')} · "
               f"{(detail.get('usage') or 0):.2f}% usage" + (f"   [{label}]" if label else ""))
         print(f"   {LEGEND}")
+        if args.profile == "prismatic-standard":
+            print(f"   Profile: {PROFILE_LABELS[args.profile]} — {PROFILE_NOTES[args.profile]}")
         card_rows: list[tuple[float, str, str, str, list[tuple[str, str]]]] = []
         scored = []
+        path = ancestral_path(final, parent_of)
+        union = path_move_union(path, learned_by_form)
         for move, forms in union.items():
-            shown, kind, bp = move_meta.get(move, (move, "?", "-"))
+            base_name, base_type, bp = move_meta.get(move, (move, "?", "-"))
+            shown, kind, coverage = display_move_for_usage(move, base_name, base_type, usage)
             pct = next((v for k, v in usage.items() if canon(k) == canon(shown)), 0.0)
-            gates: list[tuple[str, str]] = []
-            for form, form_gates in forms.items():
-                for gate, levels in form_gates.items():
-                    if gate == "level":
-                        for level in levels:
-                            gates.append((("reminder" if level == "1" else "level"),
-                                          f"{nice.get(form, form)} L{level}"))
-                    else:
-                        gates.append((gate, nice.get(form, form)))
+            gates = acquisition_gates(final, path, forms, nice)
             rank = min((EASE.index(g) for g, _ in gates), default=len(EASE))
             scored.append((pct, rank, shown, kind, bp, gates))
         scored.sort(key=lambda t: (-t[0], t[1], t[2]))
@@ -481,7 +642,8 @@ def main() -> int:
             key = meta_by_name.get(canon(shown))
             if key is None or canon(shown) in known:
                 continue
-            name, kind, bp = move_meta[key]
+            name, base_kind, bp = move_meta[key]
+            name, kind, coverage = display_move_for_usage(key, name, base_kind, usage)
             scored.append((pct, len(EASE), name, kind, bp, [("unavailable", "")]))
         scored.sort(key=lambda t: (-t[0], t[1], t[2]))
         if not scored:
@@ -489,15 +651,9 @@ def main() -> int:
         for pct, rank, shown, kind, bp, gates in scored[: args.top]:
             tags = []
             for gate, where in gates:
-                if gate in ("level", "reminder"):
-                    tags.append(f"{ICON[gate]} {where}")
-                elif gate == "unavailable":
-                    tags.append(f"{ICON[gate]} NOT obtainable in Gen 7")
-                elif canon(shown) == "hiddenpower":
-                    tags.append(f"{ICON[gate]} TM10 (type comes from IVs)")
-                else:
-                    cost = TUTOR_BP.get(canon(shown)) if gate == "tutor" else None
-                    tags.append(f"{ICON[gate]} {gate}{f' {cost} BP' if cost else ''}")
+                acq_label = acquisition_label(gate, shown if gate not in ("level", "reminder") else where,
+                                               where, args.profile)
+                tags.append(f"{ICON.get(gate, '')} {acq_label}".strip())
             print(f"   {pct:5.1f}%  {shown:18} {kind:8} {bp:>4} BP   {' · '.join(dict.fromkeys(tags))}")
             # The card is for reading on a phone, so it carries the shortlist. The text
             # output keeps the 0% rows, which answer "what else can it even learn".
@@ -512,28 +668,25 @@ def main() -> int:
                          "dex": id_of.get(final), "rows": card_rows})
 
     if args.png:
-        out = Path(args.png)
-        chain = [
-            (
-                nice.get(parent_of.get(member, ""), parent_of.get(member, "")),
-                id_of.get(parent_of.get(member, "")),
-                short_method(evo_method.get(member)),
-                nice.get(member, member),
-                id_of.get(member),
-            )
-            for member in family[1:]
-        ]
-        for section in sections:
-            # One image per Pokemon: a family with two finals (Gardevoir and Gallade) gets
-            # two cards rather than one image nobody can read.
-            target = out if len(sections) == 1 else out.with_name(f"{out.stem}-{normalize(section['name'])}.png")
-            html_path = Path(tempfile.gettempdir()) / f"moveline-{target.stem}.html"
-            html_path.write_text(card_html(entry["name"], chain, [section]))
-            subprocess.run(
-                ["node", str(REPO / "tools" / "render-png.mjs"), str(html_path), str(target)],
-                check=True,
-            )
-            print(f"wrote {target}", file=sys.stderr)
+        out = Path(args.png).expanduser()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="moveline-") as temp_dir:
+            temp_root = Path(temp_dir)
+            for section, final in zip(sections, finals):
+                # One image per Pokemon: a family with two finals (Gardevoir and Gallade) gets
+                # two cards rather than one image nobody can read.
+                target = out if len(sections) == 1 else out.with_name(
+                    f"{out.stem}-{normalize(section['name'])}{out.suffix}"
+                )
+                html_path = temp_root / f"{normalize(section['name'])}.html"
+                chain = evolution_edges(final, parent_of, evo_method, id_of, nice)
+                html_path.write_text(card_html(entry["name"], chain, [section], args.profile))
+                subprocess.run(
+                    ["node", str(REPO / "tools" / "render-png.mjs"), str(html_path), str(target),
+                     "940", "--assert-no-overflow"],
+                    check=True,
+                )
+                print(f"wrote {target}", file=sys.stderr)
     return 0
 
 
