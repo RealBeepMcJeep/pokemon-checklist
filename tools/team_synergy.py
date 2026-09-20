@@ -18,6 +18,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
+from showdown_data import configured_cache_dir, require_cache  # noqa: E402
+from showdown_text import field, integer_field, object_after, top_blocks  # noqa: E402
 import team_builder as tb  # noqa: E402
 
 TIER_POINTS = {
@@ -51,19 +53,14 @@ def validate_args(teams: int, size: int, pool: int, shortlist: int, diversity: i
 
 def load_typechart(cache: Path) -> dict:
     """Showdown's own chart. damageTaken: 1 = weak, 2 = resist, 3 = immune."""
-    cached = cache / "typechart.json"
-    if cached.exists():
-        chart = json.loads(cached.read_text())
-    else:
-        text = (cache / "typechart.js").read_text(errors="replace")
-        found = re.search(r"=\s*(\{.*\})\s*;?\s*$", text.strip(), re.S)
-        chunk = found.group(1) if found else text
-        chunk = re.sub(r"([{,}\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', chunk)
-        chunk = re.sub(r",(\s*[}\]])", r"\1", chunk)
-        try:
-            chart = json.loads(chunk)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(f"could not parse the type chart: {exc}") from exc
+    text = require_cache(cache).get_text("typechart")
+    chunk = object_after(text, "BattleTypeChart") or text
+    chunk = re.sub(r"([,{]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', chunk)
+    chunk = re.sub(r",(\s*[}\]])", r"\1", chunk)
+    try:
+        chart = json.loads(chunk)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"could not parse the type chart: {exc}") from exc
     return {defender.lower(): {attacker.lower(): value for attacker, value in (entry.get("damageTaken") or {}).items()}
             for defender, entry in chart.items()}
 
@@ -115,20 +112,17 @@ def load_movesets(cache: Path, tier: str | None = None) -> dict[str, dict[str, f
 
 
 def move_info(cache: Path) -> dict:
-    sys.path.insert(0, str(REPO / "tools"))
-    import moveline as ml
-    moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
+    moves = dict(top_blocks(require_cache(cache).get_text("moves")))
     out = {}
     for slug, body in moves.items():
-        typ_match = re.search(r"type: \"([^\"]+)\"", body)
-        bp = re.search(r"basePower: (\d+)", body)
         normalized = tb.normalize(slug)
-        typ_name = typ_match.group(1) if typ_match else ""
+        typ_name = field(body, "type") or ""
+        bp = integer_field(body, "basePower") or 0
         if normalized.startswith("hiddenpower"):
             suffix = normalized.removeprefix("hiddenpower")
             if suffix.capitalize() in ALL_TYPES:
                 typ_name = suffix.capitalize()
-        out[normalized] = (typ_name, int(bp.group(1)) if bp else 0)
+        out[normalized] = (typ_name, bp)
     return out
 
 
@@ -264,7 +258,11 @@ def search_teams(pool: list[dict], size: int, shortlist: int, teams: int, divers
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True)
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--off-limits", default="")
     parser.add_argument("--teams", type=int, default=5)
     parser.add_argument("--size", type=int, default=5)

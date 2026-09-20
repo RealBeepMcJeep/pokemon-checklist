@@ -54,6 +54,8 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 import moveline as ml  # noqa: E402  (shared parsing, one source of truth)
+from showdown_data import configured_cache_dir, require_cache  # noqa: E402
+from showdown_text import field, object_after  # noqa: E402
 
 CATEGORY_BASE = {
     "sleep": 60, "falseswipe": 25, "superfang": 8, "freeze": 10,
@@ -145,11 +147,6 @@ def island_for_place(place: str | None) -> int | None:
     return None
 
 
-def field(body: str, name: str) -> str | None:
-    m = re.search(rf"\b{name}: [\'\"]([^\'\"]*)[\'\"]", body)
-    return m.group(1) if m else None
-
-
 def ability_slots(body: str) -> dict[str, str]:
     m = re.search(r"abilities: \{(.*?)\}", body, re.S)
     if not m:
@@ -166,26 +163,9 @@ def accuracy(body: str) -> float:
     return float(found.group(1)) if found else 100.0
 
 
-def _object_after(body: str, field_name: str) -> str | None:
-    """Extract one balanced ``field: { ... }`` object from Showdown data."""
-    match = re.search(rf"\b{re.escape(field_name)}\s*:\s*\{{", body)
-    if not match:
-        return None
-    start = match.end() - 1
-    depth = 0
-    for index in range(start, len(body)):
-        if body[index] == "{":
-            depth += 1
-        elif body[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return body[start : index + 1]
-    return None
-
-
 def secondary_effect(body: str) -> tuple[int, str] | None:
     """Read the singular Showdown ``secondary`` object only."""
-    secondary = _object_after(body, "secondary")
+    secondary = object_after(body, "secondary")
     if not secondary:
         return None
     chance = re.search(r"\bchance:\s*(\d+)", secondary)
@@ -518,7 +498,11 @@ def main() -> int:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--uid", help="read this account's caught and starred species")
     source.add_argument("--species", help="comma-separated names, slugs, or dex numbers")
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=15)
     parser.add_argument("--exclude", default="", help="names/slugs to leave out, including their family")
     parser.add_argument("--explain", help="print every arithmetic step for one normalized species")
@@ -528,9 +512,10 @@ def main() -> int:
 
     try:
         cache = Path(args.cache)
-        learned = dict(ml.top_blocks((cache / "learnsets.ts").read_text(errors="replace")))
-        dex = dict(ml.top_blocks((cache / "pokedex.ts").read_text(errors="replace")))
-        moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
+        store = require_cache(cache)
+        learned = dict(ml.top_blocks(store.get_text("learnsets")))
+        dex = dict(ml.top_blocks(store.get_text("pokedex")))
+        moves = dict(ml.top_blocks(store.get_text("moves")))
         global ISLAND_OF
         ISLAND_OF = load_islands(REPO)
         rows = json.loads((REPO / "data" / "pokemon.json").read_text())

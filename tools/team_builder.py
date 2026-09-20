@@ -15,6 +15,9 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+from showdown_data import configured_cache_dir, require_cache
+from showdown_text import array_field, block, field, integer_field, list_field, object_after
+
 REPO = Path(__file__).resolve().parent.parent
 TIER_ORDER = ["Uber", "OU", "UUBL", "UU", "RUBL", "RU", "NUBL", "NU", "PUBL", "PU", "(PU)", "LC Uber", "LC"]
 TIER_RANK = {tier: index for index, tier in enumerate(TIER_ORDER)}
@@ -67,46 +70,39 @@ def read_records(uid: str) -> dict:
     return value
 
 
-def block(dex: str, name: str) -> str:
-    key = normalize(name)
-    match = re.search(rf"^\s*{re.escape(key)}: \{{(.*?)^\s*\}},", dex, re.S | re.M)
-    return match.group(1) if match else ""
-
-
 def types_of(dex: str, name: str) -> list[str]:
-    match = re.search(r"types: \[(.*?)\]", block(dex, name))
-    return re.findall(r"\"([A-Z][a-z]+)\"", match.group(1)) if match else []
+    return array_field(block(dex, name), "types")
 
 
 def stats_of(dex: str, name: str) -> str:
-    match = re.search(r"baseStats: \{([^}]*)\}", block(dex, name))
-    if not match:
+    stats = object_after(block(dex, name), "baseStats")
+    if not stats:
         return ""
-    found = dict(re.findall(r"(\w+): (\d+)", match.group(1)))
+    found = dict(re.findall(r"(\w+): (\d+)", stats))
     return "/".join(found.get(key, "?") for key in STAT_KEYS)
 
 
 def abilities_of(dex: str, name: str) -> str:
     """Slots matter: H is the hidden one, which a normal wild catch cannot have."""
-    match = re.search(r"abilities: \{(.*?)\}", block(dex, name), re.S)
-    if not match:
+    abilities = object_after(block(dex, name), "abilities")
+    if not abilities:
         return ""
-    pairs = re.findall(r"[\'\"]?([01H])[\'\"]?: [\'\"]([^\'\"]+)[\'\"]", match.group(1))
+    pairs = re.findall(r"[\'\"]?([01H])[\'\"]?: [\'\"]([^\'\"]+)[\'\"]", abilities)
     return ", ".join(f"{name}(H)" if slot == "H" else name for slot, name in pairs)
 
 
 def evo_of(dex: str, name: str) -> str:
     body = block(dex, name)
     bits = []
-    level = re.search(r"evoLevel: (\d+)", body)
-    item = re.search(r"evoItem: \"([^\"]+)\"", body)
-    kind = re.search(r"evoType: \"([^\"]+)\"", body)
+    level = integer_field(body, "evoLevel")
+    item = field(body, "evoItem")
+    kind = field(body, "evoType")
     if level:
-        bits.append(f"L{level.group(1)}")
+        bits.append(f"L{level}")
     if kind:
-        bits.append(kind.group(1))
+        bits.append(kind)
     if item:
-        bits.append(item.group(1))
+        bits.append(item)
     return ", ".join(bits) or "-"
 
 
@@ -120,12 +116,10 @@ def expand_off_limits(tokens: set[str], dex: str) -> set[str]:
             continue
         seen.add(current)
         body = block(dex, current)
-        previous = re.search(r'prevo: "([^"]+)"', body)
+        previous = field(body, "prevo")
         if previous:
-            queue.append(previous.group(1))
-        evos = re.search(r"evos: \[(.*?)\]", body, re.S)
-        if evos:
-            queue.extend(re.findall(r'"([^"]+)"', evos.group(1)))
+            queue.append(previous)
+        queue.extend(list_field(body, "evos"))
     return seen
 
 
@@ -136,7 +130,7 @@ def load_world(cache: Path):
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
     rows = rows if isinstance(rows, list) else list(rows.values())
     by_id = {int(row["id"]): row for row in rows}
-    dex = (cache / "pokedex.ts").read_text(errors="replace")
+    dex = require_cache(cache).get_text("pokedex")
     form_row: dict[str, dict] = {}
     for entry in details.get("forms", {}).values():
         if not isinstance(entry, dict) or not entry.get("source"):
@@ -401,7 +395,11 @@ def _run_catcher(uid: str, cache: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True)
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--keep", type=int, default=5)
     parser.add_argument("--min-tier", default=None, help=f"drop lines worse than this tier ({', '.join(TIER_ORDER)})")
     parser.add_argument("--off-limits", default="", help="comma-separated species/slugs to exclude")

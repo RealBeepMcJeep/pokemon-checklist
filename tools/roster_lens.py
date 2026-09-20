@@ -22,6 +22,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from showdown_data import configured_cache_dir, require_cache
+from showdown_text import block
+
 REPO = Path(__file__).resolve().parent.parent
 STAT_KEYS = ("hp", "atk", "def", "spa", "spd", "spe")
 HEADER = (f"{'pokemon':13}{'caught':>7}  {'final evolution':17}{'grade':>6}{'tier':>6}"
@@ -30,10 +33,8 @@ HEADER = (f"{'pokemon':13}{'caught':>7}  {'final evolution':17}{'grade':>6}{'tie
 
 def base_stats(dex_text: str, name: str) -> str:
     """Base stats of one species, from Showdown's pokedex."""
-    block = re.search(rf"^\s*{re.escape(name.lower())}: \{{(.*?)^\s*\}},", dex_text, re.S | re.M)
-    if not block:
-        return ""
-    stats = re.search(r"baseStats: \{([^}]*)\}", block.group(1))
+    body = block(dex_text, name)
+    stats = re.search(r"baseStats: \{([^}]*)\}", body)
     if not stats:
         return ""
     found = dict(re.findall(r"(\w+): (\d+)", stats.group(1)))
@@ -44,7 +45,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True, help="account uid holding the roster")
-    parser.add_argument("--cache", default="/opt/data/poke-data", help="Showdown data cache")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=12, help="how many rows to show")
     parser.add_argument("--fleeing", action="store_true", help="pass through to the score")
     parser.add_argument("--exclude", default="", help="pass through to the score")
@@ -66,7 +71,7 @@ def main() -> int:
     id_by_name = {row["name"]: int(row["id"]) for row in rows}
     details = {entry["id"]: entry for entry in
                json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]}
-    dex_text = (Path(args.cache) / "pokedex.ts").read_text(errors="replace")
+    dex_text = require_cache(Path(args.cache)).get_text("pokedex")
 
     print(f"{'catch utility':13}{'score':>7}   {'grade':>5} {'tier':>5} {'usage':>7}  stats")
     for line in result.stdout.splitlines():

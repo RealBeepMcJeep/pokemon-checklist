@@ -102,6 +102,17 @@ class TeamSynergyTests(unittest.TestCase):
             self.assertEqual(provenance["mapped_tier"], "OU")
             self.assertFalse(provenance["fallback"])
 
+    def test_typechart_is_read_from_the_shared_showdown_js_store(self):
+        store = mock.Mock()
+        store.get_text.return_value = (
+            "exports.BattleTypeChart = {\n"
+            "\tNormal: {damageTaken: {Fire: 1, Ghost: 3}},\n"
+            "};\n"
+        )
+        with mock.patch.object(ts, "require_cache", return_value=store):
+            chart = ts.load_typechart(Path("unused"))
+        self.assertEqual(chart["normal"], {"fire": 1, "ghost": 3})
+
     def test_profile_keeps_best_contribution_for_each_attack_type(self):
         line = {"types": ["Normal"], "stats": "50/100/50/120/50/100", "final": "Testmon",
                 "tier": "OU", "usage": 1.0}

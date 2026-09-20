@@ -34,8 +34,6 @@ jobs:
           tools/build_pokedex_details.py
           tools/extract_reference.py
           tools/build_icons.py
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build:check
+      - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
