@@ -18,6 +18,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
+from showdown_data import configured_cache_dir, require_cache  # noqa: E402
+from showdown_text import field, integer_field, object_after, top_blocks  # noqa: E402
 import team_builder as tb  # noqa: E402
 
 TIER_POINTS = {
@@ -34,6 +36,17 @@ TIER_TO_CHAOS = {
 CHAOS_FILES = {"OU": "chaos-gen7ou-1695.json", "UU": "chaos-gen7uu-1630.json",
                "RU": "chaos-gen7ru-1630.json", "NU": "chaos-gen7nu-1630.json"}
 RELATIVE_MOVE_USAGE_FLOOR = 0.15
+MAX_EXHAUSTIVE_COMBINATIONS = 100_000  # C(24, 5) is 42,504; larger searches need a smaller pool/size.
+
+
+def combination_budget(pool_size: int, size: int) -> int:
+    count = math.comb(pool_size, size) if 0 <= size <= pool_size else 0
+    if count > MAX_EXHAUSTIVE_COMBINATIONS:
+        raise ValueError(
+            f"exhaustive search requires {count:,} combinations, above the hard limit of "
+            f"{MAX_EXHAUSTIVE_COMBINATIONS:,}; reduce --pool or --size"
+        )
+    return count
 
 
 def validate_args(teams: int, size: int, pool: int, shortlist: int, diversity: int = 3, **_: object) -> None:
@@ -51,19 +64,14 @@ def validate_args(teams: int, size: int, pool: int, shortlist: int, diversity: i
 
 def load_typechart(cache: Path) -> dict:
     """Showdown's own chart. damageTaken: 1 = weak, 2 = resist, 3 = immune."""
-    cached = cache / "typechart.json"
-    if cached.exists():
-        chart = json.loads(cached.read_text())
-    else:
-        text = (cache / "typechart.js").read_text(errors="replace")
-        found = re.search(r"=\s*(\{.*\})\s*;?\s*$", text.strip(), re.S)
-        chunk = found.group(1) if found else text
-        chunk = re.sub(r"([{,}\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', chunk)
-        chunk = re.sub(r",(\s*[}\]])", r"\1", chunk)
-        try:
-            chart = json.loads(chunk)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(f"could not parse the type chart: {exc}") from exc
+    text = require_cache(cache).get_text("typechart")
+    chunk = object_after(text, "BattleTypeChart") or text
+    chunk = re.sub(r"([,{]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', chunk)
+    chunk = re.sub(r",(\s*[}\]])", r"\1", chunk)
+    try:
+        chart = json.loads(chunk)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"could not parse the type chart: {exc}") from exc
     return {defender.lower(): {attacker.lower(): value for attacker, value in (entry.get("damageTaken") or {}).items()}
             for defender, entry in chart.items()}
 
@@ -115,20 +123,17 @@ def load_movesets(cache: Path, tier: str | None = None) -> dict[str, dict[str, f
 
 
 def move_info(cache: Path) -> dict:
-    sys.path.insert(0, str(REPO / "tools"))
-    import moveline as ml
-    moves = dict(ml.top_blocks((cache / "moves.ts").read_text(errors="replace")))
+    moves = dict(top_blocks(require_cache(cache).get_text("moves")))
     out = {}
     for slug, body in moves.items():
-        typ_match = re.search(r"type: \"([^\"]+)\"", body)
-        bp = re.search(r"basePower: (\d+)", body)
         normalized = tb.normalize(slug)
-        typ_name = typ_match.group(1) if typ_match else ""
+        typ_name = field(body, "type") or ""
+        bp = integer_field(body, "basePower") or 0
         if normalized.startswith("hiddenpower"):
             suffix = normalized.removeprefix("hiddenpower")
             if suffix.capitalize() in ALL_TYPES:
                 typ_name = suffix.capitalize()
-        out[normalized] = (typ_name, int(bp.group(1)) if bp else 0)
+        out[normalized] = (typ_name, bp)
     return out
 
 
@@ -243,6 +248,7 @@ def diverse_enough(first: tuple[str, ...], second: tuple[str, ...], replacements
 
 def search_teams(pool: list[dict], size: int, shortlist: int, teams: int, diversity: int, chart: dict) -> list[tuple[float, tuple[str, ...], dict]]:
     """Score every combination in the retained pool, then apply shortlist and diversity caps."""
+    combination_budget(len(pool), size)
     heap = []
     for combo in itertools.combinations(pool, size):
         total, detail = score_team(list(combo), chart)
@@ -264,11 +270,16 @@ def search_teams(pool: list[dict], size: int, shortlist: int, teams: int, divers
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True)
-    parser.add_argument("--cache", default="/opt/data/poke-data")
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--off-limits", default="")
     parser.add_argument("--teams", type=int, default=5)
     parser.add_argument("--size", type=int, default=5)
-    parser.add_argument("--pool", type=int, default=24, help="how many canonical lines to search over")
+    parser.add_argument("--pool", type=int, default=24,
+                        help=f"how many canonical lines to search over (max {MAX_EXHAUSTIVE_COMBINATIONS:,} combinations)")
     parser.add_argument("--shortlist", type=int, default=400, help="top combinations retained before diversity")
     parser.add_argument("--diversity", type=int, default=3, help="minimum member replacements between teams")
     parser.add_argument("--no-gen1", action="store_true", help="exclude candidates with a Gen 1 lineage; Butterfree remains exempt")
@@ -299,10 +310,16 @@ def main() -> int:
         profiles.append(profile(line, chart, moveset_cache[cache_key], mtype, provenance))
     profiles.sort(key=lambda member: (member["rank"], -member["usage"], member["final"]))
     pool = profiles[:args.pool]
+    try:
+        combination_count = combination_budget(len(pool), args.size)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     print(f"=== roster: {roster['caught_count']} caught records -> {roster['canonical_count']} endpoint/form candidates ===")
     print(f"search pool: {len(pool)} of {len(profiles)} filtered candidates (rank/usage approximation; --pool={args.pool})")
-    print(f"shortlist: at most {args.shortlist} of {math.comb(len(pool), args.size) if len(pool) >= args.size else 0} combinations before diversity")
+    print(f"shortlist: at most {args.shortlist} of {combination_count} combinations before diversity "
+          f"(hard limit {MAX_EXHAUSTIVE_COMBINATIONS:,})")
     for message in roster["assumptions"] + roster["warnings"] + roster["limitations"]:
         print(f"note: {message}")
     if args.show_all:

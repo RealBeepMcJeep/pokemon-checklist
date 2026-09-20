@@ -23,7 +23,6 @@ import argparse
 import base64
 import html as html_escape
 import json
-import os
 import re
 import subprocess
 import sys
@@ -31,7 +30,7 @@ import tempfile
 import unicodedata
 import urllib.request
 from pathlib import Path
-from typing import Iterator, Mapping
+from typing import Mapping
 
 try:
     from .acquisition_data import (
@@ -42,6 +41,8 @@ try:
         tm_label,
         tutor_label,
     )
+    from . import showdown_text as st
+    from .showdown_data import ShowdownDataError, configured_cache_dir, require_cache
 except ImportError:  # Running the file directly: python tools/moveline.py ...
     from acquisition_data import (  # type: ignore[no-redef]
         MOVE_REMINDER_LOCATION,
@@ -51,9 +52,10 @@ except ImportError:  # Running the file directly: python tools/moveline.py ...
         tm_label,
         tutor_label,
     )
+    import showdown_text as st  # type: ignore[no-redef]
+    from showdown_data import ShowdownDataError, configured_cache_dir, require_cache  # type: ignore[no-redef]
 
 REPO = Path(__file__).resolve().parent.parent
-SHOWDOWN_RAW = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/{name}.ts"
 STATS = "https://www.smogon.com/stats/2019-11/moveset/gen7{tier}-{cutoff}.txt"
 
 # Tier -> the cutoff its published file uses. OU is published at 1695, lower tiers at 1630.
@@ -92,8 +94,8 @@ TYPE_COLOR = {"Normal": "#9e9e9e", "Fire": "#e64a19", "Water": "#1976d2", "Elect
               "Steel": "#607d8b", "Fairy": "#ec407a"}
 
 
-def fetch(url: str, dest: Path) -> Path:
-    """Download to the cache once, then reuse it."""
+def fetch_stats(url: str, dest: Path) -> Path:
+    """Download one Smogon usage snapshot to the analysis cache once."""
     if dest.exists() and dest.stat().st_size > 500:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -103,21 +105,11 @@ def fetch(url: str, dest: Path) -> Path:
     return dest
 
 
-def top_blocks(text: str) -> Iterator[tuple[str, str]]:
-    """Yield (key, body) for every top-level `key: { ... }` block in a Showdown data file."""
-    for m in re.finditer(r"\n\t([a-z0-9\-]+): \{", text):
-        key = m.group(1)
-        i = m.end() - 1
-        depth = 0
-        for j in range(i, len(text)):
-            ch = text[j]
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    yield key, text[i : j + 1]
-                    break
+top_blocks = st.top_blocks
+
+
+def list_field(body: str, field: str) -> list[str]:
+    return st.list_field(body, field, normalize)
 
 
 def short_method(method: str | None) -> str:
@@ -284,15 +276,7 @@ def canon(name: str) -> str:
 
 
 def scalar(body: str, field: str) -> str | None:
-    m = re.search(rf'\b{field}: "([^"]*)"', body)
-    return m.group(1) if m else None
-
-
-def list_field(body: str, field: str) -> list[str]:
-    m = re.search(rf"{field}: \[([^\]]*)\]", body)
-    if not m:
-        return []
-    return [normalize(x.strip().strip('"')) for x in m.group(1).split(",") if x.strip()]
+    return st.field(body, field)
 
 
 def lineage(slug: str, dex: dict[str, str]) -> list[str]:
@@ -533,7 +517,11 @@ def card_html(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Move report for a Pokemon family.")
     parser.add_argument("species", help="any member of the family: name, slug or dex number")
-    parser.add_argument("--cache", default=os.environ.get("POKE_DATA_CACHE", "/opt/data/poke-data"))
+    parser.add_argument(
+        "--cache",
+        default=str(configured_cache_dir()),
+        help="verified shared Showdown cache (bootstrap it first)",
+    )
     parser.add_argument("--top", type=int, default=25, help="moves to list per final evolution (default 25)")
     parser.add_argument("--png", help="also render the report to this PNG path")
     parser.add_argument("--all", action="store_true",
@@ -552,9 +540,14 @@ def main() -> int:
         return 2
 
     nice = {normalize(r["slug"]): r["name"] for r in rows}
-    ls_text = fetch(SHOWDOWN_RAW.format(name="learnsets"), cache / "learnsets.ts").read_text(errors="replace")
-    dex_text = fetch(SHOWDOWN_RAW.format(name="pokedex"), cache / "pokedex.ts").read_text(errors="replace")
-    moves_text = fetch(SHOWDOWN_RAW.format(name="moves"), cache / "moves.ts").read_text(errors="replace")
+    try:
+        store = require_cache(cache)
+        ls_text = store.get_text("learnsets")
+        dex_text = store.get_text("pokedex")
+        moves_text = store.get_text("moves")
+    except ShowdownDataError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
 
     dex = dict(top_blocks(dex_text))
     moves = dict(top_blocks(moves_text))
@@ -606,8 +599,8 @@ def main() -> int:
         order = [t for t in TIERS if t[0] == preferred] + [t for t in TIERS if t[0] != preferred]
         for tier, cutoff in order:
             try:
-                text = fetch(STATS.format(tier=tier, cutoff=cutoff),
-                             cache / f"moveset-gen7{tier}-{cutoff}.txt").read_text(errors="replace")
+                text = fetch_stats(STATS.format(tier=tier, cutoff=cutoff),
+                                   cache / f"moveset-gen7{tier}-{cutoff}.txt").read_text(errors="replace")
             except Exception:
                 continue
             got = usage_rows(text, nice.get(final, final))

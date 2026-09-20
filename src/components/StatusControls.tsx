@@ -21,7 +21,7 @@ export function PokemonIcon({ id }: { id: number }) {
         // The atlas is referenced as an <img> rather than as a CSS background on
         // purpose: a background-image keeps the ~900 KB data URL inside every
         // icon's computed style, and a full style recalculation over the 807-row
-        // Pokédex then costs about a second on a phone. See references/performance.md.
+        // Pokédex then costs about a second on a phone.
         return (
                 <span class="icon" aria-hidden="true">
                         <img

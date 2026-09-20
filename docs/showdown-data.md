@@ -3,10 +3,12 @@
 `tools/showdown_data.py` is the shared source contract for the historical
 Pokémon Showdown snapshot at commit
 `e7aee8d9ccc983c59c5608929773249adca16b8f`. The canonical names are
-`moves`, `pokedex`, `learnsets`, and `typechart`; each maps to a commit-pinned
-`raw.githubusercontent.com` URL and an exact SHA-256. The files remain opaque
-classic Showdown `.js` source so consumers can use the historical syntax
-without silently converting it to another format.
+`moves`, `pokedex`, `learnsets`, `typechart`, and `tiers`; each maps to a
+commit-pinned `raw.githubusercontent.com` URL and an exact SHA-256. `tiers` is
+Showdown's `data/mods/gen7/formats-data.js`. The files remain opaque classic
+Showdown `.js` source so consumers can use the historical syntax without
+silently converting it to another format. Smogon usage-stat files are not part
+of this contract.
 
 ## Bootstrap and refresh
 
@@ -23,7 +25,7 @@ python tools/showdown_data.py --cache-dir /tmp/pokemon-showdown-data verify
 or mixed cache is rebuilt. `refresh` explicitly downloads every file. Downloads
 are written to a same-directory staging area, hash-checked and UTF-8 checked,
 then replaced with `os.replace`; a failed download or hash check leaves the
-previous cache untouched. The manifest and all four dataset files are installed
+previous cache untouched. The manifest and all five dataset files are installed
 as one staged batch. Do not copy files into the cache by hand.
 
 Every `get_text`, `get_path`, or `load` call verifies the manifest and hashes
@@ -35,10 +37,28 @@ mixed file raises `CacheIntegrityError` (a downloaded hash mismatch raises
 SHA-256. The CLI `path`, `text`, and `provenance` commands expose the same
 representations for inspection.
 
+Analysis commands use their existing `--cache` option as this shared store.
+Run bootstrap explicitly before the first analysis (and after changing the
+cache location):
+
+```text
+python tools/showdown_data.py --cache-dir /tmp/pokemon-showdown-data bootstrap
+python tools/moveline.py ralts --cache /tmp/pokemon-showdown-data
+python tools/catcher_score.py --species ralts --cache /tmp/pokemon-showdown-data
+```
+
+Analysis commands verify the complete cache and fail with a bootstrap hint;
+they never download or repair Showdown files. Only the explicit `bootstrap` and
+`refresh` commands download Showdown data. Some analysis reports may still
+cache separately acquired Smogon usage snapshots in the same directory; those
+files are not pinned by this contract.
+
 Tests use injected local byte downloaders and never access the network:
 
 ```text
 python -m unittest discover -s tools/tests -v
 ```
 
-Consumers are intentionally not wired to this loader yet.
+`build_pokedex_details.py` also requires a bootstrapped `--cache`; it downloads
+only its separate, hash-pinned Smogon usage snapshot when regeneration is
+explicitly requested.

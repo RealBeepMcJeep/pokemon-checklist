@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-19
+
+- Consolidated active analysis tools on one commit-pinned, integrity-checked Pokémon Showdown cache and one small shared text parser; ordinary commands no longer download unpinned Showdown data.
+- Made icon and vanilla encounter regeneration offline by default through external, hash-verified source caches. Network access now requires explicit `--refresh`, icon sources are commit-pinned, cache refreshes are atomic, and downloads have finite timeouts.
+- Removed duplicate Firebase reads and Python subprocess/text interfaces from the catcher and team tools; one command now uses one account snapshot and structured in-process results.
+- Bounded exhaustive team search at 100,000 combinations so larger flags fail before performing unbounded work while the default 42,504-combination search remains available.
+- Reused the frontend's immutable validation indexes, cached each location's immutable catch-now rows, and removed unused state/sync exports and migration-only interfaces.
+- Removed speculative reset/undo code and tests that were not connected to the shipped UI or backend. Signed-in Reset remains local because the whole-account-clear guard refuses to publish it; safe synced reset and undo remain outstanding.
+- Added the Python tool suite and deterministic chat parser self-test to `npm run check` and CI.
+- Replaced the stale sync proposal with a concise current architecture/status document, removed a duplicate 2.3 MB reference PDF, fixed stale inline documentation, and ignored local `.env` credential files.
+
 ## 2026-09-18
 
 - Stopped the Pokédex from freezing the page when it closes on a phone: the first close after opening blocked the main thread for about 1.5 seconds and now takes about 70 milliseconds at four-times CPU throttling.
@@ -12,7 +23,7 @@
 - A change made while offline is kept and sent when the connection comes back. If two devices change the same species, the one that reaches the server later is the one that stays.
 - Signing in adopts the progress already on that device instead of discarding it, and signing out returns that device to its own checklist without deleting anything.
 - Each signed-in account keeps its own separate checklist; nothing is shared between accounts.
-- Added undo data to every synced change: a change records what it replaced, so it can be reversed — including a full Reset, which is logged with everything it cleared.
+- Recorded `from` and `to` values on ordinary per-record sync log entries for history and future tooling. A full Reset is not yet synced or undoable.
 
 ## 2026-09-16
 

@@ -8,6 +8,7 @@ import subprocess
 import sys
 import unittest
 from fractions import Fraction
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -188,6 +189,22 @@ class CatcherScoreTests(unittest.TestCase):
         self.assertEqual(score.resolve_species_token("Mr. Mime", rows)["slug"], "mr-mime")
         self.assertEqual(score.normalize_species_list("Mr. Mime, Nidoran♀"), ["mr-mime", "nidoran-f"])
         self.assertEqual(score.normalize_species_list("  gardevoir , Gallade "), ["gardevoir", "gallade"])
+
+    def test_rank_candidates_uses_provided_caught_and_starred_snapshot(self):
+        data = {
+            "learned": {"pikachu": '{ learnset: { falseswipe: ["7M"] } }'},
+            "dex": {"pikachu": '{ abilities: { 0: "Static" } }'},
+            "moves": {"falseswipe": "{ name: 'False Swipe', accuracy: 100 }"},
+            "rows": [{"id": 25, "slug": "pikachu", "name": "Pikachu"}],
+            "by_id": {25: {"id": 25, "slug": "pikachu", "name": "Pikachu"}},
+            "name_of": {"pikachu": "Pikachu"},
+            "tier_of": {"pikachu": "PU"},
+            "islands": {},
+        }
+        records = {"species:25": {"s": "caught"}, "star:25": {"s": "on"}}
+        with mock.patch.object(score, "read_account_records", side_effect=AssertionError("network read")):
+            result = score.rank_candidates(records, data)
+        self.assertEqual([candidate["name"] for candidate in result], ["Pikachu"])
 
     def test_branch_isolation_and_known_gender_constraint(self):
         dex = {

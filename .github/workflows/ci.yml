@@ -26,6 +26,7 @@ jobs:
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: python tools/extract_reference.py --validate
       - run: >-
           python -m py_compile
@@ -34,8 +35,5 @@ jobs:
           tools/build_pokedex_details.py
           tools/extract_reference.py
           tools/build_icons.py
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build:check
-      - run: npx playwright install --with-deps chromium
+      - run: npm run check
       - run: npm run test:e2e

@@ -1,8 +1,10 @@
-import os
-import subprocess
+import io
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -12,6 +14,19 @@ from tools import moveline as M
 
 
 class MoveLineHardeningTests(unittest.TestCase):
+    def test_missing_shared_cache_fails_without_downloading_showdown_data(self):
+        with tempfile.TemporaryDirectory() as cache:
+            stderr = io.StringIO()
+            with mock.patch.object(M.urllib.request, "urlopen") as download:
+                with mock.patch.object(
+                    sys, "argv", ["moveline.py", "pikachu", "--cache", cache, "--top", "0"]
+                ):
+                    with redirect_stderr(stderr):
+                        result = M.main()
+            self.assertEqual(result, 2)
+            self.assertIn("bootstrap", stderr.getvalue())
+            download.assert_not_called()
+
     def test_final_evolution_paths_are_branch_specific(self):
         parent_of = {
             "ralts": "",
@@ -73,15 +88,29 @@ class MoveLineHardeningTests(unittest.TestCase):
         self.assertNotIn("Gardevoir", gallade)
 
     def _run_cli(self, species: str) -> tuple[str, str]:
-        cache = Path(os.environ.get("POKE_DATA_CACHE", "/opt/data/poke-data"))
-        self.assertTrue(cache.is_dir(), f"move-data cache missing: {cache}")
-        result = subprocess.run(
-            [sys.executable, str(ROOT / "tools" / "moveline.py"), species,
-             "--cache", str(cache), "--top", "0"],
-            cwd=ROOT, capture_output=True, text=True,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        return result.stdout, result.stderr
+        store = mock.Mock()
+        store.get_text.side_effect = lambda name: {
+            "learnsets": "exports.BattleLearnsets = {\n};\n",
+            "moves": "exports.BattleMovedex = {\n};\n",
+            "pokedex": (
+                "exports.BattlePokedex = {\n"
+                "\tralts: {evos: [\"kirlia\"]},\n"
+                "\tkirlia: {prevo: \"Ralts\", evos: [\"Gardevoir\", \"Gallade\"]},\n"
+                "\tgardevoir: {prevo: \"Kirlia\"},\n"
+                "\tgallade: {prevo: \"Kirlia\"},\n"
+                "};\n"
+            ),
+        }[name]
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with mock.patch.object(M, "require_cache", return_value=store):
+            with mock.patch.object(M, "fetch_stats", side_effect=OSError("offline")):
+                with mock.patch.object(
+                    sys, "argv", ["moveline.py", species, "--cache", "unused", "--top", "0"]
+                ):
+                    with redirect_stdout(stdout), redirect_stderr(stderr):
+                        result = M.main()
+        self.assertEqual(result, 0, stderr.getvalue())
+        return stdout.getvalue(), stderr.getvalue()
 
     def test_direct_gardevoir_cli_reports_only_gardevoir_path(self):
         stdout, stderr = self._run_cli("gardevoir")

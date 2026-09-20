@@ -6,18 +6,14 @@ import {
   STAR_OFF,
   STAR_ON,
   TOMBSTONE,
-  clearedByReset,
   diffEntries,
   entriesFromState,
   formKey,
-  inverseOfSet,
   mergeDocument,
   mergeEntry,
   speciesKey,
   starKey,
   stateFromDocument,
-  undoableFrom,
-  type LogEntry,
   type RecordEntry,
   type SyncDocument,
 } from "./records";
@@ -195,99 +191,5 @@ describe("stateFromDocument", () => {
     });
     expect(stateFromDocument(doc, POKEMON, FORMS).species).toEqual({});
     expect(stateFromDocument(doc, POKEMON, FORMS).starred).toEqual([]);
-  });
-});
-
-describe("reset and undo", () => {
-  const beforeReset = save({
-    species: { "1": "caught", "25": "caught" },
-    starred: [25],
-  });
-
-  it("captures a before-image of everything a reset clears", () => {
-    expect(clearedByReset(beforeReset).sort()).toEqual(
-      [
-        [speciesKey(1), "caught"],
-        [speciesKey(25), "caught"],
-        [starKey(25), STAR_ON],
-      ].sort(),
-    );
-  });
-
-  it("restores the records the reset still owns", () => {
-    const reset: LogEntry = {
-      op: "reset",
-      at: 500,
-      by: "uid-a",
-      cleared: clearedByReset(beforeReset),
-    };
-    const doc = document({
-      [speciesKey(1)]: entry(TOMBSTONE, 500, "uid-a"),
-      [speciesKey(25)]: entry(TOMBSTONE, 500, "uid-a"),
-      [starKey(25)]: entry(STAR_OFF, 500, "uid-a"),
-    });
-    expect(undoableFrom(doc, reset).sort()).toEqual(
-      [
-        [speciesKey(1), "caught"],
-        [speciesKey(25), "caught"],
-        [starKey(25), STAR_ON],
-      ].sort(),
-    );
-  });
-
-  it("leaves a catch made after the reset alone", () => {
-    const reset: LogEntry = {
-      op: "reset",
-      at: 500,
-      by: "uid-a",
-      cleared: clearedByReset(beforeReset),
-    };
-    // The kid caught #001 on another device after the reset: newer than 500.
-    const doc = document({
-      [speciesKey(1)]: entry("caught", 900, "uid-b"),
-      [speciesKey(25)]: entry(TOMBSTONE, 500, "uid-a"),
-      [starKey(25)]: entry(STAR_OFF, 500, "uid-a"),
-    });
-    const restorable = undoableFrom(doc, reset);
-    expect(restorable).toContainEqual([speciesKey(25), "caught"]);
-    expect(restorable).not.toContainEqual([speciesKey(1), "caught"]);
-  });
-
-  it("does not re-restore a record another device re-created identically", () => {
-    const reset: LogEntry = {
-      op: "reset",
-      at: 500,
-      by: "uid-a",
-      cleared: [[speciesKey(1), "caught"]],
-    };
-    const doc = document({ [speciesKey(1)]: entry("caught", 700, "uid-b") });
-    expect(undoableFrom(doc, reset)).toEqual([]);
-  });
-
-  it("inverts a single set back to its previous value", () => {
-    const set: LogEntry = {
-      op: "set",
-      at: 10,
-      by: "uid-a",
-      key: speciesKey(25),
-      from: "seen",
-      to: "caught",
-    };
-    expect(inverseOfSet(set)).toEqual([speciesKey(25), "seen"]);
-  });
-
-  it("inverts a set that had no previous value back to a tombstone", () => {
-    const set: LogEntry = {
-      op: "set",
-      at: 10,
-      by: "uid-a",
-      key: speciesKey(25),
-      to: "caught",
-    };
-    expect(inverseOfSet(set)).toEqual([speciesKey(25), TOMBSTONE]);
-  });
-
-  it("has no inverse for a reset, which is undone through its before-image", () => {
-    expect(inverseOfSet({ op: "reset", at: 10, by: "uid-a" })).toBeNull();
   });
 });

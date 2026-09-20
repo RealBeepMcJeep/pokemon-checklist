@@ -34,6 +34,16 @@ DEFAULT_CACHE_DIR = (
 )
 
 
+def configured_cache_dir() -> Path:
+    """Return the shared store path used by analysis-tool CLI defaults."""
+
+    return Path(os.environ.get("POKE_DATA_CACHE", str(DEFAULT_CACHE_DIR))).expanduser()
+
+
+def bootstrap_hint(cache_dir: str | os.PathLike[str]) -> str:
+    return f'python tools/showdown_data.py --cache-dir "{Path(cache_dir)}" bootstrap'
+
+
 class ShowdownDataError(RuntimeError):
     """Base class for a missing, corrupt, or unusable pinned-data cache."""
 
@@ -112,6 +122,12 @@ DATASETS: Mapping[str, DatasetSpec] = MappingProxyType(
             filename="typechart.js",
             url=f"https://raw.githubusercontent.com/smogon/pokemon-showdown/{SHOWDOWN_COMMIT}/data/typechart.js",
             sha256="2c150a39b84a8baacda1b91e1ad62afe93d27411d745bb29c9d5159236a92e39",
+        ),
+        "tiers": DatasetSpec(
+            name="tiers",
+            filename="formats-data.js",
+            url=f"https://raw.githubusercontent.com/smogon/pokemon-showdown/{SHOWDOWN_COMMIT}/data/mods/gen7/formats-data.js",
+            sha256="5c6608b6c7b71f13d26ccf01963f16b94db8dfb87ed00420ecfc89708616d8c0",
         ),
     }
 )
@@ -397,6 +413,19 @@ def get_dataset(
     return ShowdownDataStore(cache_dir).load(name, refresh=refresh)
 
 
+def require_cache(cache_dir: str | os.PathLike[str]) -> ShowdownDataStore:
+    """Return a verified store without ever repairing or downloading it."""
+
+    store = ShowdownDataStore(cache_dir)
+    try:
+        store.verify_cache()
+    except ShowdownDataError as error:
+        raise CacheIntegrityError(
+            f"{error}; bootstrap the shared cache first with `{bootstrap_hint(cache_dir)}`"
+        ) from error
+    return store
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -409,7 +438,9 @@ def _parser() -> argparse.ArgumentParser:
     for command in ("bootstrap", "refresh", "verify"):
         subparsers.add_parser(command, help=f"{command} the complete pinned cache")
     for command in ("path", "text", "provenance"):
-        subparser = subparsers.add_parser(command)
+        subparser = subparsers.add_parser(
+            command, help="read the verified shared cache (bootstrap it first)"
+        )
         if command != "provenance":
             subparser.add_argument("dataset", choices=sorted(DATASETS))
         else:
@@ -437,7 +468,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "provenance":
             print(json.dumps(store.provenance(args.dataset), indent=2, sort_keys=True))
     except ShowdownDataError as error:
-        print(f"showdown-data: {error}", file=sys.stderr)
+        print(
+            f"showdown-data: {error}; bootstrap first with `{bootstrap_hint(args.cache_dir)}`",
+            file=sys.stderr,
+        )
         return 2
     return 0
 

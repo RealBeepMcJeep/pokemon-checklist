@@ -21,6 +21,7 @@ class ShowdownDataStoreTests(unittest.TestCase):
             "pokedex": b"exports.BattlePokedex = {\n\t bulbasaur: {species: 'Bulbasaur'},\n};\n",
             "learnsets": b"exports.BattleLearnsets = {\n\t bulbasaur: {learnset: {tackle: ['1L']}},\n};\n",
             "typechart": b"exports.BattleTypeChart = {\n\t Normal: {damageTaken: {}},\n};\n",
+            "tiers": b"exports.BattleFormatsData = {\n\t bulbasaur: {tier: 'PU'},\n};\n",
         }
         self.specs = {
             name: sd.DatasetSpec(
@@ -55,6 +56,14 @@ class ShowdownDataStoreTests(unittest.TestCase):
             "pokedex": "3d0f28348380c92cb01e0a9daebeba5ee12b6ed32899f583ed9f2b72029065d0",
             "learnsets": "97a2819325acac9c76b1b7a323bbe8e2bb77cf1f280f2c83f8d0a6f85aae36aa",
             "typechart": "2c150a39b84a8baacda1b91e1ad62afe93d27411d745bb29c9d5159236a92e39",
+            "tiers": "5c6608b6c7b71f13d26ccf01963f16b94db8dfb87ed00420ecfc89708616d8c0",
+        }
+        expected_paths = {
+            "moves": "/data/moves.js",
+            "pokedex": "/data/pokedex.js",
+            "learnsets": "/data/learnsets.js",
+            "typechart": "/data/typechart.js",
+            "tiers": "/data/mods/gen7/formats-data.js",
         }
 
         self.assertEqual(set(sd.DATASETS), set(expected_hashes))
@@ -62,7 +71,7 @@ class ShowdownDataStoreTests(unittest.TestCase):
             spec = sd.DATASETS[name]
             self.assertEqual(spec.commit, sd.SHOWDOWN_COMMIT)
             self.assertEqual(spec.sha256, expected_hash)
-            self.assertIn(f"/{sd.SHOWDOWN_COMMIT}/data/{name}.js", spec.url)
+            self.assertIn(f"/{sd.SHOWDOWN_COMMIT}{expected_paths[name]}", spec.url)
 
     def test_bootstrap_returns_text_path_and_provenance_for_historical_js(self) -> None:
         store = self.store()
@@ -78,6 +87,7 @@ class ShowdownDataStoreTests(unittest.TestCase):
         self.assertEqual(len(self.downloads), len(self.specs))
         self.assertEqual(store.get_text("typechart"), self.payloads["typechart"].decode())
         self.assertEqual(store.get_path("learnsets"), self.cache / "learnsets.js")
+        self.assertEqual(store.get_path("tiers"), self.cache / "tiers.js")
 
     def test_every_use_verifies_all_cached_files_and_rejects_corruption(self) -> None:
         store = self.store()
@@ -147,6 +157,9 @@ class ShowdownDataStoreTests(unittest.TestCase):
         self.assertEqual(set(manifest["datasets"]), set(self.specs))
         self.assertEqual(
             manifest["datasets"]["typechart"]["sha256"], self.specs["typechart"].sha256
+        )
+        self.assertEqual(
+            manifest["datasets"]["tiers"]["filename"], "tiers.js"
         )
 
 

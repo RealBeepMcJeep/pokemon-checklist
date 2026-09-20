@@ -3,7 +3,6 @@ import { STORAGE_KEY } from "../domain";
 import type { SavedState } from "../types";
 import {
   SYNC_STORE_KEY,
-  adoptionEntries,
   deviceIdFor,
   emptyStore,
   isWholeAccountClear,
@@ -210,23 +209,6 @@ describe("what the device shows", () => {
   });
 });
 
-describe("first sign-in adopts offline progress", () => {
-  it("turns everything on the device into pending writes", () => {
-    const offline = save({
-      species: { "25": "caught", "1": "seen" },
-      starred: [25],
-      settings: { forms: true, mode: "ultra-sun" },
-    });
-    const adopted = adoptionEntries(offline, 1_000, "uid-a");
-    expect(adopted[speciesKey(25)]).toEqual(entry("caught", 1_000));
-    expect(adopted[speciesKey(1)]).toEqual(entry("seen", 1_000));
-    expect(adopted["star:25"]).toEqual(entry("on", 1_000));
-    expect(adopted["setting:mode"]).toEqual(entry("ultra-sun", 1_000));
-    // And it is pending by definition: the confirmed document is still empty.
-    expect(Object.keys(pendingEntries(document({}), offline, 1_000, "uid-a"))).toHaveLength(5);
-  });
-});
-
 describe("the fail-safe against emptying an account", () => {
   const full = () =>
     document({
@@ -239,9 +221,10 @@ describe("the fail-safe against emptying an account", () => {
       ...SETTINGS,
     });
 
-  it("notices an empty save about to tombstone a full account", () => {
+  it("flags the full-account clear produced by a deliberate Reset", () => {
     const base = full();
-    const pending = pendingEntries(base, save(), 9_000, "uid-a");
+    const resetSave = save();
+    const pending = pendingEntries(base, resetSave, 9_000, "uid-a");
     expect(isWholeAccountClear(base, pending)).toBe(true);
   });
 

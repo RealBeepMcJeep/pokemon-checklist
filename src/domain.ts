@@ -119,7 +119,12 @@ export function cycleStatus(status: Status): Status {
   return STATUS_ORDER[(STATUS_ORDER.indexOf(status) + 1) % STATUS_ORDER.length];
 }
 
+const catchNowRowsCache = new WeakMap<Location, EncounterRow[]>();
+
 export function catchNowRows(location: Location): EncounterRow[] {
+  const cached = catchNowRowsCache.get(location);
+  if (cached) return cached;
+
   const unique = new Map<number, EncounterRow>();
   for (const group of location.groups) {
     if (group.category !== "regular") continue;
@@ -127,7 +132,9 @@ export function catchNowRows(location: Location): EncounterRow[] {
       if (row.speciesId) unique.set(row.speciesId, row);
     }
   }
-  return [...unique.values()];
+  const rows = [...unique.values()];
+  catchNowRowsCache.set(location, rows);
+  return rows;
 }
 
 export function locationProgress(

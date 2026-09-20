@@ -7,6 +7,8 @@ Local, immutable copies of the public documentation distributed by the Prismatic
 - Integrity and original Google Drive IDs: [`MANIFEST.json`](MANIFEST.json)
 - Upstream ownership: these reference documents remain the property of their original author(s); this directory is a source snapshot, not project-authored game data.
 
+The shared `Wild Pokemon Locations.pdf` is retained once at [`../Wild Pokemon Locations.pdf`](../Wild%20Pokemon%20Locations.pdf), which is the canonical copy used by the project. The former copy in this directory was byte-identical; it was removed to avoid two files representing one upstream artifact. The manifest lists the Prismatic Moon-specific files retained here.
+
 ## Data priority for this project
 
 For the user's **Prismatic Moon Standard** playthrough:
