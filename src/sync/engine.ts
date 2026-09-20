@@ -13,6 +13,7 @@ import {
   exportState,
   persist,
   setLocalChangeListener,
+  setLocalResetListener,
   setSyncAccount,
   showNotice,
   validForms,
@@ -20,24 +21,30 @@ import {
 } from "../state";
 import { initFirebase, watchAuth } from "./firebase";
 import type { User } from "firebase/auth";
+import type { SavedState } from "../types";
 import {
   TOMBSTONE,
+  clearedByReset,
   mergeDocument,
   parseRecordsSnapshot,
   type RecordEntry,
+  type RecordKey,
   type SyncDocument,
 } from "./records";
 import {
+  availableStorage,
   deviceIdFor,
   emptyDocument,
   forgetSyncSession,
   isWholeAccountClear,
   loadStore,
-  pendingEntries,
+  localIntentChanges,
+  pendingWithIntents,
   rememberSyncSession,
   saveFromView,
   saveStore,
-  viewWithPending,
+  viewWithLocalIntent,
+  type ResetImage,
   type StorageLike,
 } from "./outbox";
 
@@ -68,14 +75,26 @@ let base: SyncDocument = emptyDocument();
 let lastPushed = "";
 let unsubscribeValue: (() => void) | null = null;
 let unsubscribeConnection: (() => void) | null = null;
+let unsubscribeAuth: (() => void) | null = null;
+let generation = 0;
+let initialReadComplete = false;
+let initialReadInFlight = false;
+let ignoreLocalEvents = false;
+let observedLocal: SavedState | null = null;
+let localIntents: Record<RecordKey, RecordEntry> = {};
+let pendingReset: ResetImage | null = null;
+let resetTarget: Record<RecordKey, string> | null = null;
+let resetSent = false;
+let sentReset: ResetImage | null = null;
+let publishInFlight: Promise<void> | null = null;
+let publishQueued = false;
 
 function safeStorage(): StorageLike | null {
-  try {
-    localStorage.getItem("probe");
-    return localStorage;
-  } catch {
-    return null;
-  }
+  return availableStorage();
+}
+
+function isCurrent(run: number, uid: string): boolean {
+  return run === generation && activeUid === uid && database !== null;
 }
 
 function describe(error: unknown): string {
@@ -86,11 +105,17 @@ function describe(error: unknown): string {
   return "Sync is offline; changes are kept here and sent when it reconnects.";
 }
 
-function readBase(uid: string): SyncDocument {
-  const store = loadStore(safeStorage() ?? { getItem: () => null, setItem: () => {} });
+function readStore(uid: string) {
+  const store = loadStore(
+    safeStorage() ?? {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    },
+  );
   // A base belongs to one account. Another account's confirmed document must
   // never be reused, or this device would silently accept the wrong history.
-  return store.uid === uid ? store.base : emptyDocument();
+  return store.uid === uid ? store : null;
 }
 
 function writeBase(uid: string): void {
@@ -102,17 +127,26 @@ function writeBase(uid: string): void {
     uid,
     email: syncAccount.value?.email ?? null,
     base,
+    ...(pendingReset ? { reset: pendingReset } : {}),
   });
 }
 
 /** Publish everything the save holds that the confirmed document does not. */
-async function publish(): Promise<void> {
-  if (!database || !activeUid) return;
+async function publishNow(): Promise<void> {
+  if (!database || !activeUid || !initialReadComplete) return;
+  const run = generation;
   const uid = activeUid;
-  const pending = pendingEntries(base, exportState(), Date.now(), uid);
+  const at = Date.now();
+  const pending = pendingWithIntents(
+    base,
+    exportState(),
+    localIntents,
+    at,
+    uid,
+  );
   const keys = Object.keys(pending);
   syncPending.value = keys.length;
-  if (keys.length === 0) {
+  if (keys.length === 0 && !pendingReset) {
     lastPushed = "";
     syncPhase.value = "ready";
     return;
@@ -120,8 +154,9 @@ async function publish(): Promise<void> {
 
   // Refuse to be the reason an account empties itself. This guards the bug that
   // wiped a real account: a device that had not yet adopted the account's data
-  // published the difference between "empty" and "everything".
-  if (isWholeAccountClear(base, pending)) {
+  // published the difference between "empty" and "everything". Reset is the
+  // explicit, user-confirmed exception and is logged in the same atomic update.
+  if (!pendingReset && isWholeAccountClear(base, pending)) {
     lastPushed = "";
     syncPhase.value = "error";
     syncMessage.value =
@@ -129,9 +164,12 @@ async function publish(): Promise<void> {
     return;
   }
 
-  // The same values may already be in flight; the echo is what clears the diff,
-  // so re-sending identical payloads would only add traffic.
-  const signature = JSON.stringify(keys.sort().map((key) => [key, pending[key].s]));
+  const signature = JSON.stringify([
+    pendingReset ? "reset" : "set",
+    keys
+      .sort((a, b) => a.localeCompare(b))
+      .map((key) => [key, pending[key].s]),
+  ]);
   if (signature === lastPushed) return;
 
   const payload: Record<string, unknown> = {
@@ -146,57 +184,151 @@ async function publish(): Promise<void> {
       at: serverTimestamp(),
       by: uid,
     };
+    if (!pendingReset) {
+      const logRef = push(ref(database, `users/${uid}/log`));
+      payload[`log/${logRef.key}`] = {
+        op: "set",
+        at: serverTimestamp(),
+        by: uid,
+        dev: deviceId,
+        key,
+        from: base.records[key]?.s ?? TOMBSTONE,
+        to: pending[key].s,
+      };
+    }
+  }
+  if (pendingReset) {
     const logRef = push(ref(database, `users/${uid}/log`));
     payload[`log/${logRef.key}`] = {
-      op: "set",
+      op: "reset",
       at: serverTimestamp(),
       by: uid,
       dev: deviceId,
-      key,
-      from: base.records[key]?.s ?? TOMBSTONE,
-      to: pending[key].s,
+      cleared: pendingReset,
     };
+    resetTarget = Object.fromEntries(
+      keys.map((key) => [key, pending[key].s]),
+    );
+    sentReset = pendingReset;
+    resetSent = false;
   }
 
   lastPushed = signature;
   syncPhase.value = "pending";
   try {
     await update(ref(database, `users/${uid}`), payload);
+    if (!isCurrent(run, uid)) return;
+    if (pendingReset && sentReset && sameReset(pendingReset, sentReset)) {
+      resetSent = true;
+      settleResetIfAcknowledged(uid);
+    }
     syncPhase.value = "ready";
     syncMessage.value = "";
   } catch (error) {
+    if (!isCurrent(run, uid)) return;
     lastPushed = "";
     syncPhase.value = "error";
     syncMessage.value = describe(error);
   }
 }
 
-function applyRemote(uid: string, incoming: unknown): void {
-  // Judge what this device still owes the server against the document it had
-  // confirmed BEFORE this message arrived. Diffing against the freshly merged
-  // document instead would classify the server's own update as a local edit this
-  // device had not published — which is how a cleared species, or a whole reset,
-  // comes back from the dead and gets pushed to every other device.
-  const owedBefore = pendingEntries(base, exportState(), Date.now(), uid);
+async function publish(): Promise<void> {
+  if (publishInFlight) {
+    publishQueued = true;
+    return publishInFlight;
+  }
+  const work = publishNow();
+  publishInFlight = work;
+  try {
+    await work;
+  } finally {
+    if (publishInFlight !== work) return;
+    publishInFlight = null;
+    if (publishQueued) {
+      publishQueued = false;
+      void publish();
+    }
+  }
+}
 
+function recordLocalChange(uid: string, state: SavedState): void {
+  if (ignoreLocalEvents) return;
+  const previous = observedLocal ?? state;
+  for (const [key, entry] of Object.entries(
+    localIntentChanges(previous, state, Date.now(), uid),
+  )) {
+    if (base.records[key]?.s === entry.s) delete localIntents[key];
+    else localIntents[key] = entry;
+  }
+  observedLocal = state;
+  void publish();
+}
+
+function sameReset(left: ResetImage, right: ResetImage): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function recordReset(before: SavedState, uid: string): void {
+  if (ignoreLocalEvents || !activeUid || activeUid !== uid) return;
+  const cleared = clearedByReset(before);
+  pendingReset = cleared.length > 0 ? cleared : null;
+  resetTarget = null;
+  resetSent = false;
+  sentReset = null;
+  writeBase(uid);
+}
+
+function settleResetIfAcknowledged(uid: string): boolean {
+  if (
+    !pendingReset ||
+    !sentReset ||
+    !sameReset(pendingReset, sentReset) ||
+    !resetSent ||
+    !resetTarget
+  ) {
+    return false;
+  }
+  if (
+    !Object.entries(resetTarget).every(
+      ([key, value]) => base.records[key]?.s === value,
+    )
+  ) {
+    return false;
+  }
+  pendingReset = null;
+  resetTarget = null;
+  resetSent = false;
+  sentReset = null;
+  writeBase(uid);
+  return true;
+}
+
+function applyRemote(uid: string, incoming: unknown, run: number): void {
+  if (!isCurrent(run, uid) || !initialReadComplete) return;
   base = mergeDocument(base, {
     schema: 1,
     records: parseRecordsSnapshot(incoming),
     updatedAt: Date.now(),
   });
-  writeBase(uid);
 
-  const owed: Record<string, RecordEntry> = {};
-  for (const [key, entry] of Object.entries(owedBefore)) {
-    // Still worth sending only if the server's own value does not already say it.
-    if (base.records[key]?.s !== entry.s) owed[key] = entry;
+  for (const [key, entry] of Object.entries(localIntents)) {
+    if (base.records[key]?.s === entry.s) delete localIntents[key];
   }
+  if (!settleResetIfAcknowledged(uid)) writeBase(uid);
 
-  applyState(
-    saveFromView(viewWithPending(base, owed), validPokemon, validForms),
+  const owed = pendingWithIntents(
+    base,
+    exportState(),
+    localIntents,
+    Date.now(),
+    uid,
   );
+  applyState(
+    saveFromView(viewWithLocalIntent(base, owed), validPokemon, validForms),
+  );
+  observedLocal = exportState();
   syncPending.value = Object.keys(owed).length;
-  if (Object.keys(owed).length === 0) {
+  if (Object.keys(owed).length === 0 && !pendingReset) {
     lastPushed = "";
     syncPhase.value = "ready";
   } else {
@@ -204,24 +336,86 @@ function applyRemote(uid: string, incoming: unknown): void {
   }
 }
 
-function subscribe(uid: string): void {
-  if (!database) return;
+function subscribeConnection(uid: string, run: number): void {
+  if (!database || unsubscribeConnection) return;
+  unsubscribeConnection = onValue(
+    ref(database, ".info/connected"),
+    (snapshot) => {
+      if (!isCurrent(run, uid)) return;
+      if (snapshot.val() === true) {
+        syncMessage.value = "";
+        if (!initialReadComplete) void loadInitial(uid, run);
+        else void publish();
+      } else if (syncPhase.value !== "off" && syncPhase.value !== "error") {
+        syncPhase.value = syncPending.value > 0 ? "pending" : "ready";
+      }
+    },
+  );
+}
+
+function subscribeValue(uid: string, run: number): void {
+  if (!database || unsubscribeValue) return;
   unsubscribeValue = onValue(
     ref(database, `users/${uid}/state/records`),
-    (snapshot) => applyRemote(uid, snapshot.val() ?? {}),
+    (snapshot) => applyRemote(uid, snapshot.val() ?? {}, run),
     (error) => {
+      if (!isCurrent(run, uid)) return;
       syncPhase.value = "error";
       syncMessage.value = describe(error);
     },
   );
-  unsubscribeConnection = onValue(ref(database, ".info/connected"), (snapshot) => {
-    if (snapshot.val() === true) {
-      syncMessage.value = "";
-      void publish();
-    } else if (syncPhase.value !== "off" && syncPhase.value !== "error") {
-      syncPhase.value = syncPending.value > 0 ? "pending" : "ready";
+}
+
+async function loadInitial(uid: string, run: number): Promise<void> {
+  if (!database || !isCurrent(run, uid) || initialReadInFlight) return;
+  initialReadInFlight = true;
+  try {
+    const snapshot = await get(ref(database, `users/${uid}/state/records`));
+    if (!isCurrent(run, uid)) return;
+    const remote = parseRecordsSnapshot(snapshot.val() ?? {});
+    const serverHasRecords = Object.keys(remote).length > 0;
+    base = mergeDocument(base, {
+      schema: 1,
+      records: remote,
+      updatedAt: Date.now(),
+    });
+    writeBase(uid);
+
+    ignoreLocalEvents = true;
+    const hadAccountSave = setSyncAccount(uid, { adopt: !serverHasRecords });
+    if (serverHasRecords) {
+      const local = hadAccountSave
+        ? exportState()
+        : saveFromView(base, validPokemon, validForms);
+      const pending = pendingWithIntents(
+        base,
+        local,
+        localIntents,
+        Date.now(),
+        uid,
+      );
+      applyState(
+        saveFromView(viewWithLocalIntent(base, pending), validPokemon, validForms),
+      );
+      // Keep the confirmed view (plus any real local intent) as the account save;
+      // a synthetic empty save must never look like a deliberate whole-account clear
+      // after a reload.
+      persist();
     }
-  });
+    ignoreLocalEvents = false;
+    observedLocal = exportState();
+    initialReadComplete = true;
+    subscribeValue(uid, run);
+    await publish();
+  } catch (error) {
+    if (isCurrent(run, uid)) {
+      initialReadComplete = false;
+      syncPhase.value = "error";
+      syncMessage.value = describe(error);
+    }
+  } finally {
+    if (isCurrent(run, uid)) initialReadInFlight = false;
+  }
 }
 
 /**
@@ -240,49 +434,28 @@ export async function startSync(account: {
     return;
   }
   stopSync();
+  const run = generation;
   const { db } = initFirebase();
   database = db;
   activeUid = account.uid;
   deviceId = deviceIdFor(storage);
+  const stored = readStore(account.uid);
+  base = stored?.base ?? emptyDocument();
+  pendingReset = stored?.reset ?? null;
+  resetTarget = null;
+  resetSent = false;
+  sentReset = null;
+  localIntents = {};
+  observedLocal = exportState();
+  initialReadComplete = false;
   // From here on this device expects a session, so a reload may touch auth.
   rememberSyncSession(storage);
   syncAccount.value = { uid: account.uid, email: account.email ?? "" };
-  base = readBase(account.uid);
   syncPhase.value = "connecting";
-
-  let serverHasRecords = false;
-  try {
-    const snapshot = await get(ref(db, `users/${account.uid}/state/records`));
-    const remote = parseRecordsSnapshot(snapshot.val() ?? {});
-    serverHasRecords = Object.keys(remote).length > 0;
-    base = mergeDocument(base, {
-      schema: 1,
-      records: remote,
-      updatedAt: Date.now(),
-    });
-    writeBase(account.uid);
-  } catch (error) {
-    syncPhase.value = "error";
-    syncMessage.value = describe(error);
-    return;
-  }
-
-  // Adopt the device's offline progress only into an account that is empty.
-  setSyncAccount(account.uid, { adopt: !serverHasRecords });
-
-  if (serverHasRecords) {
-    // Start from what the account holds. Leaving the save empty against a full
-    // document reads as "the player cleared everything", so the first publish would
-    // tombstone the whole account; the guard above would refuse it, but the right fix
-    // is to never reach that state.
-    applyState(saveFromView(base, validPokemon, validForms));
-  }
-
-  subscribe(account.uid);
-  setLocalChangeListener(() => {
-    void publish();
-  });
-  await publish();
+  setLocalChangeListener((state) => recordLocalChange(account.uid, state));
+  setLocalResetListener((before) => recordReset(before, account.uid));
+  subscribeConnection(account.uid, run);
+  await loadInitial(account.uid, run);
 }
 
 function onAuthState(user: User | null, allowed: boolean): void {
@@ -298,7 +471,11 @@ function onAuthState(user: User | null, allowed: boolean): void {
     );
     return;
   }
-  void startSync({ uid: user.uid, email: user.email });
+  if (activeUid === user.uid) return;
+  void startSync({ uid: user.uid, email: user.email }).catch((error) => {
+    syncPhase.value = "error";
+    syncMessage.value = describe(error);
+  });
 }
 
 /**
@@ -311,7 +488,8 @@ function onAuthState(user: User | null, allowed: boolean): void {
  * anyone, and this is what makes that true.
  */
 export function watchSyncAccount(): void {
-  watchAuth(onAuthState);
+  if (unsubscribeAuth) return;
+  unsubscribeAuth = watchAuth(onAuthState);
 }
 
 /**
@@ -328,6 +506,9 @@ export function beginSignIn(): void {
 }
 
 export function stopSync(): void {
+  generation += 1;
+  publishInFlight = null;
+  publishQueued = false;
   unsubscribeValue?.();
   unsubscribeConnection?.();
   unsubscribeValue = null;
@@ -336,6 +517,7 @@ export function stopSync(): void {
     // Keep the account's own copy warm for the next offline session, without
     // notifying the publisher on the way out.
     setLocalChangeListener(null);
+    setLocalResetListener(null);
     persist();
     // Back to the device's own checklist, which was never touched.
     setSyncAccount(null);
@@ -344,6 +526,15 @@ export function stopSync(): void {
   database = null;
   base = emptyDocument();
   lastPushed = "";
+  initialReadComplete = false;
+  initialReadInFlight = false;
+  ignoreLocalEvents = false;
+  observedLocal = null;
+  localIntents = {};
+  pendingReset = null;
+  resetTarget = null;
+  resetSent = false;
+  sentReset = null;
   // A signed-out device must go back to touching nothing at all.
   forgetSyncSession(safeStorage());
   syncAccount.value = null;

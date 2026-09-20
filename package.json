@@ -11,11 +11,12 @@
     "validate:data": "python tools/validate_data.py",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:tools": "node --test tools/tests/firebase-admin-rest.node.test.mjs tools/tests/publish-validator.node.test.mjs",
     "build": "npm run validate:data && vite build && node tools/publish.mjs",
     "build:check": "npm run validate:data && vite build && node tools/publish.mjs --check",
     "test:e2e": "playwright test",
     "test:python": "python -m unittest discover -s tools/tests -v && python tools/pokemon_chat.py --self-test",
-    "check": "npm run typecheck && npm test && npm run build:check && npm run test:python"
+    "check": "npm run typecheck && npm test && npm run build:check && npm run test:python && npm run test:tools"
   },
   "dependencies": {
     "@preact/signals": "^2.11.2",

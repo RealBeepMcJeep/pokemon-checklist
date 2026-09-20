@@ -5,14 +5,14 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
-        ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
         "state": {
+          ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
           ".validate": "newData.hasChildren(['schema', 'records', 'updatedAt'])"
         },
         "log": {
           "$eventId": {
             ".validate": "newData.hasChildren(['op', 'at', 'by'])",
-            ".write": "auth != null && auth.uid === $uid && !data.exists()"
+            ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com') && !data.exists()"
           }
         }
       }

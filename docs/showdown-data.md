@@ -1,7 +1,7 @@
 # Pinned Showdown data contract
 
-`tools/showdown_data.py` is the shared source contract for the historical
-Pokémon Showdown snapshot at commit
+`tools/showdown_data.py` is the shared source contract used by `tools/moveline.py`
+and other data tooling for the historical Pokémon Showdown snapshot at commit
 `e7aee8d9ccc983c59c5608929773249adca16b8f`. The canonical names are
 `moves`, `pokedex`, `learnsets`, `typechart`, and `tiers`; each maps to a
 commit-pinned `raw.githubusercontent.com` URL and an exact SHA-256. `tiers` is
@@ -56,8 +56,14 @@ files are not pinned by this contract.
 Tests use injected local byte downloaders and never access the network:
 
 ```text
-python -m unittest discover -s tools/tests -v
+python -m unittest tools.tests.test_showdown_data -v
+python -m unittest tools.tests.test_moveline.MoveLineHardeningTests.test_pinned_showdown_loader_uses_injected_local_store -v
 ```
+
+`tools/moveline.py` uses this loader for its moves, Pokédex, and learnset inputs. Its explicit
+`--cache` directory is the verified contract cache; it no longer downloads Showdown `master` data.
+The historical Smogon moveset files used for ranking are separate, hash-verified snapshots and
+an unavailable tier is skipped while corruption or a network error stops the report.
 
 `build_pokedex_details.py` also requires a bootstrapped `--cache`; it downloads
 only its separate, hash-pinned Smogon usage snapshot when regeneration is

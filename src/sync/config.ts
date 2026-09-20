@@ -19,5 +19,5 @@ export const ALLOWED_EMAILS = ["realbeepmcjeep@gmail.com"] as const;
 
 export function isAllowedEmail(email: string | null | undefined): boolean {
   if (!email) return false;
-  return (ALLOWED_EMAILS as readonly string[]).includes(email.toLowerCase());
+  return (ALLOWED_EMAILS as readonly string[]).includes(email);
 }

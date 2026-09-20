@@ -6,6 +6,7 @@ import {
   STAR_OFF,
   STAR_ON,
   TOMBSTONE,
+  clearedByReset,
   diffEntries,
   entriesFromState,
   formKey,
@@ -63,6 +64,14 @@ describe("mergeEntry", () => {
     expect(merged!.s).toBe(TOMBSTONE);
   });
 
+  it("lets a clear win an exact provisional stamp tie", () => {
+    const merged = mergeEntry(
+      entry("caught", 10, "uid-z"),
+      entry(TOMBSTONE, 10, "uid-a"),
+    );
+    expect(merged!.s).toBe(TOMBSTONE);
+  });
+
   it("returns whichever side exists", () => {
     expect(mergeEntry(undefined, entry("seen", 5))).toEqual(entry("seen", 5));
     expect(mergeEntry(entry("seen", 5), undefined)).toEqual(entry("seen", 5));
@@ -115,6 +124,34 @@ describe("entriesFromState", () => {
     expect(records[SETTING_MODE]).toEqual(entry("ultra-moon", 1_000));
     expect(records[SETTING_FORMS]).toEqual(entry(STAR_ON, 1_000));
     expect(records[speciesKey(1)]).toBeUndefined();
+  });
+});
+
+describe("clearedByReset", () => {
+  it("captures only records that Reset changes", () => {
+    expect(
+      clearedByReset(
+        save({ settings: { forms: false, mode: "photonic-prismatic" } }),
+      ),
+    ).toEqual([]);
+
+    expect(
+      clearedByReset(
+        save({
+          species: { "1": "seen", "25": "caught" },
+          forms: { "25:alola": "caught" },
+          starred: [25],
+          settings: { forms: true, mode: "moon" },
+        }),
+      ),
+    ).toEqual([
+      [speciesKey(1), "seen"],
+      [speciesKey(25), "caught"],
+      [formKey("25:alola"), "caught"],
+      [starKey(25), STAR_ON],
+      [SETTING_MODE, "moon"],
+      [SETTING_FORMS, STAR_ON],
+    ]);
   });
 });
 

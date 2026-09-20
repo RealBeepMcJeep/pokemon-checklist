@@ -7,9 +7,9 @@ reports each terminal evolution from its own ancestral path. Moves are tagged by
 sorted by how often competitive players actually run it.
 
 Sources are published datasets, never scraped:
-  - Pokemon Showdown's data files (learnsets, moves, pokedex)
-  - Smogon's monthly Gen 7 stats for November 2019, the last real snapshot for USUM
-Files are cached outside the repository; the first run downloads what it needs.
+  - the commit-pinned, hash-verified Showdown contract (learnsets, moves, pokedex)
+  - Smogon's hash-verified monthly Gen 7 stats for November 2019, the last real snapshot for USUM
+Files are cached outside the repository; bootstrap the Showdown contract explicitly before running.
 
 Usage:
   python3 tools/moveline.py ralts
@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import html as html_escape
 import json
 import re
@@ -28,6 +29,8 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
+import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Mapping
@@ -57,6 +60,14 @@ except ImportError:  # Running the file directly: python tools/moveline.py ...
 
 REPO = Path(__file__).resolve().parent.parent
 STATS = "https://www.smogon.com/stats/2019-11/moveset/gen7{tier}-{cutoff}.txt"
+STATS_SHA256 = {
+    ("ou", "1695"): "1a9a25db69f4605e2d2d83a48a7ae772bbf32dcea1d8a2a9818cb67126f1d936",
+    ("uu", "1630"): "59e9e83df1a611c0a0663de2b67dbb8fa25320fc6ec3416913af76ce78bca2b2",
+    ("ru", "1630"): "1508c74a33ded16a868676aa770d9ba75ed17fb6dbd3e49b1f2cc90efec74f0e",
+    ("nu", "1630"): "cb5031f179cf29eda5f7501ad9d3055cd1b06b4aff0a4f1f2dce06e5b4c74686",
+    ("pu", "1630"): "32e2fce3da3fef779894e05bb662dfd871d6520970dab4a4e9b107151502f330",
+    ("lc", "1630"): "4505c667868d9f12b63420553e1ed9eeb91b0fd41da8b503f99bf70a37bfa828",
+}
 
 # Tier -> the cutoff its published file uses. OU is published at 1695, lower tiers at 1630.
 TIERS = [("ou", "1695"), ("uu", "1630"), ("ru", "1630"), ("nu", "1630"), ("pu", "1630"), ("lc", "1630")]
@@ -94,14 +105,76 @@ TYPE_COLOR = {"Normal": "#9e9e9e", "Fire": "#e64a19", "Water": "#1976d2", "Elect
               "Steel": "#607d8b", "Fairy": "#ec407a"}
 
 
-def fetch_stats(url: str, dest: Path) -> Path:
-    """Download one Smogon usage snapshot to the analysis cache once."""
-    if dest.exists() and dest.stat().st_size > 500:
+class StatsUnavailable(RuntimeError):
+    """A published tier file is not available; trying another tier is expected."""
+
+
+class StatsIntegrityError(RuntimeError):
+    """A cached or downloaded Smogon file is not the pinned bytes."""
+
+
+class StatsDownloadError(RuntimeError):
+    """A Smogon request failed for a reason other than an expected 404."""
+
+
+def _download_stats(url: str) -> bytes:
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https" or parsed.hostname != "www.smogon.com":
+        raise StatsDownloadError(f"unapproved Smogon source URL: {url}")
+    try:
+        with urllib.request.urlopen(url, timeout=240) as response:
+            if response.status != 200:
+                raise StatsDownloadError(f"Smogon request failed with HTTP {response.status}: {url}")
+            return response.read()
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            raise StatsUnavailable(f"published tier file is unavailable: {url}") from error
+        raise StatsDownloadError(f"Smogon request failed with HTTP {error.code}: {url}") from error
+    except (OSError, urllib.error.URLError) as error:
+        raise StatsDownloadError(f"cannot download Smogon moveset data: {url}") from error
+
+
+def fetch_stats(
+    url: str,
+    dest: Path,
+    expected_hash: str,
+    downloader=None,
+) -> Path:
+    """Read or download one hash-pinned Smogon moveset snapshot."""
+    if dest.exists():
+        try:
+            raw = dest.read_bytes()
+        except OSError as error:
+            raise StatsIntegrityError(f"cannot read cached Smogon file {dest}") from error
+        actual = hashlib.sha256(raw).hexdigest()
+        if actual != expected_hash:
+            raise StatsIntegrityError(
+                f"cached Smogon file {dest.name} has the wrong SHA-256: expected {expected_hash}, got {actual}"
+            )
         return dest
-    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise StatsDownloadError(f"cannot create Smogon cache directory for {dest}") from error
     print(f"fetching {url.rsplit('/', 1)[-1]} ...", file=sys.stderr)
-    with urllib.request.urlopen(url, timeout=240) as response:
-        dest.write_bytes(response.read())
+    try:
+        raw = downloader(url) if downloader is not None else _download_stats(url)
+    except (StatsUnavailable, StatsIntegrityError, StatsDownloadError):
+        raise
+    except (OSError, urllib.error.URLError) as error:
+        raise StatsDownloadError(f"cannot download Smogon moveset data: {url}") from error
+    if not isinstance(raw, bytes):
+        raise StatsDownloadError("Smogon downloader returned non-bytes")
+    actual = hashlib.sha256(raw).hexdigest()
+    if actual != expected_hash:
+        raise StatsIntegrityError(
+            f"downloaded Smogon file {dest.name} has the wrong SHA-256: expected {expected_hash}, got {actual}"
+        )
+    try:
+        dest.write_bytes(raw)
+    except OSError as error:
+        raise StatsDownloadError(f"cannot write cached Smogon file {dest}") from error
     return dest
 
 
@@ -598,11 +671,19 @@ def main() -> int:
         preferred = TIER_FILE.get(tier_of.get(id_of.get(final, -1), ""))
         order = [t for t in TIERS if t[0] == preferred] + [t for t in TIERS if t[0] != preferred]
         for tier, cutoff in order:
+            stats_url = STATS.format(tier=tier, cutoff=cutoff)
+            stats_path = cache / f"moveset-gen7{tier}-{cutoff}.txt"
             try:
-                text = fetch_stats(STATS.format(tier=tier, cutoff=cutoff),
-                                   cache / f"moveset-gen7{tier}-{cutoff}.txt").read_text(errors="replace")
-            except Exception:
+                text = fetch_stats(
+                    stats_url,
+                    stats_path,
+                    STATS_SHA256[(tier, cutoff)],
+                ).read_text(encoding="utf-8")
+            except StatsUnavailable:
                 continue
+            except (StatsIntegrityError, StatsDownloadError) as error:
+                print(f"error: Smogon {tier} moveset data: {error}", file=sys.stderr)
+                return 2
             got = usage_rows(text, nice.get(final, final))
             if got:
                 usage, label = got, f"gen7{tier}-{cutoff}"

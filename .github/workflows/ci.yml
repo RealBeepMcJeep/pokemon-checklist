@@ -35,5 +35,11 @@ jobs:
           tools/build_pokedex_details.py
           tools/extract_reference.py
           tools/build_icons.py
+          tools/showdown_data.py
+          tools/moveline.py
+          tools/roster_lens.py
+          tools/catcher_score.py
+          tools/pokemon_ops.py
+          tools/team_builder.py
       - run: npm run check
       - run: npm run test:e2e

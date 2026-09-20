@@ -1,3 +1,4 @@
+import hashlib
 import io
 import sys
 import tempfile
@@ -14,6 +15,45 @@ from tools import moveline as M
 
 
 class MoveLineHardeningTests(unittest.TestCase):
+    def test_smogon_stats_cache_and_download_are_hash_verified(self):
+        raw = b"fixture stats"
+        digest = hashlib.sha256(raw).hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "moveset.txt"
+            M.fetch_stats(
+                "https://www.smogon.com/stats/fixture.txt",
+                path,
+                digest,
+                downloader=lambda url: raw,
+            )
+            self.assertEqual(path.read_bytes(), raw)
+            with self.assertRaises(M.StatsIntegrityError):
+                M.fetch_stats("https://www.smogon.com/stats/fixture.txt", path, "0" * 64)
+            path.unlink()
+            with self.assertRaises(M.StatsIntegrityError):
+                M.fetch_stats(
+                    "https://www.smogon.com/stats/fixture.txt",
+                    path,
+                    digest,
+                    downloader=lambda url: b"corrupt",
+                )
+
+    def test_unavailable_stats_tier_is_distinct_from_download_failure(self):
+        with mock.patch.object(M, "_download_stats", side_effect=M.StatsUnavailable("404")):
+            with self.assertRaises(M.StatsUnavailable):
+                M.fetch_stats(
+                    "https://www.smogon.com/stats/missing.txt",
+                    Path("missing.txt"),
+                    "0" * 64,
+                )
+        with mock.patch.object(M, "_download_stats", side_effect=OSError("offline")):
+            with self.assertRaises(M.StatsDownloadError):
+                M.fetch_stats(
+                    "https://www.smogon.com/stats/error.txt",
+                    Path("error.txt"),
+                    "0" * 64,
+                )
+
     def test_missing_shared_cache_fails_without_downloading_showdown_data(self):
         with tempfile.TemporaryDirectory() as cache:
             stderr = io.StringIO()
@@ -103,7 +143,7 @@ class MoveLineHardeningTests(unittest.TestCase):
         }[name]
         stdout, stderr = io.StringIO(), io.StringIO()
         with mock.patch.object(M, "require_cache", return_value=store):
-            with mock.patch.object(M, "fetch_stats", side_effect=OSError("offline")):
+            with mock.patch.object(M, "fetch_stats", side_effect=M.StatsUnavailable("offline")):
                 with mock.patch.object(
                     sys, "argv", ["moveline.py", species, "--cache", "unused", "--top", "0"]
                 ):

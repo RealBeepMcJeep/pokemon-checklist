@@ -28,7 +28,8 @@ ASSETS = ROOT / "assets" / "locations"
 POKEMON_PATH = DATA / "pokemon.json"
 ENCOUNTERS_PATH = DATA / "encounters.json"
 POKEAPI_HOST = "raw.githubusercontent.com"
-POKEAPI_PATH = "/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv"
+POKEAPI_COMMIT = "4b82c204ddd19ecb8eda2ea044ccb59e222b721c"
+POKEAPI_PATH = f"/PokeAPI/pokeapi/{POKEAPI_COMMIT}/data/v2/csv/pokemon_species_names.csv"
 
 NUMBERED_MAPS = {
     "assets/locations/route-1-map.png": 6,

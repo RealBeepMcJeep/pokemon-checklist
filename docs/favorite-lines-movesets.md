@@ -12,9 +12,9 @@ which is the last meaningful snapshot for those games. No Gen 8/9 data applies.
 
 | Dataset | URL | Size |
 |---|---|---|
-| Learnset per species (move + method + level) | shared cache `learnsets.js` | — |
-| Move definitions (power/type/accuracy) | shared cache `moves.js` | — |
-| Base stats + ability slots | shared cache `pokedex.js` | — |
+| Learnset per species (move + method + level) | shared cache `learnsets.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
+| Move definitions (power/type/accuracy) | shared cache `moves.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
+| Base stats + ability slots | shared cache `pokedex.js` | commit-pinned; SHA-256 in `tools/showdown_data.py` |
 | Ranking (species usage %) | `smogon.com/stats/2019-11/gen7ou-1695.txt` | 73,934 B |
 | **Per-set detail (what % of sets run a move)** | `smogon.com/stats/2019-11/moveset/gen7ou-1695.txt` | 1,007,136 B |
 | Same, per tier | `.../moveset/gen7uu-1630.txt` / `gen7ru-1630` / `gen7nu-1630` | 889 KB / 746 KB / 726 KB |

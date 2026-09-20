@@ -16,7 +16,7 @@ Star any Pokédex row to pin that Pokémon above the rest of the list; click the
 
 Opening the checklist in more than one tab keeps them in sync: a change made in one tab appears in the others immediately, with a notice, and without reloading. This covers statuses, tracked forms, the selected mode, Restore, and Reset. Tabs of the `file://` copy share a local-storage origin in Chromium and sync as well, but browsers are free to isolate local files, so treat cross-tab sync as a served-page guarantee rather than a documented offline one.
 
-**Sign in to sync** is optional and off until you press it. Without it the app is exactly as it always was: fully offline, and it never contacts the network. While signed in, a change on one device appears on the others on its own; a change made offline is sent when the connection returns; and if two devices change the same species, the one that reaches the server later wins. The first sign-in on a device adopts the progress already on that device rather than discarding it, and signing out returns that device to its own checklist without deleting anything. Each account keeps its own separate checklist, because progress belongs to a person.
+**Sign in to sync** is optional and off until you press it. Unsigned/offline mode remains fully local: it never contacts the network and the checklist still works from `file://` without a server. While signed in, a change on one device appears on the others on its own; a change made offline is sent when the connection returns; and if two devices change the same species, the one that reaches the server later wins. The first sign-in on a device adopts the progress already on that device rather than discarding it, and signing out returns that device to its own checklist without deleting anything. Each account keeps its own separate checklist, because progress belongs to a person.
 
 ## Develop
 
@@ -39,15 +39,13 @@ npm run check
 npx playwright install chromium
 npm run test:e2e
 python tools/extract_reference.py --validate
-python tools/build_vanilla_encounters.py --check
 python tools/build_icons.py --check
-python -m py_compile tools/validate_data.py tools/build_vanilla_encounters.py tools/extract_reference.py tools/build_icons.py tools/pokemon_chat.py
-python tools/pokemon_chat.py --self-test
+python tools/build_vanilla_encounters.py --check
 ```
 
-Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external references (scripts, stylesheets, images, source maps, unresolved build tokens), and copies it to the tracked root `index.html`. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. The no-network guarantee is behavioural and enforced by a browser test rather than by that check: while signed out the artifact may not so much as *attempt* a request to anything other than `data:`, `file:` or localhost, on a desktop or a mobile user agent. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
+Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external scripts, stylesheets, iframe/object/embed/media/track resources, CSS `url(...)` and `@import` references, source maps, and unresolved build tokens, and copies it to the tracked root `index.html`. Data URLs and fragment-only references remain valid embedded resources. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. The no-network guarantee is behavioural and enforced by a browser test rather than by that check: while signed out the artifact may not so much as *attempt* a request to anything other than `data:`, `file:` or localhost, on a desktop or a mobile user agent. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
 
-`npm run check` runs strict TypeScript checking, Vitest domain tests, canonical Python data validation, and the production build/freshness audit. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. GitHub Actions enforces these checks for pull requests and `main`.
+`npm run check` runs strict TypeScript checking, Vitest, the production build/freshness audit, the full Python tool suite plus chat self-test, and deterministic Node tool tests. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. GitHub Actions enforces these checks for pull requests and `main`.
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`. `python tools/build_pokedex_details.py` regenerates the type, evolution, inherited-grade, form, and usage snapshot from checksum-pinned Pokémon Showdown sources; it requires network access, while normal builds remain offline.
 
