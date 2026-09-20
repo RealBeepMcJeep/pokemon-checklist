@@ -422,16 +422,25 @@ def download_bytes(url: str) -> bytes:
         raise RuntimeError(f"Could not download pinned source {url}") from error
 
 
-def download_text(
+def download_source_bytes(
     url: str,
     expected_hash: str | None = None,
     downloader=None,
-) -> str:
+) -> bytes:
     raw = (downloader or download_bytes)(url)
     if not isinstance(raw, bytes):
         raise TypeError(f"Downloader returned non-bytes for {url}")
     if expected_hash and sha256_bytes(raw) != expected_hash:
         raise ValueError(f"Pinned encounter-table source changed: {url}")
+    return raw
+
+
+def download_text(
+    url: str,
+    expected_hash: str | None = None,
+    downloader=None,
+) -> str:
+    raw = download_source_bytes(url, expected_hash, downloader)
     try:
         return raw.decode("utf-8").replace("\r\n", "\n")
     except UnicodeDecodeError as error:
@@ -585,10 +594,11 @@ def refresh_cache(
     for game in selected:
         if game not in GAME_CONFIGS:
             raise ValueError(f"Unknown game: {game}")
-        text = "\n".join(
-            download_text(url, digest, downloader) for url, digest in GAME_CONFIGS[game]["tableSources"]
-        )
-        raw = text.encode("utf-8")
+        raw_sources = [
+            download_source_bytes(url, digest, downloader)
+            for url, digest in GAME_CONFIGS[game]["tableSources"]
+        ]
+        raw = b"\n".join(raw_sources)
         if sha256_bytes(raw) != GAME_CONFIGS[game]["tableHash"]:
             raise ValueError(f"Combined encounter table hash changed: {game}")
         table_raw[game] = raw

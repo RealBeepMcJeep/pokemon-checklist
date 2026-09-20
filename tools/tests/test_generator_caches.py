@@ -133,6 +133,34 @@ class GeneratorCacheTests(unittest.TestCase):
             self.assertEqual(table["expectedSha256"], table_hash)
             self.assertEqual(table["sources"][0]["sha256"], table_hash)
 
+    def test_vanilla_refresh_preserves_raw_bytes_for_multi_source_tables(self):
+        first = b"first\r\nrow\r\n"
+        second = b"second\r\nrow\r\n"
+        combined = b"\n".join((first, second))
+        config = dict(vanilla.GAME_CONFIGS["moon"])
+        config.update(
+            tableSources=[
+                ("https://example.test/moon-first", hashlib.sha256(first).hexdigest()),
+                ("https://example.test/moon-second", hashlib.sha256(second).hexdigest()),
+            ],
+            tableRevision="fixture-revision",
+            tableHash=hashlib.sha256(combined).hexdigest(),
+        )
+
+        def downloader(url):
+            return {
+                "https://example.test/moon-first": first,
+                "https://example.test/moon-second": second,
+            }.get(url, b"fixture csv\n")
+
+        with tempfile.TemporaryDirectory() as temporary, mock.patch.dict(
+            vanilla.GAME_CONFIGS, {"moon": config}, clear=False
+        ):
+            cache = Path(temporary) / "vanilla"
+            vanilla.refresh_cache(cache, ["moon"], downloader)
+            self.assertEqual(vanilla.load_table("moon", None, cache), "first\nrow\n\nsecond\nrow\n")
+            self.assertEqual((cache / "tables" / "moon.txt").read_bytes(), combined)
+
     def test_vanilla_cache_rejects_corruption_and_missing_cache_explains_refresh(self):
         with tempfile.TemporaryDirectory() as temporary:
             cache = Path(temporary) / "vanilla"
