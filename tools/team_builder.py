@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+import catcher_score as catcher
 from showdown_data import configured_cache_dir, require_cache
 from showdown_text import array_field, block, field, integer_field, list_field, object_after
 
@@ -123,14 +124,14 @@ def expand_off_limits(tokens: set[str], dex: str) -> set[str]:
     return seen
 
 
-def load_world(cache: Path):
+def load_world(cache: Path, dex_text: str | None = None):
     """Load the app snapshot and Showdown snapshot used by both team commands."""
     details = json.loads((REPO / "data" / "pokedex-details.json").read_text())
     det = {int(entry["id"]): entry for entry in details["species"]}
     rows = json.loads((REPO / "data" / "pokemon.json").read_text())
     rows = rows if isinstance(rows, list) else list(rows.values())
     by_id = {int(row["id"]): row for row in rows}
-    dex = require_cache(cache).get_text("pokedex")
+    dex = dex_text if dex_text is not None else require_cache(cache).get_text("pokedex")
     form_row: dict[str, dict] = {}
     for entry in details.get("forms", {}).values():
         if not isinstance(entry, dict) or not entry.get("source"):
@@ -349,9 +350,10 @@ def load_roster(
     keep_alolan: bool = False,
     min_tier: str | None = None,
     form_overrides: dict[str, str] | None = None,
+    dex_text: str | None = None,
 ) -> dict:
     """Shared account loading, canonicalization, and filtering for both team tools."""
-    det, by_id, form_row, dex = load_world(cache)
+    det, by_id, form_row, dex = load_world(cache, dex_text)
     records = read_records(uid)
     caught_ids = sorted({int(key.split(":", 1)[1]) for key, value in records.items()
                          if key.startswith("species:") and isinstance(value, dict) and value.get("s") == "caught"})
@@ -380,18 +382,6 @@ def load_roster(
     }
 
 
-def _run_catcher(uid: str, cache: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", uid, "--cache", cache, "--top", "3"],
-        capture_output=True,
-        text=True,
-        cwd=REPO,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"catcher_score failed: {(result.stderr or result.stdout).strip()[:300]}")
-    return result.stdout or result.stderr
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--uid", required=True)
@@ -410,10 +400,15 @@ def main() -> int:
         validate_keep(args.keep)
         minimum = normalise_tier(args.min_tier)
         overrides = parse_form_overrides(args.form_override)
-        roster = load_roster(args.uid, Path(args.cache), off_limits=args.off_limits, min_tier=minimum,
-                             form_overrides=overrides)
+        cache = Path(args.cache)
+        catcher_data = catcher.load_rank_data(cache)
+        roster = load_roster(args.uid, cache, off_limits=args.off_limits, min_tier=minimum,
+                             form_overrides=overrides, dex_text=catcher_data["dex_text"])
         pool = sorted(roster["pool"], key=lambda line: (line["rank"], -line["usage"], line["final"]))
-        catcher = _run_catcher(args.uid, args.cache)
+        catcher_candidates = catcher.rank_candidates(roster["records"], catcher_data)
+        catcher_output = catcher.plain_lines(
+            catcher_candidates, top=3, roster_count=len(catcher.record_species_ids(roster["records"]))
+        )
     except (RuntimeError, ValueError, OSError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -447,7 +442,7 @@ def main() -> int:
         print(f"{'':34}abilities: {line['abilities']}")
 
     print("\n=== catcher, from catcher_score.py (utility, tier plays no part) ===")
-    for line in catcher.splitlines()[:6]:
+    for line in catcher_output[:6]:
         print("  " + line.rstrip())
     if roster["excluded"]:
         print(f"\n=== excluded ({len(roster['excluded'])}) ===")

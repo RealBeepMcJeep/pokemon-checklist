@@ -36,6 +36,17 @@ TIER_TO_CHAOS = {
 CHAOS_FILES = {"OU": "chaos-gen7ou-1695.json", "UU": "chaos-gen7uu-1630.json",
                "RU": "chaos-gen7ru-1630.json", "NU": "chaos-gen7nu-1630.json"}
 RELATIVE_MOVE_USAGE_FLOOR = 0.15
+MAX_EXHAUSTIVE_COMBINATIONS = 100_000  # C(24, 5) is 42,504; larger searches need a smaller pool/size.
+
+
+def combination_budget(pool_size: int, size: int) -> int:
+    count = math.comb(pool_size, size) if 0 <= size <= pool_size else 0
+    if count > MAX_EXHAUSTIVE_COMBINATIONS:
+        raise ValueError(
+            f"exhaustive search requires {count:,} combinations, above the hard limit of "
+            f"{MAX_EXHAUSTIVE_COMBINATIONS:,}; reduce --pool or --size"
+        )
+    return count
 
 
 def validate_args(teams: int, size: int, pool: int, shortlist: int, diversity: int = 3, **_: object) -> None:
@@ -237,6 +248,7 @@ def diverse_enough(first: tuple[str, ...], second: tuple[str, ...], replacements
 
 def search_teams(pool: list[dict], size: int, shortlist: int, teams: int, diversity: int, chart: dict) -> list[tuple[float, tuple[str, ...], dict]]:
     """Score every combination in the retained pool, then apply shortlist and diversity caps."""
+    combination_budget(len(pool), size)
     heap = []
     for combo in itertools.combinations(pool, size):
         total, detail = score_team(list(combo), chart)
@@ -266,7 +278,8 @@ def main() -> int:
     parser.add_argument("--off-limits", default="")
     parser.add_argument("--teams", type=int, default=5)
     parser.add_argument("--size", type=int, default=5)
-    parser.add_argument("--pool", type=int, default=24, help="how many canonical lines to search over")
+    parser.add_argument("--pool", type=int, default=24,
+                        help=f"how many canonical lines to search over (max {MAX_EXHAUSTIVE_COMBINATIONS:,} combinations)")
     parser.add_argument("--shortlist", type=int, default=400, help="top combinations retained before diversity")
     parser.add_argument("--diversity", type=int, default=3, help="minimum member replacements between teams")
     parser.add_argument("--no-gen1", action="store_true", help="exclude candidates with a Gen 1 lineage; Butterfree remains exempt")
@@ -297,10 +310,16 @@ def main() -> int:
         profiles.append(profile(line, chart, moveset_cache[cache_key], mtype, provenance))
     profiles.sort(key=lambda member: (member["rank"], -member["usage"], member["final"]))
     pool = profiles[:args.pool]
+    try:
+        combination_count = combination_budget(len(pool), args.size)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     print(f"=== roster: {roster['caught_count']} caught records -> {roster['canonical_count']} endpoint/form candidates ===")
     print(f"search pool: {len(pool)} of {len(profiles)} filtered candidates (rank/usage approximation; --pool={args.pool})")
-    print(f"shortlist: at most {args.shortlist} of {math.comb(len(pool), args.size) if len(pool) >= args.size else 0} combinations before diversity")
+    print(f"shortlist: at most {args.shortlist} of {combination_count} combinations before diversity "
+          f"(hard limit {MAX_EXHAUSTIVE_COMBINATIONS:,})")
     for message in roster["assumptions"] + roster["warnings"] + roster["limitations"]:
         print(f"note: {message}")
     if args.show_all:

@@ -1,4 +1,5 @@
 import json
+import math
 import sys
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
+import roster_lens as rl  # noqa: E402
 import team_builder as tb  # noqa: E402
 import team_synergy as ts  # noqa: E402
 
@@ -208,12 +210,54 @@ class TeamSynergyTests(unittest.TestCase):
         chosen = ts.search_teams(pool, size=2, shortlist=3, teams=1, diversity=1, chart={})
         self.assertEqual(chosen[0][1], ("A", "C"))
 
-    def test_catcher_subprocess_failure_is_not_reported_as_success(self):
-        failed = mock.Mock(returncode=9, stdout="", stderr="catcher unavailable")
-        with mock.patch.object(tb.subprocess, "run", return_value=failed):
-            with self.assertRaises(RuntimeError) as ctx:
-                tb._run_catcher("uid", "/tmp/cache")
-        self.assertIn("catcher unavailable", str(ctx.exception))
+    def test_team_builder_passes_one_loaded_records_snapshot_to_catcher(self):
+        records = {"species:25": {"s": "caught"}}
+        catcher_data = {"dex_text": "loaded dex"}
+        roster = {
+            "records": records, "pool": [], "caught_count": 1, "canonical_count": 0,
+            "assumptions": [], "warnings": [], "limitations": [], "excluded": [],
+        }
+        with mock.patch.object(tb.catcher, "load_rank_data", return_value=catcher_data), \
+             mock.patch.object(tb, "load_roster", return_value=roster), \
+             mock.patch.object(tb.catcher, "rank_candidates", return_value=[]) as rank, \
+             mock.patch.object(tb.catcher, "plain_lines", return_value=["score pokemon tier best tool"]), \
+             mock.patch.object(sys, "argv", ["team_builder.py", "--uid", "uid", "--cache", "unused"]):
+            self.assertEqual(tb.main(), 0)
+        rank.assert_called_once_with(records, catcher_data)
+
+    def test_roster_lens_uses_structured_catcher_results(self):
+        records = {"species:25": {"s": "caught"}}
+        catcher_data = {
+            "rows": [{"id": 25, "name": "Pikachu"}],
+            "details": {25: {"source": "Pikachu", "grade": "A", "tier": "UU", "usage": 1.0}},
+            "dex_text": "\n\tpikachu: {baseStats: {hp: 35, atk: 55, def: 40, spa: 50, spd: 50, spe: 90}},",
+        }
+        candidate = {"name": "Pikachu", "score": 12.5}
+        with mock.patch.object(rl.catcher, "load_rank_data", return_value=catcher_data), \
+             mock.patch.object(rl.roster_data, "read_records", return_value=records) as read, \
+             mock.patch.object(rl.catcher, "rank_candidates", return_value=[candidate]) as rank, \
+             mock.patch("builtins.print"), \
+             mock.patch.object(sys, "argv", ["roster_lens.py", "--uid", "uid"]):
+            self.assertEqual(rl.main(), 0)
+        read.assert_called_once_with("uid")
+        rank.assert_called_once_with(records, catcher_data, exclude="", fleeing=False)
+        self.assertFalse(hasattr(rl, "subprocess"))
+
+
+class TeamSearchBudgetTests(unittest.TestCase):
+    def test_default_size_search_is_within_the_exhaustive_budget(self):
+        pool = [{"final": str(index)} for index in range(24)]
+        with mock.patch.object(ts, "score_team", return_value=(1.0, {})) as score_team:
+            result = ts.search_teams(pool, size=5, shortlist=1, teams=1, diversity=1, chart={})
+        self.assertEqual(len(result), 1)
+        self.assertEqual(score_team.call_count, math.comb(24, 5))
+
+    def test_oversized_search_is_rejected_before_scoring(self):
+        pool = [{"final": str(index)} for index in range(24)]
+        with mock.patch.object(ts, "score_team") as score_team:
+            with self.assertRaisesRegex(ValueError, "hard limit"):
+                ts.search_teams(pool, size=6, shortlist=1, teams=1, diversity=1, chart={})
+        score_team.assert_not_called()
 
 
 if __name__ == "__main__":

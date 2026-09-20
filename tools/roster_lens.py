@@ -18,11 +18,12 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
-from showdown_data import configured_cache_dir, require_cache
+import catcher_score as catcher
+import team_builder as roster_data
+from showdown_data import configured_cache_dir
 from showdown_text import block
 
 REPO = Path(__file__).resolve().parent.parent
@@ -55,36 +56,27 @@ def main() -> int:
     parser.add_argument("--exclude", default="", help="pass through to the score")
     args = parser.parse_args()
 
-    cmd = [sys.executable, str(REPO / "tools" / "catcher_score.py"), "--uid", args.uid,
-           "--cache", args.cache, "--top", str(args.top)]
-    if args.fleeing:
-        cmd.append("--fleeing")
-    if args.exclude:
-        cmd += ["--exclude", args.exclude]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(result.stderr or result.stdout, file=sys.stderr)
-        return result.returncode
+    try:
+        data = catcher.load_rank_data(Path(args.cache))
+        records = roster_data.read_records(args.uid)
+        candidates = catcher.rank_candidates(records, data, exclude=args.exclude, fleeing=args.fleeing)
+    except (RuntimeError, ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
-    rows = json.load(open(REPO / "data" / "pokemon.json"))
-    rows = rows if isinstance(rows, list) else list(rows.values())
+    rows = data["rows"]
     id_by_name = {row["name"]: int(row["id"]) for row in rows}
-    details = {entry["id"]: entry for entry in
-               json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]}
-    dex_text = require_cache(Path(args.cache)).get_text("pokedex")
+    details = data["details"]
 
     print(f"{'catch utility':13}{'score':>7}   {'grade':>5} {'tier':>5} {'usage':>7}  stats")
-    for line in result.stdout.splitlines():
-        hit = re.match(r"^\s*(\d+\.\d+)\s+(\S+)", line)
-        if not hit:
-            continue
-        score, name = float(hit.group(1)), hit.group(2)
+    for candidate in candidates[:args.top]:
+        score, name = candidate["score"], candidate["name"]
         entry = details.get(id_by_name.get(name, -1), {})
         final = entry.get("source", "?")
         usage = entry.get("usage")
         usage = f"{float(usage):.2f}%" if isinstance(usage, (int, float)) else "n/a"
         print(f"{name:13}{score:7.1f}   {str(entry.get('grade', '?')):>5} "
-              f"{str(entry.get('tier', '?')):>5} {usage:>7}  {base_stats(dex_text, final)}"
+              f"{str(entry.get('tier', '?')):>5} {usage:>7}  {base_stats(data['dex_text'], final)}"
               f"   ({final})")
     return 0
 
