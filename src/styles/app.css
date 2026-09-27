@@ -809,6 +809,10 @@ tbody tr:hover {
 .star-button[aria-pressed="true"] {
   color: var(--accent);
 }
+/* `display: flex` above would otherwise override the attribute. */
+.dex-row[hidden] {
+  display: none;
+}
 .dex-row + .dex-row {
   margin-top: 0.15rem;
 }

@@ -22,8 +22,7 @@ Completed items move to `changelog.md`.
 
 ### Mobile performance
 
-- [ ] Repeat the startup, mode-switch, and restore profiling on real phone hardware; the current numbers come from 4× CPU throttling at a phone viewport.
-- [ ] Cut the first Pokédex open: mounting the 807 rows still blocks the main thread for ~0.8 s at 4× throttling on the first open after a page load (later toggles cost ~90 ms, and closing no longer stalls at all). Windowing or virtualising the list is the lever, and it needs the "807 rows in the DOM" assertions rewritten with keyboard and accessibility care.
+- [ ] Repeat the startup, mode-switch, restore, and Pokédex-open profiling on real phone hardware; the current numbers come from 4× CPU throttling at a phone viewport. Virtualising the Pokédex list remains the next lever only if chunked mounting still stutters there.
 
 ### Game modes
 

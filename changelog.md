@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-27
+
+- Stopped the first Pokédex open from freezing a phone: the list now mounts 30 rows per animation frame instead of all 807 in one render. The longest main-thread block on first open fell from a median of ~1,100 ms to ~120 ms at 4× CPU throttling and a phone viewport; every row is still in the DOM once mounting finishes.
+- Made search hide non-matching rows instead of unmounting them, so clearing a search no longer rebuilds the list: its longest block fell from a median of ~775 ms to ~100 ms, and typing a first letter stays under the 50 ms long-task threshold.
+- Memoised each row's contents so a new chunk or a keystroke only toggles a row's `hidden` attribute; status, star, and selection still update each row through its own signals.
+- Added a browser check that Pokédex rows survive a search and its clearing as the same DOM nodes, and made the search tests count only visible rows.
+- Corrected the sync status document: a signed-in Reset propagates atomically with a single `reset` log event carrying its before-image; only undo is outstanding.
+
 ## 2026-09-19
 
 - Consolidated active analysis tools on one commit-pinned, integrity-checked Pokémon Showdown cache and one small shared text parser; ordinary commands no longer download unpinned Showdown data.
