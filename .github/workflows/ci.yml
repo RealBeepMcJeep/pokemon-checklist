@@ -37,6 +37,7 @@ jobs:
           tools/build_icons.py
           tools/showdown_data.py
           tools/moveline.py
+          tools/build_moves.py
           tools/roster_lens.py
           tools/catcher_score.py
           tools/pokemon_ops.py

@@ -85,6 +85,7 @@ built and deployed; Stage 2 (chat control) follows it.
 - [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend. Blocked on an agent credential the owner creates: either a dedicated allowlisted user's refresh token or a service-account key, kept in `/opt/data/.env`.
 - [x] Add the chat parser's self-test to CI (`python tools/pokemon_chat.py --self-test`).
 - [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
+- [ ] Make the full-page sign-in fallback work in browsers that block third-party storage (Safari, Firefox strict mode, Chrome without third-party cookies). The app is served from `github.io` while `authDomain` is `firebaseapp.com`, so a redirect sign-in there can return signed out; the popup, which is tried first, is unaffected. The fix is to serve Firebase's `/__/auth/` helper from the app's own origin (a custom domain or the `realbeepmcjeep.github.io` root site) and point `authDomain` at it.
 
 ### Verification
 
@@ -96,7 +97,7 @@ built and deployed; Stage 2 (chat control) follows it.
 - Split the `photonic-prismatic` mode into Prismatic Moon **Standard** vs **Rebalanced**.
   The encounters data assumes one variant; Rebalanced changes base stats, types, abilities,
   learnsets and TM compatibility, so vanilla Gen 7 competitive advice would be wrong there.
-- Optional feature: ship a sliced movelist (evolution chain + legal Gen 7 moves by method +
-  the top usage moves per final evolution) in `data/`, so the dex can show "best moves" in-app
-  instead of answering in chat. Dataset, sizes and refresh commands:
-  `docs/favorite-lines-movesets.md`.
+- Popular moves are built for Standard (`data/moves.json`, `source.profile: "gen7"`). A Rebalanced
+  variant would be a second profile of the same file shape once its learnsets are sourced.
+- Popular moves cover species only; tracked forms (Alolan finals, Lycanroc forms) could be added
+  under form keys such as `"26:alolan"` without a schema change.

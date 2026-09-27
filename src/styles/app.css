@@ -134,6 +134,21 @@ h3 {
 .sync-account::after {
   content: " · ";
 }
+/* The status word carries the state, so it carries the colour too. */
+.sync-status[data-phase="ready"] .sync-phase {
+  color: var(--caught);
+}
+.sync-status[data-phase="pending"] .sync-phase,
+.sync-status[data-phase="connecting"] .sync-phase {
+  color: var(--accent-bright);
+}
+.sync-status[data-online="false"]:not([data-phase="error"]) .sync-phase {
+  color: var(--muted);
+}
+.sync-status[data-phase="error"] .sync-phase {
+  color: #ff9a9a;
+  font-weight: 600;
+}
 /* A button label may never wrap or spill: it is the control, not the detail. */
 .sync-panel .action-button {
   flex: 0 0 auto;
@@ -744,6 +759,59 @@ tbody tr:hover {
 }
 .location-links p {
   margin: 0.3rem 0 0;
+}
+.popular-moves {
+  margin-top: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--link-bg);
+  font-size: 0.78rem;
+}
+.popular-moves > summary {
+  color: var(--accent-bright);
+  font-weight: 700;
+  cursor: pointer;
+}
+.final-moves h3 {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+}
+.final-moves ol {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.final-moves li {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--line);
+}
+.final-moves li:first-child {
+  border-top: 0;
+}
+.move-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.4rem;
+}
+.move-usage {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.move-routes {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.move-routes.unavailable {
+  color: #ff9a9a;
+}
+.moves-source {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
 }
 .evolution-path {
   margin-top: 0.35rem;

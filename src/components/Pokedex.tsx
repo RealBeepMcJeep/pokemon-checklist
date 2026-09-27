@@ -18,6 +18,7 @@ import {
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
+import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
 
 const evolutionIds = new Map(
@@ -157,6 +158,7 @@ function Selection() {
           </p>
         )}
       </div>
+      <PopularMoves id={selected} />
     </>
   );
 }

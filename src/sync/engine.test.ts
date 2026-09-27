@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   initFirebase: vi.fn(() => ({ auth: {}, db: {} })),
   watchAuth: vi.fn(() => vi.fn()),
+  signOutOfSync: vi.fn(async () => {}),
 }));
 
 vi.mock("firebase/database", () => ({
@@ -22,6 +23,7 @@ vi.mock("firebase/database", () => ({
 vi.mock("./firebase", () => ({
   initFirebase: mocks.initFirebase,
   watchAuth: mocks.watchAuth,
+  signOutOfSync: mocks.signOutOfSync,
 }));
 
 import {
@@ -33,6 +35,7 @@ import {
 } from "./engine";
 import { cycleSpecies, resetState } from "../state";
 import { speciesKey } from "./records";
+import { SYNC_SESSION_KEY } from "./outbox";
 
 let storage = new Map<string, string>();
 
@@ -69,6 +72,7 @@ beforeEach(() => {
   mocks.update.mockReset().mockResolvedValue(undefined);
   mocks.watchAuth.mockReset().mockReturnValue(vi.fn());
   mocks.initFirebase.mockClear();
+  mocks.signOutOfSync.mockClear();
   stopSync();
 });
 
@@ -256,5 +260,47 @@ describe("auth watching", () => {
     watchSyncAccount();
     watchSyncAccount();
     expect(mocks.watchAuth).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("sign-in flow", () => {
+  type Listener = (user: { uid: string; email: string } | null, allowed: boolean) => void;
+
+  // The auth watcher registers once per module, so each case loads a fresh engine.
+  async function freshEngine() {
+    vi.resetModules();
+    let listener: Listener | undefined;
+    mocks.watchAuth.mockImplementation(((callback: Listener) => {
+      listener = callback;
+      return vi.fn();
+    }) as never);
+    const engine = await import("./engine");
+    return { engine, fire: (...args: Parameters<Listener>) => listener!(...args) };
+  }
+
+  it("keeps the sign-in flag through Firebase's initial signed-out event", async () => {
+    // Firebase reports "signed out" as soon as auth starts. Clearing the flag then made a
+    // full-page sign-in come back to a page that never looked for its session.
+    const { engine, fire } = await freshEngine();
+    engine.beginSignIn();
+    fire(null, false);
+    expect(localStorage.getItem(SYNC_SESSION_KEY)).toBe("1");
+  });
+
+  it("forgets the flag when a sign-in is abandoned", async () => {
+    const { engine, fire } = await freshEngine();
+    engine.beginSignIn();
+    fire(null, false);
+    engine.cancelSignIn();
+    expect(localStorage.getItem(SYNC_SESSION_KEY)).toBe("0");
+  });
+
+  it("signs a disallowed account straight back out", async () => {
+    const { engine, fire } = await freshEngine();
+    engine.beginSignIn();
+    fire({ uid: "stranger", email: "stranger@example.com" }, false);
+    expect(mocks.signOutOfSync).toHaveBeenCalledTimes(1);
+    expect(engine.syncAccount.value).toBeNull();
+    expect(localStorage.getItem(SYNC_SESSION_KEY)).toBe("0");
   });
 });

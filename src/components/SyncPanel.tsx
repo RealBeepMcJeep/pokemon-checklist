@@ -1,11 +1,14 @@
 import { useState } from "preact/hooks";
 import {
   beginSignIn,
+  cancelSignIn,
   syncAccount,
   syncMessage,
+  syncOnline,
   syncPending,
   syncPhase,
 } from "../sync/engine";
+import { isAllowedEmail } from "../sync/config";
 
 /**
  * Failures a full-page round trip cannot fix: the player's own choice, a network
@@ -40,12 +43,14 @@ function statusText(): string {
       return syncAccount.value ? "Signed in" : "";
     case "connecting":
       return "Syncing…";
-    case "pending":
-      return syncPending.value === 1
-        ? "1 to send"
-        : `${syncPending.value} to send`;
+    case "pending": {
+      const count =
+        syncPending.value === 1 ? "1 to send" : `${syncPending.value} to send`;
+      return syncOnline.value ? count : `Offline · ${count}`;
+    }
     case "ready":
-      return "Synced";
+      // "Synced" while offline would claim the other devices have caught up.
+      return syncOnline.value ? "Synced" : "Offline";
     case "error":
       return syncMessage.value || "Sync is not working";
   }
@@ -83,25 +88,31 @@ export function SyncPanel() {
     // telling it to look for a session has to be in place by then.
     beginSignIn();
     try {
-      await signInWithGoogle();
-      showNotice(
-        "Signed in. This checklist now syncs across your devices.",
-        "good",
-      );
+      const user = await signInWithGoogle();
+      // A disallowed account gets its own notice from the auth watcher; this one would
+      // overwrite it with a false promise.
+      if (isAllowedEmail(user?.email)) {
+        showNotice(
+          "Signed in. This checklist now syncs across your devices.",
+          "good",
+        );
+      }
     } catch (error) {
       const code =
         typeof error === "object" && error !== null && "code" in error
           ? String((error as { code: unknown }).code)
           : "";
       if (NO_FULL_PAGE_RETRY.has(code)) {
+        cancelSignIn();
         showNotice(describeSignIn(error), "error");
       } else {
         // Hand the whole page to Google rather than leaving the player with a window
         // that cannot sign in and no way to fix it from inside.
         showNotice(describeSignIn(error), "");
-        await signInWithGoogleRedirect().catch(() =>
-          showNotice("Sign-in could not be completed.", "error"),
-        );
+        await signInWithGoogleRedirect().catch(() => {
+          cancelSignIn();
+          showNotice("Sign-in could not be completed.", "error");
+        });
       }
     } finally {
       setBusy(false);
@@ -125,6 +136,8 @@ export function SyncPanel() {
       <span
         class="sync-status"
         id="sync-status"
+        data-phase={phase === "off" ? undefined : phase}
+        data-online={account ? String(syncOnline.value) : undefined}
         role="status"
         aria-live="polite"
       >
@@ -137,7 +150,9 @@ export function SyncPanel() {
             {account.email || "Signed in"}
           </span>
         )}
-        <span class="sync-phase">{statusText()}</span>
+        <span class="sync-phase" title={statusText()}>
+          {statusText()}
+        </span>
       </span>
       {account ? (
         <button

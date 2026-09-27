@@ -167,6 +167,35 @@ test("keeps Pokédex rows mounted through a search", async ({
   expect(errors).toEqual([]);
 });
 
+test("shows popular moves for a species and its final evolutions", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#dex-search").fill("ralts");
+  await page.locator('[data-action="select"][data-species="280"]').click();
+  const moves = page.locator("#dex-selection .popular-moves");
+  await expect(moves.locator("summary")).toHaveText(
+    "Popular moves of its 2 final evolutions",
+  );
+  await moves.locator("summary").click();
+  await expect(moves.locator(".final-moves h3")).toHaveText([
+    "Gardevoir · RU",
+    /^Gallade · /,
+  ]);
+  const moonblast = moves.locator(".final-moves li").first();
+  await expect(moonblast).toContainText("Moonblast");
+  await expect(moonblast.locator(".move-routes")).toHaveText(
+    "Level 62 · Move Reminder",
+  );
+
+  // A final evolution shows its own list, and the panel stays open between selections.
+  await page.locator("#dex-search").fill("gardevoir");
+  await page.locator('[data-action="select"][data-species="282"]').click();
+  await expect(moves.locator("summary")).toHaveText("Popular moves (RU)");
+  await expect(moves.locator(".final-moves li").first()).toContainText("Moonblast");
+  expect(errors).toEqual([]);
+});
+
 test("tracks forms and validates restore, migration, and reset", async ({
   page,
 }, testInfo) => {
@@ -412,6 +441,22 @@ test("attempts no network requests while signed out", async ({
   await mobilePage.waitForTimeout(2500);
   expect(external(mobileAttempts)).toEqual([]);
   await mobile.close();
+});
+
+test("gives sign-in a whole row on a small phone", async ({ page }, testInfo) => {
+  // The phone header is a three-column button grid; sign-in once got one cell of it and
+  // spilled out of its own frame at 320px.
+  await page.setViewportSize({ width: 320, height: 700 });
+  const errors = await openApp(page, testInfo.project.name);
+  const actions = await page.locator(".actions").boundingBox();
+  const panel = await page.locator("#sync-panel").boundingBox();
+  const button = await page.locator("#sync-signin").boundingBox();
+  expect(panel!.width).toBeGreaterThan(actions!.width * 0.9);
+  expect(button!.x + button!.width).toBeLessThanOrEqual(panel!.x + panel!.width + 1);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  ).toBe(true);
+  expect(errors).toEqual([]);
 });
 
 test("offers sign-in without ever prompting for it", async ({

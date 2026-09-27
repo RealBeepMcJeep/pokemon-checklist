@@ -65,6 +65,16 @@ python -m unittest tools.tests.test_moveline.MoveLineHardeningTests.test_pinned_
 The historical Smogon moveset files used for ranking are separate, hash-verified snapshots and
 an unavailable tier is skipped while corruption or a network error stops the report.
 
+`build_moves.py` regenerates `data/moves.json`, the app's Popular moves, from the same cache and
+`moveline.py`'s ranking. It is offline by default: the hash-pinned Smogon moveset files (Ubers through
+LC, November 2019) must already be in the cache, and `--refresh` downloads any that are missing.
+`--check` fails when the committed file is stale:
+
+```text
+python tools/build_moves.py --refresh
+python tools/build_moves.py --check
+```
+
 `build_pokedex_details.py` also requires a bootstrapped `--cache`; it downloads
 only its separate, hash-pinned Smogon usage snapshot when regeneration is
 explicitly requested.
