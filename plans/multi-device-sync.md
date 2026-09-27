@@ -17,13 +17,14 @@ Records use server-assigned timestamps and deterministic UID tie-breaking. A dev
 
 - Firebase Google authentication, allowed-email handling, and account-specific local save namespaces.
 - Firebase sync engine with realtime subscriptions, server-ordered per-record merging, offline local edits, adoption of an existing device save on first sign-in, and safe sign-out.
-- Per-record `set` logs for ordinary app changes and chat changes. A signed-in Reset currently remains local: `resetState()` produces a derived whole-account-clear diff, and the sync guard rejects publishing it, so Reset is not propagated and does not currently produce and publish ordinary per-record logs.
-- A whole-account-clear guard that refuses any substantial whole-account clear before it can tombstone the account.
+- Per-record `set` logs for ordinary app changes and chat changes.
+- Signed-in Reset propagates. `resetState()` hands the before-image to the engine, which keeps it in the sync store (`reset`) until one atomic update writes the cleared records plus a single `op: "reset"` log event carrying that before-image in `cleared`. Reset writes no per-record `set` events, and the pending reset survives a reload until the server echo confirms it.
+- A whole-account-clear guard that refuses any substantial whole-account clear before it can tombstone the account. The explicit Reset above is the only exception.
 - Service-account chat tooling: `tools/pokemon_chat.py` parses intents, `tools/pokemon_ops.py` resolves and validates operations, and `tools/firebase-admin-rest.mjs` applies validated patches without putting credentials in the repository.
 
 ## Still outstanding
 
-- Define and implement a safe synced-reset path, plus any undo design; neither exists today.
+- Design and build undo; the Reset log event already holds the before-image it would need.
 - Define and implement log retention or compaction.
 - Test reset, reconnect, concurrent edits, account switching, and retention on real Firebase accounts and multiple physical devices.
 

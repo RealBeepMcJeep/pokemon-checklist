@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
 POKEDEX_DETAILS_PATH = ROOT / "data" / "pokedex-details.json"
+MOVES_PATH = ROOT / "data" / "moves.json"
 ENCOUNTERS_PATH = ROOT / "data" / "encounters.json"
 VANILLA_ENCOUNTERS = {
     "sun": (ROOT / "data" / "encounters-sun.json", 57),
@@ -332,11 +333,53 @@ def validate_pokedex_details(details: object) -> list[str]:
     return errors
 
 
+MOVE_ROUTES = {"level", "reminder", "TM", "tutor", "egg", "event"}
+
+
+def validate_moves(moves: object) -> list[str]:
+    """Shape and cross-references of data/moves.json; its content is checked by build_moves.py."""
+    if not isinstance(moves, dict) or moves.get("schemaVersion") != 1:
+        return ["moves.json schemaVersion must be 1"]
+    errors: list[str] = []
+    table, finals, lines = moves.get("moves"), moves.get("finals"), moves.get("lines")
+    if not isinstance(table, dict) or not isinstance(finals, dict) or not isinstance(lines, dict):
+        return ["moves.json needs moves, finals and lines objects"]
+    for key, info in table.items():
+        if not isinstance(info, dict) or not isinstance(info.get("name"), str) or info.get("type") not in POKEMON_TYPES:
+            errors.append(f"moves.json move {key} needs a name and a known type")
+    valid_ids = {str(number) for number in range(1, 808)}
+    for dex, entry in finals.items():
+        label = f"moves.json final {dex}"
+        if dex not in valid_ids or not isinstance(entry, dict) or not isinstance(entry.get("moves"), list):
+            errors.append(f"{label} is not a valid entry")
+            continue
+        for row in entry["moves"]:
+            if not isinstance(row, dict) or row.get("move") not in table:
+                errors.append(f"{label} references an unknown move")
+                continue
+            usage = row.get("usage")
+            if not isinstance(usage, (int, float)) or not 0 < usage <= 100:
+                errors.append(f"{label} {row['move']} has invalid usage")
+            for route in row.get("how", []):
+                form = route.get("form") if isinstance(route, dict) else None
+                if not isinstance(route, dict) or route.get("via") not in MOVE_ROUTES or (
+                    form is not None and str(form) not in valid_ids
+                ):
+                    errors.append(f"{label} {row['move']} has an invalid route")
+    for dex, targets in lines.items():
+        if dex not in valid_ids or dex in finals or not isinstance(targets, list) or not targets or any(
+            str(target) not in finals for target in targets
+        ):
+            errors.append(f"moves.json line {dex} must list known final evolutions")
+    return errors
+
+
 def validate_all() -> list[str]:
     pokemon = read_json(POKEMON_PATH)
     encounters = read_json(ENCOUNTERS_PATH)
     errors = validate_inputs(pokemon, encounters)
     errors.extend(validate_pokedex_details(read_json(POKEDEX_DETAILS_PATH)))
+    errors.extend(validate_moves(read_json(MOVES_PATH)))
     for mode, (path, expected_locations) in VANILLA_ENCOUNTERS.items():
         errors.extend(
             f"{path.name}: {error}"

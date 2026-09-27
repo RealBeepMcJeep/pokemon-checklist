@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-27
+
+- Added **Popular moves** to every Pokédex entry: the eight moves competitive players ran most for each of the 439 final evolutions (434 with usage data), with how the game teaches each one. Unevolved Pokémon list their final evolutions' moves; Ubers and every tier through LC are covered, each from its own tier's November 2019 Smogon file.
+- Worded egg moves per mode: bred in the vanilla games, learned by level-up in Photonic Sun / Prismatic Moon. Moves players ran that Gen 7 cannot teach are marked as not obtainable.
+- Generated the data with a new offline `tools/build_moves.py` (`--refresh` downloads missing pinned files, `--check` detects staleness) on the move report's own ranking, now shared as functions in `moveline.py`; `validate_data.py` checks the file's shape and cross-references.
+- Stored facts rather than wording, keyed by dex number with a named learnset profile, so forms and a Rebalanced variant can be added without a schema change; move details live once in a shared table, keeping the embedded data to ~300 KB.
+- Pinned the Smogon Ubers moveset file, matched Smogon's straight-apostrophe names (Farfetch'd), and read `(PU)` species from the PU file instead of whichever tier listed them first.
+- Fixed the full-page sign-in fallback returning signed out: Firebase's initial "signed out" report cleared the flag that tells the reloaded page to look for its session.
+- Signed a disallowed Google account straight back out of Firebase, and stopped the sign-in success notice from overwriting the "not on the list" message.
+- Gave the sync controls their own full-width row on phones; they were squeezed into one third of the button grid, clipping the status and spilling the sign-in button at 320 px. Errors now wrap in full, the signed-in address shows on phones, and the status is coloured by state.
+- Showed "Offline" instead of "Synced" (or "3 to send") while the database connection is down.
+- Stopped the first Pokédex open from freezing a phone: the list now mounts 30 rows per animation frame instead of all 807 in one render. The longest main-thread block on first open fell from a median of ~1,100 ms to ~120 ms at 4× CPU throttling and a phone viewport; every row is still in the DOM once mounting finishes.
+- Made search hide non-matching rows instead of unmounting them, so clearing a search no longer rebuilds the list: its longest block fell from a median of ~775 ms to ~100 ms, and typing a first letter stays under the 50 ms long-task threshold.
+- Memoised each row's contents so a new chunk or a keystroke only toggles a row's `hidden` attribute; status, star, and selection still update each row through its own signals.
+- Added a browser check that Pokédex rows survive a search and its clearing as the same DOM nodes, and made the search tests count only visible rows.
+- Corrected the sync status document: a signed-in Reset propagates atomically with a single `reset` log event carrying its before-image; only undo is outstanding.
+
 ## 2026-09-19
 
 - Consolidated active analysis tools on one commit-pinned, integrity-checked Pokémon Showdown cache and one small shared text parser; ordinary commands no longer download unpinned Showdown data.

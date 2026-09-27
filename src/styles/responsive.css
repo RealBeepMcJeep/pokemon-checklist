@@ -48,11 +48,13 @@
   .backdrop.visible {
     display: block;
   }
-  /* On a phone the account line would push the button off its own frame, so the
-     status word stands alone and the address stays in the title. */
-  .sync-account,
-  .sync-account::after {
-    display: none;
+  /* The account shortens before the status does: the status is the signal. */
+  .sync-account {
+    overflow: hidden;
+    flex: 0 1 auto;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* Give the row its own line rather than sharing one with six buttons: the status
      still needs room, and squeezing it clips the very thing it is reporting. */
@@ -62,6 +64,9 @@
   }
   .sync-status {
     flex: 1 1 auto;
+    flex-wrap: wrap;
+    /* An error is a sentence the player needs whole; let it wrap, never clip. */
+    white-space: normal;
   }
   .title-row {
     gap: 0.4rem;
@@ -95,6 +100,10 @@
   .actions {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* The grid would otherwise give sign-in one third of a row. */
+  .sync-panel {
+    grid-column: 1 / -1;
   }
   .action-button {
     padding: 0.42rem 0.3rem;

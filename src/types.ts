@@ -40,6 +40,46 @@ export interface PokedexDetailsData {
   forms: Record<string, PokemonDetails>;
 }
 
+/** How the game teaches a move; see tools/build_moves.py. */
+export interface MoveRoute {
+  via: "level" | "reminder" | "TM" | "tutor" | "egg" | "event";
+  level?: number;
+  /** Dex number of the form that learns it; set for level-up, egg and pre-evolution routes. */
+  form?: number;
+  beforeEvolving?: boolean;
+}
+
+export interface MoveInfo {
+  name: string;
+  type: string;
+  power?: number;
+  tm?: number;
+  tmAt?: string;
+  tutorAt?: string;
+  tutorBp?: number;
+}
+
+export interface PopularMove {
+  move: string;
+  /** Percent of that species' competitive sets running the move. */
+  usage: number;
+  /** Set-specific overrides, e.g. "Hidden Power Fire". */
+  name?: string;
+  type?: string;
+  /** Empty when the game cannot teach the move at all. */
+  how: MoveRoute[];
+}
+
+export interface MovesData {
+  schemaVersion: 1;
+  source: { showdownCommit: string; usage: string; profile: string; top: number };
+  moves: Record<string, MoveInfo>;
+  /** Keyed by dex number; `stats` names the Smogon file, or null when none lists it. */
+  finals: Record<string, { stats: string | null; moves: PopularMove[] }>;
+  /** Unevolved species -> the final evolutions whose moves apply. */
+  lines: Record<string, number[]>;
+}
+
 export interface Rates {
   single?: number;
   day?: number;

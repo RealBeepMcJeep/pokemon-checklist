@@ -32,6 +32,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
@@ -61,6 +62,7 @@ except ImportError:  # Running the file directly: python tools/moveline.py ...
 REPO = Path(__file__).resolve().parent.parent
 STATS = "https://www.smogon.com/stats/2019-11/moveset/gen7{tier}-{cutoff}.txt"
 STATS_SHA256 = {
+    ("ubers", "1630"): "3e74989f657842948283bee698929e10a4c34e9208e5d149d816e31a284cda9d",
     ("ou", "1695"): "1a9a25db69f4605e2d2d83a48a7ae772bbf32dcea1d8a2a9818cb67126f1d936",
     ("uu", "1630"): "59e9e83df1a611c0a0663de2b67dbb8fa25320fc6ec3416913af76ce78bca2b2",
     ("ru", "1630"): "1508c74a33ded16a868676aa770d9ba75ed17fb6dbd3e49b1f2cc90efec74f0e",
@@ -69,8 +71,9 @@ STATS_SHA256 = {
     ("lc", "1630"): "4505c667868d9f12b63420553e1ed9eeb91b0fd41da8b503f99bf70a37bfa828",
 }
 
-# Tier -> the cutoff its published file uses. OU is published at 1695, lower tiers at 1630.
-TIERS = [("ou", "1695"), ("uu", "1630"), ("ru", "1630"), ("nu", "1630"), ("pu", "1630"), ("lc", "1630")]
+# Tier -> the cutoff its published file uses. OU is published at 1695, other tiers at 1630.
+TIERS = [("ou", "1695"), ("uu", "1630"), ("ru", "1630"), ("nu", "1630"), ("pu", "1630"),
+         ("lc", "1630"), ("ubers", "1630")]
 
 # Learnset code prefixes. The leading digit is the generation; only 7 is relevant.
 GATES = {"7L": "level", "7M": "TM", "7T": "tutor", "7E": "egg", "7S": "event"}
@@ -92,8 +95,8 @@ LEGEND = ("\U0001F7E2 level-up · \U0001F501 move reminder (endgame) · \U0001F4
 
 # Where a species' usage lives, keyed by the tier the app already records for it. A species
 # banned from a tier (BL) is used in the tier above, which is the file that holds its stats.
-TIER_FILE = {"OU": "ou", "UUBL": "ou", "UU": "uu", "RUBL": "uu", "RU": "ru", "NUBL": "ru",
-             "NU": "nu", "PUBL": "nu", "PU": "pu", "LC": "lc", "LC Uber": "lc"}
+TIER_FILE = {"Uber": "ubers", "OU": "ou", "UUBL": "ou", "UU": "uu", "RUBL": "uu", "RU": "ru", "NUBL": "ru",
+             "NU": "nu", "PUBL": "nu", "PU": "pu", "(PU)": "pu", "LC": "lc", "LC Uber": "lc"}
 
 # Chip colours, keyed by how a move is obtained, then by type.
 GATE_COLOR = {"level": "#2e7d32", "reminder": "#00796b", "TM": "#1565c0", "tutor": "#6a1b9a",
@@ -283,6 +286,31 @@ def lineage_label(finals: list[str], parent_of: Mapping[str, str], nice: Mapping
     )
 
 
+def acquisition_sources(
+    final: str,
+    path: list[str],
+    form_gates: Mapping[str, dict[str, list[str]]],
+) -> list[dict]:
+    """Every way one final's path learns a move, as data: {via, form, level?, beforeEvolving?}.
+
+    ``via`` is level, reminder (a level-1 move), TM, tutor, egg, or event. ``beforeEvolving``
+    marks a gate only an earlier form has, so the move must be taught before evolving.
+    """
+    final_gates = form_gates.get(final) or {}
+    sources: list[dict] = []
+    for form in path:
+        for gate, levels in (form_gates.get(form) or {}).items():
+            for level in levels or [""]:
+                source: dict = {"via": "reminder" if gate == "level" and level == "1" else gate,
+                                "form": form}
+                if gate == "level":
+                    source["level"] = level
+                if form != final and gate not in final_gates:
+                    source["beforeEvolving"] = True
+                sources.append(source)
+    return sources
+
+
 def acquisition_gates(
     final: str,
     path: list[str],
@@ -290,20 +318,13 @@ def acquisition_gates(
     nice: Mapping[str, str],
 ) -> list[tuple[str, str]]:
     """Flatten one path's gates and mark moves that must be taught before evolution."""
-    final_gates = form_gates.get(final) or {}
     output: list[tuple[str, str]] = []
-    for form in path:
-        for gate, levels in (form_gates.get(form) or {}).items():
-            for level in levels or [""]:
-                if gate == "level":
-                    actual_gate = "reminder" if level == "1" else "level"
-                    detail = f"{nice.get(form, form)} L{level}"
-                else:
-                    actual_gate = gate
-                    detail = nice.get(form, form)
-                if form != final and gate not in final_gates:
-                    detail = f"TEACH BEFORE EVOLVING: {detail}"
-                output.append((actual_gate, detail))
+    for source in acquisition_sources(final, path, form_gates):
+        name = nice.get(source["form"], source["form"])
+        detail = f"{name} L{source['level']}" if "level" in source else name
+        if source.get("beforeEvolving"):
+            detail = f"TEACH BEFORE EVOLVING: {detail}"
+        output.append((source["via"], detail))
     return output
 
 
@@ -401,8 +422,10 @@ def usage_rows(text: str, species: str) -> dict[str, float]:
     """{move: percent of that species' sets} from a Smogon moveSet file."""
     lines = text.splitlines()
     head = re.compile(r"^\s*\|\s*([A-Za-z0-9'\u2019.\-: ]+?)\s*\|\s*$")
+    # Normalised, because Smogon writes "Farfetch'd" where the dex writes "Farfetch\u2019d".
+    wanted = normalize(species)
     start = next((i for i, l in enumerate(lines)
-                  if (m := head.match(l)) and m.group(1).strip() == species), None)
+                  if (m := head.match(l)) and normalize(m.group(1)) == wanted), None)
     if start is None:
         return {}
     rows: dict[str, float] = {}
@@ -587,6 +610,128 @@ def card_html(
 </body></html>"""
 
 
+@dataclass
+class MoveData:
+    """Everything a move ranking reads, loaded once from the verified cache and the app's data."""
+
+    cache: Path
+    rows: list[dict]
+    nice: dict[str, str]
+    id_of: dict[str, int]
+    dex: dict[str, str]
+    move_meta: dict[str, tuple[str, str, str]]
+    meta_by_name: dict[str, str]
+    learned: dict[str, str]
+    details_by_id: dict[int, dict]
+    tier_of: dict[int, str]
+    evo_method: dict[str, str]
+    parent_of: dict[str, str]
+    evos_of: dict[str, list[str]]
+
+
+def load_move_data(cache: Path) -> MoveData:
+    """Raises ShowdownDataError when the shared cache is missing or not the pinned bytes."""
+    rows = json.loads((REPO / "data" / "pokemon.json").read_text(encoding="utf-8"))
+    rows = rows if isinstance(rows, list) else list(rows.values())
+    store = require_cache(cache)
+    ls_text = store.get_text("learnsets")
+    dex_text = store.get_text("pokedex")
+    moves_text = store.get_text("moves")
+    dex = dict(top_blocks(dex_text))
+    moves = dict(top_blocks(moves_text))
+
+    def power(body: str) -> str:
+        found = re.search(r"\bbasePower: (\d+)", body)
+        return found.group(1) if found else "-"
+
+    move_meta = {k: (scalar(b, "name") or k, scalar(b, "type") or "?", power(b))
+                 for k, b in moves.items()}
+    details = json.loads((REPO / "data" / "pokedex-details.json").read_text(encoding="utf-8"))["species"]
+    # How each species is reached, from the app's own evolution data ("Level 25",
+    # "Use Dawn Stone"). Keyed by the species that is reached.
+    evo_method: dict[str, str] = {}
+    for detail in details:
+        for step in detail.get("evolution") or []:
+            method = str(step.get("method") or "").strip()
+            if method and method != "?":
+                evo_method[normalize(str(step.get("name", "")))] = method
+    return MoveData(
+        cache=cache,
+        rows=rows,
+        nice={normalize(r["slug"]): r["name"] for r in rows},
+        id_of={normalize(r["slug"]): int(r["id"]) for r in rows},
+        dex=dex,
+        move_meta=move_meta,
+        meta_by_name={normalize(v[0]): k for k, v in move_meta.items()},
+        learned=dict(top_blocks(ls_text)),
+        details_by_id={int(d["id"]): d for d in details},
+        tier_of={int(d["id"]): (d.get("tier") or "") for d in details},
+        evo_method=evo_method,
+        parent_of={normalize(key): normalize(scalar(body, "prevo") or "") for key, body in dex.items()},
+        evos_of={normalize(k): list_field(b, "evos") for k, b in dex.items()},
+    )
+
+
+def tier_usage(final: str, data: MoveData, downloader=None) -> tuple[dict[str, float], str | None]:
+    """{move: % of sets} from the species' own tier file first, then any other tier.
+
+    Raises StatsIntegrityError or StatsDownloadError; an unpublished tier is skipped.
+    """
+    preferred = TIER_FILE.get(data.tier_of.get(data.id_of.get(final, -1), ""))
+    order = [t for t in TIERS if t[0] == preferred] + [t for t in TIERS if t[0] != preferred]
+    for tier, cutoff in order:
+        try:
+            text = fetch_stats(
+                STATS.format(tier=tier, cutoff=cutoff),
+                data.cache / f"moveset-gen7{tier}-{cutoff}.txt",
+                STATS_SHA256[(tier, cutoff)],
+                downloader,
+            ).read_text(encoding="utf-8")
+        except StatsUnavailable:
+            continue
+        got = usage_rows(text, data.nice.get(final, final))
+        if got:
+            return got, f"gen7{tier}-{cutoff}"
+    return {}, None
+
+
+def rank_moves(final: str, data: MoveData, usage: Mapping[str, float]) -> list[dict]:
+    """Every move one final's path can learn, plus used moves Gen 7 cannot produce.
+
+    Sorted by usage, then by the easiest way to get it, then by name. Each entry carries
+    ``pct``, ``name``, ``key`` (legality key), ``type``, ``bp``, structured ``sources`` (empty
+    when not obtainable in Gen 7) and their display ``gates``.
+    """
+    path = ancestral_path(final, data.parent_of)
+    learned_by_form = {form: gen7_moves(data.learned.get(form, "")) for form in path}
+    ranked: list[tuple[float, int, str, dict]] = []
+    for move, forms in path_move_union(path, learned_by_form).items():
+        base_name, base_type, bp = data.move_meta.get(move, (move, "?", "-"))
+        shown, kind, _coverage = display_move_for_usage(move, base_name, base_type, usage)
+        pct = next((v for k, v in usage.items() if canon(k) == canon(shown)), 0.0)
+        gates = acquisition_gates(final, path, forms, data.nice)
+        rank = min((EASE.index(g) for g, _ in gates), default=len(EASE))
+        ranked.append((pct, rank, shown, {
+            "pct": pct, "name": shown, "key": move, "type": kind, "bp": bp,
+            "sources": acquisition_sources(final, path, forms), "gates": gates,
+        }))
+    # Moves the pros run that this game cannot legally produce at all. Worth showing:
+    # otherwise they look like the obvious picks.
+    known = {canon(entry[2]) for entry in ranked}
+    for shown, pct in usage.items():
+        key = data.meta_by_name.get(canon(shown))
+        if key is None or canon(shown) in known:
+            continue
+        name, base_kind, bp = data.move_meta[key]
+        name, kind, _coverage = display_move_for_usage(key, name, base_kind, usage)
+        ranked.append((pct, len(EASE), name, {
+            "pct": pct, "name": name, "key": key, "type": kind, "bp": bp,
+            "sources": [], "gates": [("unavailable", "")],
+        }))
+    ranked.sort(key=lambda t: (-t[0], t[1], t[2]))
+    return [entry for *_, entry in ranked]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Move report for a Pokemon family.")
     parser.add_argument("species", help="any member of the family: name, slug or dex number")
@@ -603,8 +748,7 @@ def main() -> int:
                         help="acquisition profile (default: gen7)")
     args = parser.parse_args()
 
-    cache = Path(args.cache)
-    rows = json.loads((REPO / "data" / "pokemon.json").read_text())
+    rows = json.loads((REPO / "data" / "pokemon.json").read_text(encoding="utf-8"))
     rows = rows if isinstance(rows, list) else list(rows.values())
     try:
         entry = resolve_species(args.species, rows)
@@ -612,45 +756,14 @@ def main() -> int:
         print(str(error), file=sys.stderr)
         return 2
 
-    nice = {normalize(r["slug"]): r["name"] for r in rows}
     try:
-        store = require_cache(cache)
-        ls_text = store.get_text("learnsets")
-        dex_text = store.get_text("pokedex")
-        moves_text = store.get_text("moves")
+        data = load_move_data(Path(args.cache))
     except ShowdownDataError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
+    nice = data.nice
 
-    dex = dict(top_blocks(dex_text))
-    moves = dict(top_blocks(moves_text))
-
-    def power(body: str) -> str:
-        found = re.search(r"\bbasePower: (\d+)", body)
-        return found.group(1) if found else "-"
-
-    move_meta = {k: (scalar(b, "name") or k, scalar(b, "type") or "?", power(b))
-                 for k, b in moves.items()}
-    meta_by_name = {normalize(v[0]): k for k, v in move_meta.items()}
-    learned = dict(top_blocks(ls_text))
-    details = json.loads((REPO / "data" / "pokedex-details.json").read_text())["species"]
-    tier_of = {int(d["id"]): (d.get("tier") or "") for d in details}
-    details_by_id = {int(d["id"]): d for d in details}
-    id_of = {normalize(r["slug"]): int(r["id"]) for r in rows}
-    # How each species is reached, from the app's own evolution data ("Level 25",
-    # "Use Dawn Stone"). Keyed by the species that is reached.
-    evo_method: dict[str, str] = {}
-    for detail in details:
-        for step in detail.get("evolution") or []:
-            method = str(step.get("method") or "").strip()
-            if method and method != "?":
-                evo_method[normalize(str(step.get("name", "")))] = method
-    parent_of = {
-        normalize(key): normalize(scalar(body, "prevo") or "")
-        for key, body in dex.items()
-    }
-
-    raw_family = lineage(entry["slug"], dex)
+    raw_family = lineage(entry["slug"], data.dex)
     # The app's checked-in Gen 7 dex is the compatibility boundary. Current Showdown data
     # can include later regional forms (for example Galar Mr. Mime); do not leak them into a
     # Gen 7 report just because they share a modern Showdown family block.
@@ -659,37 +772,18 @@ def main() -> int:
         print(f"no learnset lineage for species: {entry['name']}", file=sys.stderr)
         return 2
 
-    learned_by_form = {form: gen7_moves(learned.get(form, "")) for form in family}
-    evos_of = {normalize(k): list_field(b, "evos") for k, b in dex.items()}
-    finals = selected_finals(entry["slug"], family, evos_of)
-    print(f"# {entry['name']} — lineage: {lineage_label(finals, parent_of, nice)}\n", file=sys.stderr)
+    finals = selected_finals(entry["slug"], family, data.evos_of)
+    print(f"# {entry['name']} — lineage: {lineage_label(finals, data.parent_of, nice)}\n", file=sys.stderr)
     sections: list[dict] = []
 
     for final in finals:
-        usage: dict[str, float] = {}
-        label = None
-        preferred = TIER_FILE.get(tier_of.get(id_of.get(final, -1), ""))
-        order = [t for t in TIERS if t[0] == preferred] + [t for t in TIERS if t[0] != preferred]
-        for tier, cutoff in order:
-            stats_url = STATS.format(tier=tier, cutoff=cutoff)
-            stats_path = cache / f"moveset-gen7{tier}-{cutoff}.txt"
-            try:
-                text = fetch_stats(
-                    stats_url,
-                    stats_path,
-                    STATS_SHA256[(tier, cutoff)],
-                ).read_text(encoding="utf-8")
-            except StatsUnavailable:
-                continue
-            except (StatsIntegrityError, StatsDownloadError) as error:
-                print(f"error: Smogon {tier} moveset data: {error}", file=sys.stderr)
-                return 2
-            got = usage_rows(text, nice.get(final, final))
-            if got:
-                usage, label = got, f"gen7{tier}-{cutoff}"
-                break
+        try:
+            usage, label = tier_usage(final, data)
+        except (StatsIntegrityError, StatsDownloadError) as error:
+            print(f"error: Smogon moveset data: {error}", file=sys.stderr)
+            return 2
 
-        detail = details_by_id.get(id_of.get(final, -1)) or {}
+        detail = data.details_by_id.get(data.id_of.get(final, -1)) or {}
         print(f"## {nice.get(final, final)}")
         types = "/".join(str(t) for t in (detail.get("types") or [])) or "?"
         print(f"   {types} · grade {detail.get('grade', '?')} · Smogon {detail.get('tier', '?')} · "
@@ -698,31 +792,11 @@ def main() -> int:
         if args.profile == "prismatic-standard":
             print(f"   Profile: {PROFILE_LABELS[args.profile]} — {PROFILE_NOTES[args.profile]}")
         card_rows: list[tuple[float, str, str, str, list[tuple[str, str]]]] = []
-        scored = []
-        path = ancestral_path(final, parent_of)
-        union = path_move_union(path, learned_by_form)
-        for move, forms in union.items():
-            base_name, base_type, bp = move_meta.get(move, (move, "?", "-"))
-            shown, kind, coverage = display_move_for_usage(move, base_name, base_type, usage)
-            pct = next((v for k, v in usage.items() if canon(k) == canon(shown)), 0.0)
-            gates = acquisition_gates(final, path, forms, nice)
-            rank = min((EASE.index(g) for g, _ in gates), default=len(EASE))
-            scored.append((pct, rank, shown, kind, bp, gates))
-        scored.sort(key=lambda t: (-t[0], t[1], t[2]))
-        # Moves the pros run that this game cannot legally produce at all. Worth showing:
-        # otherwise they look like the obvious picks.
-        known = {canon(row[2]) for row in scored}
-        for shown, pct in usage.items():
-            key = meta_by_name.get(canon(shown))
-            if key is None or canon(shown) in known:
-                continue
-            name, base_kind, bp = move_meta[key]
-            name, kind, coverage = display_move_for_usage(key, name, base_kind, usage)
-            scored.append((pct, len(EASE), name, kind, bp, [("unavailable", "")]))
-        scored.sort(key=lambda t: (-t[0], t[1], t[2]))
-        if not scored:
+        ranked = rank_moves(final, data, usage)
+        if not ranked:
             print("   (no Gen 7 moves found)")
-        for pct, rank, shown, kind, bp, gates in scored[: args.top]:
+        for move in ranked[: args.top]:
+            pct, shown, kind, bp, gates = move["pct"], move["name"], move["type"], move["bp"], move["gates"]
             tags = []
             for gate, where in gates:
                 acq_label = acquisition_label(gate, shown if gate not in ("level", "reminder") else where,
@@ -739,7 +813,7 @@ def main() -> int:
                          "grade": detail.get("grade") or "?",
                          "smogon_tier": detail.get("tier") or "?",
                          "usage": detail.get("usage"),
-                         "dex": id_of.get(final), "rows": card_rows})
+                         "dex": data.id_of.get(final), "rows": card_rows})
 
     if args.png:
         out = Path(args.png).expanduser()
@@ -753,7 +827,7 @@ def main() -> int:
                     f"{out.stem}-{normalize(section['name'])}{out.suffix}"
                 )
                 html_path = temp_root / f"{normalize(section['name'])}.html"
-                chain = evolution_edges(final, parent_of, evo_method, id_of, nice)
+                chain = evolution_edges(final, data.parent_of, data.evo_method, data.id_of, nice)
                 html_path.write_text(card_html(entry["name"], chain, [section], args.profile))
                 subprocess.run(
                     ["node", str(REPO / "tools" / "render-png.mjs"), str(html_path), str(target),

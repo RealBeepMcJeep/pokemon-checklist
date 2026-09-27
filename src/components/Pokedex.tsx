@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { memo } from "preact/compat";
 import { POKEMON, byDex, detailsByDex, formDetails } from "../data";
 import { getOccurrences, normalize, safeId } from "../domain";
 import {
@@ -17,6 +18,7 @@ import {
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
+import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
 
 const evolutionIds = new Map(
@@ -156,6 +158,7 @@ function Selection() {
           </p>
         )}
       </div>
+      <PopularMoves id={selected} />
     </>
   );
 }
@@ -182,11 +185,20 @@ function StarButton({ id, name }: { id: number; name: string }) {
   );
 }
 
-function DexRow({ id, name }: { id: number; name: string }) {
+// Memoised row contents: a new chunk or a search keystroke then only touches the
+// row's own `hidden` attribute. Status, star and selection still update each row
+// through its own signals.
+const DexRowContent = memo(function DexRowContent({
+  id,
+  name,
+}: {
+  id: number;
+  name: string;
+}) {
   const selected = selectedDex.value === id;
   const details = detailsByDex.get(id);
   return (
-    <div class="dex-row">
+    <>
       <StarButton id={id} name={name} />
       <button
         type="button"
@@ -203,35 +215,45 @@ function DexRow({ id, name }: { id: number; name: string }) {
         {details && <PokemonFacts details={details} name={name} />}
       </button>
       <StatusButton id={id} context="Pokédex" />
-    </div>
+    </>
   );
-}
+});
+
+// Rows mounted per animation frame. Creating all 807 in one render blocked a phone
+// (4× CPU throttling) for about a second; chunks keep each frame short and put the
+// first screen of rows up at once.
+const ROW_CHUNK = 30;
 
 export function Pokedex() {
   const query = normalize(searchTerm.value);
   const pinned = new Set(starred.value);
-  // Starred species are pinned to the top of whatever set is showing; everything
-  // else keeps National Dex order. The sort is stable for equal ranks.
-  const filtered = POKEMON.filter(
-    (pokemon) =>
-      !query ||
-      normalize(pokemon.name).includes(query) ||
-      String(pokemon.id).padStart(3, "0").includes(query) ||
-      String(pokemon.id) === query,
-  ).sort(
+  const matches = (pokemon: (typeof POKEMON)[number]) =>
+    !query ||
+    normalize(pokemon.name).includes(query) ||
+    String(pokemon.id).padStart(3, "0").includes(query) ||
+    String(pokemon.id) === query;
+  // Starred species are pinned to the top; everything else keeps National Dex
+  // order. The sort is stable for equal ranks.
+  const rows = [...POKEMON].sort(
     (a, b) =>
       Number(pinned.has(b.id)) - Number(pinned.has(a.id)) || a.id - b.id,
   );
+  const matchCount = query ? POKEMON.filter(matches).length : POKEMON.length;
   const open = drawerOpen.value;
   const mobile = window.innerWidth < DRAWER_BREAKPOINT;
   const hidden = mobile ? !open : sidebarHidden.value;
-  // The Pokédex is a closed drawer on phones, so building 807 rows before anyone
-  // has opened it is wasted work. Mount the list the first time it is shown, then
-  // keep it so searching and selecting stay instant.
-  const [mounted, setMounted] = useState(!hidden);
+  // The Pokédex is a closed drawer on phones, so building rows before anyone has
+  // opened it is wasted work. Mount the list in chunks the first time it is shown,
+  // then keep every row: a search only hides rows, because rebuilding them when a
+  // search is cleared cost as much as the first open.
+  const [mountedRows, setMountedRows] = useState(hidden ? 0 : ROW_CHUNK);
   useEffect(() => {
-    if (!hidden) setMounted(true);
-  }, [hidden]);
+    if ((hidden && !mountedRows) || mountedRows >= POKEMON.length) return;
+    const frame = requestAnimationFrame(() =>
+      setMountedRows((count) => count + ROW_CHUNK),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [hidden, mountedRows]);
   useEffect(() => {
     if (open) {
       requestAnimationFrame(() =>
@@ -278,7 +300,7 @@ export function Pokedex() {
               searchTerm.value = event.currentTarget.value;
             }}
           />
-          <DexCount filtered={filtered.length} />
+          <DexCount filtered={matchCount} />
           <details class="type-legend">
             <summary>Type colors</summary>
             <div>
@@ -300,11 +322,12 @@ export function Pokedex() {
             <Selection />
           </div>
           <div class="dex-list" id="dex-list">
-            {mounted &&
-              filtered.map((pokemon) => (
-                <DexRow key={pokemon.id} id={pokemon.id} name={pokemon.name} />
-              ))}
-            {mounted && !filtered.length && (
+            {rows.slice(0, mountedRows).map((pokemon) => (
+              <div class="dex-row" key={pokemon.id} hidden={!matches(pokemon)}>
+                <DexRowContent id={pokemon.id} name={pokemon.name} />
+              </div>
+            ))}
+            {mountedRows > 0 && !matchCount && (
               <div class="empty">No Pokémon match that search.</div>
             )}
           </div>

@@ -3,6 +3,8 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
 const standaloneUrl = pathToFileURL(resolve("index.html")).href;
+// A search hides non-matching rows rather than unmounting them.
+const VISIBLE_ROW = "#dex-list .dex-row:not([hidden])";
 
 async function openApp(page: Page, project: string): Promise<string[]> {
   const errors: string[] = [];
@@ -102,8 +104,8 @@ test("searches, selects, and navigates to known locations", async ({
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#dex-search").fill("807");
-  await expect(page.locator(".dex-row")).toHaveCount(1);
-  await expect(page.locator(".dex-name")).toContainText("Zeraora");
+  await expect(page.locator(VISIBLE_ROW)).toHaveCount(1);
+  await expect(page.locator(`${VISIBLE_ROW} .dex-name`)).toContainText("Zeraora");
   await page.locator("#dex-search").fill("6");
   await page.locator('[data-action="select"][data-species="6"]').click();
   await expect(page.locator("#dex-selection .location-links")).toContainText(
@@ -141,6 +143,56 @@ test("searches, selects, and navigates to known locations", async ({
   await link.click();
   await expect(page.locator(`#${targetId}`)).toBeFocused();
   expect(new URL(page.url()).hash).toBe(`#${targetId}`);
+  expect(errors).toEqual([]);
+});
+
+test("keeps Pokédex rows mounted through a search", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await expect(page.locator(".dex-row")).toHaveCount(807);
+  // Clearing a search used to rebuild every row, which blocked a phone for about a
+  // second. Rows must survive a search and its clearing as the same DOM nodes.
+  await page.evaluate(() => {
+    document.querySelector<HTMLElement>(
+      '.dex-row:has([data-species="500"])',
+    )!.dataset.probe = "kept";
+  });
+  await page.locator("#dex-search").fill("pikachu");
+  await expect(page.locator(VISIBLE_ROW)).toHaveCount(1);
+  await expect(page.locator("#dex-count")).toContainText("1 of 807");
+  await page.locator("#dex-search").fill("");
+  await expect(page.locator(VISIBLE_ROW)).toHaveCount(807);
+  await expect(page.locator('.dex-row[data-probe="kept"]')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test("shows popular moves for a species and its final evolutions", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#dex-search").fill("ralts");
+  await page.locator('[data-action="select"][data-species="280"]').click();
+  const moves = page.locator("#dex-selection .popular-moves");
+  await expect(moves.locator("summary")).toHaveText(
+    "Popular moves of its 2 final evolutions",
+  );
+  await moves.locator("summary").click();
+  await expect(moves.locator(".final-moves h3")).toHaveText([
+    "Gardevoir · RU",
+    /^Gallade · /,
+  ]);
+  const moonblast = moves.locator(".final-moves li").first();
+  await expect(moonblast).toContainText("Moonblast");
+  await expect(moonblast.locator(".move-routes")).toHaveText(
+    "Level 62 · Move Reminder",
+  );
+
+  // A final evolution shows its own list, and the panel stays open between selections.
+  await page.locator("#dex-search").fill("gardevoir");
+  await page.locator('[data-action="select"][data-species="282"]').click();
+  await expect(moves.locator("summary")).toHaveText("Popular moves (RU)");
+  await expect(moves.locator(".final-moves li").first()).toContainText("Moonblast");
   expect(errors).toEqual([]);
 });
 
@@ -278,7 +330,7 @@ test("mirrors progress between two tabs of the same site", async ({
   // Stars travel between tabs the same way statuses do.
   await page.locator('[data-action="star"][data-species="807"]').click();
   await expect(
-    other.locator("#dex-list .dex-row .dex-name").first(),
+    other.locator(`${VISIBLE_ROW} .dex-name`).first(),
   ).toContainText("807");
 
   expect(errors).toEqual([]);
@@ -288,7 +340,7 @@ test("pins starred Pokémon to the top of the Pokédex list", async ({
   page,
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
-  const firstRow = page.locator("#dex-list .dex-row .dex-name").first();
+  const firstRow = page.locator(`${VISIBLE_ROW} .dex-name`).first();
   const starFor = (id: number) =>
     page.locator(`[data-action="star"][data-species="${id}"]`);
 
@@ -309,7 +361,7 @@ test("pins starred Pokémon to the top of the Pokédex list", async ({
   await starFor(25).click();
   await expect(firstRow).toContainText("025");
   await expect(
-    page.locator("#dex-list .dex-row .dex-name").nth(1),
+    page.locator(`${VISIBLE_ROW} .dex-name`).nth(1),
   ).toContainText("807");
 
   // A starred match still floats above lower-numbered matches in a search.
@@ -334,7 +386,7 @@ test("keeps starred Pokémon across a reload", async ({ page }, testInfo) => {
   await page.reload();
 
   await expect(
-    page.locator("#dex-list .dex-row .dex-name").first(),
+    page.locator(`${VISIBLE_ROW} .dex-name`).first(),
   ).toContainText("807");
   await expect(
     page.locator('[data-action="star"][data-species="807"]'),
@@ -389,6 +441,22 @@ test("attempts no network requests while signed out", async ({
   await mobilePage.waitForTimeout(2500);
   expect(external(mobileAttempts)).toEqual([]);
   await mobile.close();
+});
+
+test("gives sign-in a whole row on a small phone", async ({ page }, testInfo) => {
+  // The phone header is a three-column button grid; sign-in once got one cell of it and
+  // spilled out of its own frame at 320px.
+  await page.setViewportSize({ width: 320, height: 700 });
+  const errors = await openApp(page, testInfo.project.name);
+  const actions = await page.locator(".actions").boundingBox();
+  const panel = await page.locator("#sync-panel").boundingBox();
+  const button = await page.locator("#sync-signin").boundingBox();
+  expect(panel!.width).toBeGreaterThan(actions!.width * 0.9);
+  expect(button!.x + button!.width).toBeLessThanOrEqual(panel!.x + panel!.width + 1);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  ).toBe(true);
+  expect(errors).toEqual([]);
 });
 
 test("offers sign-in without ever prompting for it", async ({
@@ -470,11 +538,11 @@ test("keeps the atlas out of computed styles and crops the right frame", async (
 
   // A species outside the atlas's first row has to be shifted on both axes.
   await page.fill("#dex-search", "Mewtwo");
-  await expect(page.locator(".dex-row")).toHaveCount(1);
-  const mewtwo = await page.evaluate(() => {
-    const image = document.querySelector<HTMLImageElement>(".dex-row .icon-sprite")!;
+  await expect(page.locator(VISIBLE_ROW)).toHaveCount(1);
+  const mewtwo = await page.evaluate((row) => {
+    const image = document.querySelector<HTMLImageElement>(`${row} .icon-sprite`)!;
     return getComputedStyle(image).transform;
-  });
+  }, VISIBLE_ROW);
   expect(mewtwo).toBe("matrix(1, 0, 0, 1, -840, -120)");
   expect(errors).toEqual([]);
 });

@@ -19,7 +19,7 @@ import {
   validForms,
   validPokemon,
 } from "../state";
-import { initFirebase, watchAuth } from "./firebase";
+import { initFirebase, signOutOfSync, watchAuth } from "./firebase";
 import type { User } from "firebase/auth";
 import type { SavedState } from "../types";
 import {
@@ -67,6 +67,8 @@ export const syncPhase = signal<SyncPhase>("off");
 export const syncPending = signal(0);
 export const syncAccount = signal<{ uid: string; email: string } | null>(null);
 export const syncMessage = signal("");
+/** Whether the database connection is up; only meaningful while signed in. */
+export const syncOnline = signal(false);
 
 let database: Database | null = null;
 let activeUid: string | null = null;
@@ -76,6 +78,9 @@ let lastPushed = "";
 let unsubscribeValue: (() => void) | null = null;
 let unsubscribeConnection: (() => void) | null = null;
 let unsubscribeAuth: (() => void) | null = null;
+// Between pressing "Sign in" and an account arriving. Firebase reports "signed out" as
+// soon as auth starts; that report must not end a sign-in that has not finished yet.
+let signInPending = false;
 let generation = 0;
 let initialReadComplete = false;
 let initialReadInFlight = false;
@@ -342,6 +347,7 @@ function subscribeConnection(uid: string, run: number): void {
     ref(database, ".info/connected"),
     (snapshot) => {
       if (!isCurrent(run, uid)) return;
+      syncOnline.value = snapshot.val() === true;
       if (snapshot.val() === true) {
         syncMessage.value = "";
         if (!initialReadComplete) void loadInitial(uid, run);
@@ -460,11 +466,15 @@ export async function startSync(account: {
 
 function onAuthState(user: User | null, allowed: boolean): void {
   if (!user) {
-    stopSync();
+    if (!signInPending) stopSync();
     return;
   }
+  signInPending = false;
   if (!allowed) {
     stopSync();
+    // Leave nothing behind: a disallowed session would otherwise be restored, and
+    // refused again, on every later sign-in attempt.
+    void signOutOfSync().catch(() => {});
     showNotice(
       `${user.email ?? "That account"} is not on the list for the shared checklist.`,
       "error",
@@ -501,8 +511,15 @@ export function watchSyncAccount(): void {
  * a successful sign-in comes back looking signed out.
  */
 export function beginSignIn(): void {
+  signInPending = true;
   rememberSyncSession(safeStorage());
   watchSyncAccount();
+}
+
+/** The player gave up on signing in: go back to touching nothing on the next load. */
+export function cancelSignIn(): void {
+  signInPending = false;
+  if (!activeUid) forgetSyncSession(safeStorage());
 }
 
 export function stopSync(): void {
@@ -539,6 +556,7 @@ export function stopSync(): void {
   forgetSyncSession(safeStorage());
   syncAccount.value = null;
   syncPending.value = 0;
+  syncOnline.value = false;
   syncPhase.value = "off";
   syncMessage.value = "";
 }
