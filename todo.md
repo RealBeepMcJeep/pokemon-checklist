@@ -35,7 +35,7 @@ built and deployed. Stage 2's repository side is built: `tools/pokemon_chat.py` 
 - [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
 - [ ] Stage 2: wire the chat tooling into Hermes and verify it end to end against the live account. Needs the service-account key at `/opt/data/firebase/service-account.json` (or `FIREBASE_SERVICE_ACCOUNT`) on the Hermes host; its presence there cannot be checked from this repository.
 - [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
-- [ ] Make the full-page sign-in fallback work in browsers that block third-party storage (Safari, Firefox strict mode, Chrome without third-party cookies). The app is served from `github.io` while `authDomain` is `firebaseapp.com`, so a redirect sign-in there can return signed out; the popup, which is tried first, is unaffected. The fix is to serve Firebase's `/__/auth/` helper from the app's own origin (a custom domain or the `realbeepmcjeep.github.io` root site) and point `authDomain` at it.
+- [ ] Confirm sign-in on Safari (macOS and iOS) now that the popup opens straight from the click. If Safari still refuses, serve Firebase's `/__/auth/` helper from the app's own origin (a custom domain or the `realbeepmcjeep.github.io` root site) and point `authDomain` at it.
 
 ## Movelists and game variants (2026-09-18)
 

@@ -33,7 +33,7 @@ import {
   syncPhase,
   watchSyncAccount,
 } from "./engine";
-import { cycleSpecies, resetState } from "../state";
+import { cycleSpecies, notice, resetState, speciesStatus } from "../state";
 import { speciesKey } from "./records";
 import { SYNC_SESSION_KEY } from "./outbox";
 
@@ -252,6 +252,60 @@ describe("sync startup lifecycle", () => {
     expect(payload[`state/records/${speciesKey(1)}`]).toEqual(
       expect.objectContaining({ s: "none" }),
     );
+  });
+});
+
+describe("first sign-in never loses a checklist", () => {
+  const DEVICE_SAVE = "pokemon-checklist-state-v3";
+  const settings = {
+    "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
+    "setting:forms": { s: "off", at: 100, by: "uid-a" },
+  };
+
+  function published(): Record<string, { s: string }> {
+    return Object.assign(
+      {},
+      ...mocks.update.mock.calls.map((call) => call[1] as Record<string, { s: string }>),
+    );
+  }
+
+  it("adopts this device's progress into an empty account", async () => {
+    resetState();
+    cycleSpecies(25); // caught, while signed out
+    const deviceSave = localStorage.getItem(DEVICE_SAVE);
+    mocks.get.mockResolvedValue(snapshot({}));
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    expect(published()[`state/records/${speciesKey(25)}`]).toEqual(
+      expect.objectContaining({ s: "caught" }),
+    );
+    expect(speciesStatus(25)).toBe("caught");
+    expect(localStorage.getItem(DEVICE_SAVE)).toBe(deviceSave);
+  });
+
+  it("shows an account's existing checklist without clearing it or this device's", async () => {
+    resetState();
+    cycleSpecies(25); // this device: Pikachu caught
+    const deviceSave = localStorage.getItem(DEVICE_SAVE);
+    mocks.get.mockResolvedValue(
+      snapshot({ ...settings, [speciesKey(150)]: { s: "caught", at: 100, by: "uid-a" } }),
+    );
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    // The account's collection is shown, and nothing in it is cleared.
+    expect(speciesStatus(150)).toBe("caught");
+    expect(published()[`state/records/${speciesKey(150)}`]).toBeUndefined();
+    for (const [key, value] of Object.entries(published())) {
+      if (key.startsWith("state/records/")) expect(value.s).not.toBe("none");
+    }
+    // This device's own progress is untouched, said so, and back after signing out.
+    expect(localStorage.getItem(DEVICE_SAVE)).toBe(deviceSave);
+    expect(notice.value.message).toContain("sign out");
+    stopSync();
+    expect(speciesStatus(25)).toBe("caught");
+    expect(speciesStatus(150)).toBe("none");
   });
 });
 

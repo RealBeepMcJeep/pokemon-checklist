@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-28
+
+- Fixed sign-in on Safari: the first press loaded Google's sign-in helper before opening its window, about 3.5 seconds after the click, so Safari blocked the popup; the app then fell back to a full-page redirect, which cannot return a session to a `github.io` page from `firebaseapp.com` under Safari's storage rules, so it came back signed out. The helper now loads first, and if the browser blocks the window the button becomes **Continue with Google**, whose press opens the popup within the click itself (1 ms in WebKit).
+- Removed the full-page redirect fallback, which cannot work on this site in Safari, Firefox's strict mode, or Chrome without third-party cookies.
+- Said so when a first sign-in shows an account's existing checklist instead of this device's: the device's own progress is kept and returns on signing out, where before it silently looked deleted.
+- Added engine tests proving a first sign-in never loses data: an empty account adopts this device's progress, and an account that already has a checklist is neither cleared nor clears this device's own save.
+
 ## 2026-09-27
 
 - Added **Popular moves** to every Pokédex entry: the eight moves competitive players ran most for each of the 439 final evolutions (434 with usage data), with how the game teaches each one. Unevolved Pokémon list their final evolutions' moves; Ubers and every tier through LC are covered, each from its own tier's November 2019 Smogon file.

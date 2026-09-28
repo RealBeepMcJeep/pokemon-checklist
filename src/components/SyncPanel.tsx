@@ -9,23 +9,9 @@ import {
   syncPhase,
 } from "../sync/engine";
 import { isAllowedEmail } from "../sync/config";
-
-/**
- * Failures a full-page round trip cannot fix: the player's own choice, a network
- * that is down, or a project configured wrong. Anything else means the sign-in
- * WINDOW failed — a script blocker is the usual cause and cannot be detected — and
- * the full page is the path that works there, so it is taken without asking.
- */
-const NO_FULL_PAGE_RETRY = new Set([
-  "auth/popup-closed-by-user",
-  "auth/network-request-failed",
-  "auth/unauthorized-domain",
-  "auth/operation-not-allowed",
-  "auth/user-disabled",
-]);
 import {
+  prepareSignIn,
   signInWithGoogle,
-  signInWithGoogleRedirect,
   signOutOfSync,
 } from "../sync/firebase";
 import { showNotice } from "../state";
@@ -64,10 +50,9 @@ function describeSignIn(error: unknown): string {
   switch (code) {
     case "auth/unauthorized-domain":
       return "This site is not authorized for sign-in in the Firebase console yet.";
-    case "auth/popup-blocked":
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "The sign-in window did not work here, so this page is handing over to Google instead.";
+      return "The sign-in window was closed before signing in finished. Your checklist here is untouched.";
     case "auth/network-request-failed":
       return "No connection right now. Keep playing — your progress is saved here.";
     case "auth/operation-not-allowed":
@@ -77,18 +62,29 @@ function describeSignIn(error: unknown): string {
   }
 }
 
+// Google's sign-in helper, once loaded, stays loaded for the page's lifetime.
+let prepared = false;
+
 export function SyncPanel() {
   const account = syncAccount.value;
   const phase = syncPhase.value;
   const [busy, setBusy] = useState(false);
+  // The browser blocked the popup; the next press opens it straight from the click.
+  const [blocked, setBlocked] = useState(false);
 
   async function signIn(): Promise<void> {
     setBusy(true);
-    // Before anything else: a full-page round trip reloads the page, and the flag
-    // telling it to look for a session has to be in place by then.
+    // Before anything else, so the session is looked for if the page reloads.
     beginSignIn();
     try {
+      // Only the first press waits here. After it, the popup below opens within the
+      // click itself, which is what Safari requires.
+      if (!prepared) {
+        await prepareSignIn();
+        prepared = true;
+      }
       const user = await signInWithGoogle();
+      setBlocked(false);
       // A disallowed account gets its own notice from the auth watcher; this one would
       // overwrite it with a false promise.
       if (isAllowedEmail(user?.email)) {
@@ -102,17 +98,16 @@ export function SyncPanel() {
         typeof error === "object" && error !== null && "code" in error
           ? String((error as { code: unknown }).code)
           : "";
-      if (NO_FULL_PAGE_RETRY.has(code)) {
-        cancelSignIn();
-        showNotice(describeSignIn(error), "error");
+      if (code === "auth/popup-blocked") {
+        setBlocked(true);
+        showNotice(
+          "Your browser blocked Google's sign-in window. Press “Continue with Google” to open it.",
+          "",
+        );
       } else {
-        // Hand the whole page to Google rather than leaving the player with a window
-        // that cannot sign in and no way to fix it from inside.
-        showNotice(describeSignIn(error), "");
-        await signInWithGoogleRedirect().catch(() => {
-          cancelSignIn();
-          showNotice("Sign-in could not be completed.", "error");
-        });
+        cancelSignIn();
+        setBlocked(false);
+        showNotice(describeSignIn(error), "error");
       }
     } finally {
       setBusy(false);
@@ -171,7 +166,11 @@ export function SyncPanel() {
           disabled={busy || phase === "connecting"}
           onClick={() => void signIn()}
         >
-          {busy ? "Signing in…" : "Sign in to sync"}
+          {busy
+            ? "Signing in…"
+            : blocked
+              ? "Continue with Google"
+              : "Sign in to sync"}
         </button>
       )}
     </span>
