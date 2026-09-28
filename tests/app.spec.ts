@@ -471,10 +471,9 @@ test("offers sign-in without ever prompting for it", async ({
   // Signed out there is no account line and no sign-out control, and nothing has
   // opened a provider dialog behind the player's back.
   await expect(page.locator("#sync-status")).toHaveText("");
-  // player cannot fix from inside. There is deliberately no second control for that:
-  // a failed window hands the page over to Google by itself, so the actions row keeps
-  // exactly one sign-in button.
-  await expect(page.locator("#sync-signin-full")).toHaveCount(0);
+  // There is exactly one sign-in control; a blocked popup relabels it rather than
+  // adding a second one.
+  await expect(page.locator("#sync-panel button")).toHaveCount(1);
   await expect(page.locator("#sync-signout")).toHaveCount(0);
   await expect(page.locator("iframe")).toHaveCount(0);
 

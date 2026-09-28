@@ -24,73 +24,18 @@ Completed items move to `changelog.md`.
 
 - [ ] Repeat the startup, mode-switch, restore, and Pokédex-open profiling on real phone hardware; the current numbers come from 4× CPU throttling at a phone viewport. Virtualising the Pokédex list remains the next lever only if chunked mounting still stutters there.
 
-### Game modes
-
-- [x] Confirm reproducible sources for Pokémon Sun, Moon, Ultra Sun, and Ultra Moon.
-- [x] Generate canonical vanilla encounter JSON with forms, rates, levels, methods, conditions, SOS encounters, and provenance.
-- [x] Reconcile vanilla areas with stable guide locations and omit misleading mod-specific numbered maps.
-- [x] Replace the two-mode button with a five-mode native dropdown while preserving overlapping locations.
-- [x] Persist the selected mode without changing shared Pokémon/form progress or the v1 save migration.
-- [x] Apply a distinct accessible theme to each mode and restore it with the saved selection.
-- [x] Reuse the embedded atlas for small sprites beside location-table Pokémon.
-- [x] Update known-place links, progress totals, build validation, documentation, and attribution for all modes.
-- [x] Test data invariants, migration, mode switching, backup/restore, desktop, tablet, mobile, and offline operation.
-
-### Stable Pokédex scrolling
-
-- [x] Keep selected Pokémon details pinned above the scrolling Pokédex list.
-- [x] Preserve the current list position and existing rows when a Pokémon is selected.
-- [x] Bound long location lists so they do not cover the entire drawer.
-- [x] Update the browser regression check for sticky details without a jump to 001.
-
-### Targeted status updates
-
-- [x] Stop rebuilding all 60 locations and 807 Pokédex rows for an ordinary status change.
-- [x] Update matching status buttons, location totals, and overall totals in place.
-- [x] Keep full renders for area transitions, forms, restore, and reset.
-- [x] Add a browser regression check that unaffected DOM nodes survive a status click.
-
-### Pokédex location discovery
-
-- [x] Bring the selected Pokémon's guide locations into view after any Pokédex-row click.
-- [x] Show island, location, encounter group, availability, and SOS/wild encounter type.
-- [x] Explain when the guide contains no direct location rather than guessing an evolution path.
-- [x] Add a browser regression check for selecting a Pokémon far down the Pokédex.
-
-### Dark encyclopedia polish
-
-- [x] Apply a dark Bulbapedia-inspired visual theme without copying its layout.
-- [x] Replace remaining developer/game-mechanic shorthand with plain-language labels.
-- [x] Turn encounter tables into readable cards on phones and keep the drawer layout on portrait tablets.
-- [x] Display the bundled Photonic Sun / Prismatic Moon title artwork instead of embedding it unused.
-
-### Simplification
-
-- [x] Make `data/encounters.json` the canonical dataset and remove its duplicate Python transcription.
-- [x] Retain only the source-image extraction, data validation, and optional Pokémon-name refresh tooling.
-
 ### Multi-device sync and control from chat
 
 Spec, decisions and research: `plans/multi-device-sync.md` and `plans/research/`. Stage 1 (sync) is
-built and deployed; Stage 2 (chat control) follows it.
+built and deployed. Stage 2's repository side is built: `tools/pokemon_chat.py` parses the verbs,
+`tools/pokemon_ops.py` runs the mark, trade/evolve, favourites and list workflows, and
+`tools/firebase-admin-rest.mjs` writes them with a service-account key kept outside the repository.
 
-- [x] Create the Firebase project on Spark with billing off, add a Realtime Database, enable Google sign-in, set the authorized domains.
-- [x] Restate the publisher's network rule as "no request unless signed in", with a browser test recording every request and failing on anything but data:/file:/localhost while signed out — desktop *and* mobile user agents.
-- [x] Keep the player's save untouched and put sync bookkeeping in its own document, with saves namespaced per account.
-- [x] Derive pending work from the confirmed document rather than queueing operations, so retrying is idempotent and a server-side change can never be mistaken for an unpublished local edit.
-- [x] Merge incoming changes per record with server-assigned ordering, and adopt the device's existing progress only into an empty account.
-- [x] Sign in with Google (popup with a redirect fallback) with the email allowlist enforced in the security rules, and a control that never prompts on its own.
 - [ ] Add a single-step undo of any logged change; Reset before-images are already written to the log, but undo is not built.
 - [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
-- [ ] Stage 2: teach Hermes the chat verbs (caught, seen, trade, star, unstar, status, team) against the same backend. Blocked on an agent credential the owner creates: either a dedicated allowlisted user's refresh token or a service-account key, kept in `/opt/data/.env`.
-- [x] Add the chat parser's self-test to CI (`python tools/pokemon_chat.py --self-test`).
+- [ ] Stage 2: wire the chat tooling into Hermes and verify it end to end against the live account. Needs the service-account key at `/opt/data/firebase/service-account.json` (or `FIREBASE_SERVICE_ACCOUNT`) on the Hermes host; its presence there cannot be checked from this repository.
 - [ ] Test the two offline flows on real devices, and confirm two signed-in browsers show the same checklist.
-- [ ] Make the full-page sign-in fallback work in browsers that block third-party storage (Safari, Firefox strict mode, Chrome without third-party cookies). The app is served from `github.io` while `authDomain` is `firebaseapp.com`, so a redirect sign-in there can return signed out; the popup, which is tried first, is unaffected. The fix is to serve Firebase's `/__/auth/` helper from the app's own origin (a custom domain or the `realbeepmcjeep.github.io` root site) and point `authDomain` at it.
-
-### Verification
-
-- [x] Rebuild the self-contained `index.html` and repeat desktop, tablet, and phone smoke checks.
-- [x] Run final source, build, diagnostics, and repository checks.
+- [ ] Confirm sign-in on Safari (macOS and iOS) now that the popup opens straight from the click. If Safari still refuses, serve Firebase's `/__/auth/` helper from the app's own origin (a custom domain or the `realbeepmcjeep.github.io` root site) and point `authDomain` at it.
 
 ## Movelists and game variants (2026-09-18)
 

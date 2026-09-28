@@ -2,9 +2,9 @@ import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   GoogleAuthProvider,
   getAuth,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   type Auth,
   type User,
@@ -40,23 +40,28 @@ export function watchAuth(
 }
 
 /**
- * Popup first because it keeps the page alive. Callers must fall back to
- * `signInWithRedirect` when the popup is blocked, which is why the result is
- * returned rather than assumed.
+ * Load Google's sign-in helper ahead of the popup.
+ *
+ * `signInWithPopup` fetches that helper before it opens its window, which takes
+ * seconds on a first sign-in. Safari only lets a click open a window straight away,
+ * so it blocks a popup that late. Once this has run, the popup opens at once.
+ * (`getRedirectResult` is the public call that initialises the helper.)
+ */
+export async function prepareSignIn(): Promise<void> {
+  const { auth: instance } = initFirebase();
+  await getRedirectResult(instance);
+}
+
+/**
+ * The only sign-in path. A full-page redirect cannot work here: the app is on
+ * github.io and Firebase's sign-in page on firebaseapp.com, and Safari, Firefox's
+ * strict mode and Chrome without third-party cookies keep the two sites' storage
+ * apart, so a redirect comes back signed out.
  */
 export async function signInWithGoogle(): Promise<User | null> {
   const { auth: instance } = initFirebase();
   const result = await signInWithPopup(instance, new GoogleAuthProvider());
   return result.user;
-}
-
-/**
- * The fallback for a browser that refuses the popup. Firebase leaves the page and
- * comes back, so the caller must not expect a user out of this one.
- */
-export async function signInWithGoogleRedirect(): Promise<void> {
-  const { auth: instance } = initFirebase();
-  await signInWithRedirect(instance, new GoogleAuthProvider());
 }
 
 export async function signOutOfSync(): Promise<void> {

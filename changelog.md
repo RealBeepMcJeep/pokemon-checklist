@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-28
+
+- Fixed sign-in on Safari: the first press loaded Google's sign-in helper before opening its window, about 3.5 seconds after the click, so Safari blocked the popup; the app then fell back to a full-page redirect, which cannot return a session to a `github.io` page from `firebaseapp.com` under Safari's storage rules, so it came back signed out. The helper now loads first, and if the browser blocks the window the button becomes **Continue with Google**, whose press opens the popup within the click itself (1 ms in WebKit).
+- Removed the full-page redirect fallback, which cannot work on this site in Safari, Firefox's strict mode, or Chrome without third-party cookies.
+- Said so when a first sign-in shows an account's existing checklist instead of this device's: the device's own progress is kept and returns on signing out, where before it silently looked deleted.
+- Added engine tests proving a first sign-in never loses data: an empty account adopts this device's progress, and an account that already has a checklist is neither cleared nor clears this device's own save.
+
 ## 2026-09-27
 
 - Added **Popular moves** to every Pokédex entry: the eight moves competitive players ran most for each of the 439 final evolutions (434 with usage data), with how the game teaches each one. Unevolved Pokémon list their final evolutions' moves; Ubers and every tier through LC are covered, each from its own tier's November 2019 Smogon file.
@@ -26,6 +33,7 @@
 - Reused the frontend's immutable validation indexes, cached each location's immutable catch-now rows, and removed unused state/sync exports and migration-only interfaces.
 - Retained the canonical Prismatic Moon references and added a commit-pinned, SHA-256-verified Pokémon Showdown data contract for reproducible move, Pokédex, learnset, and type data.
 - Added and hardened move-card, catcher, roster, team-building, synergy, and chat-checklist tools, including branch-aware move reports, opt-in Roto Catch calculations, and canonical evolution-line selection.
+- Built Stage 2's repository side in `tools/pokemon_ops.py`: validated mark (caught / seen / none), trade and evolve pairs, exact favourites, and list workflows, each sent as one minimal patch and verified by reading it back. Wiring it into Hermes remains.
 - Made signed-in sync preserve the latest local edit through server echoes, serialize rapid reversals, retry failed startup reads, ignore stale account starts, and register only one authentication watcher.
 - Made an intentional Reset propagate atomically with its before-image in the sync log while retaining the guard against accidental whole-account clears; single-step undo remains future work.
 - Kept sync changes flowing after a storage write failure, rejected read-only storage at startup, and made all sync cache access non-throwing.
@@ -47,6 +55,11 @@
 - Signing in adopts the progress already on that device instead of discarding it, and signing out returns that device to its own checklist without deleting anything.
 - Each signed-in account keeps its own separate checklist; nothing is shared between accounts.
 - Recorded `from` and `to` values on ordinary per-record sync log entries for history and future tooling. Reset before-images are logged, but undo is not built.
+- Set up the Firebase project on the Spark plan with billing off: a Realtime Database, Google sign-in (a popup, falling back to a full-page redirect), and authorized domains, with an email allowlist enforced by the database's security rules.
+- Restated the offline promise as "no request unless signed in" and enforced it with a browser test that records every request and fails on anything but `data:`, `file:` or localhost while signed out, on desktop and mobile user agents.
+- Kept the player's save untouched: sync bookkeeping lives in its own document, and signed-in saves are namespaced per account.
+- Derived pending work from the last server-confirmed document instead of queueing operations, so a retry is idempotent and a server-side change is never mistaken for an unpublished local edit.
+- Added the chat channel's phrase parser (`tools/pokemon_chat.py`), which resolves a species and emits the exact record keys sync writes, and a dependency-free service-account client (`tools/firebase-admin-rest.mjs`) that refuses a key stored inside the repository.
 
 ## 2026-09-16
 

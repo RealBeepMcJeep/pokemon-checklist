@@ -388,6 +388,11 @@ async function loadInitial(uid: string, run: number): Promise<void> {
     writeBase(uid);
 
     ignoreLocalEvents = true;
+    const device = exportState();
+    const deviceHasProgress =
+      Object.keys(device.species).length > 0 ||
+      Object.keys(device.forms).length > 0 ||
+      device.starred.length > 0;
     const hadAccountSave = setSyncAccount(uid, { adopt: !serverHasRecords });
     if (serverHasRecords) {
       const local = hadAccountSave
@@ -407,6 +412,13 @@ async function loadInitial(uid: string, run: number): Promise<void> {
       // a synthetic empty save must never look like a deliberate whole-account clear
       // after a reload.
       persist();
+      if (!hadAccountSave && deviceHasProgress) {
+        // Otherwise it looks as if this device's progress was just deleted.
+        showNotice(
+          "This account already has a checklist, so it is shown here. This device's own progress is kept: sign out to see it again.",
+          "good",
+        );
+      }
     }
     ignoreLocalEvents = false;
     observedLocal = exportState();
@@ -505,10 +517,8 @@ export function watchSyncAccount(): void {
 /**
  * Prepare for a sign-in, called BEFORE the provider is invoked.
  *
- * The full-page flow leaves the page and comes back as a fresh load, so the
- * "this device has signed in before" flag has to be set first. Otherwise the
- * reload decides there is no session to look for, auth is never initialised, and
- * a successful sign-in comes back looking signed out.
+ * Sets the "this device has signed in before" flag first, so a reload during or
+ * after signing in still looks for the session instead of coming back signed out.
  */
 export function beginSignIn(): void {
   signInPending = true;
