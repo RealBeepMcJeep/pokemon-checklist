@@ -11,7 +11,7 @@ Firebase Realtime Database stores one account namespace at `users/{uid}`:
 - `state/records` is the merged per-record view.
 - `log` contains the current per-record `op: "set"` entries with actor, device or channel, server time, key, `from`, and `to`.
 
-Records use server-assigned timestamps and deterministic UID tie-breaking. A device layers local edits over its confirmed base. Pending work is derived as `diff(base, current save)`, not stored as an operation queue; retries are idempotent and the server echo empties the diff.
+Records use server-assigned timestamps and deterministic UID tie-breaking. A device layers its own recorded edits over its confirmed base and sends only those: a difference between the save and the base can also be another device's change on its way in, and must never be sent back as an undo. Incoming changes are saved on the device as they arrive. After a reload the device's edits are recovered as `diff(last confirmed base, save)`, and a recovered set that would clear every live record is discarded as stale. Retries are idempotent and the server echo settles each edit.
 
 ## Implemented
 
