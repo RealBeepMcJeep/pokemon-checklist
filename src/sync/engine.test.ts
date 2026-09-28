@@ -30,6 +30,7 @@ import {
   startSync,
   stopSync,
   syncAccount,
+  syncPending,
   syncPhase,
   watchSyncAccount,
 } from "./engine";
@@ -306,6 +307,102 @@ describe("first sign-in never loses a checklist", () => {
     stopSync();
     expect(speciesStatus(25)).toBe("caught");
     expect(speciesStatus(150)).toBe("none");
+  });
+});
+
+describe("an old copy on this device never overrides the account", () => {
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const blankSave = {
+    schemaVersion: 3,
+    species: {},
+    forms: {},
+    starred: [],
+    settings: { forms: false, mode: "photonic-prismatic" },
+  };
+  const serverRecords = {
+    "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
+    "setting:forms": { s: "off", at: 100, by: "uid-a" },
+    [speciesKey(25)]: { s: "caught", at: 100, by: "uid-a" },
+    [speciesKey(150)]: { s: "caught", at: 100, by: "uid-a" },
+    "star:25": { s: "on", at: 100, by: "uid-a" },
+  };
+
+  function storeBase(records: Record<string, unknown>): void {
+    localStorage.setItem(
+      "pokemon-checklist-sync-v1",
+      JSON.stringify({
+        version: 1,
+        deviceId: "dev-desk",
+        uid: "uid-a",
+        email: "realbeepmcjeep@gmail.com",
+        base: { schema: 1, records, updatedAt: 0 },
+      }),
+    );
+  }
+
+  function sentClears(): string[] {
+    return mocks.update.mock.calls.flatMap((call) =>
+      Object.entries(call[1] as Record<string, { s?: string }>)
+        .filter(([key, value]) => key.startsWith("state/records/") && (value.s === "none" || value.s === "off"))
+        .map(([key]) => key),
+    );
+  }
+
+  it("shows the account when this device's saved copy is blank (the 64-to-send bug)", async () => {
+    storeBase(serverRecords);
+    localStorage.setItem(ACCOUNT_SAVE, JSON.stringify(blankSave));
+    mocks.get.mockResolvedValue(snapshot(serverRecords));
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    expect(speciesStatus(25)).toBe("caught");
+    expect(speciesStatus(150)).toBe("caught");
+    expect(syncPending.value).toBe(0);
+    expect(sentClears()).toEqual([]);
+  });
+
+  it("shows the account when this device never confirmed anything for it", async () => {
+    localStorage.setItem(ACCOUNT_SAVE, JSON.stringify(blankSave));
+    mocks.get.mockResolvedValue(snapshot(serverRecords));
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    expect(speciesStatus(150)).toBe("caught");
+    expect(syncPending.value).toBe(0);
+    expect(sentClears()).toEqual([]);
+  });
+
+  it("still sends a real offline change without undoing another device's", async () => {
+    const before = { ...serverRecords };
+    delete (before as Record<string, unknown>)[speciesKey(150)]; // the phone caught Mewtwo later
+    storeBase(before);
+    localStorage.setItem(
+      ACCOUNT_SAVE,
+      JSON.stringify({ ...blankSave, species: { 25: "caught", 6: "caught" }, starred: [25] }),
+    ); // this device caught Charizard while offline
+    mocks.get.mockResolvedValue(snapshot(serverRecords));
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    expect(speciesStatus(6)).toBe("caught");
+    expect(speciesStatus(150)).toBe("caught");
+    expect(sentClears()).toEqual([]);
+    expect(mocks.update.mock.calls.at(-1)![1]).toHaveProperty(`state/records/${speciesKey(6)}`);
+  });
+
+  it("applies another device's change mid-session instead of undoing it", async () => {
+    const withoutMewtwo = { ...serverRecords };
+    delete (withoutMewtwo as Record<string, unknown>)[speciesKey(150)];
+    mocks.get.mockResolvedValue(snapshot(withoutMewtwo));
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    mocks.update.mockClear();
+
+    recordsChanged.at(-1)!(snapshot({ ...withoutMewtwo, [speciesKey(150)]: { s: "caught", at: 200, by: "uid-a" } }));
+    await Promise.resolve();
+
+    expect(speciesStatus(150)).toBe("caught");
+    expect(syncPending.value).toBe(0);
+    expect(sentClears()).toEqual([]);
   });
 });
 

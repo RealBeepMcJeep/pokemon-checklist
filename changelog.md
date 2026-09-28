@@ -2,6 +2,7 @@
 
 ## 2026-09-28
 
+- Fixed a sync bug that could undo other devices' changes. The engine sent every difference between this device's save and the server's copy as local edits, so a change arriving from another device looked like one to reverse, and incoming changes were never written to the device's save. A browser whose old saved copy was blank therefore showed an empty checklist and "64 to send" against a full account; the whole-account guard refused the send, and no data was lost. Only edits recorded on the device are now sent, incoming changes are saved as they arrive, and a sign-in recovers only edits made since that device's last confirmed copy, never a set that would clear the whole account.
 - Fixed sign-in on Safari: the first press loaded Google's sign-in helper before opening its window, about 3.5 seconds after the click, so Safari blocked the popup; the app then fell back to a full-page redirect, which cannot return a session to a `github.io` page from `firebaseapp.com` under Safari's storage rules, so it came back signed out. The helper now loads first, and if the browser blocks the window the button becomes **Continue with Google**, whose press opens the popup within the click itself (1 ms in WebKit).
 - Removed the full-page redirect fallback, which cannot work on this site in Safari, Firefox's strict mode, or Chrome without third-party cookies.
 - Said so when a first sign-in shows an account's existing checklist instead of this device's: the device's own progress is kept and returns on signing out, where before it silently looked deleted.

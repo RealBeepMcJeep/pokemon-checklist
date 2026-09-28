@@ -25,6 +25,7 @@ import type { SavedState } from "../types";
 import {
   TOMBSTONE,
   clearedByReset,
+  entriesFromState,
   mergeDocument,
   parseRecordsSnapshot,
   type RecordEntry,
@@ -39,7 +40,7 @@ import {
   isWholeAccountClear,
   loadStore,
   localIntentChanges,
-  pendingWithIntents,
+  pendingEntries,
   rememberSyncSession,
   saveFromView,
   saveStore,
@@ -94,6 +95,20 @@ let sentReset: ResetImage | null = null;
 let publishInFlight: Promise<void> | null = null;
 let publishQueued = false;
 
+/**
+ * What this device still owes the server: its own edits that the confirmed document
+ * does not reflect yet. Only recorded local edits count. Any other difference between
+ * the save and the document is a change from another device on its way in, and
+ * treating it as owed would send an "undo" of that change.
+ */
+function owed(): Record<RecordKey, RecordEntry> {
+  const out: Record<RecordKey, RecordEntry> = {};
+  for (const [key, entry] of Object.entries(localIntents)) {
+    if (base.records[key]?.s !== entry.s) out[key] = entry;
+  }
+  return out;
+}
+
 function safeStorage(): StorageLike | null {
   return availableStorage();
 }
@@ -141,14 +156,7 @@ async function publishNow(): Promise<void> {
   if (!database || !activeUid || !initialReadComplete) return;
   const run = generation;
   const uid = activeUid;
-  const at = Date.now();
-  const pending = pendingWithIntents(
-    base,
-    exportState(),
-    localIntents,
-    at,
-    uid,
-  );
+  const pending = owed();
   const keys = Object.keys(pending);
   syncPending.value = keys.length;
   if (keys.length === 0 && !pendingReset) {
@@ -321,19 +329,18 @@ function applyRemote(uid: string, incoming: unknown, run: number): void {
   }
   if (!settleResetIfAcknowledged(uid)) writeBase(uid);
 
-  const owed = pendingWithIntents(
-    base,
-    exportState(),
-    localIntents,
-    Date.now(),
-    uid,
-  );
+  const pending = owed();
   applyState(
-    saveFromView(viewWithLocalIntent(base, owed), validPokemon, validForms),
+    saveFromView(viewWithLocalIntent(base, pending), validPokemon, validForms),
   );
+  // Save what arrived. A save left behind the confirmed document is what later made
+  // a whole checklist look like 64 deletions waiting to be sent.
+  ignoreLocalEvents = true;
+  persist();
+  ignoreLocalEvents = false;
   observedLocal = exportState();
-  syncPending.value = Object.keys(owed).length;
-  if (Object.keys(owed).length === 0 && !pendingReset) {
+  syncPending.value = Object.keys(pending).length;
+  if (Object.keys(pending).length === 0 && !pendingReset) {
     lastPushed = "";
     syncPhase.value = "ready";
   } else {
@@ -380,6 +387,8 @@ async function loadInitial(uid: string, run: number): Promise<void> {
     if (!isCurrent(run, uid)) return;
     const remote = parseRecordsSnapshot(snapshot.val() ?? {});
     const serverHasRecords = Object.keys(remote).length > 0;
+    // What this device last confirmed, before the server's current copy is merged in.
+    const confirmed = base;
     base = mergeDocument(base, {
       schema: 1,
       records: remote,
@@ -395,18 +404,17 @@ async function loadInitial(uid: string, run: number): Promise<void> {
       device.starred.length > 0;
     const hadAccountSave = setSyncAccount(uid, { adopt: !serverHasRecords });
     if (serverHasRecords) {
-      const local = hadAccountSave
-        ? exportState()
-        : saveFromView(base, validPokemon, validForms);
-      const pending = pendingWithIntents(
-        base,
-        local,
-        localIntents,
-        Date.now(),
-        uid,
-      );
+      // Only edits made here since this device's last confirmed copy are its own; the
+      // rest of any difference is other devices' work. Without a confirmed copy there
+      // are no known edits, and a set that would empty the account is never an edit.
+      let edits =
+        hadAccountSave && Object.keys(confirmed.records).length > 0
+          ? pendingEntries(confirmed, exportState(), Date.now(), uid)
+          : {};
+      if (!pendingReset && isWholeAccountClear(base, edits, 1)) edits = {};
+      localIntents = edits;
       applyState(
-        saveFromView(viewWithLocalIntent(base, pending), validPokemon, validForms),
+        saveFromView(viewWithLocalIntent(base, owed()), validPokemon, validForms),
       );
       // Keep the confirmed view (plus any real local intent) as the account save;
       // a synthetic empty save must never look like a deliberate whole-account clear
@@ -419,6 +427,10 @@ async function loadInitial(uid: string, run: number): Promise<void> {
           "good",
         );
       }
+    }
+    if (!serverHasRecords) {
+      // An empty account adopts everything this device holds.
+      localIntents = entriesFromState(exportState(), Date.now(), uid);
     }
     ignoreLocalEvents = false;
     observedLocal = exportState();

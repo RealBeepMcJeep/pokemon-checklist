@@ -16,14 +16,16 @@ import {
  * to work out what still needs publishing.
  *
  * There is deliberately NO operation queue. The store keeps `base` — the last
- * document the server confirmed — and the pending work is derived on demand as
- * `diff(base, currentSave)`. Consequences worth having:
+ * document the server confirmed. The engine sends only edits it recorded on this
+ * device; after a reload it recovers them as `diff(base, save)`, which is valid
+ * because incoming changes are written to the save as they arrive. A plain
+ * `diff(base, save)` is never sent mid-session: it cannot tell this device's edits
+ * from another device's changes, and sending it undoes the latter.
  *
- *  - Retrying a failed publish is free and idempotent: the diff is recomputed, not
- *    replayed from a queue that could drift out of step with the save.
- *  - A reload loses nothing: both sides of the diff are persisted.
- *  - The diff empties itself when the server echoes the write back, so there is no
- *    acknowledgement bookkeeping to get wrong.
+ *  - Retrying a failed publish is free and idempotent: the edits are re-sent as
+ *    values, not replayed operations.
+ *  - A reload loses nothing: the base and the save are both persisted.
+ *  - An edit settles when the server echoes it back.
  */
 
 export const SYNC_STORE_KEY = "pokemon-checklist-sync-v1";
@@ -309,6 +311,7 @@ export function saveFromView(
 export function isWholeAccountClear(
   base: SyncDocument,
   pending: Record<RecordKey, RecordEntry>,
+  minimumLive = 5,
 ): boolean {
   // Only PROGRESS records count. Settings are records too, but they clear by taking
   // a different value ("off", a mode name) rather than a tombstone, so counting them
@@ -317,7 +320,7 @@ export function isWholeAccountClear(
   const live = Object.entries(base.records).filter(
     ([key, entry]) => isProgress(key) && isLive(key, entry.s),
   ).length;
-  if (live < 5) return false;
+  if (live < minimumLive) return false;
   const cleared = Object.entries(pending).filter(
     ([key, entry]) => isProgress(key) && isCleared(key, entry.s),
   ).length;
