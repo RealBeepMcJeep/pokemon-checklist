@@ -26,6 +26,7 @@
 - Reused the frontend's immutable validation indexes, cached each location's immutable catch-now rows, and removed unused state/sync exports and migration-only interfaces.
 - Retained the canonical Prismatic Moon references and added a commit-pinned, SHA-256-verified Pokémon Showdown data contract for reproducible move, Pokédex, learnset, and type data.
 - Added and hardened move-card, catcher, roster, team-building, synergy, and chat-checklist tools, including branch-aware move reports, opt-in Roto Catch calculations, and canonical evolution-line selection.
+- Built Stage 2's repository side in `tools/pokemon_ops.py`: validated mark (caught / seen / none), trade and evolve pairs, exact favourites, and list workflows, each sent as one minimal patch and verified by reading it back. Wiring it into Hermes remains.
 - Made signed-in sync preserve the latest local edit through server echoes, serialize rapid reversals, retry failed startup reads, ignore stale account starts, and register only one authentication watcher.
 - Made an intentional Reset propagate atomically with its before-image in the sync log while retaining the guard against accidental whole-account clears; single-step undo remains future work.
 - Kept sync changes flowing after a storage write failure, rejected read-only storage at startup, and made all sync cache access non-throwing.
@@ -47,6 +48,11 @@
 - Signing in adopts the progress already on that device instead of discarding it, and signing out returns that device to its own checklist without deleting anything.
 - Each signed-in account keeps its own separate checklist; nothing is shared between accounts.
 - Recorded `from` and `to` values on ordinary per-record sync log entries for history and future tooling. Reset before-images are logged, but undo is not built.
+- Set up the Firebase project on the Spark plan with billing off: a Realtime Database, Google sign-in (a popup, falling back to a full-page redirect), and authorized domains, with an email allowlist enforced by the database's security rules.
+- Restated the offline promise as "no request unless signed in" and enforced it with a browser test that records every request and fails on anything but `data:`, `file:` or localhost while signed out, on desktop and mobile user agents.
+- Kept the player's save untouched: sync bookkeeping lives in its own document, and signed-in saves are namespaced per account.
+- Derived pending work from the last server-confirmed document instead of queueing operations, so a retry is idempotent and a server-side change is never mistaken for an unpublished local edit.
+- Added the chat channel's phrase parser (`tools/pokemon_chat.py`), which resolves a species and emits the exact record keys sync writes, and a dependency-free service-account client (`tools/firebase-admin-rest.mjs`) that refuses a key stored inside the repository.
 
 ## 2026-09-16
 
