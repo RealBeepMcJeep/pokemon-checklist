@@ -1,7 +1,8 @@
 import { Fragment } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { memo } from "preact/compat";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { ASSETS, detailsByDex, formDetails } from "../data";
-import { formSlug, locationProgress, rateText, safeId } from "../domain";
+import { formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
   focusedLocation,
@@ -14,7 +15,7 @@ import type {
   Island as IslandData,
   Location as LocationData,
 } from "../types";
-import { openPokemon } from "../ui";
+import { consumeRowFocusIntent, openPokemon } from "../ui";
 import { PokemonFacts } from "./PokemonFacts";
 import {
   AllyForms,
@@ -36,12 +37,12 @@ function GuidePokemon({
   form?: string;
   ability?: string;
 }) {
-  const formKey = form
-    ? `${id}:${formSlug(form)}`
+  const key = form
+    ? formKey(id, "form", formSlug(form))
     : ability
-      ? `${id}:ability-${formSlug(ability)}`
+      ? formKey(id, "ability", formSlug(ability))
       : "";
-  const details = formDetails.get(formKey) || detailsByDex.get(id);
+  const details = formDetails.get(key) || detailsByDex.get(id);
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} context={context} compact />
@@ -220,7 +221,11 @@ function AssetImage({
   );
 }
 
-function Location({
+// Memoised like Pokedex.tsx's DexRowContent: `location` and `open` only change for
+// the location(s) whose focus actually moved, so every other already-open
+// location's tables would otherwise be rebuilt on every focus change (finishing a
+// location, switching mode) for no visible difference.
+const Location = memo(function Location({
   location,
   open,
 }: {
@@ -236,11 +241,16 @@ function Location({
   useEffect(() => {
     if (open) setMounted(true);
   }, [open]);
+  // Render count exposed only for the Playwright test that guards this memoisation;
+  // an integer attribute costs nothing worth measuring.
+  const renders = useRef(0);
+  renders.current += 1;
   return (
     <details
       class="location"
       id={`location-${safeId(location.id)}`}
       data-location-id={location.id}
+      data-renders={renders.current}
       open={open}
       onToggle={(event) => {
         if (event.currentTarget.open) setMounted(true);
@@ -288,7 +298,7 @@ function Location({
       )}
     </details>
   );
-}
+});
 
 function Island({
   island,
@@ -322,12 +332,15 @@ function Island({
   );
 }
 
-export function LocationList() {
+export function LocationList({ inert = false }: { inert?: boolean }) {
   const encounters = activeEncounters.value;
   const openLocation = focusedLocation.value;
   const currentMode = mode.value;
   useEffect(() => {
     if (!openLocation) return;
+    // jumpTo() is about to scroll to and focus a specific row in this location
+    // itself; focusing the summary here would win the race and steal it back.
+    if (consumeRowFocusIntent(openLocation)) return;
     requestAnimationFrame(() => {
       const target = document.querySelector<HTMLElement>(
         `[data-location-id="${CSS.escape(openLocation)}"]`,
@@ -339,7 +352,7 @@ export function LocationList() {
     });
   }, [currentMode, openLocation]);
   return (
-    <main id="main-view" tabIndex={-1}>
+    <main id="main-view" tabIndex={-1} inert={inert}>
       {encounters.islands.map((island) => (
         <Island key={island.id} island={island} openLocation={openLocation} />
       ))}

@@ -88,8 +88,7 @@ h3 {
   filter: drop-shadow(0 2px 4px #000);
 }
 .subtitle,
-.muted,
-.source-note {
+.muted {
   color: var(--muted);
   font-size: 0.86rem;
 }
@@ -246,7 +245,9 @@ details.location {
   border-radius: 0.65rem;
   background: var(--panel);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  scroll-margin-top: 7rem;
+  /* Falls back to the header's usual height; kept in sync with its real,
+     possibly-wrapped height by the ResizeObserver in App.tsx. */
+  scroll-margin-top: var(--header-h, 7rem);
   overflow: clip;
 }
 details.location[open] {
@@ -282,12 +283,6 @@ details.location > summary::marker {
 }
 .location-body {
   padding: 0 0.8rem 0.9rem;
-}
-.location-meta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
-  align-items: start;
 }
 .map-grid {
   display: grid;
@@ -502,9 +497,12 @@ tbody tr:hover {
 }
 .pokedex {
   position: sticky;
-  top: 7rem;
+  /* --header-h is measured live (App.tsx) so this tracks the header's real height,
+     wrapped or not, instead of assuming a fixed number of lines. */
+  top: var(--header-h, 7rem);
   align-self: start;
-  max-height: calc(100vh - 8rem);
+  max-height: calc(100vh - var(--header-h, 7rem) - 1rem);
+  max-height: calc(100dvh - var(--header-h, 7rem) - 1rem);
   overflow: hidden;
   border: 1px solid var(--drawer-line);
   border-radius: 0.65rem;
@@ -569,6 +567,7 @@ tbody tr:hover {
 }
 .dex-content {
   max-height: calc(100vh - 14.5rem);
+  max-height: calc(100dvh - 14.5rem);
   overflow-y: auto;
 }
 .dex-selection {
@@ -707,16 +706,21 @@ tbody tr:hover {
   text-shadow: 0 1px 2px #000;
 }
 .grade-sss {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  /* Darkened from the original #ec4899 pink stop: at this badge's small (0.68rem)
+     size it fell short of WCAG AA's 4.5:1 contrast against the white text. */
+  background: linear-gradient(135deg, #7c3aed, #be2f85);
 }
 .grade-s {
   background: #d32f2f;
 }
 .grade-a {
-  background: #ef6c00;
+  /* Darkened from #ef6c00 (3.1:1 against white) to clear WCAG AA (4.5:1) at this
+     badge's small text size. */
+  background: #b34c00;
 }
 .grade-b {
-  background: #a67c00;
+  /* Darkened from #a67c00 (3.8:1 against white) to clear WCAG AA (4.5:1). */
+  background: #8a6800;
 }
 .grade-c {
   background: #27843c;

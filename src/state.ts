@@ -8,6 +8,7 @@ import {
   buildFormDefinitions,
   canonicalState,
   cycleStatus,
+  formsForMode,
   validateState,
 } from "./domain";
 import type { GameMode, SavedState, Status } from "./types";
@@ -48,6 +49,11 @@ export const activeEncounters = computed(() => ENCOUNTERS_BY_MODE[mode.value]);
 export const activeLocations = computed(() =>
   activeEncounters.value.islands.flatMap((island) => island.locations),
 );
+/** Forms obtainable in the active mode only, e.g. 14-17 rather than all 54 across
+ * every mode: the denominator a player can actually complete. */
+export const activeFormDefinitions = computed(() =>
+  formsForMode(activeEncounters.value),
+);
 export const caughtCount = computed(
   () =>
     [...speciesSignals.values()].filter((status) => status.value === "caught")
@@ -58,11 +64,13 @@ export const seenCount = computed(
     [...speciesSignals.values()].filter((status) => status.value === "seen")
       .length,
 );
-export const formsCaught = computed(
-  () =>
-    [...formSignals.values()].filter((status) => status.value === "caught")
-      .length,
-);
+export const formsCaught = computed(() => {
+  let count = 0;
+  for (const key of activeFormDefinitions.value.keys()) {
+    if (formSignals.get(key)?.value === "caught") count++;
+  }
+  return count;
+});
 
 // --- accounts ---------------------------------------------------------------
 //

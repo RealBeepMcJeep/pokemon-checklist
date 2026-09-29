@@ -2,6 +2,14 @@
 
 ## 2026-09-28
 
+- Made the Pokédex's "Known places in this mode" links open the right location first; before, they did nothing unless that location was already open.
+- Kept the Pokédex working after resizing a window or rotating a tablet across the phone/desktop layout switch; it could become visible but unclickable, or hidden but still focusable. A drawer left open on a phone now closes when the layout becomes desktop.
+- Counted "Forms caught" against the forms the current mode can actually offer (14 in Sun and Moon, 17 in the Ultra games, 48 in Prismatic Moon) instead of all 54 across every game, so the counter can be completed.
+- Gave status, star and ally buttons a full 44-pixel tap target on phones, without changing desktop rows.
+- Selecting a Pokémon now updates only the two affected rows instead of all 807, and search no longer re-sorts and re-normalises every name on each keystroke.
+- Locked the page behind the phone Pokédex drawer so it cannot scroll underneath, and kept keyboard focus inside the drawer while it is open.
+- Stopped the game-mode menu from zooming the page on iPhone, sized full-height panels for Safari's moving toolbar, and kept the desktop Pokédex aligned when the header wraps onto extra lines.
+- Darkened three grade badge colours that were too light to read, and made status buttons say what pressing them will change the status to.
 - Added a **Catch next** card to the Pokédex: before you pick a Pokémon it lists the uncaught catch-now Pokémon at the next unfinished location, each with its status button and a jump to that location, and it updates as you catch them. **← Catch next** above any selected Pokémon brings it back.
 - Showed where a Pokémon can be caught in the other four game modes, including for Pokémon with no wild spot in the current mode.
 - Showed the evolution path even when the Pokémon also has a wild location, so a caught Pichu or Feebas still says how to finish its line.

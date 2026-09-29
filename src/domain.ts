@@ -46,11 +46,20 @@ export const normalize = (value: unknown): string =>
 
 export const formSlug = (value: unknown): string => normalize(value);
 
-export const titleForm = (value: unknown): string =>
+const titleForm = (value: unknown): string =>
   String(value)
     .split("-")
     .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
     .join(" ");
+
+/** The one place the `species:slug` / `species:kind-slug` form-key format is
+ * spelled out; StatusControls.tsx and Locations.tsx build the same keys through
+ * this rather than re-typing the format. */
+export const formKey = (
+  speciesId: number,
+  kind: string,
+  slug: string,
+): string => `${speciesId}:${kind === "form" ? slug : `${kind}-${slug}`}`;
 
 export const safeId = (value: unknown): string =>
   String(value)
@@ -76,10 +85,10 @@ export function forEachEncounter(
   }
 }
 
-export function buildFormDefinitions(
-  encountersByMode: Record<GameMode, EncounterData>,
-): Map<string, FormDefinition> {
-  const forms = new Map<string, FormDefinition>();
+function addFormsFrom(
+  encounters: EncounterData,
+  forms: Map<string, FormDefinition>,
+): void {
   const add = (
     speciesId: number | null | undefined,
     rawName: string | undefined,
@@ -89,7 +98,7 @@ export function buildFormDefinitions(
     if (!speciesId || !rawName) return;
     const slug = formSlug(rawName);
     if (!slug) return;
-    const key = `${speciesId}:${kind === "form" ? slug : `${kind}-${slug}`}`;
+    const key = formKey(speciesId, kind, slug);
     if (!forms.has(key)) {
       forms.set(key, {
         key,
@@ -100,18 +109,35 @@ export function buildFormDefinitions(
     }
   };
 
-  for (const encounters of Object.values(encountersByMode)) {
-    forEachEncounter(encounters, (row) => {
-      if (row.speciesId) {
-        add(row.speciesId, row.form);
-        for (const form of row.forms || []) add(row.speciesId, form);
-        if (row.ability) {
-          add(row.speciesId, row.ability, "ability", `${row.ability} ability`);
-        }
+  forEachEncounter(encounters, (row) => {
+    if (row.speciesId) {
+      add(row.speciesId, row.form);
+      for (const form of row.forms || []) add(row.speciesId, form);
+      if (row.ability) {
+        add(row.speciesId, row.ability, "ability", `${row.ability} ability`);
       }
-      for (const ally of row.allies || []) add(ally.speciesId, ally.form);
-    });
+    }
+    for (const ally of row.allies || []) add(ally.speciesId, ally.form);
+  });
+}
+
+/** Every form obtainable across all five modes; used to validate a save's form
+ * keys regardless of which mode it was written under. */
+export function buildFormDefinitions(
+  encountersByMode: Record<GameMode, EncounterData>,
+): Map<string, FormDefinition> {
+  const forms = new Map<string, FormDefinition>();
+  for (const encounters of Object.values(encountersByMode)) {
+    addFormsFrom(encounters, forms);
   }
+  return forms;
+}
+
+/** Only the forms reachable in one mode's own encounters, e.g. for a "forms
+ * caught" count that shouldn't count forms the active mode can't offer. */
+export function formsForMode(encounters: EncounterData): Map<string, FormDefinition> {
+  const forms = new Map<string, FormDefinition>();
+  addFormsFrom(encounters, forms);
   return forms;
 }
 

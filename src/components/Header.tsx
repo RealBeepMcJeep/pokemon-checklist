@@ -1,9 +1,9 @@
 import { ASSETS, POKEMON } from "../data";
 import { DEFAULT_MODE, MODE_LABELS } from "../domain";
 import {
+  activeFormDefinitions,
   caughtCount,
   drawerOpen,
-  formDefinitions,
   formsCaught,
   formsTracked,
   mode,
@@ -16,21 +16,21 @@ import type { GameMode } from "../types";
 import { BUILD_LABEL } from "../version";
 import { SyncPanel } from "./SyncPanel";
 import {
-  DRAWER_BREAKPOINT,
   changeMode,
   exportJSON,
   importFile,
+  isMobile,
   reset,
   toggleSidebar,
 } from "../ui";
 
-export function Header() {
+export function Header({ inert = false }: { inert?: boolean }) {
   const caught = caughtCount.value;
   const trackForms = formsTracked.value;
   const currentMode = mode.value;
   const currentNotice = notice.value;
   return (
-    <header class="app-header">
+    <header class="app-header" inert={inert}>
       <div class="header-inner">
         <div class="title-row">
           <div class="brand">
@@ -67,8 +67,7 @@ export function Header() {
               type="button"
               aria-controls="pokedex"
               aria-expanded={
-                !sidebarHidden.value &&
-                (window.innerWidth >= DRAWER_BREAKPOINT || drawerOpen.value)
+                !sidebarHidden.value && (!isMobile.value || drawerOpen.value)
               }
               onClick={toggleSidebar}
             >
@@ -149,7 +148,7 @@ export function Header() {
             {caught} / {POKEMON.length} Pokémon
           </strong>
           <span id="form-progress" class="muted" hidden={!trackForms}>
-            Forms caught: {formsCaught.value} / {formDefinitions.size}
+            Forms caught: {formsCaught.value} / {activeFormDefinitions.value.size}
           </span>
         </div>
         <div
