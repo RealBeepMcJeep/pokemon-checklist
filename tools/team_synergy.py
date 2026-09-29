@@ -22,8 +22,12 @@ from showdown_data import configured_cache_dir, require_cache  # noqa: E402
 from showdown_text import field, integer_field, object_after, top_blocks  # noqa: E402
 import team_builder as tb  # noqa: E402
 
+# Keep a point value for every tier in tb.TIER_ORDER (see the coverage test in
+# tools/tests/test_team_tools.py) so an unscored tier like the missing "AG"
+# used to be doesn't silently fall through TIER_POINTS.get(tier, 0.0) as if it
+# were the worst possible tier.
 TIER_POINTS = {
-    "Uber": 7.0, "OU": 6.0, "UUBL": 5.5, "UU": 5.0, "RUBL": 4.5, "RU": 4.0,
+    "AG": 7.5, "Uber": 7.0, "OU": 6.0, "UUBL": 5.5, "UU": 5.0, "RUBL": 4.5, "RU": 4.0,
     "NUBL": 3.5, "NU": 3.0, "PUBL": 2.5, "PU": 2.0, "(PU)": 1.0,
     "LC Uber": 0.5, "LC": 0.0,
 }

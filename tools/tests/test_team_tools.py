@@ -54,6 +54,18 @@ class TeamBuilderTests(unittest.TestCase):
         self.assertTrue(tb.tier_passes("Uber", "OU"))
         self.assertFalse(tb.tier_passes("UU", "OU"))
 
+    def test_ag_is_a_recognized_tier_above_uber(self):
+        # TIER_ORDER used to be a private 13-entry list missing "AG"; any species
+        # ever tiered AG would make normalise_tier() raise instead of ranking it.
+        self.assertEqual(tb.normalise_tier("ag"), "AG")
+        self.assertLess(tb.tier_rank("AG"), tb.tier_rank("Uber"))
+
+    def test_normalize_folds_accents_so_flabebe_resolves(self):
+        # normalize() used to ascii-ignore-encode, which drops an accented letter
+        # entirely instead of folding it to its base letter, so "Flabébé" and a
+        # plain-ascii "flabebe" lookup normalized to different keys.
+        self.assertEqual(tb.normalize("Flabébé"), tb.normalize("flabebe"))
+
     def test_invalid_selection_arguments_are_rejected(self):
         for kwargs in (
             {"teams": 0, "size": 5, "pool": 10, "shortlist": 10},
@@ -92,6 +104,13 @@ class TeamBuilderTests(unittest.TestCase):
 
 
 class TeamSynergyTests(unittest.TestCase):
+    def test_tier_points_covers_every_ranked_tier(self):
+        # Smogon tier lists used to be hand-retyped independently in team_builder.py,
+        # team_synergy.py, validate_data.py, build_pokedex_details.py and moveline.py,
+        # with different memberships (team_synergy's TIER_POINTS was missing "AG").
+        # Every tier in the one shared TIER_ORDER must have a point value.
+        self.assertEqual(set(ts.TIER_POINTS), set(tb.TIER_ORDER))
+
     def test_tier_local_chaos_file_does_not_merge_other_tiers(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)

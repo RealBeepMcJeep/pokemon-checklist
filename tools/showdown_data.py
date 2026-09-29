@@ -24,20 +24,49 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Callable, Mapping
 
+try:
+    from . import cache_support
+except ImportError:  # Running the file directly: python tools/showdown_data.py ...
+    import cache_support  # type: ignore[no-redef]
+
 SHOWDOWN_COMMIT = "e7aee8d9ccc983c59c5608929773249adca16b8f"
 MANIFEST_FILENAME = "showdown-manifest.json"
 CONTRACT_ID = "pokemon-checklist.showdown-data"
 CACHE_ENVIRONMENT_VARIABLE = "SHOWDOWN_DATA_CACHE"
-DEFAULT_CACHE_DIR = (
-    Path(os.environ.get(CACHE_ENVIRONMENT_VARIABLE, "~/.cache/pokemon-checklist/showdown"))
-    .expanduser()
+
+# Every Smogon singles tier the project's tools recognize, best to worst. The one
+# canonical list every tier-keyed table (grades, points, file buckets, schema
+# validation) should be built from instead of hand-retyping the tier name set,
+# so a tier missing from one table (like the "AG" that used to be missing from
+# team_builder.py, raising ValueError for any AG-tiered species) cannot drift
+# back in silently. "NFE" (not fully evolved) is a real `ownTier` value but not
+# part of this competitive ladder, so it is not included here.
+TIER_ORDER = (
+    "AG", "Uber", "OU", "UUBL", "UU", "RUBL", "RU", "NUBL", "NU", "PUBL", "PU",
+    "(PU)", "LC Uber", "LC",
 )
+
+DEFAULT_CACHE_DIR = Path(
+    os.environ.get(CACHE_ENVIRONMENT_VARIABLE, str(cache_support.default_cache_dir("showdown")))
+).expanduser()
+# This file used to hardcode "~/.cache/pokemon-checklist/showdown" unconditionally,
+# even on Windows, instead of using cache_support's per-OS default (which resolves
+# to %LOCALAPPDATA%/pokemon-checklist/showdown there). Fall back to that old default
+# once, automatically, so a cache already bootstrapped there is not orphaned.
+_LEGACY_DEFAULT_CACHE_DIR = Path("~/.cache/pokemon-checklist/showdown").expanduser()
+
+
+def _resolve_default_cache_dir() -> Path:
+    if not DEFAULT_CACHE_DIR.exists() and _LEGACY_DEFAULT_CACHE_DIR.exists():
+        return _LEGACY_DEFAULT_CACHE_DIR
+    return DEFAULT_CACHE_DIR
 
 
 def configured_cache_dir() -> Path:
     """Return the shared store path used by analysis-tool CLI defaults."""
 
-    return Path(os.environ.get("POKE_DATA_CACHE", str(DEFAULT_CACHE_DIR))).expanduser()
+    configured = os.environ.get("POKE_DATA_CACHE")
+    return Path(configured).expanduser() if configured else _resolve_default_cache_dir()
 
 
 def bootstrap_hint(cache_dir: str | os.PathLike[str]) -> str:
@@ -131,8 +160,6 @@ DATASETS: Mapping[str, DatasetSpec] = MappingProxyType(
         ),
     }
 )
-# Alias with an explicit name for callers that prefer the manifest terminology.
-DATASET_SPECS = DATASETS
 
 
 @dataclass(frozen=True)
@@ -146,10 +173,6 @@ class LoadedDataset:
 
 
 Downloader = Callable[[str], bytes]
-
-
-def _sha256_bytes(raw: bytes) -> str:
-    return hashlib.sha256(raw).hexdigest()
 
 
 def _sha256_file(path: Path) -> str:
@@ -334,7 +357,7 @@ class ShowdownDataStore:
             for name in sorted(self.datasets):
                 spec = self.datasets[name]
                 raw = self._download(spec.url)
-                actual_hash = _sha256_bytes(raw)
+                actual_hash = cache_support.sha256_bytes(raw)
                 if actual_hash != spec.sha256:
                     raise HashMismatchError(
                         f"downloaded {name} ({spec.filename}) has the wrong SHA-256: "
@@ -402,17 +425,6 @@ class ShowdownDataStore:
         return self._manifest()
 
 
-def get_dataset(
-    name: str,
-    *,
-    cache_dir: str | os.PathLike[str] = DEFAULT_CACHE_DIR,
-    refresh: bool = False,
-) -> LoadedDataset:
-    """Convenience loader for consumers that need both text and path."""
-
-    return ShowdownDataStore(cache_dir).load(name, refresh=refresh)
-
-
 def require_cache(cache_dir: str | os.PathLike[str]) -> ShowdownDataStore:
     """Return a verified store without ever repairing or downloading it."""
 
@@ -431,7 +443,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cache-dir",
         type=Path,
-        default=DEFAULT_CACHE_DIR,
+        default=_resolve_default_cache_dir(),
         help=f"cache directory (default: ${CACHE_ENVIRONMENT_VARIABLE} or {DEFAULT_CACHE_DIR})",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

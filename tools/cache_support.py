@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Iterator
 
 
+class CacheError(ValueError):
+    """A generator's on-disk cache is missing, corrupted, or otherwise unusable."""
+
+
 def default_cache_dir(name: str) -> Path:
     if os.name == "nt":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
