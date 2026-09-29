@@ -2,6 +2,11 @@
 
 ## 2026-09-28
 
+- Stopped the chat helper reading a question as a command: "did I already get bulbasaur" used to mark Bulbasaur caught, and "have I got a pikachu yet?" failed on the trailing "yet". Questions now only report status, and "resetting my plan" no longer trips the reset guard.
+- Let `pokemon_ops.py` take `--uid` after the subcommand, reported a skipped no-op write as not written rather than "verified", and derived the National Dex bound from `data/pokemon.json`.
+- Fixed data-tool drift: the catcher tool now uses the shared TM and tutor location tables (its private copy had three entries under the wrong keys), one normaliser handles accents such as Flabébé, one tier order covers AG, and the vanilla-encounter generator keeps repeated species/rarity rows and tells the two Nidoran apart. Generated data is unchanged.
+- Moved the Showdown cache to the same per-platform cache folder as the other generators, still finding an existing `~/.cache` copy; tools-test discovery and the artifact freshness check now behave the same on Windows and Linux.
+- Corrected the README and docs on what CI checks and which generator needs the network.
 - Made the Pokédex's "Known places in this mode" links open the right location first; before, they did nothing unless that location was already open.
 - Kept the Pokédex working after resizing a window or rotating a tablet across the phone/desktop layout switch; it could become visible but unclickable, or hidden but still focusable. A drawer left open on a phone now closes when the layout becomes desktop.
 - Counted "Forms caught" against the forms the current mode can actually offer (14 in Sun and Moon, 17 in the Ultra games, 48 in Prismatic Moon) instead of all 54 across every game, so the counter can be completed.
