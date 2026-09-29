@@ -358,6 +358,11 @@ export function isWholeAccountClear(
   return cleared >= live;
 }
 
+/** Whether a record's value clears player progress (a species, or a star). */
+export function isProgressClear(key: string, status: string): boolean {
+  return isProgress(key) && isCleared(key, status);
+}
+
 function isProgress(key: string): boolean {
   return key.startsWith("species:") || key.startsWith("star:");
 }

@@ -39,6 +39,9 @@ function statusText(): string {
       return syncOnline.value ? "Synced" : "Offline";
     case "error":
       return syncMessage.value || "Sync is not working";
+    case "elsewhere":
+      // One tab per account talks to the server; this one hands its changes over.
+      return "Syncing in another tab";
   }
 }
 

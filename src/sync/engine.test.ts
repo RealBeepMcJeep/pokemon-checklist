@@ -30,6 +30,7 @@ import {
   startSync,
   stopSync,
   syncAccount,
+  syncMessage,
   syncPending,
   syncPhase,
   watchSyncAccount,
@@ -41,6 +42,8 @@ import {
   restoreState,
   savedNotice,
   speciesStatus,
+  syncFromStorage,
+  toggleStar,
 } from "../state";
 import { speciesKey } from "./records";
 import { SYNC_SESSION_KEY } from "./outbox";
@@ -491,6 +494,24 @@ describe("sign-in flow", () => {
     expect(mocks.watchAuth).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
   });
+
+  it("L5: following another tab's sign-in never clears that tab's session flag", async () => {
+    const { engine, fire } = await freshEngine();
+    const listeners: ((event: { key: string; newValue: string | null }) => void)[] = [];
+    vi.stubGlobal("window", {
+      addEventListener: (type: string, listener: (typeof listeners)[number]) => {
+        if (type === "storage") listeners.push(listener);
+      },
+    });
+    engine.followSignInFromOtherTabs();
+    localStorage.setItem(SYNC_SESSION_KEY, "1"); // set by the tab that is signing in
+    listeners.forEach((listener) => listener({ key: SYNC_SESSION_KEY, newValue: "1" }));
+
+    fire(null, false); // Firebase's first report here: not signed in (yet)
+
+    expect(localStorage.getItem(SYNC_SESSION_KEY)).toBe("1");
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("the edit made last wins", () => {
@@ -738,6 +759,7 @@ describe("sign-in keeps the checklist on screen honest", () => {
     const started = startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
     expect(speciesStatus(1)).toBe("caught");
     cycleSpecies(150); // tapped before the server answers
+    await vi.waitFor(() => expect(mocks.get).toHaveBeenCalled());
     answer(snapshot(server));
     await started;
 
@@ -756,6 +778,7 @@ describe("sign-in keeps the checklist on screen honest", () => {
 
     const started = startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
     resetState(); // on the device's checklist, still on screen
+    await vi.waitFor(() => expect(mocks.get).toHaveBeenCalled());
     answer(snapshot({ ...settings, [speciesKey(25)]: { s: "caught", at: 100, by: "uid-a" } }));
     await started;
     await Promise.resolve();
@@ -785,5 +808,251 @@ describe("sign-in keeps the checklist on screen honest", () => {
     expect(speciesStatus(150)).toBe("caught");
     expect(notice.value.message).toMatch(/lost its sync records/);
     expect(notice.value.action?.label).toMatch(/Download/);
+  });
+
+  it("keeps a tap made while connecting even when the sync records were lost", async () => {
+    localStorage.setItem(ACCOUNT_SAVE, accountSave({ "1": "caught" }));
+    let answer!: (value: unknown) => void;
+    mocks.get.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)));
+
+    const started = startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    await vi.waitFor(() => expect(mocks.get).toHaveBeenCalled());
+    cycleSpecies(25); // caught, while connecting; the server says seen
+    answer(
+      snapshot({
+        ...settings,
+        [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
+        [speciesKey(25)]: { s: "seen", at: 100, by: "uid-a" },
+      }),
+    );
+    await started;
+
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalled());
+    expect(mocks.update.mock.calls[0][1]).toHaveProperty(
+      `state/records/${speciesKey(25)}`,
+      expect.objectContaining({ s: "caught" }),
+    );
+    expect(speciesStatus(25)).toBe("caught");
+  });
+});
+
+describe("adversarial review", () => {
+  const settings = {
+    "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
+    "setting:forms": { s: "off", at: 100, by: "uid-a" },
+  };
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const sentRecords = () =>
+    mocks.update.mock.calls.map((call) =>
+      Object.fromEntries(
+        Object.entries(call[1] as Record<string, { s?: string }>)
+          .filter(([key]) => key.startsWith("state/records/"))
+          .map(([key, value]) => [key.slice("state/records/".length), value.s]),
+      ),
+    );
+
+  async function signedIn(records: Record<string, unknown>) {
+    resetState();
+    mocks.get.mockResolvedValue(snapshot(records));
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    connected[0]({ val: () => true });
+    mocks.update.mockClear();
+  }
+
+  /** Firebase shows a write to the page's own listeners inside update(). */
+  function echoLocally(records: Record<string, unknown>, reply: Promise<void>) {
+    mocks.update.mockImplementation(
+      (_target: unknown, payload: Record<string, { s: string }>) => {
+        const shown: Record<string, unknown> = { ...records };
+        for (const [key, value] of Object.entries(payload)) {
+          if (key.startsWith("state/records/")) {
+            shown[key.slice("state/records/".length)] = { s: value.s, at: Date.now(), by: "uid-a" };
+          }
+        }
+        recordsChanged.at(-1)!(snapshot(shown));
+        return reply;
+      },
+    );
+  }
+
+  it("H1: re-sends a tap whose write was shown locally but never acknowledged", async () => {
+    await signedIn(settings);
+    echoLocally(settings, new Promise(() => {})); // a half-dead connection
+    cycleSpecies(25);
+    await Promise.resolve();
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    // Not acknowledged, so it still counts as unsent (sign-out reports it).
+    expect(syncPending.value).toBe(1);
+
+    stopSync(); // the tab is killed
+    mocks.update.mockReset().mockResolvedValue(undefined);
+    mocks.get.mockResolvedValue(snapshot(settings)); // the server never got it
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalled());
+    expect(sentRecords().at(-1)).toHaveProperty(speciesKey(25), "caught");
+    expect(speciesStatus(25)).toBe("caught");
+  });
+
+  it("H1: a refused write is sent again rather than taken as confirmed", async () => {
+    await signedIn(settings);
+    mocks.update.mockImplementationOnce(
+      (_target: unknown, payload: Record<string, { s: string }>) => {
+        const optimistic = payload[`state/records/${speciesKey(25)}`];
+        recordsChanged.at(-1)!(
+          snapshot({ ...settings, [speciesKey(25)]: { s: optimistic.s, at: Date.now() + 5_000, by: "uid-a" } }),
+        );
+        // Refused: Firebase reverts the local write before rejecting.
+        recordsChanged.at(-1)!(snapshot(settings));
+        return Promise.reject(new Error("write failed: disconnected"));
+      },
+    );
+    cycleSpecies(25);
+    await vi.waitFor(() => expect(syncPhase.value).toBe("error"));
+    expect(syncPending.value).toBe(1);
+    const stored = JSON.parse(storage.get("pokemon-checklist-sync-v1")!);
+    expect(stored.base.records[speciesKey(25)]).toBeUndefined();
+    expect(stored.intents[speciesKey(25)].s).toBe("caught");
+
+    connected[0]({ val: () => false });
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(snapshot(settings));
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    expect(sentRecords()[1]).toHaveProperty(speciesKey(25), "caught");
+  });
+
+  it("M1: an echo is matched to the write in flight, not to any value once sent", async () => {
+    const clock = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+    await signedIn(settings);
+    cycleSpecies(25); // caught, sent and acknowledged
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    recordsChanged.at(-1)!(
+      snapshot({ ...settings, [speciesKey(25)]: { s: "caught", at: 1_000_010, by: "uid-a" } }),
+    );
+    mocks.update.mockClear();
+    connected[0]({ val: () => false });
+    clock.mockReturnValue(2_000_000);
+    cycleSpecies(25); // seen, offline
+    cycleSpecies(25); // none, offline, at 2,000,000
+    clock.mockReturnValue(4_000_000);
+    connected[0]({ val: () => true });
+    // Chat marked it caught at 3,000,000: newer than the offline clear.
+    recordsChanged.at(-1)!(
+      snapshot({ ...settings, [speciesKey(25)]: { s: "caught", at: 3_000_000, by: "chat:uid-a" } }),
+    );
+    await Promise.resolve();
+
+    expect(sentRecords().flatMap((sent) => Object.entries(sent))).not.toContainEqual([
+      speciesKey(25),
+      "none",
+    ]);
+    expect(speciesStatus(25)).toBe("caught");
+    clock.mockRestore();
+  });
+
+  it("H2: another tab's save is not taken as this tab's edits (no Web Locks)", async () => {
+    await signedIn(settings);
+    connected[0]({ val: () => false });
+    cycleSpecies(25); // caught, offline, unsent
+    // Tab B, which knows nothing of that edit, writes its view of the account save.
+    const theirs = JSON.stringify({
+      schemaVersion: 3,
+      species: {},
+      forms: {},
+      starred: [],
+      settings: { forms: false, mode: "photonic-prismatic" },
+    });
+    storage.set(ACCOUNT_SAVE, theirs);
+    syncFromStorage({ key: ACCOUNT_SAVE, newValue: theirs } as StorageEvent);
+    expect(speciesStatus(25)).toBe("caught");
+    cycleSpecies(40);
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(snapshot(settings));
+
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalled());
+    const sent = Object.assign({}, ...sentRecords());
+    expect(sent[speciesKey(25)]).toBe("caught");
+    expect(sent[speciesKey(40)]).toBe("caught");
+  });
+
+  it("H2: a store rewrite keeps another tab's unsent edits and pending Reset", async () => {
+    await signedIn(settings);
+    connected[0]({ val: () => false });
+    // Another tab (no Web Locks) recorded an unsent catch and a Reset, and saved them.
+    const save = JSON.parse(storage.get(ACCOUNT_SAVE)!);
+    save.species = { "151": "caught" };
+    storage.set(ACCOUNT_SAVE, JSON.stringify(save));
+    syncFromStorage({ key: ACCOUNT_SAVE, newValue: JSON.stringify(save) } as StorageEvent);
+    const store = JSON.parse(storage.get("pokemon-checklist-sync-v1")!);
+    store.intents = { [speciesKey(151)]: { s: "caught", at: Date.now(), by: "uid-a" } };
+    store.reset = [[speciesKey(7), "caught"]];
+    storage.set("pokemon-checklist-sync-v1", JSON.stringify(store));
+
+    cycleSpecies(25); // this tab writes the store
+
+    const after = JSON.parse(storage.get("pokemon-checklist-sync-v1")!);
+    expect(after.intents[speciesKey(151)].s).toBe("caught");
+    expect(after.intents[speciesKey(25)].s).toBe("caught");
+    expect(after.reset).toEqual([[speciesKey(7), "caught"]]);
+  });
+
+  it("M3: an Undo expires when a record it would put back changes elsewhere", async () => {
+    await signedIn(settings);
+    cycleSpecies(25);
+    savedNotice("Status");
+    const undo = notice.value.action!;
+    await vi.waitFor(() => expect(syncPending.value).toBe(0)); // acknowledged
+    recordsChanged.at(-1)!(
+      snapshot({ ...settings, [speciesKey(25)]: { s: "caught", at: Date.now(), by: "uid-a" } }),
+    );
+    expect(notice.value.action?.label).toBe("Undo"); // its own echo changes nothing
+    // Later chat corrects it to seen.
+    recordsChanged.at(-1)!(
+      snapshot({ ...settings, [speciesKey(25)]: { s: "seen", at: Date.now() + 60_000, by: "chat:uid-a" } }),
+    );
+    expect(notice.value.action).toBeUndefined();
+
+    mocks.update.mockClear();
+    undo.run(); // even a stale reference must not clear the newer value
+    await Promise.resolve();
+    expect(speciesStatus(25)).toBe("seen");
+    expect(sentRecords().flatMap((sent) => Object.keys(sent))).not.toContain(speciesKey(25));
+  });
+
+  it("L1: holds back clears that would empty the account, and still sends the rest", async () => {
+    await signedIn({
+      ...settings,
+      [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
+      [speciesKey(4)]: { s: "caught", at: 100, by: "uid-a" },
+    });
+    connected[0]({ val: () => false });
+    cycleSpecies(1);
+    cycleSpecies(1); // none
+    cycleSpecies(4);
+    cycleSpecies(4); // none: together these empty the account
+    toggleStar(807); // unrelated
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(
+      snapshot({
+        ...settings,
+        [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
+        [speciesKey(4)]: { s: "caught", at: 100, by: "uid-a" },
+      }),
+    );
+
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(sentRecords()[0]).toEqual({ "star:807": "on" });
+    await vi.waitFor(() => expect(syncPhase.value).toBe("error"));
+    expect(syncPending.value).toBe(2);
+    expect(syncMessage.value).toMatch(/Held back 2 changes/);
+  });
+
+  it("L4: a refused re-send after a lost acknowledgement is retried with fresh log ids", async () => {
+    await signedIn(settings);
+    mocks.update.mockRejectedValueOnce(new Error("PERMISSION_DENIED: Permission denied"));
+    cycleSpecies(25);
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(syncPhase.value).toBe("ready"));
+    expect(sentRecords()[1]).toHaveProperty(speciesKey(25), "caught");
   });
 });
