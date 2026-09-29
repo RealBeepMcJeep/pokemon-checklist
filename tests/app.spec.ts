@@ -672,6 +672,15 @@ test("keeps the pokedex interactive after crossing the breakpoint via resize", a
   // Not just the attribute: the panel must actually respond to input again.
   await page.locator("#dex-search").fill("bulbasaur");
   await expect(page.locator(VISIBLE_ROW)).toHaveCount(1);
+
+  // A drawer left open on a phone must not keep the desktop page locked or inert.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("#sidebar-toggle").click();
+  await expect(page.locator("#pokedex")).toHaveClass(/drawer-open/);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.locator("#pokedex")).not.toHaveClass(/drawer-open/);
+  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+  await expect(page.locator(".app-header")).not.toHaveAttribute("inert", /.*/);
   expect(errors).toEqual([]);
 });
 

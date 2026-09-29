@@ -28,6 +28,9 @@ const mobileQuery = window.matchMedia(`(max-width: ${DRAWER_BREAKPOINT - 1}px)`)
 export const isMobile = signal(mobileQuery.matches);
 mobileQuery.addEventListener("change", (event) => {
   isMobile.value = event.matches;
+  // The phone drawer is a modal; left open into the desktop layout it would keep the
+  // page scroll-locked and everything behind it inert.
+  if (!event.matches) drawerOpen.value = false;
 });
 // The drawer is a modal on a phone: lock the page behind it so a swipe on the
 // backdrop can't scroll the location list underneath.
