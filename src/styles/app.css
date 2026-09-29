@@ -969,3 +969,22 @@ tbody tr:hover {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* --- Cross-mode lookup --------------------------------------------------- */
+.also-catchable {
+  margin-top: 0.5rem;
+  font-size: 0.76rem;
+}
+.also-catchable > summary {
+  color: var(--accent-bright);
+  font-weight: 700;
+  cursor: pointer;
+}
+.also-catchable ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+}
+.also-catchable li {
+  margin: 0.2rem 0;
+  color: var(--muted);
+}

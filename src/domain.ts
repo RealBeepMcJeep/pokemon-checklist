@@ -349,3 +349,21 @@ export function uncaughtCatchNowRows(
     (row) => row.speciesId && statusOf(row.speciesId) !== "caught",
   );
 }
+
+/**
+ * Where a species turns up in every OTHER game mode, for the Pokédex's "Also
+ * catchable in" section. All five modes' data already sit in memory together
+ * (src/data.ts), so this is one more loop over it, not a new fetch.
+ */
+export function crossModeOccurrences(
+  encountersByMode: Record<GameMode, EncounterData>,
+  currentMode: GameMode,
+  speciesId: number,
+): { mode: GameMode; occurrences: Occurrence[] }[] {
+  return GAME_MODES.filter((candidate) => candidate !== currentMode)
+    .map((candidate) => ({
+      mode: candidate,
+      occurrences: getOccurrences(encountersByMode[candidate], speciesId),
+    }))
+    .filter((entry) => entry.occurrences.length > 0);
+}
