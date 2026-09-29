@@ -1,4 +1,5 @@
 """Image cards: same report JSON as the CLI, with Gen VII project atlas sprites."""
+import os
 import sys
 import tempfile
 import unittest
@@ -8,15 +9,22 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import story_team_cards as cards
+import showdown_data
 
 
 class StoryTeamCardsTests(unittest.TestCase):
     def test_render_uses_project_atlas_and_writes_a_complete_image(self):
         atlas = Image.open(cards.ATLAS).convert("RGBA")
-        report = {"utility": "Butterfree", "utility_dex": 12, "caught_records": 58}
+        moves = [{"name": name, "type": typ, "gate": gate} for name, typ, gate in
+                 [("Sleep Powder", "Grass", "Butterfree L13"),
+                  ("Bug Buzz", "Bug", "Butterfree L31"),
+                  ("Roost", "Flying", "TM19 · Route 3"),
+                  ("Air Slash", "Flying", "Butterfree L43")]]
+        report = {"utility": "Butterfree", "utility_dex": 12, "caught_records": 58,
+                  "utility_moves": moves}
         members = [{"owned": name, "final": name, "dex": dex, "owned_dex": dex,
                     "types": [typ], "tier": "RU", "favorite": False,
-                    "evolution": name} for name, dex, typ in
+                    "evolution": name, "moves": moves} for name, dex, typ in
                    [("Gengar", 94, "Ghost"), ("Arcanine", 59, "Fire"),
                     ("Raichu", 26, "Electric"), ("Pidgeot", 18, "Flying"),
                     ("Slowbro", 80, "Water")]]
@@ -36,6 +44,24 @@ class StoryTeamCardsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "distinct battlers"):
                 cards.render_card(report, {**option, "members": members[:4]}, 1, atlas, dest,
                                   generated="test")
+            with self.assertRaisesRegex(ValueError, "acquisition-checked"):
+                cards.render_card({**report, "utility_moves": []}, option, 1, atlas, dest,
+                                  generated="test")
+
+    def test_enrich_once_and_redraw_without_firebase_or_cache(self):
+        old = {"utility": "Butterfree", "options": [{"members": [
+            {"owned": "Gastly", "final": "Gengar"}]}]}
+        cache = (Path(os.environ["SHOWDOWN_DATA_CACHE"]).expanduser() if
+                 os.environ.get("SHOWDOWN_DATA_CACHE") else showdown_data.configured_cache_dir())
+        if not (cache / showdown_data.MANIFEST_FILENAME).exists():
+            self.skipTest("pinned Showdown cache not bootstrapped; run showdown_data.py bootstrap")
+        enriched = cards.add_move_targets(old, cache)
+        self.assertNotIn("utility_moves", old)
+        self.assertEqual(len(enriched["utility_moves"]), 4)
+        self.assertEqual(len(enriched["options"][0]["members"][0]["moves"]), 4)
+        self.assertEqual(cards.add_move_targets(enriched, None), enriched)
+        with self.assertRaisesRegex(ValueError, "needs --cache"):
+            cards.add_move_targets(old, None)
 
     def test_no_guessed_sprite_for_out_of_atlas_dex(self):
         with Image.open(cards.ATLAS) as atlas:
