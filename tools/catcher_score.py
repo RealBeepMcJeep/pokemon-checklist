@@ -54,6 +54,7 @@ from typing import Mapping
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
+import acquisition_data as ad  # noqa: E402  (shared TM/tutor locations, one source of truth)
 import moveline as ml  # noqa: E402  (shared parsing, one source of truth)
 from showdown_data import configured_cache_dir, require_cache  # noqa: E402
 from showdown_text import field, object_after  # noqa: E402
@@ -77,19 +78,28 @@ FIXED_CATEGORY = {
 # simply levelling up, so in this game they are nearly a level-up move. The level the
 # hack assigns is unknown, so the timing stays neutral rather than guessed.
 ACQ = {"level": 1.0, "reminder": 0.2, "TM": 0.8, "egg": 0.9, "event": 0.2}
-# Where each tutor move is taught, from Serebii's USUM Move Tutors page - parsed, not typed.
-# This is the axis that was missing: a Battle Tree move is late-game, so it must be dampened
-# like one, while a Big Wave Beach move is available at the end of the first island.
-TUTOR_LOCATION = {
-    **{m: 0.80 for m in ['snore', 'healbell', 'electroweb', 'defog', 'lowkick', 'uproar', 'bind', 'helpinghand', 'shockwave', 'block', 'lastresort', 'covet', 'bugbite', 'snatch', 'recycle']},   # Big Wave Beach, Melemele
-    **{m: 0.65 for m in ['irontail', 'spite', 'afteryou', 'gigadrain', 'synthesis', 'allyswitch', 'signalbeam', 'gravity', 'stealthrock', 'irondefense', 'telekinesis', 'magnetrise', 'bounce', 'roleplay', 'firepunch', 'waterpulse']},   # Heahea Beach, Akala
-    **{m: 0.55 for m in ['ironhead', 'aquatail', 'painsplit', 'tailwind', 'thunderpunch', 'endeavor', 'focuspunch', 'icywind', 'zenheadbutt', 'seedbomb', 'laserfocus', 'trick', 'drillrun', 'magiccoat', 'icepunch', 'wonderroom', 'magicroom']},   # Ula'ula Beach
-    **{m: 0.25 for m in ['liquidation', 'gastroacid', 'foulplay', 'superfang', 'outrage', 'skyattack', 'throatchop', 'stompingtantrum', 'skillswap', 'earthpower', 'gunkshot', 'dualchop', 'drainpunch', 'heatwave', 'hypervoice', 'superpower', 'knockoff', 'dragonpulse']},   # Battle Tree, Poni - late
+# Where each tutor move is taught. Location membership comes from
+# acquisition_data.TUTOR_LOCATION (the move report's own table) so the two
+# cannot drift apart the way this file's former private copy did (it was
+# missing "worryseed" from Big Wave Beach). The per-location factor below is
+# this scoring model's own axis, not the report's: a Battle Tree move is
+# late-game, so it must be dampened like one, while a Big Wave Beach move is
+# available at the end of the first island.
+_TUTOR_LOCATION_FACTOR = {
+    "Big Wave Beach (Melemele)": 0.80,
+    "Heahea Beach (Akala)": 0.65,
+    "Ula'ula Beach": 0.55,
+    "Battle Tree (Poni)": 0.25,
 }
-# Where the TM is found. Reported, deliberately NOT dampened: turning a location into a
-# progress factor needs a verified route-to-island table first, and guessing one would be
-# the same error as scoring the Move Reminder as free.
-TM_LOCATION = {'workup': 'Route 1 - Trainer School', 'dragonclaw': 'Vast Poni Canyon', 'psyshock': 'Lake of the Moone/Lake of the Sunne', 'calmmind': 'Seafolk Village Pok�Mart', 'roar': "Kala'e Bay", 'toxic': 'Aether Paradise', 'hail': 'Royal Avenue - Pok�Mart', 'bulkup': 'Royal Avenue', 'venoshock': 'Konikoni City Pok�Mart', 'hiddenpower': 'Paniola Ranch', 'sunnyday': 'Royal Avenue - Pok�Mart', 'taunt': 'Route 13', 'icebeam': 'Mount Lanakila', 'blizzard': 'Seafolk Village Pok�Mart', 'hyperbeam': 'Seafolk Village Pok�Mart', 'lightscreen': 'Heahea City Pok�Mart', 'protect': 'Heahea City Pok�Mart', 'raindance': 'Royal Avenue - Pok�Mart', 'roost': 'Route 3', 'safeguard': 'Heahea City Pok�Mart', 'frustration': 'Malie City', 'solarbeam': 'Seafolk Village Pok�Mart', 'smackdown': 'Ten Carat Hill', 'thunderbolt': 'Sandy Cave', 'thunder': 'Seafolk Village Pok�Mart', 'earthquake': 'Resolution Cave', 'return': 'Malie City', 'leechlife': 'Akala Outskirts', 'psychic': 'Aether Paradise', 'shadowball': 'Route 14', 'brickbreak': 'Verdant Cavern', 'doubleteam': 'Route 7', 'reflect': 'Heahea City Pok�Mart', 'sludgewave': 'Seafolk Village Pok�Mart', 'flamethrower': 'Vast Poni Canyon', 'sludgebomb': 'Shady House', 'sandstorm': 'Royal Avenue - Pok�Mart', 'fireblast': 'Seafolk Village Pok�Mart', 'rocktomb': 'Wela Volcano Park', 'aerialace': 'Konikoni City Pok�Mart', 'torment': 'Route 5', 'facade': 'Malie City Pok�Mart', 'flamecharge': 'Route 8', 'rest': 'Royal Avenue - Thrifty Megamart', 'attract': 'Hano Grand Resort', 'thief': 'Verdant Cavern', 'lowsweep': 'Konikoni City Pok�Mart', 'round': "Hau'oli City", 'echoedvoice': "Hau'oli City", 'overheat': 'Poni Meadow', 'steelwing': 'Konikoni City Pok�Mart', 'focusblast': 'Seafolk Village Pok�Mart', 'energyball': 'Route 8', 'falseswipe': 'Iki Town', 'scald': 'Ancient Poni Path', 'fling': "Hau'oli Cemetery", 'chargebeam': 'Brooklet Hill', 'skydrop': 'Route 8', 'brutalswing': 'Route 5', 'quash': 'Poni Plains', 'will-o-wisp': 'Konikoni City', 'acrobatics': 'Route 15', 'embargo': 'Blush Mountain', 'explosion': 'Ten Carat Hill', 'shadowclaw': 'Malie City Pok�Mart', 'payback': 'Route 11', 'smartstrike': 'Lush Jungle', 'gigaimpact': 'Seafolk Village Pok�Mart', 'rockpolish': 'Malie City Pok�Mart', 'auroraveil': 'Heahea City Pok�Mart', 'stoneedge': 'Seafolk Village Pok�Mart', 'voltswitch': 'Mount Hokulani', 'thunderwave': 'Malie Garden', 'gyroball': 'Route 11', 'swordsdance': 'Poni Meadow', 'fly': 'Malie City', 'psychup': 'Malie City Pok�Mart', 'bulldoze': 'Konikoni City Pok�Mart', 'frostbreath': 'Seaward Cave', 'rockslide': 'Route 17', 'x-scissor': 'Route 16', 'dragontail': 'Route 12', 'infestation': 'Route 3', 'poisonjab': 'Mount Lanakila', 'dreameater': 'Haina Desert', 'grassknot': 'Lush Jungle', 'swagger': 'Route 2', 'sleeptalk': 'Paniola Town', 'u-turn': 'Malie City Pok�Mart', 'substitute': 'Route 1', 'flashcannon': 'Seafolk Village', 'trickroom': 'Hano Grand Resort', 'wildcharge': 'Vast Poni Canyon', 'surf': 'Poni Breaker Coast', 'snarl': 'Mount Hokulani', 'naturepower': 'Route 5', 'darkpulse': 'Poni Coast', 'waterfall': 'Poni Breaker Coast', 'dazzlinggleam': 'Vast Poni Canyon', 'confide': "Hau'oli Cemetery"}
+TUTOR_LOCATION = {move: _TUTOR_LOCATION_FACTOR[place] for move, place in ad.TUTOR_LOCATION.items()}
+# Where the TM is found, from acquisition_data.TM_INFO (the move report's own table)
+# so a location cannot silently disagree between the two tools, as this file's
+# former private copy did (mojibake in ~28 entries, three moves keyed by the
+# hyphenated display spelling instead of Showdown's move id, so they never
+# matched a real lookup at all). Reported, deliberately NOT dampened: turning a
+# location into a progress factor needs a verified route-to-island table first,
+# and guessing one would be the same error as scoring the Move Reminder as free.
+TM_LOCATION = {move: place for move, (_, place) in ad.TM_INFO.items()}
 
 LABEL = {"sleep": "sleep", "falseswipe": "False Swipe", "superfang": "Super Fang",
          "freeze": "freeze chance", "paralysis": "paralysis", "antighost": "anti-Ghost",

@@ -1,7 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { chromium } from "playwright-core";
+// @playwright/test re-exports playwright-core's chromium launcher; reusing it
+// here (rather than importing playwright-core directly) means this script has
+// no dependency of its own that isn't already declared in package.json.
+import { chromium } from "@playwright/test";
 
 const [htmlPathArg, pngPathArg, widthArg, ...flags] = process.argv.slice(2);
 if (!htmlPathArg || !pngPathArg) {

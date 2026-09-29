@@ -44,3 +44,14 @@ export function normalizeStamp(html) {
 export function hasStamp(html) {
   return new RegExp(STAMP_SOURCE).test(html);
 }
+
+/**
+ * Is the committed root index.html an exact rebuild of dist/index.html (other than
+ * the stamp)? Both sides are normalized to LF first: a fresh build is always LF, but
+ * the committed file could have been resaved with CRLF line endings by some tool or
+ * editor outside git's own `eol=lf` filters, and that must not read as a stale build.
+ */
+export function isFreshBuild(builtHtml, publishedHtml) {
+  const normalize = (text) => normalizeStamp(text.replace(/\r\n?/g, "\n"));
+  return normalize(builtHtml) === normalize(publishedHtml);
+}

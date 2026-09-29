@@ -14,9 +14,9 @@ from pathlib import Path
 from PIL import Image
 
 try:
-    from .cache_support import default_cache_dir, sha256_bytes, staged_directory, write_manifest
+    from .cache_support import CacheError, default_cache_dir, sha256_bytes, staged_directory, write_manifest
 except ImportError:  # Running the file directly: python tools/build_icons.py
-    from cache_support import default_cache_dir, sha256_bytes, staged_directory, write_manifest  # type: ignore[no-redef]
+    from cache_support import CacheError, default_cache_dir, sha256_bytes, staged_directory, write_manifest  # type: ignore[no-redef]
 
 COUNT = 807
 COLUMNS = 32
@@ -40,10 +40,6 @@ LICENSE_OUT = ROOT / "references" / "PokeAPI-sprites-LICENCE.txt"
 
 def _normalized_text(raw: bytes) -> str:
     return raw.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
-
-
-class CacheError(ValueError):
-    pass
 
 
 def download_bytes(url: str) -> bytes:

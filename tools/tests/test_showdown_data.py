@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -161,6 +163,39 @@ class ShowdownDataStoreTests(unittest.TestCase):
         self.assertEqual(
             manifest["datasets"]["tiers"]["filename"], "tiers.js"
         )
+
+
+class CacheDirMigrationTests(unittest.TestCase):
+    """showdown_data.py used to hardcode ~/.cache/pokemon-checklist/showdown on every
+    OS; it now derives its default from cache_support's per-OS helper (matching
+    build_icons.py/build_vanilla_encounters.py), but must still find a cache already
+    bootstrapped at the old hardcoded location."""
+
+    def test_falls_back_to_the_legacy_cache_when_the_new_default_is_unbootstrapped(self):
+        with tempfile.TemporaryDirectory() as parent:
+            legacy = Path(parent) / "legacy"
+            legacy.mkdir()
+            missing = Path(parent) / "not-bootstrapped-yet"
+            with mock.patch.object(sd, "DEFAULT_CACHE_DIR", missing), \
+                 mock.patch.object(sd, "_LEGACY_DEFAULT_CACHE_DIR", legacy), \
+                 mock.patch.dict("os.environ", {}, clear=False):
+                os.environ.pop("POKE_DATA_CACHE", None)
+                self.assertEqual(sd.configured_cache_dir(), legacy)
+
+    def test_prefers_the_new_default_once_it_has_been_bootstrapped(self):
+        with tempfile.TemporaryDirectory() as parent:
+            new_default = Path(parent) / "new"
+            new_default.mkdir()
+            legacy = Path(parent) / "legacy"
+            legacy.mkdir()
+            with mock.patch.object(sd, "DEFAULT_CACHE_DIR", new_default), \
+                 mock.patch.object(sd, "_LEGACY_DEFAULT_CACHE_DIR", legacy):
+                self.assertEqual(sd.configured_cache_dir(), new_default)
+
+    def test_tier_order_is_the_one_canonical_list(self):
+        self.assertEqual(sd.TIER_ORDER[0], "AG")
+        self.assertEqual(sd.TIER_ORDER[-1], "LC")
+        self.assertEqual(len(set(sd.TIER_ORDER)), len(sd.TIER_ORDER))
 
 
 if __name__ == "__main__":

@@ -75,6 +75,8 @@ python tools/build_moves.py --refresh
 python tools/build_moves.py --check
 ```
 
-`build_pokedex_details.py` also requires a bootstrapped `--cache`; it downloads
-only its separate, hash-pinned Smogon usage snapshot when regeneration is
-explicitly requested.
+`build_pokedex_details.py` also requires a bootstrapped `--cache`, but unlike its
+siblings above it has no offline-only path: it downloads its separate,
+hash-pinned Smogon usage snapshot on every run, including `--check`, since that
+snapshot is not part of the cache contract this file describes. There is no
+`--refresh` flag on this script — every invocation needs network access.

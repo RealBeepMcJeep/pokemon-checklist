@@ -16,17 +16,24 @@ from pathlib import Path
 from typing import Iterable
 
 import catcher_score as catcher
-from showdown_data import configured_cache_dir, require_cache
-from showdown_text import array_field, block, field, integer_field, list_field, object_after
+from showdown_data import TIER_ORDER, configured_cache_dir, require_cache
+from showdown_text import (
+    array_field,
+    block,
+    field,
+    integer_field,
+    list_field,
+    normalize_name,
+    object_after,
+)
 
 REPO = Path(__file__).resolve().parent.parent
-TIER_ORDER = ["Uber", "OU", "UUBL", "UU", "RUBL", "RU", "NUBL", "NU", "PUBL", "PU", "(PU)", "LC Uber", "LC"]
 TIER_RANK = {tier: index for index, tier in enumerate(TIER_ORDER)}
 STAT_KEYS = ("hp", "atk", "def", "spa", "spd", "spe")
 
-
-def normalize(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", str(value).lower())
+# Accent-folding, not just ascii-ignore encoding, so an accented species name
+# (Flabébé is the only one in the dex) still resolves like every other lookup.
+normalize = normalize_name
 
 
 def normalise_tier(value: str | None) -> str | None:

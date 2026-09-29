@@ -191,6 +191,35 @@ class GeneratorCacheTests(unittest.TestCase):
         self.assertEqual(urlopen.call_args.kwargs["timeout"], vanilla.DOWNLOAD_TIMEOUT)
         self.assertGreater(vanilla.DOWNLOAD_TIMEOUT, 0)
 
+    def test_normalize_disambiguates_nidoran_genders(self):
+        # normalize() used to ascii-ignore-encode, which drops ♀/♂ entirely instead
+        # of translating them, so both genders collapsed to the same "nidoran" key
+        # and by_name = {normalize(item["name"]): item ...} kept only whichever
+        # Nidoran happened to be processed last.
+        self.assertNotEqual(vanilla.normalize("Nidoran♀"), vanilla.normalize("Nidoran♂"))
+
+    def test_table_for_counts_duplicate_species_rarity_pairs_as_a_multiset(self):
+        # wanted used to be built with a set comprehension around the generator
+        # expression, collapsing a duplicate (speciesId, rarity) pair to one
+        # element before Counter ever saw it, so it could never equal a real
+        # table's multiset signature for a location with a repeated pair.
+        records = [
+            {"speciesId": 1, "rarity": 20, "minimum": 2, "maximum": 4},
+            {"speciesId": 1, "rarity": 20, "minimum": 2, "maximum": 4},
+        ]
+        table = {
+            "header": "Test Area",
+            "number": "1",
+            "day": {
+                "entries": [{"speciesId": 1, "rate": 20}, {"speciesId": 1, "rate": 20}],
+                "minimum": 2,
+                "maximum": 4,
+            },
+            "night": {"entries": [], "minimum": 2, "maximum": 4},
+        }
+        matched = vanilla.table_for(records, [table], "test-area", "field", "walk", False)
+        self.assertIs(matched, table)
+
 
 if __name__ == "__main__":
     unittest.main()

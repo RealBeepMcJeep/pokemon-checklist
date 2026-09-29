@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from collections.abc import Callable, Iterator
 
 
@@ -37,6 +38,21 @@ def field(body: str, name: str) -> str | None:
     """Read one quoted Showdown scalar field."""
     match = re.search(rf"\b{re.escape(name)}\s*:\s*['\"]([^'\"]*)['\"]", body)
     return match.group(1) if match else None
+
+
+def normalize_name(value: object) -> str:
+    """Fold a display name to a bare key: strip accents, case, and punctuation.
+
+    Shared by every tool (and the chat parser) that matches a typed or stored name
+    against data/pokemon.json, so an accented species like Flabébé resolves the
+    same way everywhere instead of drifting per hand-rolled copy -- a plain
+    ascii-ignore encode used to drop accented letters whole instead of folding
+    them to their base letter, silently losing the only accented Latin-letter
+    species in the dex.
+    """
+    decomposed = unicodedata.normalize("NFD", str(value))
+    stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]", "", stripped.lower())
 
 
 def list_field(

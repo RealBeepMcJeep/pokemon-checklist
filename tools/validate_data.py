@@ -7,6 +7,11 @@ import json
 import struct
 from pathlib import Path
 
+try:
+    from . import showdown_data as sd
+except ImportError:  # Running the file directly: python tools/validate_data.py
+    import showdown_data as sd  # type: ignore[no-redef]
+
 ROOT = Path(__file__).resolve().parents[1]
 
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
@@ -25,23 +30,9 @@ ATLAS_WIDTH = 1280
 ATLAS_HEIGHT = 780
 ATLAS_COLUMNS = 32
 GRADES = {"SSS", "S", "A", "B", "C", "D", "F"}
-TIERS = {
-    "AG",
-    "Uber",
-    "OU",
-    "UUBL",
-    "UU",
-    "RUBL",
-    "RU",
-    "NUBL",
-    "NU",
-    "PUBL",
-    "PU",
-    "(PU)",
-    "LC",
-    "LC Uber",
-    "NFE",
-}
+# "NFE" (not fully evolved) is a real `ownTier` value but not part of the
+# competitive ladder in showdown_data.TIER_ORDER, so it is added on top of it.
+TIERS = set(sd.TIER_ORDER) | {"NFE"}
 POKEMON_TYPES = {
     "Normal",
     "Fire",
@@ -276,7 +267,7 @@ def validate_pokedex_details(details: object) -> list[str]:
     source = details.get("source")
     if (
         not isinstance(source, dict)
-        or source.get("showdownCommit") != "e7aee8d9ccc983c59c5608929773249adca16b8f"
+        or source.get("showdownCommit") != sd.SHOWDOWN_COMMIT
     ):
         errors.append("pokedex-details.json must use the pinned Gen VII source")
     species = details.get("species")

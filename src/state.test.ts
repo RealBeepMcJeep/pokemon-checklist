@@ -234,9 +234,15 @@ describe("starred species", () => {
 });
 
 describe("storage failures", () => {
+  beforeEach(() => {
+    // storageAvailable is a module-level signal shared between tests; assert
+    // each test's starting state instead of relying on a previous test's
+    // cleanup line to have left it true.
+    storageAvailable.value = true;
+  });
+
   it("still notifies sync of the current state when persistence fails", () => {
     installStorage();
-    storageAvailable.value = true;
     setLocalChangeListener(null);
     resetState();
 

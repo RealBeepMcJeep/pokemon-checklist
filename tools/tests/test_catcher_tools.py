@@ -195,6 +195,17 @@ class CatcherScoreTests(unittest.TestCase):
     def test_worry_seed_is_not_a_catching_category(self):
         self.assertIsNone(score.benefit("worryseed", "{ accuracy: 100 }"))
 
+    def test_tm_and_tutor_locations_are_derived_from_acquisition_data(self):
+        # TM_LOCATION/TUTOR_LOCATION used to be private copies that had drifted:
+        # mojibake, moves keyed by the hyphenated display spelling instead of
+        # Showdown's move id (never matching a real learnset key), and a tutor
+        # move ("worryseed") missing from its location bucket entirely.
+        for move in ("willowisp", "xscissor", "uturn"):
+            self.assertIn(move, score.TM_LOCATION)
+            self.assertNotIn("�", score.TM_LOCATION[move])
+        self.assertIn("worryseed", score.TUTOR_LOCATION)
+        self.assertEqual(score.TUTOR_LOCATION["worryseed"], 0.80)
+
     def test_island_mapping_uses_encounter_island_order(self):
         mapping = score.load_islands(ROOT)
         self.assertEqual(mapping[score.normalize_place("Route 1")], 1)
