@@ -347,29 +347,47 @@ describe("a save that cannot be read never hides a good one", () => {
     expect(storageAvailable.value).toBe(true);
   });
 
-  it("falls back to an older build's save", () => {
+  it("never loads an older build's save over a current one it cannot read", () => {
+    const legacy = JSON.stringify({
+      schemaVersion: 2,
+      species: { "25": "seen" },
+      forms: {},
+      settings: { forms: false, mode: "sun" },
+    });
     const store = installStorage({
       [STORAGE_KEY]: "{truncated",
-      "pokemon-checklist-state-v2": JSON.stringify({
-        schemaVersion: 2,
-        species: { "25": "seen" },
-        forms: {},
-        settings: { forms: false, mode: "sun" },
-      }),
+      "pokemon-checklist-state-v2": legacy,
     });
 
     initializeState();
+    cycleSpecies(1);
 
-    expect(exportState().species).toEqual({ "25": "seen" });
+    expect(exportState().species).toEqual({ "1": "caught" });
+    expect(store.get(STORAGE_KEY)).toBe("{truncated");
+    expect(store.get("pokemon-checklist-state-v2")).toBe(legacy);
     expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe("{truncated");
+    expect(storageAvailable.value).toBe(false);
   });
 
-  it("starts fresh but keeps the unreadable save when nothing else can be read", () => {
+  it("starts a fresh, unsaved checklist when nothing else can be read", () => {
     const store = installStorage({ [STORAGE_KEY]: FUTURE });
     initializeState();
     cycleSpecies(1);
+    expect(store.get(STORAGE_KEY)).toBe(FUTURE);
     expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe(FUTURE);
-    expect(storageAvailable.value).toBe(true);
+    expect(storageAvailable.value).toBe(false);
+    expect(notice.value.message).toMatch(/not saved/);
+  });
+
+  it("keeps every different unreadable save, never only the latest", () => {
+    const store = installStorage({ [STORAGE_KEY]: FUTURE });
+    initializeState();
+    store.set(STORAGE_KEY, "{another");
+    initializeState();
+    initializeState();
+    expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe(FUTURE);
+    expect(store.get(`${STORAGE_KEY}:unreadable-2`)).toBe("{another");
+    expect(store.get(`${STORAGE_KEY}:unreadable-3`)).toBeUndefined();
   });
 
   it("never writes the account's checklist over an unreadable device save on sign-out", () => {
@@ -390,6 +408,7 @@ describe("saving recovers and never hides a failure", () => {
   beforeEach(() => {
     installStorage();
     setSyncAccount(null);
+    initializeState();
     resetState();
   });
 
@@ -473,6 +492,28 @@ describe("undo", () => {
     expect(notice.value.message).toBe("Undone.");
     expect(notice.value.action).toBeUndefined();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).species).toEqual({ "150": "caught" });
+  });
+
+  it("undoes only this tab's change when saving took in another tab's", () => {
+    const store = installStorage();
+    initializeState();
+    // Another tab saved 150 while this one missed the event.
+    store.set(STORAGE_KEY, saveOf({ "150": "caught" }));
+    cycleSpecies(731);
+    savedNotice("Status");
+    expect(exportState().species).toEqual({ "150": "caught", "731": "caught" });
+
+    notice.value.action!.run();
+
+    expect(exportState().species).toEqual({ "150": "caught" });
+  });
+
+  it("withdraws Undo when another account's checklist is shown", () => {
+    cycleSpecies(25);
+    savedNotice("Status");
+    setSyncAccount("uid-new"); // no save of its own: adopts, with no notice
+    expect(notice.value.action).toBeUndefined();
+    setSyncAccount(null);
   });
 
   it("does not offer to undo a change it did not report", () => {

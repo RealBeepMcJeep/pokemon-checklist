@@ -55,7 +55,7 @@ export const isClearing = (value: string): boolean =>
  * than "none" so the stored document reads sensibly when inspected by hand;
  * both are treated as absent when a document is turned back into a save.
  */
-function clearedValue(key: RecordKey): string {
+export function clearedValue(key: RecordKey): string {
   return key.startsWith("star:") || key === SETTING_FORMS ? STAR_OFF : TOMBSTONE;
 }
 
@@ -163,7 +163,9 @@ export function beforeImage(
  * `onto`, with only the records that changed between `from` and `to` changed the
  * same way. Everything else keeps the value `onto` has, so replaying one change
  * (an undo, or this tab's edit over another tab's newer save) never reverts
- * unrelated progress that arrived in the meantime.
+ * unrelated progress that arrived in the meantime. With `onlyUnchanged`, a record
+ * `onto` no longer holds at its `from` value is left alone too (an Undo must not
+ * override a record changed after the change it undoes).
  */
 export function rebaseState(
   onto: SavedState,
@@ -171,15 +173,20 @@ export function rebaseState(
   to: SavedState,
   validPokemon: ReadonlySet<number>,
   validForms: ReadonlySet<string>,
+  onlyUnchanged = false,
 ): SavedState {
-  const change = diffEntries(
-    entriesFromState(from, 0, ""),
-    entriesFromState(to, 0, ""),
-  );
+  const fromEntries = entriesFromState(from, 0, "");
+  const ontoEntries = entriesFromState(onto, 0, "");
+  const change = diffEntries(fromEntries, entriesFromState(to, 0, ""));
+  if (onlyUnchanged) {
+    for (const key of Object.keys(change)) {
+      if (ontoEntries[key]?.s !== fromEntries[key]?.s) delete change[key];
+    }
+  }
   return stateFromDocument(
     {
       schema: 1,
-      records: { ...entriesFromState(onto, 0, ""), ...change },
+      records: { ...ontoEntries, ...change },
       updatedAt: 0,
     },
     validPokemon,

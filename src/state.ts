@@ -12,7 +12,7 @@ import {
 } from "./domain";
 import type { GameMode, SavedState, Status } from "./types";
 import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
-import { rebaseState } from "./sync/records";
+import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
 
 export interface Notice {
   message: string;
@@ -82,6 +82,7 @@ let localChangeListener: ((state: SavedState) => void) | null = null;
 let localReplaceListener:
   | ((before: SavedState, op: ReplaceOp) => void)
   | null = null;
+let otherTabListener: ((state: SavedState) => void) | null = null;
 
 /** The localStorage key the player's save belongs to right now. */
 export function activeSaveKey(): string {
@@ -105,6 +106,13 @@ export function setLocalReplaceListener(
   localReplaceListener = listener;
 }
 
+/** Told when another tab's save of the same checklist has just been applied here. */
+export function setOtherTabListener(
+  listener: ((state: SavedState) => void) | null,
+): void {
+  otherTabListener = listener;
+}
+
 /**
  * Point the app at a signed-in account's save, or back at the device's own.
  *
@@ -118,6 +126,8 @@ export function setSyncAccount(
   { adopt = true, ifSaved = false }: { adopt?: boolean; ifSaved?: boolean } = {},
 ): boolean {
   if (uid === activeUid) return true;
+  // Another checklist is about to be shown: nothing on screen can be undone into it.
+  expireUndo();
   const previous = activeUid;
   activeUid = uid;
   let read: StoredSave | null = null;
@@ -209,6 +219,8 @@ export function applyState(state: SavedState): void {
     mode.value = state.settings.mode;
     starred.value = [...state.starred];
   });
+  // Anything that changes a record an Undo would put back ends that Undo.
+  if (undoable && !stillAsLeft(undoable)) expireUndo();
 }
 
 export function showNotice(
@@ -216,6 +228,7 @@ export function showNotice(
   kind: Notice["kind"] = "",
   action?: Notice["action"],
 ): void {
+  undoable = null;
   notice.value = action ? { message, kind, action } : { message, kind };
 }
 
@@ -242,12 +255,14 @@ interface StoredSave {
 
 function readSave(): StoredSave {
   const key = activeSaveKey();
-  // Signed in, an account has its own save only. Signed out, an older build's key
-  // is still migrated on read.
-  const candidates = activeUid
-    ? [key, lastGoodKey(key)]
-    : [key, lastGoodKey(key), ...LEGACY_STORAGE_KEYS];
   const raw = localStorage.getItem(key);
+  // Signed in, an account has its own save only. Signed out, an older build's key
+  // is migrated on read, but only when there is no current save at all: an older
+  // save never replaces a current one that merely could not be read.
+  const candidates =
+    activeUid || raw !== null
+      ? [key, lastGoodKey(key)]
+      : [key, lastGoodKey(key), ...LEGACY_STORAGE_KEYS];
   let unreadable: string | null = null;
   for (const candidate of candidates) {
     const text = candidate === key ? raw : localStorage.getItem(candidate);
@@ -262,13 +277,22 @@ function readSave(): StoredSave {
   return { found: null, unreadable, raw };
 }
 
-/** Put an unreadable save aside before anything can overwrite it. */
+/**
+ * Put an unreadable save aside before anything can overwrite it. Each different
+ * one gets its own slot (`:unreadable`, `:unreadable-2`, ...), so a second never
+ * replaces the first.
+ */
 function keepUnreadable(key: string, text: string): boolean {
   try {
-    if (localStorage.getItem(unreadableKey(key)) !== text) {
-      localStorage.setItem(unreadableKey(key), text);
+    for (let slot = 1; ; slot += 1) {
+      const name = slot === 1 ? unreadableKey(key) : `${unreadableKey(key)}-${slot}`;
+      const kept = localStorage.getItem(name);
+      if (kept === text) return true;
+      if (kept === null) {
+        localStorage.setItem(name, text);
+        return true;
+      }
     }
-    return true;
   } catch {
     heldKey = key;
     return false;
@@ -281,16 +305,21 @@ function useSave({ found, unreadable, raw }: StoredSave): boolean {
   heldKey = null;
   seen = { key, raw, state: found?.state ?? defaultState() };
   const kept = unreadable === null || keepUnreadable(key, unreadable);
+  // With no readable copy of it at all, nothing is saved over the unreadable save.
+  if (unreadable !== null && !found) heldKey = key;
   if (found) {
     applyState(found.state);
     // An older (or last good) copy rewrites itself under the current key. A legacy
     // entry is deliberately left behind so an older build still finds its own data.
     if (found.key !== key) persist();
   }
+  if (heldKey === key) storageAvailable.value = false;
   if (unreadable !== null) {
     showNotice(
       `Your saved checklist could not be read, so ${
-        found ? "the last copy that could be read is shown" : "a fresh one is started"
+        found
+          ? "the last copy that could be read is shown"
+          : "a fresh checklist is shown that will not be saved"
       }. ${
         kept
           ? "The unreadable copy is kept on this device."
@@ -332,8 +361,14 @@ function withOtherTabsChanges(key: string, state: SavedState): SavedState {
     keepUnreadable(key, stored);
     return state;
   }
+  const base = seen.state;
+  // First take the other tab's save as its storage event would have delivered it
+  // (sync must learn of it the same way), then lay this tab's change on top.
+  seen = { key, raw: stored, state: theirs.state };
+  applyState(theirs.state);
+  otherTabListener?.(theirs.state);
   applyState(
-    rebaseState(theirs.state, seen.state, state, validPokemon, validForms),
+    rebaseState(exportState(), base, state, validPokemon, validForms),
   );
   return exportState();
 }
@@ -358,7 +393,9 @@ export function persist(): void {
   } catch {
     storageAvailable.value = false;
     showNotice(
-      "Browser storage is unavailable; changes will disappear when this tab closes.",
+      key === heldKey
+        ? "Your saved checklist could not be read, so changes are not saved over it; they will disappear when this tab closes."
+        : "Browser storage is unavailable; changes will disappear when this tab closes.",
       "error",
     );
   }
@@ -386,26 +423,57 @@ export function initializeState(): void {
 
 interface Change {
   before: SavedState;
+  /** This tab's own result, taken before saving could merge in another tab's. */
   after: SavedState;
+  /** The records the change touched. */
+  keys: string[];
   /** Reset or Restore: undone as a restore, so sync logs it as one event. */
   replace: boolean;
 }
 
 /** The change that the next notice can offer to undo. */
 let lastChange: Change | null = null;
+/** The change whose Undo the notice is showing. */
+let undoable: Change | null = null;
 
-function remember(before: SavedState, replace = false): void {
-  lastChange = { before, after: exportState(), replace };
+function change(before: SavedState, after: SavedState, replace = false): Change {
+  const keys = Object.keys(
+    diffEntries(entriesFromState(before, 0, ""), entriesFromState(after, 0, "")),
+  );
+  return { before, after, keys, replace };
+}
+
+/** Whether every record the change touched still holds what it left there. */
+function stillAsLeft({ after, keys }: Change): boolean {
+  const now = entriesFromState(exportState(), 0, "");
+  const then = entriesFromState(after, 0, "");
+  return keys.every((key) => now[key]?.s === then[key]?.s);
+}
+
+/** Withdraw the notice's Undo: what it would put back has changed since. */
+function expireUndo(): void {
+  if (!undoable) return;
+  undoable = null;
+  const { message, kind, action } = notice.value;
+  if (action?.label === "Undo") notice.value = { message, kind };
 }
 
 /**
- * Put back what one change changed, and nothing else: progress that arrived since
- * (from another device or tab) stays. It goes through the ordinary save path, so
- * sync sends an undo as the plain edits it is.
+ * Put back what one change changed, and nothing else: a record changed since, and
+ * progress that arrived since (from another device or tab), stays. It goes through
+ * the ordinary save path, so sync sends an undo as the plain edits it is.
  */
-function undo({ before, after, replace }: Change): void {
-  const target = rebaseState(exportState(), after, before, validPokemon, validForms);
-  if (replace) replaceState(target, "restore");
+function undo(done: Change): void {
+  undoable = null;
+  const target = rebaseState(
+    exportState(),
+    done.after,
+    done.before,
+    validPokemon,
+    validForms,
+    true,
+  );
+  if (done.replace) replaceState(target, "restore");
   else {
     applyState(target);
     persist();
@@ -422,22 +490,24 @@ export function changeNotice(
   message: string,
   unsaved = `${message} Browser storage is unavailable, so this is not saved.`,
 ): void {
-  const change = lastChange;
+  const done = lastChange;
   lastChange = null;
   const saved = storageAvailable.value;
   showNotice(
     saved ? message : unsaved,
     saved ? "good" : "error",
-    change ? { label: "Undo", run: () => undo(change) } : undefined,
+    done ? { label: "Undo", run: () => undo(done) } : undefined,
   );
+  undoable = done;
 }
 
 export function cycleSpecies(id: number): void {
   const before = exportState();
   const status = speciesSignal(id);
   status.value = cycleStatus(status.value);
+  const done = change(before, exportState());
   persist();
-  remember(before);
+  lastChange = done;
 }
 
 export function cycleForm(key: string): void {
@@ -453,8 +523,9 @@ export function cycleForm(key: string): void {
       speciesSignal(form.speciesId).value = "seen";
     }
   });
+  const done = change(before, exportState());
   persist();
-  remember(before);
+  lastChange = done;
 }
 
 export function setMode(nextMode: GameMode): void {
@@ -478,8 +549,9 @@ export function toggleStar(id: number): void {
   starred.value = pinned
     ? starred.value.filter((entry) => entry !== id)
     : [...starred.value, id].sort((a, b) => a - b);
+  const done = change(before, exportState());
   persist();
-  remember(before);
+  lastChange = done;
   changeNotice(
     pinned ? "Unstarred." : "Starred. It stays at the top until you unstar it.",
   );
@@ -502,9 +574,10 @@ export function parseState(text: string): SavedState {
 function replaceState(state: SavedState, op: ReplaceOp): void {
   const before = exportState();
   applyState(state);
+  const done = change(before, exportState(), true);
   localReplaceListener?.(before, op);
   persist();
-  remember(before, true);
+  lastChange = done;
 }
 
 export function restoreState(state: SavedState): void {
@@ -555,11 +628,19 @@ export function interpretStoredState(raw: string | null): SyncedState {
  */
 export function syncFromStorage(event: StorageEvent): void {
   if (event.key !== activeSaveKey()) return;
+  try {
+    // A later write has replaced this one (and was taken in, or has its own event):
+    // applying the older value now would roll that write back.
+    if (localStorage.getItem(event.key) !== event.newValue) return;
+  } catch {
+    return;
+  }
   const synced = interpretStoredState(event.newValue);
   if (synced.kind === "ignore") return;
   const state = synced.kind === "cleared" ? defaultState() : synced.state;
   seen = { key: activeSaveKey(), raw: event.newValue, state };
   applyState(state);
+  otherTabListener?.(state);
   if (synced.kind === "cleared") {
     showNotice("Progress was cleared in another tab.");
     return;
