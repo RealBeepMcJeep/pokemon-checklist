@@ -26,7 +26,8 @@ Correct known mechanics and scoring defects before adding more heuristics.
 ## Stage 2 — recurring chat operations
 
 1. Add a single `pokemon_ops.py` command for mark, evolve, trade, exact favorites reconciliation,
-   roster listing and catch odds.
+   and roster listing. (Catch-probability analysis stayed a separate standalone tool by design;
+   see `tools/catch_odds.py` and `tools/catcher_score.py` from Stage 1.)
 2. Validate record keys and values; queries never emit writes.
 3. Compute minimal diffs, skip no-ops, apply one patch and verify exact values by reading them back.
 4. Harden chat log entries to carry one `key/from/to` change per log record.

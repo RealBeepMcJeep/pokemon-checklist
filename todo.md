@@ -39,9 +39,11 @@ built and deployed. Stage 2's repository side is built: `tools/pokemon_chat.py` 
 
 ## Movelists and game variants (2026-09-18)
 
-- Split the `photonic-prismatic` mode into Prismatic Moon **Standard** vs **Rebalanced**.
-  The encounters data assumes one variant; Rebalanced changes base stats, types, abilities,
-  learnsets and TM compatibility, so vanilla Gen 7 competitive advice would be wrong there.
+- [ ] Consider splitting the `photonic-prismatic` mode into Prismatic Moon **Standard** vs
+  **Rebalanced**. Not started: `src/types.ts` still defines one `photonic-prismatic` mode with no
+  variant distinction (see `docs/favorite-lines-movesets.md`'s "Known gap"). The encounters data
+  assumes one variant; Rebalanced changes base stats, types, abilities, learnsets and TM
+  compatibility, so vanilla Gen 7 competitive advice would be wrong there if it were split.
 - Popular moves are built for Standard (`data/moves.json`, `source.profile: "gen7"`). A Rebalanced
   variant would be a second profile of the same file shape once its learnsets are sourced.
 - Popular moves cover species only; tracked forms (Alolan finals, Lycanroc forms) could be added
