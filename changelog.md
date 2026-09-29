@@ -5,6 +5,7 @@
 - Added a read-only story-team mode to the local team-synergy tool: Butterfree stays in the catching slot while five suggestions cover OG-151-only, no-OG-151 and three mixed battler lineups from the current caught roster. It shows owned-stage evolution paths and treats party favorites as preferences, not locks.
 - Added a repeatable five-card image renderer using the project's Gen VII pixel-sprite atlas. Each phone-sized card labels the catcher, anchor and partners with Dex numbers, types, evolution paths, ranks and caveats; the saved JSON can be rendered again offline. No website or checklist save-format change.
 - Added four acquisition-checked move targets and their types to each Pokémon on those cards, prioritizing Prismatic Standard level-ups and obtainable TMs/tutors while labeling late-game gates and moves to teach before evolution. Egg/event-only moves are not silently recommended.
+- Made the team cards easier to compare on a phone: distinct mixed-team headlines, larger pixel sprites and move text, clearer move-gate labels, and a fail-fast check for any clipped move or evolution detail. The five cards still come from one reusable local Pillow renderer, not the generic table-image tool.
 
 ## 2026-09-28
 

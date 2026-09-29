@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ATLAS = ROOT / "assets/gen7-icons.png"
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-SIZE = (1260, 1930)
+SIZE = (1260, 2120)
+ROW_TOP, ROW_STEP, ROW_HEIGHT = 269, 274, 265
 FRAME = (40, 30)
 COLS = 32
 PALETTE = {
@@ -50,12 +51,24 @@ def sprite(atlas: Image.Image, dex: int, scale: int) -> Image.Image:
         (FRAME[0] * scale, FRAME[1] * scale), Image.Resampling.NEAREST)
 
 
-def fit(draw: ImageDraw.ImageDraw, text: str, face: ImageFont.FreeTypeFont, max_width: int) -> str:
+def fit(draw: ImageDraw.ImageDraw, text: str, face: ImageFont.FreeTypeFont,
+        max_width: int, *, strict: bool = False) -> str:
     if draw.textlength(text, font=face) <= max_width:
         return text
+    if strict:
+        raise ValueError(f"essential card text does not fit ({max_width}px): {text}")
     while text and draw.textlength(text + "…", font=face) > max_width:
         text = text[:-1]
     return text.rstrip() + "…"
+
+def card_title(option: dict) -> str:
+    if option["category"] != "Mixed":
+        return option["category"].upper()
+    partner = next((m["final"] for m in option["members"]
+                    if m["final"] != option["anchor"]), None)
+    if partner is None:
+        raise ValueError("a mixed card needs a partner distinct from its anchor")
+    return f"{option['anchor'].upper()} + {partner.upper()}"
 
 
 def blurb(option: dict) -> str:
@@ -102,67 +115,69 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
     d = ImageDraw.Draw(canvas)
     accent = "#d6b969" if option["category"] == "OG-151" else (
         "#7dcbd5" if option["category"] == "No OG-151" else "#c19ce8")
-    d.rounded_rectangle((26, 25, 1234, 1920), radius=34, fill=PANEL, outline=LINE, width=2)
+    d.rounded_rectangle((26, 25, 1234, 2108), radius=34, fill=PANEL, outline=LINE, width=2)
     d.rounded_rectangle((48, 44, 346, 82), radius=18, fill=accent)
-    d.text((65, 49), f"STORY TEAM  /  {number:02d} OF 05", fill=BG, font=font(20, True))
-    d.text((52, 103), option["category"].upper(), fill=WHITE, font=font(45, True))
+    d.text((65, 49), f"{option['category'].upper()}  /  {number:02d} OF 05", fill=BG, font=font(20, True))
+    d.text((52, 103), fit(d, card_title(option), font(45, True), 1135, strict=True),
+           fill=WHITE, font=font(45, True))
     d.text((54, 170), fit(d, blurb(option), font(22), 1140), fill=DIM, font=font(22))
     d.line((50, 215, 1210, 215), fill=LINE, width=2)
-    d.text((58, 233), "OWNED → ENDGAME  /  EVOLUTION PATH  /  FOUR MOVE TARGETS", font=font(18, True), fill=DIM)
+    d.text((58, 233), "OWNED → ENDGAME  /  FOUR MOVE TARGETS + HOW TO GET THEM", font=font(18, True), fill=DIM)
     d.text((917, 233), "TYPE", font=font(18, True), fill=DIM)
     d.text((1128, 233), "DEX", font=font(18, True), fill=DIM)
     for idx, m in enumerate(rows):
-        y = 269 + idx * 245
+        y = ROW_TOP + idx * ROW_STEP
         catcher = idx == 0
         anchor = m["final"] == option["anchor"] and not catcher
         role = "CATCHER" if catcher else ("ANCHOR" if anchor else "PARTNER")
         color = "#76d2b7" if catcher else (accent if anchor else DIM)
-        d.rounded_rectangle((50, y, 1210, y + 231), radius=17,
+        d.rounded_rectangle((50, y, 1210, y + ROW_HEIGHT), radius=17,
                             fill="#213452" if anchor else "#1b2a43", outline=color if anchor else LINE,
                             width=2 if anchor else 1)
         d.rounded_rectangle((64, y + 9, 177, y + 34), radius=10, fill=color)
         d.text((74, y + 9), role, font=font(14, True), fill=BG)
-        canvas.paste(sprite(atlas, int(m["owned_dex"]), 2), (69, y + 40),
-                     sprite(atlas, int(m["owned_dex"]), 2))
+        owned_icon = sprite(atlas, int(m["owned_dex"]), 3)
+        canvas.paste(owned_icon, (65, y + 39), owned_icon)
         if m["owned_dex"] != m["dex"]:
-            canvas.paste(sprite(atlas, int(m["dex"]), 2), (169, y + 53),
-                         sprite(atlas, int(m["dex"]), 2))
-            d.text((151, y + 69), "→", font=font(19, True), fill=color)
-        x = 274
+            final_icon = sprite(atlas, int(m["dex"]), 3)
+            canvas.paste(final_icon, (190, y + 39), final_icon)
+        x = 326
         label = m["owned"] if m["owned"] == m["final"] else f"{m['owned']} → {m['final']}"
-        d.text((x, y + 18), fit(d, label, font(27, True), 600), font=font(27, True), fill=WHITE)
+        d.text((x, y + 18), fit(d, label, font(29, True), 570, strict=True),
+               font=font(29, True), fill=WHITE)
         evolution = m["evolution"] if not catcher else "Sleep utility · cannot use False Swipe"
-        d.text((x, y + 61), fit(d, evolution, font(18), 606), font=font(18), fill=DIM)
+        d.text((x, y + 65), fit(d, evolution, font(19), 570, strict=True),
+               font=font(19), fill=DIM)
         badges = m.get("tier", "")
         if m.get("favorite") and not catcher:
             badges += "  ·  IN PARTY"
-        d.text((x, y + 98), badges, font=font(17, True), fill=color)
+        d.text((x, y + 105), badges, font=font(18, True), fill=color)
         for t_index, typ in enumerate(m["types"]):
             ty = y + 28 + t_index * 47
             shade = PALETTE.get(typ, DIM)
             d.rounded_rectangle((912, ty, 1103, ty + 35), radius=10, fill=shade)
             d.text((927, ty + 3), typ.upper(), fill=BG, font=font(18, True))
         d.text((1126, y + 47), f"#{int(m['dex']):03d}", font=font(21, True), fill=WHITE)
-        d.line((76, y + 121, 1185, y + 121), fill=LINE, width=1)
+        d.line((76, y + 137, 1185, y + 137), fill=LINE, width=1)
         for move_index, move in enumerate(m["moves"]):
             col, subrow = move_index % 2, move_index // 2
-            mx, my = 76 + 573 * col, y + 128 + 49 * subrow
+            mx, my = 76 + 573 * col, y + 148 + 52 * subrow
             typ = str(move["type"])
-            d.text((mx, my), fit(d, str(move["name"]), font(20, True), 345),
-                   fill=WHITE, font=font(20, True))
-            d.rounded_rectangle((mx + 381, my - 2, mx + 511, my + 26), radius=8,
+            d.text((mx, my), fit(d, str(move["name"]), font(24, True), 345, strict=True),
+                   fill=WHITE, font=font(24, True))
+            d.rounded_rectangle((mx + 381, my - 2, mx + 511, my + 30), radius=8,
                                 fill=PALETTE.get(typ, DIM))
-            d.text((mx + 389, my + 1), fit(d, typ.upper(), font(14, True), 114),
-                   font=font(14, True), fill=BG)
-            d.text((mx, my + 27), fit(d, str(move["gate"]), font(15), 515),
-                   font=font(15), fill=DIM)
-    y = 1753
+            d.text((mx + 389, my + 2), fit(d, typ.upper(), font(16, True), 114, strict=True),
+                   font=font(16, True), fill=BG)
+            d.text((mx, my + 31), fit(d, str(move["gate"]), font(18), 515, strict=True),
+                   font=font(18), fill=DIM)
+    y = 1934
     d.line((54, y, 1206, y), fill=LINE, width=2)
     d.text((56, y + 12), f"ANCHOR  {option['anchor'].upper()}     •     {option['evolving']}/5 EVOLVABLE     •     {option['level_evolving']}/5 LEVEL-BASED", font=font(20, True), fill=accent)
-    d.text((56, y + 51), f"5-BATTLER SCORE {option['core_score']:.2f}  /  WITH BUTTERFREE {option['six_score']:.2f}     ·     {report['caught_records']} CAUGHT", font=font(17, True), fill=WHITE)
-    d.text((56, y + 86), "Move gates checked against Prismatic Standard + pinned Gen VII. Late tutors/TMs are labeled.", font=font(16), fill=DIM)
-    d.text((56, y + 111), "Scores still use STAB potential, not these future moves. Abilities and item ownership unrecorded.", font=font(15), fill=DIM)
-    d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=font(15), fill=DIM)
+    d.text((56, y + 51), f"5-BATTLER SCORE {option['core_score']:.2f}  /  WITH BUTTERFREE {option['six_score']:.2f}     ·     {report['caught_records']} CAUGHT", font=font(19, True), fill=WHITE)
+    d.text((56, y + 86), "MOVES: Prismatic Standard + Gen VII · LATER / ENDGAME = progression gate.", font=font(18), fill=DIM)
+    d.text((56, y + 111), "Scores use type potential, not these moves. Items and abilities unrecorded.", font=font(18), fill=DIM)
+    d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=font(17), fill=DIM)
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output, optimize=True)
 

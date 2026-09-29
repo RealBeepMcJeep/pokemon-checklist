@@ -13,6 +13,22 @@ import showdown_data
 
 
 class StoryTeamCardsTests(unittest.TestCase):
+    def test_mixed_titles_name_the_actual_anchor_and_first_partner(self):
+        base = {"category": "Mixed", "anchor": "Gengar"}
+        for partner in ("Feraligatr", "Infernape", "Slowbro"):
+            option = {**base, "members": [{"final": "Gengar"}, {"final": partner}]}
+            with self.subTest(partner=partner):
+                self.assertEqual(cards.card_title(option), f"GENGAR + {partner.upper()}")
+
+    def test_essential_text_must_fit_instead_of_being_silently_cut(self):
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(Image.new("RGB", (800, 100)))
+        self.assertEqual(cards.fit(draw, "TM19 · Route 3", cards.font(18), 400, strict=True),
+                         "TM19 · Route 3")
+        with self.assertRaisesRegex(ValueError, "does not fit"):
+            cards.fit(draw, "Too long to lose the location behind an ellipsis",
+                      cards.font(18), 80, strict=True)
+
     def test_render_uses_project_atlas_and_writes_a_complete_image(self):
         atlas = Image.open(cards.ATLAS).convert("RGBA")
         moves = [{"name": name, "type": typ, "gate": gate} for name, typ, gate in
@@ -35,11 +51,11 @@ class StoryTeamCardsTests(unittest.TestCase):
             cards.render_card(report, option, 1, atlas, dest, generated="test")
             with Image.open(dest) as image:
                 self.assertEqual(image.size, cards.SIZE)
-                frame = cards.sprite(atlas, 12, 2)
+                frame = cards.sprite(atlas, 12, 3)
                 alpha = frame.getchannel("A")
                 opaque = next((x, y) for y in range(frame.height) for x in range(frame.width)
                               if alpha.getpixel((x, y)) == 255)
-                self.assertEqual(image.getpixel((69 + opaque[0], 269 + 40 + opaque[1])),
+                self.assertEqual(image.getpixel((65 + opaque[0], 269 + 39 + opaque[1])),
                                  frame.convert("RGB").getpixel(opaque))
             with self.assertRaisesRegex(ValueError, "distinct battlers"):
                 cards.render_card(report, {**option, "members": members[:4]}, 1, atlas, dest,
@@ -47,6 +63,11 @@ class StoryTeamCardsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "acquisition-checked"):
                 cards.render_card({**report, "utility_moves": []}, option, 1, atlas, dest,
                                   generated="test")
+            long_gate = {**moves[0], "gate": "a route description too long to display without losing the actual acquisition details " * 3}
+            with self.assertRaisesRegex(ValueError, "essential card text does not fit"):
+                cards.render_card({**report, "utility_moves": [long_gate, *moves[1:]]},
+                                  option, 1, atlas, dest, generated="test")
+            self.assertLess(cards.ROW_TOP + 5 * cards.ROW_STEP + cards.ROW_HEIGHT, 1934)
 
     def test_enrich_once_and_redraw_without_firebase_or_cache(self):
         old = {"utility": "Butterfree", "options": [{"members": [
