@@ -14,6 +14,13 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     headless: true,
   },
+  // Playwright's webServer precondition is config-wide, not per-project: there is
+  // no per-project webServer field, and an array of webServer entries still all
+  // start (and must succeed) before any project runs, even filtered with
+  // --project. So `standalone-file` -- which opens index.html via file:// and
+  // never talks to this server -- is unavoidably coupled to it starting
+  // successfully. This is accepted, not fixed: `npx playwright test
+  // --project=standalone-file` still needs the dev server to bind first.
   webServer: {
     command: `npm run dev -- --port ${port} --strictPort`,
     url: `http://127.0.0.1:${port}`,

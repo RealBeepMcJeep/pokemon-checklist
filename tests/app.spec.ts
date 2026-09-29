@@ -6,6 +6,33 @@ const standaloneUrl = pathToFileURL(resolve("index.html")).href;
 // A search hides non-matching rows rather than unmounting them.
 const VISIBLE_ROW = "#dex-list .dex-row:not([hidden])";
 
+/**
+ * Wait until network activity (as tracked by `getCount`) has been quiet for
+ * `settleMs`, bounded by `timeoutMs`. A fixed sleep is both slow in the common
+ * case (nothing happens) and not a real deadline (a request firing just past
+ * the sleep goes undetected); this settles as soon as it can and keeps
+ * extending the window, up to the bound, for as long as new requests keep
+ * arriving, so a late-firing request is still caught instead of racing a
+ * clock that already stopped watching.
+ */
+async function waitForNetworkQuiet(
+  getCount: () => number,
+  { settleMs = 300, timeoutMs = 3000 } = {},
+): Promise<void> {
+  const start = Date.now();
+  let lastCount = getCount();
+  let lastChange = start;
+  while (Date.now() - start < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const count = getCount();
+    if (count !== lastCount) {
+      lastCount = count;
+      lastChange = Date.now();
+    }
+    if (Date.now() - lastChange >= settleMs) return;
+  }
+}
+
 async function openApp(page: Page, project: string): Promise<string[]> {
   const errors: string[] = [];
   page.on("console", (message) => {
@@ -417,7 +444,7 @@ test("attempts no network requests while signed out", async ({
   page.on("request", (request) => desktopAttempts.push(request.url()));
   const errors = await openApp(page, testInfo.project.name);
   await page.click('[data-action="species"][data-species="25"]');
-  await page.waitForTimeout(1500);
+  await waitForNetworkQuiet(() => desktopAttempts.length);
   expect(external(desktopAttempts)).toEqual([]);
   expect(errors).toEqual([]);
 
@@ -438,7 +465,7 @@ test("attempts no network requests while signed out", async ({
   }
   await mobilePage.goto(standalone ? standaloneUrl : "/");
   await expect(mobilePage.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
-  await mobilePage.waitForTimeout(2500);
+  await waitForNetworkQuiet(() => mobileAttempts.length, { timeoutMs: 5000 });
   expect(external(mobileAttempts)).toEqual([]);
   await mobile.close();
 });
