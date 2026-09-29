@@ -151,13 +151,27 @@ export function Header({ inert = false }: { inert?: boolean }) {
             Forms caught: {formsCaught.value} / {activeFormDefinitions.value.size}
           </span>
         </div>
-        <div
-          id="notice"
-          class={currentNotice.kind}
-          role="status"
-          aria-live="polite"
-        >
-          {currentNotice.message}
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6rem">
+          <div
+            id="notice"
+            class={currentNotice.kind}
+            role="status"
+            aria-live="polite"
+          >
+            {currentNotice.message}
+          </div>
+          {/* One tap, e.g. Undo; it goes when the next notice replaces this one. */}
+          {currentNotice.action && (
+            <button
+              class="action-button"
+              id="notice-action"
+              type="button"
+              style="padding: 0.1rem 0.55rem"
+              onClick={currentNotice.action.run}
+            >
+              {currentNotice.action.label}
+            </button>
+          )}
         </div>
       </div>
     </header>

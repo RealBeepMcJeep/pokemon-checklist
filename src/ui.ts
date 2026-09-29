@@ -1,6 +1,7 @@
 import { signal } from "@preact/signals";
 import {
   activeEncounters,
+  changeNotice,
   cycleSpecies,
   drawerOpen,
   exportState,
@@ -73,7 +74,7 @@ export function changeMode(nextMode: GameMode): void {
   );
   focusedLocation.value =
     open.find((id) => available.has(id)) || firstIncomplete()?.id || null;
-  showNotice(`Switched to ${MODE_LABELS[nextMode]}.`, "good");
+  changeNotice(`Switched to ${MODE_LABELS[nextMode]}.`);
 }
 
 export function changeSpecies(id: number): void {
@@ -199,7 +200,7 @@ export async function importFile(event: Event): Promise<void> {
     if (!confirm("Replace your current checklist with this backup?")) return;
     restoreState(imported);
     focusedLocation.value = firstIncomplete()?.id || null;
-    showNotice("Backup restored.", "good");
+    changeNotice("Backup restored.");
   } catch (error) {
     showNotice(
       `Restore failed: ${error instanceof Error ? error.message : "that file could not be read"}.`,
@@ -217,5 +218,5 @@ export function reset(): void {
     return;
   resetState();
   focusedLocation.value = firstIncomplete()?.id || null;
-  showNotice("Checklist reset.", "good");
+  changeNotice("Checklist reset.");
 }
