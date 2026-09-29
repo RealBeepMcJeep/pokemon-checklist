@@ -10,7 +10,7 @@ import {
   type User,
 } from "firebase/auth";
 import { getDatabase, type Database } from "firebase/database";
-import { FIREBASE_CONFIG, isAllowedEmail } from "./config";
+import { FIREBASE_CONFIG, isAllowedAccount } from "./config";
 
 // Nothing in this module touches the network until a player signs in.
 // `initializeApp`, `getAuth` and `getDatabase` construct local objects and read
@@ -35,7 +35,7 @@ export function watchAuth(
 ): () => void {
   const { auth: instance } = initFirebase();
   return onAuthStateChanged(instance, (user) => {
-    onUser(user, isAllowedEmail(user?.email));
+    onUser(user, isAllowedAccount(user));
   });
 }
 
