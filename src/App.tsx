@@ -1,6 +1,7 @@
 import { useEffect } from "preact/hooks";
 import { Header } from "./components/Header";
 import { LocationList } from "./components/Locations";
+import { NoticeAction } from "./components/NoticeAction";
 import { Pokedex } from "./components/Pokedex";
 import { drawerOpen, mode, sidebarHidden } from "./state";
 import { closeDrawer } from "./ui";
@@ -50,6 +51,7 @@ export function App() {
         <LocationList inert={modalOpen} />
         <Pokedex />
       </div>
+      <NoticeAction />
     </>
   );
 }

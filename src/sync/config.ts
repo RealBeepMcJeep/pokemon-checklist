@@ -21,3 +21,10 @@ export function isAllowedEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   return (ALLOWED_EMAILS as readonly string[]).includes(email);
 }
+
+/** The rules also require a verified address, so the app asks for one too. */
+export function isAllowedAccount(
+  user: { email: string | null; emailVerified: boolean } | null | undefined,
+): boolean {
+  return Boolean(user?.emailVerified) && isAllowedEmail(user?.email);
+}

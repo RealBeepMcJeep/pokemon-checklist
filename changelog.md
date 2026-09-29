@@ -2,6 +2,16 @@
 
 ## 2026-09-28
 
+- Added one-tap **Undo** after changing a status, form or star, and after Reset or Restore. It floats at the bottom of the screen, above the phone Pokédex, works offline and signed in, puts back only what that change touched, and disappears if those Pokémon change elsewhere first.
+- A change now counts as sent only once the server confirms it, so closing the page on a bad connection can no longer lose a tap that looked saved.
+- Fixed sync letting an older change overwrite a newer one: an edit or a Reset made offline no longer replaces what another device or chat changed after it.
+- Only one tab per account syncs; the others hand their changes, including Reset and Restore, to it, so two open tabs no longer undo each other's changes.
+- Made Restore work while signed in: a confirmed restore now syncs and is logged, instead of being refused as a whole-checklist wipe forever.
+- A saved checklist that cannot be read no longer hides a good one: the last good copy loads instead, and every unreadable copy is kept and can be downloaded. If nothing readable is left, a fresh checklist is shown and nothing is saved over the old one.
+- Saving recovers by itself after a failed write, and messages no longer say "saved" when nothing was saved.
+- Clearing a whole checklist by accident is held back and reported while every other change still syncs; Reset clears everything on purpose.
+- A signed-in device shows the account's checklist right away, even offline; a tab opened before signing in elsewhere follows that sign-in; signing out says when changes had not been sent yet; a device that lost its sync records adds only what the account has never had and says so.
+- Made the phone Pokédex drawer fill the screen even when a search leaves only a few rows.
 - Stopped the chat helper reading a question as a command: "did I already get bulbasaur" used to mark Bulbasaur caught, and "have I got a pikachu yet?" failed on the trailing "yet". Questions now only report status, and "resetting my plan" no longer trips the reset guard.
 - Let `pokemon_ops.py` take `--uid` after the subcommand, reported a skipped no-op write as not written rather than "verified", and derived the National Dex bound from `data/pokemon.json`.
 - Fixed data-tool drift: the catcher tool now uses the shared TM and tutor location tables (its private copy had three entries under the wrong keys), one normaliser handles accents such as Flabébé, one tier order covers AG, and the vanilla-encounter generator keeps repeated species/rarity rows and tells the two Nidoran apart. Generated data is unchanged.

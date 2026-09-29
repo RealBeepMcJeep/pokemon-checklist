@@ -205,6 +205,33 @@ progress {
 #notice.good {
   color: var(--caught);
 }
+/* Above the phone drawer (30) and its backdrop (20), clear of the iPhone home bar. */
+.notice-action {
+  position: fixed;
+  z-index: 40;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.45rem 0.5rem 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  font-size: 0.85rem;
+  transform: translateX(-50%);
+}
+.notice-action.error {
+  border-color: #ff9a9a;
+}
+.notice-action .action-button {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  font-weight: 700;
+}
 .visually-hidden {
   position: absolute !important;
   width: 1px;

@@ -3,6 +3,7 @@ import type { SavedState } from "../types";
 import {
   diffEntries,
   entriesFromState,
+  isClearing,
   mergeDocument,
   stateFromDocument,
   TOMBSTONE,
@@ -38,6 +39,8 @@ export interface StorageLike {
 }
 
 export type ResetImage = [RecordKey, string][];
+/** A deliberate whole-checklist replacement, which the sync log records as one event. */
+export type ReplaceOp = "reset" | "restore";
 
 export interface SyncStore {
   version: 1;
@@ -48,8 +51,17 @@ export interface SyncStore {
   email: string | null;
   /** The last document the server confirmed. */
   base: SyncDocument;
-  /** An intentional reset waiting for its atomic state-and-log write. */
+  /** An intentional reset (or restore) waiting for its atomic state-and-log write. */
   reset?: ResetImage;
+  /** Which replacement `reset` holds; absent means a Reset. */
+  op?: "restore";
+  /**
+   * This device's unsent edits, with the (server) time each was made. The time is
+   * what lets a newer change from elsewhere win over an edit that sat offline.
+   */
+  intents?: Record<RecordKey, RecordEntry>;
+  /** The last known difference between the server's clock and this device's. */
+  offset?: number;
 }
 
 /**
@@ -150,6 +162,15 @@ function isEntry(value: unknown): value is RecordEntry {
   );
 }
 
+function entries(value: unknown): Record<RecordKey, RecordEntry> {
+  const out: Record<RecordKey, RecordEntry> = {};
+  if (typeof value !== "object" || value === null) return out;
+  for (const [key, entry] of Object.entries(value)) {
+    if (isEntry(entry)) out[key] = entry;
+  }
+  return out;
+}
+
 /**
  * Read the store, falling back to an empty one on anything unexpected. Nothing
  * here is player progress — it is all rebuildable from the save — so a corrupt
@@ -166,13 +187,8 @@ export function loadStore(storage: StorageLike): SyncStore {
   try {
     const parsed = JSON.parse(raw) as Partial<SyncStore>;
     if (parsed.version !== 1) return emptyStore();
-    const records: Record<RecordKey, RecordEntry> = {};
-    const base = parsed.base?.records;
-    if (typeof base === "object" && base !== null) {
-      for (const [key, entry] of Object.entries(base)) {
-        if (isEntry(entry)) records[key] = entry;
-      }
-    }
+    const records = entries(parsed.base?.records);
+    const intents = entries(parsed.intents);
     const reset = Array.isArray(parsed.reset)
       ? parsed.reset.filter(
           (entry): entry is [string, string] =>
@@ -189,6 +205,11 @@ export function loadStore(storage: StorageLike): SyncStore {
       email: typeof parsed.email === "string" ? parsed.email : null,
       base: { schema: 1, records, updatedAt: 0 },
       ...(reset.length > 0 ? { reset } : {}),
+      ...(reset.length > 0 && parsed.op === "restore" ? { op: "restore" as const } : {}),
+      ...(Object.keys(intents).length > 0 ? { intents } : {}),
+      ...(typeof parsed.offset === "number" && Number.isFinite(parsed.offset)
+        ? { offset: parsed.offset }
+        : {}),
     };
   } catch {
     return emptyStore();
@@ -240,21 +261,6 @@ export function localIntentChanges(
   );
 }
 
-/** Derive pending work while retaining a local intent independently of `base`. */
-export function pendingWithIntents(
-  base: SyncDocument,
-  save: SavedState,
-  intents: Record<RecordKey, RecordEntry>,
-  at: number,
-  by: string,
-): Record<RecordKey, RecordEntry> {
-  const pending = pendingEntries(base, save, at, by);
-  for (const [key, entry] of Object.entries(intents)) {
-    if (base.records[key]?.s !== entry.s) pending[key] = entry;
-  }
-  return pending;
-}
-
 /**
  * What this device should display: the confirmed document with any local edits
  * layered on top.
@@ -274,6 +280,30 @@ export function viewWithPending(
     records: pending,
     updatedAt: 0,
   });
+}
+
+/**
+ * How far this device's estimate of server time may be off. Firebase's
+ * `.info/serverTimeOffset` is accurate to about half a round trip; this is wide.
+ */
+export const CLOCK_SLACK = 2_000;
+
+/**
+ * Whether a change that arrived from elsewhere is newer than this device's unsent
+ * edit to the same record, so the edit must be dropped instead of sent.
+ *
+ * The edit made last wins, judged by when each was MADE — not by which reached the
+ * server first, which let a stale offline edit (or an offline Reset) silently beat
+ * a newer change from another device or from chat. Close calls, within the clock
+ * slack, go to whichever side keeps data: a clear only beats a value it is clearly
+ * newer than, and a value only loses to a clear that is clearly newer.
+ */
+export function supersedes(remote: RecordEntry, local: RecordEntry): boolean {
+  const remoteClears = isClearing(remote.s);
+  const localClears = isClearing(local.s);
+  if (localClears && !remoteClears) return remote.at > local.at - CLOCK_SLACK;
+  if (!localClears && remoteClears) return remote.at > local.at + CLOCK_SLACK;
+  return remote.at > local.at;
 }
 
 /** Overlay the latest local intent until the server has echoed that value. */
@@ -306,12 +336,13 @@ export function saveFromView(
  * document is far more likely to be a bug than a player deleting a whole
  * collection, and the cost of guessing wrong is their data — which is what
  * happened once: a device that started from empty against a full account
- * published tombstones for every record.
+ * published tombstones for every record. A single record is exempt, so clearing
+ * the only thing an account holds stays one ordinary tap.
  */
 export function isWholeAccountClear(
   base: SyncDocument,
   pending: Record<RecordKey, RecordEntry>,
-  minimumLive = 5,
+  minimumLive = 2,
 ): boolean {
   // Only PROGRESS records count. Settings are records too, but they clear by taking
   // a different value ("off", a mode name) rather than a tombstone, so counting them
@@ -325,6 +356,11 @@ export function isWholeAccountClear(
     ([key, entry]) => isProgress(key) && isCleared(key, entry.s),
   ).length;
   return cleared >= live;
+}
+
+/** Whether a record's value clears player progress (a species, or a star). */
+export function isProgressClear(key: string, status: string): boolean {
+  return isProgress(key) && isCleared(key, status);
 }
 
 function isProgress(key: string): boolean {

@@ -8,7 +8,7 @@ import {
   syncPending,
   syncPhase,
 } from "../sync/engine";
-import { isAllowedEmail } from "../sync/config";
+import { isAllowedAccount } from "../sync/config";
 import {
   prepareSignIn,
   signInWithGoogle,
@@ -39,15 +39,20 @@ function statusText(): string {
       return syncOnline.value ? "Synced" : "Offline";
     case "error":
       return syncMessage.value || "Sync is not working";
+    case "elsewhere":
+      // One tab per account talks to the server; this one hands its changes over.
+      return "Syncing in another tab";
   }
 }
 
+function errorCode(error: unknown): string {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code: unknown }).code)
+    : "";
+}
+
 function describeSignIn(error: unknown): string {
-  const code =
-    typeof error === "object" && error !== null && "code" in error
-      ? String((error as { code: unknown }).code)
-      : "";
-  switch (code) {
+  switch (errorCode(error)) {
     case "auth/unauthorized-domain":
       return "This site is not authorized for sign-in in the Firebase console yet.";
     case "auth/popup-closed-by-user":
@@ -87,18 +92,14 @@ export function SyncPanel() {
       setBlocked(false);
       // A disallowed account gets its own notice from the auth watcher; this one would
       // overwrite it with a false promise.
-      if (isAllowedEmail(user?.email)) {
+      if (isAllowedAccount(user)) {
         showNotice(
           "Signed in. This checklist now syncs across your devices.",
           "good",
         );
       }
     } catch (error) {
-      const code =
-        typeof error === "object" && error !== null && "code" in error
-          ? String((error as { code: unknown }).code)
-          : "";
-      if (code === "auth/popup-blocked") {
+      if (errorCode(error) === "auth/popup-blocked") {
         setBlocked(true);
         showNotice(
           "Your browser blocked Google's sign-in window. Press “Continue with Google” to open it.",
@@ -115,10 +116,14 @@ export function SyncPanel() {
   }
 
   async function signOut(): Promise<void> {
+    // Read before signing out, which resets it.
+    const unsent = syncPending.value;
     try {
       await signOutOfSync();
       showNotice(
-        "Signed out. This device keeps its own checklist; nothing was deleted.",
+        unsent > 0
+          ? `Signed out. ${unsent === 1 ? "1 change" : `${unsent} changes`} had not reached your other devices yet; they are kept here and sent the next time you sign in on this device.`
+          : "Signed out. This device keeps its own checklist; nothing was deleted.",
         "good",
       );
     } catch {

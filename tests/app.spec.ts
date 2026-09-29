@@ -950,3 +950,95 @@ test("keeps grade badge colors at WCAG AA contrast against their white text", as
   }
   expect(errors).toEqual([]);
 });
+
+test("undoes a status change, a star, and a Reset in one tap", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const pikipek = page.locator('[data-action="species"][data-species="731"]').first();
+  const undo = page.locator("#notice-action");
+
+  await pikipek.click();
+  await expect(page.locator("#notice")).toHaveText("Status saved.");
+  await undo.click();
+  await expect(page.locator("#notice")).toHaveText("Undone.");
+  await expect(undo).toHaveCount(0);
+  await expect(pikipek).toContainText("None");
+
+  await page.locator('[data-action="star"][data-species="807"]').click();
+  await undo.click();
+  await expect(
+    page.locator('[data-action="star"][data-species="807"]'),
+  ).toHaveAttribute("aria-pressed", "false");
+
+  await pikipek.click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("#reset-button").click();
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(undo).toHaveText("Undo");
+  await undo.click();
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+
+  // The undo was saved like any other change.
+  await page.reload();
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  expect(errors).toEqual([]);
+});
+
+test("shows the last good copy when the save cannot be read", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator('[data-action="species"][data-species="731"]').first().click();
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await page.evaluate(() =>
+    localStorage.setItem("pokemon-checklist-state-v3", "{half a save"),
+  );
+
+  await page.reload();
+
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#notice")).toContainText("could not be read");
+  await expect(page.locator("#notice-action")).toHaveText("Download unreadable copy");
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("pokemon-checklist-state-v3:unreadable"),
+    ),
+  ).toBe("{half a save");
+  expect(errors).toEqual([]);
+});
+
+test("offers Undo above the phone Pokédex drawer, where the tap happened", async ({
+  page,
+}, testInfo) => {
+  // The header's notice line sits behind the drawer and scrolls away on a phone,
+  // so the action floats where a player tapping inside the drawer can reach it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#sidebar-toggle").click();
+  await page.locator("#dex-search").fill("bulbasaur");
+  const status = page.locator('#dex-list [data-action="species"][data-species="1"]');
+  await status.click();
+  await expect(status).toContainText("Caught");
+  const undo = page.locator("#notice-action");
+  await expect(undo).toBeVisible();
+  await expect(page.locator("#pokedex")).toHaveClass(/drawer-open/);
+  await undo.click();
+  await expect(status).toContainText("None");
+  await expect(undo).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("fills the phone screen with the Pokédex drawer even for a short list", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#sidebar-toggle").click();
+  await page.locator("#dex-search").fill("bulbasaur");
+  const height = await page.evaluate(
+    () => document.querySelector("#pokedex")!.getBoundingClientRect().height,
+  );
+  expect(height).toBeGreaterThanOrEqual(840);
+  expect(errors).toEqual([]);
+});
