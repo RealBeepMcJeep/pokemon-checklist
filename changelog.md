@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-29
+
+- Added a read-only story-team mode to the local team-synergy tool: Butterfree stays in the catching slot while five suggestions cover OG-151-only, no-OG-151 and three mixed battler lineups from the current caught roster. It shows owned-stage evolution paths and treats party favorites as preferences, not locks.
+- Added a repeatable five-card image renderer using the project's Gen VII pixel-sprite atlas. Each phone-sized card labels the catcher, anchor and partners with Dex numbers, types, evolution paths, ranks and caveats; the saved JSON can be rendered again offline. No website or checklist save-format change.
+
 ## 2026-09-28
 
 - Added one-tap **Undo** after changing a status, form or star, and after Reset or Restore. It floats at the bottom of the screen, above the phone Pokédex, works offline and signed in, puts back only what that change touched, and disappears if those Pokémon change elsewhere first.

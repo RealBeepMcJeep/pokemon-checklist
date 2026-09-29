@@ -291,12 +291,19 @@ def main() -> int:
     parser.add_argument("--show-all", action="store_true")
     parser.add_argument("--min-tier", default=None, help=f"drop lines worse than this tier ({', '.join(tb.TIER_ORDER)})")
     parser.add_argument("--form-override", default="", help="comma-separated name=form entries")
+    parser.add_argument("--story-options", action="store_true",
+                        help="five read-only story teams: fixed catcher, anchor + four partners")
+    parser.add_argument("--utility", default="butterfree", help="fixed story catcher (default: butterfree)")
+    parser.add_argument("--json", action="store_true", help="JSON report for --story-options")
     args = parser.parse_args()
     try:
         validate_args(args.teams, args.size, args.pool, args.shortlist, args.diversity)
+        if args.story_options and args.size != 5:
+            raise ValueError("--story-options requires five battlers plus the fixed catcher")
         minimum = tb.normalise_tier(args.min_tier)
         overrides = tb.parse_form_overrides(args.form_override)
-        roster = tb.load_roster(args.uid, Path(args.cache), off_limits=args.off_limits, no_gen1=args.no_gen1,
+        off_limits = args.off_limits or ("litten,magnemite,riolu,abra" if args.story_options else "")
+        roster = tb.load_roster(args.uid, Path(args.cache), off_limits=off_limits, no_gen1=args.no_gen1,
                                 keep_alolan=args.keep_alolan, min_tier=minimum, form_overrides=overrides)
         chart = load_typechart(Path(args.cache))
         mtype = move_info(Path(args.cache))
@@ -312,6 +319,23 @@ def main() -> int:
         if cache_key not in moveset_cache:
             moveset_cache[cache_key] = load_movesets(Path(args.cache), line.get("tier")) if cache_key else {}
         profiles.append(profile(line, chart, moveset_cache[cache_key], mtype, provenance))
+    if args.story_options:
+        import team_options as opt
+        stars = opt.starred_ids(roster)
+        for member in profiles:
+            member["favorite"] = bool(stars.intersection(member["caught_ids"]))
+        profiles = opt.conservative_profiles(profiles)
+        utility = next((p for p in profiles if tb.normalize(p["final"]) == tb.normalize(args.utility)), None)
+        if utility is None:
+            print(f"error: utility {args.utility!r} is not caught or is off limits", file=sys.stderr)
+            return 2
+        options = opt.choose_options(profiles, utility, chart)
+        report = opt.story_report(roster, options, utility)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(opt.format_story_report(report))
+        return 0
     profiles.sort(key=lambda member: (member["rank"], -member["usage"], member["final"]))
     pool = profiles[:args.pool]
     try:

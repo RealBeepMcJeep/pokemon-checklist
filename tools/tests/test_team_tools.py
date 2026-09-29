@@ -1,5 +1,7 @@
 import json
+import io
 import math
+import contextlib
 import sys
 import tempfile
 import unittest
@@ -12,6 +14,147 @@ sys.path.insert(0, str(TOOLS))
 import roster_lens as rl  # noqa: E402
 import team_builder as tb  # noqa: E402
 import team_synergy as ts  # noqa: E402
+import team_options as opt  # noqa: E402
+
+
+class TeamOptionsTests(unittest.TestCase):
+    def test_team_synergy_story_flag_routes_to_fixed_utility_options(self):
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        other = self._member("Galvantula", 596, "Electric", owned="Joltik")
+        roster = {"pool": [utility, other], "records": {}, "caught_count": 2,
+                  "canonical_count": 2, "by_id": {}, "warnings": [], "assumptions": [], "limitations": []}
+        with mock.patch.object(tb, "load_roster", return_value=roster) as load, \
+             mock.patch.object(ts, "load_typechart", return_value={}), \
+             mock.patch.object(ts, "move_info", return_value={}), \
+             mock.patch.object(ts, "moveset_provenance", return_value={"path": ""}), \
+             mock.patch.object(ts, "profile", side_effect=lambda p, *args: p), \
+             mock.patch.object(opt, "choose_options", return_value=[]) as choose, \
+             mock.patch.object(sys, "argv", ["team_synergy.py", "--uid", "uid", "--story-options"]), \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ts.main(), 0)
+        self.assertEqual(load.call_args.kwargs["off_limits"], "litten,magnemite,riolu,abra")
+        self.assertEqual(choose.call_args.args[1]["final"], "Butterfree")
+
+    def _member(self, name, dex, typ, points=4, owned=None):
+        return {"final": name, "endpoint_id": dex, "caught_as": [owned or name + "-baby"],
+                "caught_ids": [dex - 1], "lineage_ids": [dex - 1, dex], "types": [typ],
+                "points": points, "moves": [(typ, 100, 1.0)], "weak": set(),
+                "resist": set(), "atk": 100, "spa": 110, "bulk": 280, "spe": 110,
+                "tier": "RU", "usage": 0.1, "rank": 5}
+
+    def test_five_options_fix_utility_and_scope_og_by_final_endpoint(self):
+        old = [self._member(f"Old{i}", 20 + i, typ) for i, typ in
+               enumerate(["Normal", "Fire", "Water", "Electric", "Grass", "Ice"])]
+        new = [self._member(f"New{i}", 200 + i, typ) for i, typ in
+               enumerate(["Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug"])]
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        options = opt.choose_options(old + new, utility, {}, min_changes=1)
+        self.assertEqual([o["category"] for o in options],
+                         ["OG-151", "No OG-151", "Mixed", "Mixed", "Mixed"])
+        self.assertTrue(all(o["utility"] == "Butterfree" and len(o["members"]) == 5
+                            and o["anchor"] in o["members"] for o in options))
+        self.assertTrue(all(m["endpoint_id"] <= 151 for m in options[0]["profiles"]))
+        self.assertTrue(all(m["endpoint_id"] > 151 for m in options[1]["profiles"]))
+        self.assertTrue(all(opt.is_evolving(m) for o in options for m in o["profiles"]))
+
+    def test_og_attempt_is_reported_instead_of_fabricating_five_members(self):
+        modern = [self._member(f"New{i}", 200 + i, typ) for i, typ in
+                  enumerate(["Normal", "Fire", "Water", "Electric", "Grass", "Ice"])]
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        options = opt.choose_options(modern, utility, {}, min_changes=1)
+        self.assertEqual(options[0]["category"], "OG-151")
+        self.assertFalse(options[0]["members"])
+        self.assertIn("only 0", options[0]["warning"])
+
+    def test_anchor_rejects_hidden_ability_dependency_and_finalized_species(self):
+        strong = self._member("Diggersby", 660, "Ground", points=5.5)
+        sturdy = self._member("Pelipper", 279, "Flying", points=6)
+        finalized = self._member("AlreadyDone", 500, "Water", points=7, owned="AlreadyDone")
+        self.assertLess(opt.anchor_score(strong), opt.anchor_score(sturdy))
+        self.assertFalse(opt.is_evolving(finalized))
+
+    def test_alolan_gen1_endpoint_is_neither_og_only_nor_no_og(self):
+        alolan = self._member("Muk-Alola", 89, "Poison", owned="Grimer")
+        alolan["alolan"] = True
+        old = [self._member(f"Old{i}", 20 + i, typ) for i, typ in
+               enumerate(["Fire", "Water", "Electric", "Grass", "Ice"])]
+        modern = [self._member(f"New{i}", 200 + i, typ) for i, typ in
+                  enumerate(["Fire", "Water", "Electric", "Grass", "Ice"])]
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        options = opt.choose_options([*old, *modern, alolan], utility, {}, min_changes=1)
+        self.assertNotIn("Muk-Alola", options[0]["members"])
+        self.assertNotIn("Muk-Alola", options[1]["members"])
+
+    def test_og_only_requires_an_owned_og_stage(self):
+        tyrogue = self._member("Hitmonlee", 106, "Fighting", owned="Tyrogue")
+        tyrogue["caught_ids"] = [236]
+        pikachu = self._member("Raichu", 26, "Electric", owned="Pikachu")
+        pikachu["caught_ids"] = [25, 172]
+        self.assertFalse(opt.og_ready(tyrogue))
+        self.assertTrue(opt.og_ready(pikachu))
+
+    def test_no_og_rejects_gen1_owned_stage_even_if_final_is_later(self):
+        slowking = self._member("Slowking", 199, "Water", owned="Slowpoke")
+        slowking["caught_ids"] = [79]
+        self.assertFalse(opt.no_og_ready(slowking))
+        self.assertTrue(opt.no_og_ready(self._member("Feraligatr", 160, "Water", owned="Totodile")))
+
+    def test_no_assumed_gender_or_stat_gate_on_unrecorded_individual(self):
+        species = [self._member(name, dex, typ) for name, dex, typ in
+                   [("Salazzle", 758, "Poison"), ("Hitmontop", 237, "Fighting"),
+                    ("Froslass", 478, "Ice"),
+                    ("Gardevoir", 282, "Fairy"), ("Vikavolt", 738, "Electric")]]
+        usable = opt.eligible_for_easy_run(species)
+        self.assertEqual([p["final"] for p in usable], ["Gardevoir", "Vikavolt"])
+
+    def test_non_og_options_do_not_use_pu_filler_when_nu_pool_is_viable(self):
+        old = [self._member(f"Old{i}", 20 + i, typ) for i, typ in
+               enumerate(["Normal", "Fire", "Water", "Electric", "Grass"])]
+        new = [self._member(f"New{i}", 200 + i, typ) for i, typ in
+               enumerate(["Fighting", "Poison", "Ground", "Flying", "Psychic", "Rock"])]
+        weak = self._member("Gumshoos", 735, "Dark", points=9)
+        weak["tier"] = "(PU)"
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        options = opt.choose_options(old + new + [weak], utility, {}, min_changes=1)
+        self.assertNotIn("Gumshoos", options[1]["members"])
+        self.assertTrue(all("Gumshoos" not in o["members"] for o in options[2:]))
+
+    def test_story_coverage_does_not_credit_unverified_ladder_moves(self):
+        line = self._member("Infernape", 392, "Fire")
+        line["types"] = ["Fire", "Fighting"]
+        line["moves"] = [("Ice", 120, 1.0), ("Fire", 120, 1.0)]
+        transformed = opt.conservative_profiles([line])[0]
+        self.assertEqual({typ for typ, _, _ in transformed["moves"]}, {"Fire", "Fighting"})
+        self.assertEqual(line["moves"], [("Ice", 120, 1.0), ("Fire", 120, 1.0)])
+        self.assertIn("proxy", transformed["coverage_source"])
+
+    def test_current_favorite_breaks_equal_team_score_tie_without_locking(self):
+        old = self._member("Old", 40, "Normal")
+        new = [self._member(f"New{i}", 200 + i, "Normal") for i in range(4)]
+        favorite = self._member("ZZFavorite", 230, "Normal")
+        favorite["favorite"] = True
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        ranked = opt._rank([old, *new, favorite], utility, {}, category="Mixed")
+        self.assertIn("ZZFavorite", ranked[0]["members"])
+
+    def test_story_report_uses_hack_evolution_overrides_and_owned_stages(self):
+        klink = self._member("Klinklang", 601, "Steel", owned="Klink")
+        klink["caught_ids"] = [599]
+        roster = {"caught_count": 1, "canonical_count": 1, "pool": [klink],
+                  "by_id": {599: {"name": "Klink"}}, "det": {601: {"evolution": [
+                      {"name": "Klink"}, {"name": "Klang", "method": "Level 38"},
+                      {"name": "Klinklang", "method": "Level 49"}]}},
+                  "records": {"star:599": {"s": "on"}}}
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        option = {"category": "No OG-151", "members": ["Klinklang"],
+                  "profiles": [klink], "anchor": "Klinklang", "utility": "Butterfree",
+                  "core_score": 1, "six_score": 1, "evolving": 1, "level_evolving": 1,
+                  "shared_types": 0}
+        report = opt.story_report(roster, [option], utility)
+        text = opt.format_story_report(report)
+        self.assertIn("Klink → Klang (L28) → Klinklang (L39)", text)
+        self.assertEqual(report["options"][0]["anchor"], "Klinklang")
+        self.assertTrue(report["options"][0]["members"][0]["favorite"])
 
 
 class TeamBuilderTests(unittest.TestCase):
