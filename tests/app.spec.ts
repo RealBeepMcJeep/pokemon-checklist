@@ -545,3 +545,32 @@ test("keeps the atlas out of computed styles and crops the right frame", async (
   expect(mewtwo).toBe("matrix(1, 0, 0, 1, -840, -120)");
   expect(errors).toEqual([]);
 });
+
+test("shows a live catch-next card as the Pokédex's empty-selection state", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const catchNext = page.locator("#dex-selection .catch-next");
+  await expect(catchNext.locator("strong")).toHaveText("Catch next in Route 1");
+  const pikipekRow = catchNext.locator("li").filter({ hasText: "Pikipek" });
+  await expect(pikipekRow).toHaveCount(1);
+
+  // A status change made from the card itself must update the still-open card live,
+  // with no selection and no navigation.
+  await pikipekRow.locator('[data-species="731"]').click();
+  await expect(
+    catchNext.locator("li").filter({ hasText: "Pikipek" }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-action="species"][data-species="731"]').first(),
+  ).toContainText("Caught");
+  await expect(page.locator("#dex-selection .selected-title")).toHaveCount(0);
+
+  // The jump button opens the same location the card is about, reusing the same
+  // focusedLocation mechanism as every other in-app jump.
+  await catchNext.locator(".catch-next-jump").click();
+  await expect(
+    page.locator('[data-location-id="melemele-island/route-1"][open]'),
+  ).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

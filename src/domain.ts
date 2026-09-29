@@ -339,3 +339,13 @@ export function canonicalState(state: SavedState): SavedState {
     settings: { forms: state.settings.forms, mode: state.settings.mode },
   };
 }
+
+/** The catch-now species at a location that are not yet caught, in "Catch next". */
+export function uncaughtCatchNowRows(
+  location: Location,
+  statusOf: (id: number) => Status,
+): EncounterRow[] {
+  return catchNowRows(location).filter(
+    (row) => row.speciesId && statusOf(row.speciesId) !== "caught",
+  );
+}

@@ -9,6 +9,7 @@ import {
   firstIncompleteLocation,
   getOccurrences,
   locationProgress,
+  uncaughtCatchNowRows,
   validateState,
 } from "./domain";
 import type { Status } from "./types";
@@ -221,5 +222,19 @@ describe("checklist domain", () => {
   it("indexes forms once across all five modes", () => {
     expect(forms.get("19:alolan")?.label).toBe("Alolan");
     expect(forms.size).toBeGreaterThan(20);
+  });
+
+  it("drops caught species from the catch-next list", () => {
+    const location = ENCOUNTERS_BY_MODE[DEFAULT_MODE].islands[0].locations[0];
+    const rows = catchNowRows(location);
+    const first = rows[0].speciesId!;
+    const status = (id: number): Status => (id === first ? "caught" : "none");
+    const uncaught = uncaughtCatchNowRows(location, status);
+    expect(uncaught).toHaveLength(rows.length - 1);
+    expect(uncaught.some((row) => row.speciesId === first)).toBe(false);
+    // Nothing caught yet: every catch-now row is still uncaught.
+    expect(uncaughtCatchNowRows(location, () => "none")).toHaveLength(
+      rows.length,
+    );
   });
 });

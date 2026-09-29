@@ -17,6 +17,7 @@ import {
   toggleStar,
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
+import { CatchNext } from "./CatchNext";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
@@ -42,7 +43,8 @@ function Selection() {
   if (!selected) {
     return (
       <div class="empty">
-        Select a Pokémon to see its status and wild locations.
+        <p>Select a Pokémon to see its status and wild locations.</p>
+        <CatchNext />
       </div>
     );
   }
