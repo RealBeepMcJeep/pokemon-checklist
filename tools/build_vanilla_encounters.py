@@ -17,6 +17,7 @@ from pathlib import Path
 
 try:
     from .cache_support import (
+        CacheError,
         default_cache_dir,
         sha256_bytes,
         staged_directory,
@@ -24,6 +25,7 @@ try:
     )
 except ImportError:  # Running the file directly: python tools/build_vanilla_encounters.py
     from cache_support import (  # type: ignore[no-redef]
+        CacheError,
         default_cache_dir,
         sha256_bytes,
         staged_directory,
@@ -377,8 +379,12 @@ ALOLAN_SPECIES = {
 
 
 def normalize(value: str) -> str:
+    # Gender symbols carry real meaning (Nidoran female/male are different species,
+    # data/pokemon.json:145/160 -> "nidoran-f"/"nidoran-m"); translate them before the
+    # ascii-ignore encode drops them, or both genders collide on the same "nidoran" key.
+    translated = str(value).replace("♀", "f").replace("♂", "m")
     ascii_value = (
-        unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+        unicodedata.normalize("NFKD", translated).encode("ascii", "ignore").decode()
     )
     return re.sub(r"[^a-z0-9]", "", ascii_value.lower())
 
@@ -402,9 +408,6 @@ def read_json(path: Path) -> object:
             f"Cannot read valid JSON from {path.relative_to(ROOT)}"
         ) from error
 
-
-class CacheError(ValueError):
-    pass
 
 
 def download_bytes(url: str) -> bytes:
@@ -763,7 +766,7 @@ def table_for(
         )
         if matched:
             return matched
-    wanted = Counter({(record["speciesId"], record["rarity"]) for record in records})
+    wanted = Counter((record["speciesId"], record["rarity"]) for record in records)
     candidates = [
         table
         for table in tables
