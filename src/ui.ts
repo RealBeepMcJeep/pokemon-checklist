@@ -1,3 +1,4 @@
+import { signal } from "@preact/signals";
 import {
   activeEncounters,
   cycleSpecies,
@@ -19,6 +20,33 @@ import type { GameMode, Location } from "./types";
 
 export const DRAWER_BREAKPOINT = 1000;
 let previousFocus: HTMLElement | null = null;
+// Set once and updated only by the media query below, so a resize or rotation
+// across the breakpoint is never missed by a render that reads window.innerWidth
+// once and never again. Pokedex.tsx and Header.tsx derive mobile/hidden state
+// from this instead of reading the viewport directly.
+const mobileQuery = window.matchMedia(`(max-width: ${DRAWER_BREAKPOINT - 1}px)`);
+export const isMobile = signal(mobileQuery.matches);
+mobileQuery.addEventListener("change", (event) => {
+  isMobile.value = event.matches;
+});
+// The drawer is a modal on a phone: lock the page behind it so a swipe on the
+// backdrop can't scroll the location list underneath.
+let bodyOverflowLock: (() => void) | null = null;
+drawerOpen.subscribe((open) => {
+  if (open && !bodyOverflowLock) {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    bodyOverflowLock = () => {
+      document.body.style.overflow = previous;
+    };
+  } else if (!open && bodyOverflowLock) {
+    bodyOverflowLock();
+    bodyOverflowLock = null;
+  }
+});
+/** Set right before opening the drawer so its focus lands on the selection panel
+ * (opened for a specific Pokémon) rather than the search box (opened generically). */
+let focusSelectionOnOpen = false;
 
 export function currentOpenLocations(): string[] {
   return [
@@ -53,9 +81,9 @@ export function changeSpecies(id: number): void {
   if (before !== after) focusedLocation.value = after;
 }
 
-export function jumpTo(hash: string): void {
+function focusEncounterRow(hash: string): boolean {
   const target = document.getElementById(hash.slice(1));
-  if (!target) return;
+  if (!target) return false;
   let parent = target.parentElement;
   while (parent) {
     if (parent instanceof HTMLDetailsElement) parent.open = true;
@@ -65,13 +93,51 @@ export function jumpTo(hash: string): void {
   target.scrollIntoView({ block: "center" });
   target.focus({ preventScroll: true });
   closeDrawer();
+  return true;
+}
+
+// Set right before focusing a new location so its own open effect (which would
+// otherwise focus the location's <summary>) yields to the more specific row jumpTo
+// is about to focus. Locations.tsx consumes this once per location change.
+let pendingRowFocus: string | null = null;
+
+/** Consumed by Locations.tsx's own scroll/focus effect: true means jumpTo is about
+ * to focus a specific row in this location, so the effect must not also focus the
+ * location's summary out from under it. */
+export function consumeRowFocusIntent(locationId: string): boolean {
+  if (pendingRowFocus !== locationId) return false;
+  pendingRowFocus = null;
+  return true;
+}
+
+/**
+ * Scroll to and focus an encounter row, opening its owning location first when
+ * that location has never been opened (so the row hasn't mounted yet). `locationId`
+ * is the id of the location the row lives in; omit it for a hash known to already
+ * be on the page (e.g. one the caller just opened itself).
+ */
+export function jumpTo(hash: string, locationId?: string): void {
+  if (focusEncounterRow(hash)) return;
+  if (!locationId) return;
+  pendingRowFocus = locationId;
+  focusedLocation.value = locationId;
+  // The location's body mounts the first time it opens (Locations.tsx), which
+  // happens on the next render plus its own mount effect; retry across a few
+  // frames rather than guessing exactly how many renders that takes.
+  let attempts = 10;
+  const retry = () => {
+    if (focusEncounterRow(hash) || --attempts <= 0) return;
+    requestAnimationFrame(retry);
+  };
+  requestAnimationFrame(retry);
 }
 
 export function openPokemon(id: number): void {
   selectedDex.value = id;
-  if (window.innerWidth < DRAWER_BREAKPOINT) {
+  if (isMobile.value) {
     if (!drawerOpen.value)
       previousFocus = document.activeElement as HTMLElement | null;
+    focusSelectionOnOpen = true;
     drawerOpen.value = true;
   } else {
     sidebarHidden.value = false;
@@ -83,13 +149,21 @@ export function openPokemon(id: number): void {
   });
 }
 
+/** Consumed by Pokedex.tsx's open effect: true means openPokemon already queued
+ * focus for the selection panel, so the effect must not steal it back to search. */
+export function consumeSelectionFocusIntent(): boolean {
+  const value = focusSelectionOnOpen;
+  focusSelectionOnOpen = false;
+  return value;
+}
+
 export function closeDrawer(): void {
   drawerOpen.value = false;
-  if (window.innerWidth < DRAWER_BREAKPOINT) previousFocus?.focus();
+  if (isMobile.value) previousFocus?.focus();
 }
 
 export function toggleSidebar(): void {
-  if (window.innerWidth < DRAWER_BREAKPOINT) {
+  if (isMobile.value) {
     if (!drawerOpen.value)
       previousFocus = document.activeElement as HTMLElement | null;
     drawerOpen.value = !drawerOpen.value;
