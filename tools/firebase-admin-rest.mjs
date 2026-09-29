@@ -26,7 +26,14 @@ const KEY_PATH =
 const STATUS_VALUES = new Set(["none", "seen", "caught"]);
 const STAR_VALUES = new Set(["on", "off"]);
 const MODE_VALUES = new Set(["photonic-prismatic", "sun", "moon", "ultra-sun", "ultra-moon"]);
-const NATIONAL_DEX_MAX = 807;
+
+/** The catalogue's own highest species id, so this bound cannot drift from data/pokemon.json. */
+function loadNationalDexMax() {
+  const raw = JSON.parse(readFileSync(resolve(REPO, "data", "pokemon.json"), "utf8"));
+  const list = Array.isArray(raw) ? raw : raw.species ?? raw.pokemon ?? raw.pokedex;
+  return Math.max(...list.map((entry) => Number(entry.id)));
+}
+const NATIONAL_DEX_MAX = loadNationalDexMax();
 const MAX_UID_LENGTH = 128;
 const MAX_APPLY_RETRIES = 3;
 const KEY_RE = /^(species|star):([1-9][0-9]*)$/;
@@ -169,8 +176,10 @@ export function validateRecordMap(records, { entries = false } = {}) {
       if (typeof raw.s !== "string" || !allowedValues(kind).has(raw.s)) {
         throw new Error(`record ${key} has invalid value`);
       }
-      if ("at" in raw && typeof raw.at !== "number" &&
-          !(raw.at && raw.at[".sv"] === "timestamp")) {
+      // A real Firebase GET always resolves the `{".sv":"timestamp"}` sentinel to a
+      // number before returning it, so a record still carrying the raw sentinel is
+      // never valid here; do not special-case it.
+      if ("at" in raw && typeof raw.at !== "number") {
         throw new Error(`record ${key} has invalid at`);
       }
       if ("by" in raw && typeof raw.by !== "string") {
@@ -227,7 +236,7 @@ export function buildApplyPayload(uid, changes, { note = "", now = Date.now(), i
     payload[`state/records/${change.key}`] = {
       s: change.to,
       at: SERVER_TIME,
-      by: `chat:${uid}`,
+      by: uid,
     };
     payload[`log/${logPrefix}-${String(index).padStart(3, "0")}`] = {
       op: "set",

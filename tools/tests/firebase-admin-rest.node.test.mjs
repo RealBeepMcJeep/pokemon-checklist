@@ -22,6 +22,18 @@ test("validates Firebase-safe account and record keys", () => {
   assert.throws(() => validateRecordMap({ "species:808": "caught" }), /National Dex/);
 });
 
+test("rejects an unresolved server-value sentinel as a record's at", () => {
+  // A real Firebase GET always resolves {".sv": "timestamp"} to a number before
+  // returning it, so a record still carrying the raw sentinel is never valid.
+  assert.throws(
+    () => validateRecordMap(
+      { "species:25": { s: "caught", at: { ".sv": "timestamp" } } },
+      { entries: true },
+    ),
+    /invalid at/,
+  );
+});
+
 test("uses a process-safe log id and preserves full change provenance", () => {
   const payload = buildApplyPayload(
     "abc:123",
@@ -34,6 +46,10 @@ test("uses a process-safe log id and preserves full change provenance", () => {
     op: "set", at: { ".sv": "timestamp" }, by: "abc:123", via: "chat",
     key: "species:25", from: "seen", to: "caught", note: "chat",
   });
+  // The record entry's `by` must match every other writer (the log entry
+  // above, and the browser's own engine.ts): a bare uid, no "chat:" prefix.
+  const recordKey = Object.keys(payload).find((key) => key.startsWith("state/records/"));
+  assert.equal(payload[recordKey].by, "abc:123");
 });
 
 test("merges updates into a cloned account without losing unknown data or logs", () => {
