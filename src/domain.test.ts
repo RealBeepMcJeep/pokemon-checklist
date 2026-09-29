@@ -5,10 +5,12 @@ import {
   buildFormDefinitions,
   canonicalState,
   catchNowRows,
+  crossModeOccurrences,
   cycleStatus,
   firstIncompleteLocation,
   getOccurrences,
   locationProgress,
+  uncaughtCatchNowRows,
   validateState,
 } from "./domain";
 import type { Status } from "./types";
@@ -221,5 +223,32 @@ describe("checklist domain", () => {
   it("indexes forms once across all five modes", () => {
     expect(forms.get("19:alolan")?.label).toBe("Alolan");
     expect(forms.size).toBeGreaterThan(20);
+  });
+
+  it("drops caught species from the catch-next list", () => {
+    const location = ENCOUNTERS_BY_MODE[DEFAULT_MODE].islands[0].locations[0];
+    const rows = catchNowRows(location);
+    const first = rows[0].speciesId!;
+    const status = (id: number): Status => (id === first ? "caught" : "none");
+    const uncaught = uncaughtCatchNowRows(location, status);
+    expect(uncaught).toHaveLength(rows.length - 1);
+    expect(uncaught.some((row) => row.speciesId === first)).toBe(false);
+    // Nothing caught yet: every catch-now row is still uncaught.
+    expect(uncaughtCatchNowRows(location, () => "none")).toHaveLength(
+      rows.length,
+    );
+  });
+
+  it("finds a species in other game modes without repeating the current one", () => {
+    const elsewhere = crossModeOccurrences(ENCOUNTERS_BY_MODE, DEFAULT_MODE, 731);
+    expect(elsewhere.every((entry) => entry.mode !== DEFAULT_MODE)).toBe(true);
+    expect(elsewhere.every((entry) => entry.occurrences.length > 0)).toBe(true);
+    expect(elsewhere.some((entry) => entry.mode === "sun")).toBe(true);
+    // Nothing to report once every mode is excluded from the search.
+    for (const gameMode of elsewhere.map((entry) => entry.mode)) {
+      expect(crossModeOccurrences(ENCOUNTERS_BY_MODE, gameMode, 731)).not.toEqual(
+        [],
+      );
+    }
   });
 });

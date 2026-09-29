@@ -8,6 +8,9 @@ export function movesFinals(id: number): number[] {
 
 export function moveInfo(row: PopularMove): MoveInfo {
   const info = MOVES.moves[row.move];
+  // A move missing from the table (a stale/mistyped name from a future data build)
+  // degrades to a visibly labeled entry instead of crashing the whole Pokédex panel.
+  if (!info) return { name: row.name ?? row.move, type: row.type ?? "?" };
   return {
     ...info,
     name: row.name ?? info.name,

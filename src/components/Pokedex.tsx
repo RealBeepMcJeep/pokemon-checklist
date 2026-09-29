@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { memo } from "preact/compat";
-import { POKEMON, byDex, detailsByDex, formDetails } from "../data";
-import { getOccurrences, normalize, safeId } from "../domain";
+import { ENCOUNTERS_BY_MODE, POKEMON, byDex, detailsByDex, formDetails } from "../data";
+import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
   caughtCount,
@@ -9,6 +9,7 @@ import {
   formDefinitions,
   formsTracked,
   isStarred,
+  mode,
   searchTerm,
   seenCount,
   selectedDex,
@@ -17,6 +18,7 @@ import {
   toggleStar,
 } from "../state";
 import { DRAWER_BREAKPOINT, closeDrawer, jumpTo, openPokemon } from "../ui";
+import { CatchNext } from "./CatchNext";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
@@ -42,13 +44,19 @@ function Selection() {
   if (!selected) {
     return (
       <div class="empty">
-        Select a Pokémon to see its status and wild locations.
+        <p>Select a Pokémon to see its status and wild locations.</p>
+        <CatchNext />
       </div>
     );
   }
   const pokemon = byDex.get(selected);
   if (!pokemon) return null;
   const occurrences = getOccurrences(activeEncounters.value, selected);
+  const otherModeOccurrences = crossModeOccurrences(
+    ENCOUNTERS_BY_MODE,
+    mode.value,
+    selected,
+  );
   const details = detailsByDex.get(selected);
   const bulbapediaUrl = `https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(`${pokemon.name}_(Pokémon)`).replaceAll("%20", "_")}`;
   const forms = [...formDefinitions.values()].filter(
@@ -56,6 +64,16 @@ function Selection() {
   );
   return (
     <>
+      <button
+        class="deselect-button"
+        type="button"
+        aria-label="Close these details and show what to catch next"
+        onClick={() => {
+          selectedDex.value = null;
+        }}
+      >
+        ← Catch next
+      </button>
       <div class="selected-title">
         <PokemonIcon id={selected} />
         <span>
@@ -101,7 +119,7 @@ function Selection() {
             ? `Known places in this mode (${occurrences.length})`
             : "No direct wild location in this mode"}
         </strong>
-        {occurrences.length ? (
+        {occurrences.length > 0 && (
           <ul>
             {occurrences.map((item, index) => {
               const href = `#encounter-${safeId(item.row.id)}`;
@@ -125,7 +143,11 @@ function Selection() {
               );
             })}
           </ul>
-        ) : details?.evolution ? (
+        )}
+        {/* Shown whenever the species evolves, even when it also has a direct wild
+            location above: a caught-but-unevolved Pichu or Feebas still needs the
+            reminder of how to finish its line. */}
+        {details?.evolution && (
           <div class="evolution-path">
             <span>Evolution path</span>
             <ol aria-label={`Evolution path to ${pokemon.name}`}>
@@ -152,10 +174,29 @@ function Selection() {
               })}
             </ol>
           </div>
-        ) : (
+        )}
+        {!occurrences.length && !details?.evolution && (
           <p class="muted">
             This Pokémon does not evolve from another Pokémon.
           </p>
+        )}
+        {otherModeOccurrences.length > 0 && (
+          <details class="also-catchable">
+            <summary>
+              Also catchable in {otherModeOccurrences.length}{" "}
+              other mode{otherModeOccurrences.length === 1 ? "" : "s"}
+            </summary>
+            <ul>
+              {otherModeOccurrences.flatMap(({ mode: otherMode, occurrences: rows }) =>
+                rows.map((item, index) => (
+                  <li key={`${otherMode}:${index}`}>
+                    {MODE_LABELS[otherMode]}: {item.location.name}
+                    {item.ally ? " · SOS ally" : ""}
+                  </li>
+                )),
+              )}
+            </ul>
+          </details>
         )}
       </div>
       <PopularMoves id={selected} />

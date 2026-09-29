@@ -545,3 +545,92 @@ test("keeps the atlas out of computed styles and crops the right frame", async (
   expect(mewtwo).toBe("matrix(1, 0, 0, 1, -840, -120)");
   expect(errors).toEqual([]);
 });
+
+test("shows a live catch-next card as the Pokédex's empty-selection state", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const catchNext = page.locator("#dex-selection .catch-next");
+  await expect(catchNext.locator("strong")).toHaveText("Catch next in Route 1");
+  const pikipekRow = catchNext.locator("li").filter({ hasText: "Pikipek" });
+  await expect(pikipekRow).toHaveCount(1);
+
+  // A status change made from the card itself must update the still-open card live,
+  // with no selection and no navigation.
+  await pikipekRow.locator('[data-species="731"]').click();
+  await expect(
+    catchNext.locator("li").filter({ hasText: "Pikipek" }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-action="species"][data-species="731"]').first(),
+  ).toContainText("Caught");
+  await expect(page.locator("#dex-selection .selected-title")).toHaveCount(0);
+
+  // The jump button opens the same location the card is about, reusing the same
+  // focusedLocation mechanism as every other in-app jump.
+  await catchNext.locator(".catch-next-jump").click();
+  await expect(
+    page.locator('[data-location-id="melemele-island/route-1"][open]'),
+  ).toHaveCount(1);
+
+  // Selecting a Pokémon replaces the card; the details header brings it back.
+  await page.locator('[data-action="select"][data-species="1"]').click();
+  await expect(catchNext).toHaveCount(0);
+  await page.locator("#dex-selection .deselect-button").click();
+  await expect(catchNext.locator("strong")).toHaveText("Catch next in Route 1");
+  expect(errors).toEqual([]);
+});
+
+test("lists where a species is caught in other game modes", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#dex-search").fill("pichu");
+  await page.locator('[data-action="select"][data-species="172"]').click();
+  const also = page.locator("#dex-selection .also-catchable");
+  await expect(also.locator("summary")).toHaveText(
+    "Also catchable in 4 other modes",
+  );
+  await also.locator("summary").click();
+  await expect(also.locator("li").first()).toContainText(
+    "Pokémon Sun: Route 1",
+  );
+  // Switching into a mode Pichu is already listed under swaps it out for the mode
+  // just left, rather than double-counting or keeping the current mode listed.
+  await page.locator("#mode-select").selectOption("sun");
+  const alsoAfterSwitch = page.locator("#dex-selection .also-catchable");
+  await expect(alsoAfterSwitch.locator("summary")).toHaveText(
+    "Also catchable in 4 other modes",
+  );
+  await alsoAfterSwitch.locator("summary").click();
+  await expect(alsoAfterSwitch).not.toContainText("Pokémon Sun:");
+  await expect(alsoAfterSwitch).toContainText("Prismatic Moon:");
+
+  // A species with no encounter at all in the current mode still says where else
+  // it can be caught, instead of going blank.
+  await page.locator("#mode-select").selectOption("photonic-prismatic");
+  await page.locator("#dex-search").fill("chansey");
+  await page.locator('[data-action="select"][data-species="113"]').click();
+  await expect(page.locator("#dex-selection .location-links")).toContainText(
+    "No direct wild location in this mode",
+  );
+  await expect(
+    page.locator("#dex-selection .also-catchable summary"),
+  ).toHaveText("Also catchable in 4 other modes");
+  expect(errors).toEqual([]);
+});
+
+test("always shows the evolution path, even next to a direct wild location", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#dex-search").fill("pikachu");
+  await page.locator('[data-action="select"][data-species="25"]').click();
+  await expect(
+    page.locator("#dex-selection .location-links > strong"),
+  ).toContainText("Known places in this mode");
+  await expect(
+    page.locator("#dex-selection .evolution-path .evolution-link"),
+  ).toHaveText(["Pichu", "Pikachu"]);
+  expect(errors).toEqual([]);
+});

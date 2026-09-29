@@ -77,4 +77,11 @@ describe("popular moves", () => {
     expect(statsTier("gen7ru-1630")).toBe("RU");
     expect(statsTier("gen7ubers-1630")).toBe("Ubers");
   });
+
+  it("degrades to a labeled entry instead of throwing when a move is unknown", () => {
+    const row = { move: "not-a-real-move", usage: 1, how: [] };
+    expect(moveInfo(row)).toEqual({ name: "not-a-real-move", type: "?" });
+    const overridden = { move: "not-a-real-move", usage: 1, how: [], name: "Hidden Power Fire", type: "Fire" };
+    expect(moveInfo(overridden)).toEqual({ name: "Hidden Power Fire", type: "Fire" });
+  });
 });
