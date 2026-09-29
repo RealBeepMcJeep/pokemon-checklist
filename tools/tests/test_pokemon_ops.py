@@ -102,6 +102,52 @@ class PokemonOpsTests(unittest.TestCase):
         with self.assertRaises(ops.SchemaError):
             ops.validate_record_map({"species:25": entry("query")}, {25})
 
+    def test_unresolved_server_value_sentinel_is_rejected_as_at(self):
+        # A real Firebase GET always resolves {".sv": "timestamp"} to a number;
+        # a record still carrying the raw sentinel must fail closed, not be
+        # special-cased as valid.
+        with self.assertRaises(ops.SchemaError):
+            ops.validate_record_map(
+                {"species:25": {"s": "caught", "at": {".sv": "timestamp"}}}, {25}
+            )
+
+    def test_uid_flag_is_accepted_after_the_subcommand(self):
+        # argparse's subparsers action swallows every token after the subcommand,
+        # so --uid must work whether it comes before or after `mark`.
+        parser = ops.build_parser()
+        before = parser.parse_args(["--uid", "u1", "mark", "pikachu", "caught"])
+        after = parser.parse_args(["mark", "pikachu", "caught", "--uid", "u1"])
+        self.assertEqual(before.uid, "u1")
+        self.assertEqual(after.uid, "u1")
+
+    def test_missing_uid_anywhere_is_still_rejected(self):
+        parser = ops.build_parser()
+        args = parser.parse_args(["mark", "pikachu", "caught"])
+        self.assertIsNone(args.uid)
+
+    def test_apply_reports_no_write_when_transport_no_ops_the_write(self):
+        # A concurrent writer can land between pokemon_ops.py's own read and the
+        # transport's later fresh read-then-diff, so the transport makes no write
+        # (and no log/* entry) even though the value already matches by the time
+        # we read it back. That must not be reported the same as a verified write.
+        class RaceClient:
+            def __init__(self):
+                self.applied = 0
+
+            def read_records(self, uid):
+                if self.applied:
+                    return {"species:25": entry("seen")}
+                return {"species:25": entry("caught")}
+
+            def apply_records(self, uid, records, note=""):
+                self.applied += 1
+                return {"ok": True, "changed": False, "changes": []}
+
+        result = ops.run_mark(RaceClient(), "uid", "pikachu", "seen", SPECIES)
+        self.assertTrue(result["changed"])
+        self.assertFalse(result.get("verified"))
+        self.assertTrue(result.get("verified_no_write"))
+
     def test_ambiguous_name_fails_without_a_write(self):
         client = FakeClient()
         with self.assertRaises(ops.AmbiguousSpeciesError):
@@ -134,6 +180,17 @@ class PokemonOpsTests(unittest.TestCase):
         result = pokemon_chat.parse("status of pikachu", species)
         self.assertEqual(result["intent"], "status_query")
         self.assertNotIn("record", result)
+
+    def test_question_phrasing_never_emits_a_mutation_record(self):
+        species = pokemon_chat.load_species()
+        for text in (
+            "did I already get bulbasaur",
+            "have I got a pikachu yet?",
+            "did you catch a mewtwo",
+        ):
+            result = pokemon_chat.parse(text, species)
+            self.assertEqual(result["intent"], "status_query", text)
+            self.assertNotIn("record", result, text)
 
     def test_multi_species_chat_phrase_fails_clearly(self):
         species = pokemon_chat.load_species()

@@ -182,10 +182,10 @@ def validate_record_map(records: Mapping[str, Any] | None, species_ids: Iterable
         if "at" in raw and not (
             isinstance(raw["at"], (int, float)) and not isinstance(raw["at"], bool)
         ):
-            # A fake/test transport may retain the server-value sentinel before
-            # Firebase resolves it; permit only that exact sentinel shape.
-            if raw["at"] != {".sv": "timestamp"}:
-                raise SchemaError(f"record {key} has invalid at")
+            # A real Firebase GET always resolves the `{".sv":"timestamp"}` sentinel
+            # to a number before returning it, so a record read back with the raw
+            # sentinel still attached is never valid; do not special-case it here.
+            raise SchemaError(f"record {key} has invalid at")
         if "by" in raw and not isinstance(raw["by"], str):
             raise SchemaError(f"record {key} has invalid by")
         checked[str(key)] = copy.deepcopy(dict(raw))
@@ -279,7 +279,7 @@ def _apply_verified(
 
     # Exactly one transport call is made for a multi-key workflow. The wrapper
     # turns it into one Firebase PATCH, not one request per record.
-    client.apply_records(uid, changes, note=note)
+    applied = client.apply_records(uid, changes, note=note)
     after = _read_checked(client, uid, species)
     for key, expected in changes.items():
         if key not in after or after[key].get("s") != expected:
@@ -287,7 +287,15 @@ def _apply_verified(
             raise VerificationError(
                 f"readback mismatch for {key}: expected {expected!r}, got {actual!r}"
             )
-    result["verified"] = True
+    if isinstance(applied, Mapping) and applied.get("changed") is False:
+        # The transport did its own fresh read-then-diff and found the desired
+        # value already there (a concurrent writer landed between our read and
+        # its write): the readback matches, but this call created no log/*
+        # audit entry, so it must not be reported the same as a real write.
+        result["verified"] = False
+        result["verified_no_write"] = True
+    else:
+        result["verified"] = True
     return result
 
 
@@ -404,8 +412,14 @@ def run_list(
 
 
 def _add_common_flags(parser: argparse.ArgumentParser, *, suppress_defaults: bool = False) -> None:
+    # --uid is never argparse-`required` here: a subparsers action (nargs=PARSER)
+    # swallows every token after the subcommand into the SUBPARSER, so a top-level
+    # `required=True` action never sees a --uid placed after `mark`/`evolve`/etc.
+    # and fails closed even though the flag was supplied. Both parsers share one
+    # namespace attribute, so whichever position provides --uid sets it; main()
+    # checks it is actually present once, after parsing, regardless of order.
     default = argparse.SUPPRESS if suppress_defaults else None
-    parser.add_argument("--uid", required=not suppress_defaults, default=default, help="Firebase account uid")
+    parser.add_argument("--uid", default=default, help="Firebase account uid")
     parser.add_argument("--json", action="store_true", default=default, help="emit machine-readable JSON")
     parser.add_argument("--dry-run", action="store_true", default=default, help="show the patch without writing")
     parser.add_argument("--note", default=default, help="audit note for the write")
@@ -459,6 +473,8 @@ def _print_result(result: Mapping[str, Any], as_json: bool) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if not args.uid:
+        parser.error("the following arguments are required: --uid")
     species = load_species()
     client = FirebaseClient()
     try:
