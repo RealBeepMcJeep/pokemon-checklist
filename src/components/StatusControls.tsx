@@ -1,142 +1,136 @@
 import { ATLAS, byDex } from "../data";
-import { STATUS_LABEL, formSlug } from "../domain";
+import { STATUS_LABEL, cycleStatus, formKey as buildFormKey, formSlug } from "../domain";
 import {
-        cycleForm,
-        formDefinitions,
-        formSignal,
-        formsTracked,
-        savedNotice,
-        speciesSignal,
+  cycleForm,
+  formDefinitions,
+  formSignal,
+  formsTracked,
+  savedNotice,
+  speciesSignal,
 } from "../state";
 import { changeSpecies } from "../ui";
 import type { Ally, EncounterRow, Status } from "../types";
 
 const STATUS_SYMBOL = {
-        none: "❌",
-        caught: "✅",
-        seen: "👁️",
+  none: "❌",
+  caught: "✅",
+  seen: "👁️",
 } satisfies Record<Status, string>;
 
 export function PokemonIcon({ id }: { id: number }) {
-        // The atlas is referenced as an <img> rather than as a CSS background on
-        // purpose: a background-image keeps the ~900 KB data URL inside every
-        // icon's computed style, and a full style recalculation over the 807-row
-        // Pokédex then costs about a second on a phone.
-        return (
-                <span class="icon" aria-hidden="true">
-                        <img
-                                class="icon-sprite"
-                                src={ATLAS.url}
-                                alt=""
-                                style={{
-                                        transform: `translate(-${((id - 1) % ATLAS.columns) * ATLAS.frameWidth}px, -${Math.floor((id - 1) / ATLAS.columns) * ATLAS.frameHeight}px)`,
-                                }}
-                        />
-                </span>
-        );
+  // The atlas is referenced as an <img> rather than as a CSS background on
+  // purpose: a background-image keeps the ~900 KB data URL inside every
+  // icon's computed style, and a full style recalculation over the 807-row
+  // Pokédex then costs about a second on a phone.
+  return (
+    <span class="icon" aria-hidden="true">
+      <img
+        class="icon-sprite"
+        src={ATLAS.url}
+        alt=""
+        style={{
+          transform: `translate(-${((id - 1) % ATLAS.columns) * ATLAS.frameWidth}px, -${Math.floor((id - 1) / ATLAS.columns) * ATLAS.frameHeight}px)`,
+        }}
+      />
+    </span>
+  );
 }
 
 export function StatusButton({
-        id,
-        context = "",
-        compact = false,
+  id,
+  context = "",
+  compact = false,
 }: {
-        id: number;
-        context?: string;
-        compact?: boolean;
+  id: number;
+  context?: string;
+  compact?: boolean;
 }) {
-        const status = speciesSignal(id).value;
-        const displayName = byDex.get(id)?.name || "Pokémon";
-        const label = `${displayName}${context ? ` ${context}` : ""} status: ${STATUS_LABEL[status]}. Activate to cycle status.`;
-        return (
-                <button
-                        type="button"
-                        class={`status-button status-${status} ${compact ? "compact-status" : ""}`}
-                        data-action="species"
-                        data-species={id}
-                        aria-label={label}
-                        onClick={() => changeSpecies(id)}
-                >
-                        {compact ? (
-                                <>
-                                        <span
-                                                class="status-symbol"
-                                                aria-hidden="true"
-                                        >
-                                                {STATUS_SYMBOL[status]}
-                                        </span>
-                                        <span class="status-text visually-hidden">
-                                                {STATUS_LABEL[status]}
-                                        </span>
-                                </>
-                        ) : (
-                                <span class="status-text">
-                                        {STATUS_LABEL[status]}
-                                </span>
-                        )}
-                </button>
-        );
+  const status = speciesSignal(id).value;
+  const displayName = byDex.get(id)?.name || "Pokémon";
+  const next = STATUS_LABEL[cycleStatus(status)];
+  const label = `${displayName}${context ? ` ${context}` : ""} status: ${STATUS_LABEL[status]}. Activate to mark as ${next}.`;
+  return (
+    <button
+      type="button"
+      class={`status-button status-${status} ${compact ? "compact-status" : ""}`}
+      data-action="species"
+      data-species={id}
+      aria-label={label}
+      onClick={() => changeSpecies(id)}
+    >
+      {compact ? (
+        <>
+          <span class="status-symbol" aria-hidden="true">
+            {STATUS_SYMBOL[status]}
+          </span>
+          <span class="status-text visually-hidden">
+            {STATUS_LABEL[status]}
+          </span>
+        </>
+      ) : (
+        <span class="status-text">{STATUS_LABEL[status]}</span>
+      )}
+    </button>
+  );
 }
 
 export function FormStatusButton({
-        formKey,
-        prefix = "",
+  formKey,
+  prefix = "",
 }: {
-        formKey: string;
-        prefix?: string;
+  formKey: string;
+  prefix?: string;
 }) {
-        const form = formDefinitions.get(formKey);
-        if (!form) return null;
-        const status = formSignal(formKey).value;
-        const label = `${prefix || byDex.get(form.speciesId)?.name || "Pokémon"} ${form.label} form status: ${STATUS_LABEL[status]}. Activate to cycle status.`;
-        return (
-                <button
-                        type="button"
-                        class={`status-button form-status status-${status}`}
-                        data-action="form"
-                        data-form={formKey}
-                        aria-label={label}
-                        onClick={() => {
-                                cycleForm(formKey);
-                                savedNotice("Form status");
-                        }}
-                >
-                        <span>{form.label}</span>
-                        <span class="status-text">{STATUS_LABEL[status]}</span>
-                </button>
-        );
+  const form = formDefinitions.get(formKey);
+  if (!form) return null;
+  const status = formSignal(formKey).value;
+  const next = STATUS_LABEL[cycleStatus(status)];
+  const label = `${prefix || byDex.get(form.speciesId)?.name || "Pokémon"} ${form.label} form status: ${STATUS_LABEL[status]}. Activate to mark as ${next}.`;
+  return (
+    <button
+      type="button"
+      class={`status-button form-status status-${status}`}
+      data-action="form"
+      data-form={formKey}
+      aria-label={label}
+      onClick={() => {
+        cycleForm(formKey);
+        savedNotice("Form status");
+      }}
+    >
+      <span>{form.label}</span>
+      <span class="status-text">{STATUS_LABEL[status]}</span>
+    </button>
+  );
 }
 
 export function RowForms({ row }: { row: EncounterRow }) {
-        if (!formsTracked.value || !row.speciesId) return null;
-        const keys = [
-                ...(row.form ? [`${row.speciesId}:${formSlug(row.form)}`] : []),
-                ...(row.forms || []).map(
-                        (form) => `${row.speciesId}:${formSlug(form)}`,
-                ),
-                ...(row.ability
-                        ? [`${row.speciesId}:ability-${formSlug(row.ability)}`]
-                        : []),
-        ];
-        return (
-                <div class="form-list">
-                        {[...new Set(keys)]
-                                .filter((key) => formDefinitions.has(key))
-                                .map((key) => (
-                                        <FormStatusButton
-                                                key={key}
-                                                formKey={key}
-                                        />
-                                ))}
-                </div>
-        );
+  if (!formsTracked.value || !row.speciesId) return null;
+  const keys = [
+    ...(row.form ? [buildFormKey(row.speciesId, "form", formSlug(row.form))] : []),
+    ...(row.forms || []).map((form) =>
+      buildFormKey(row.speciesId!, "form", formSlug(form)),
+    ),
+    ...(row.ability
+      ? [buildFormKey(row.speciesId, "ability", formSlug(row.ability))]
+      : []),
+  ];
+  return (
+    <div class="form-list">
+      {[...new Set(keys)]
+        .filter((key) => formDefinitions.has(key))
+        .map((key) => (
+          <FormStatusButton key={key} formKey={key} />
+        ))}
+    </div>
+  );
 }
 
 export function AllyForms({ ally }: { ally: Ally }) {
-        if (!formsTracked.value || !ally.form) return null;
-        return (
-                <FormStatusButton
-                        formKey={`${ally.speciesId}:${formSlug(ally.form)}`}
-                />
-        );
+  if (!formsTracked.value || !ally.form) return null;
+  return (
+    <FormStatusButton
+      formKey={buildFormKey(ally.speciesId, "form", formSlug(ally.form))}
+    />
+  );
 }
