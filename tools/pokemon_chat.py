@@ -52,8 +52,17 @@ FILLER = {
     "from", "with", "you", "your", "am",
 }
 
-# Anything the player should not be able to trigger by chatting.
+# Anything the player should not be able to trigger by chatting. Matched on word
+# boundaries (below) so "resetting my plan" doesn't trip on "reset".
 DANGEROUS = ("reset", "wipe", "clear everything", "delete everything", "start over")
+DANGEROUS_PATTERNS = tuple(re.compile(rf"\b{re.escape(phrase)}\b") for phrase in DANGEROUS)
+
+# A question never mutates state, no matter which verb it contains ("did I
+# already GET bulbasaur" must not read as an instruction to catch it). Detected
+# either by a leading auxiliary-plus-subject pair or a trailing "?".
+QUESTION_AUX = {"did", "do", "does", "have", "has", "am", "is", "are", "was", "were",
+                "can", "could", "would", "should", "will"}
+QUESTION_SUBJECTS = {"i", "you", "we", "it", "he", "she", "they"}
 
 
 def normalize(value: str) -> str:
@@ -61,6 +70,17 @@ def normalize(value: str) -> str:
     decomposed = unicodedata.normalize("NFD", value)
     stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     return re.sub(r"[^a-z0-9]", "", stripped.lower())
+
+
+def _is_question(cleaned: str, tokens: list[str]) -> bool:
+    """A leading auxiliary+subject pair ("did I", "have you") or a trailing "?"."""
+    if cleaned.endswith("?"):
+        return True
+    if len(tokens) >= 2:
+        first, second = normalize(tokens[0]), normalize(tokens[1])
+        if first in QUESTION_AUX and second in QUESTION_SUBJECTS:
+            return True
+    return False
 
 
 def load_species() -> list[Species]:
@@ -89,12 +109,8 @@ def load_species() -> list[Species]:
     return species
 
 
-def resolve(query: str, species: list[Species]) -> Intent:
-    """Find one species, or say why not. Deterministic: no fuzzy guessing."""
-    text = query.strip().lstrip("#").strip()
-    if not text:
-        return {"kind": "missing"}
-
+def _resolve_once(text: str, species: list[Species]) -> Intent:
+    """Try to resolve exactly this text, with no retry."""
     needle = normalize(text)
     if not needle:
         return {"kind": "missing"}
@@ -123,12 +139,36 @@ def resolve(query: str, species: list[Species]) -> Intent:
     return {"kind": "unknown", "query": text}
 
 
+def resolve(query: str, species: list[Species]) -> Intent:
+    """Find one species, or say why not. Deterministic: no fuzzy guessing.
+
+    normalize() concatenates every remaining word, so a trailing word the FILLER
+    list doesn't happen to cover (e.g. "yet" in "did I get bulbasaur yet") would
+    otherwise corrupt an exact match.  Retry with trailing words dropped, one at a
+    time, before giving up -- but a real ambiguity or an out-of-range dex number
+    is a final answer, not something to keep trimming around.
+    """
+    text = query.strip().lstrip("#").strip()
+    if not text:
+        return {"kind": "missing"}
+
+    words = text.split()
+    result = _resolve_once(text, species)
+    cutoff = len(words)
+    while result["kind"] == "unknown" and cutoff > 1:
+        cutoff -= 1
+        result = _resolve_once(" ".join(words[:cutoff]), species)
+    if result["kind"] == "unknown":
+        result = {"kind": "unknown", "query": text}
+    return result
+
+
 def parse(text: str, species: list[Species]) -> Intent:
     """Text in, intent out. Never raises for anything a player might type."""
     cleaned = " ".join(text.split())
     lowered = cleaned.lower()
-    for phrase in DANGEROUS:
-        if phrase in lowered:
+    for pattern in DANGEROUS_PATTERNS:
+        if pattern.search(lowered):
             return {
                 "intent": "confirm_required",
                 "reply": (
@@ -170,6 +210,12 @@ def parse(text: str, species: list[Species]) -> Intent:
             verb_word = word
             intent = matched
             break
+
+    # A question describes state; it must never be read as an instruction, no
+    # matter which verb it contains ("did I already GET bulbasaur" is not a
+    # command to catch it). The verb match above still anchors target_tokens().
+    if intent not in ("status_query", "team", "help") and _is_question(cleaned, tokens):
+        intent = "status_query"
 
     def target_tokens() -> list[str]:
         remaining = tokens[verb_index + 1 :] if verb_index is not None else tokens
@@ -271,6 +317,16 @@ CASES: list[tuple[str, Intent]] = [
     ("caught 999", {"intent": "unknown"}),
     ("reset everything", {"intent": "confirm_required"}),
     ("cleared my pikachu", {"intent": "status_none", "id": 25}),
+    # Questions must route to status_query, never a mutation, no matter which
+    # verb or trailing word they contain.
+    ("did I already get bulbasaur", {"intent": "status_query", "id": 1}),
+    ("have I got a pikachu yet?", {"intent": "status_query", "id": 25}),
+    ("did you catch a mewtwo", {"intent": "status_query", "id": 150}),
+    ("has she caught pikachu", {"intent": "status_query", "id": 25}),
+    # "resetting" must not trip the dangerous-phrase guard on the substring "reset".
+    ("resetting my plan", {"intent": "unknown"}),
+    # A trailing word FILLER doesn't cover must not corrupt species resolution.
+    ("star pikachu already", {"intent": "star_on", "id": 25, "record": {"star:25": "on"}}),
 ]
 
 
