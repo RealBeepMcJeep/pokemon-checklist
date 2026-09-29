@@ -5,7 +5,7 @@
 // base64 in src/index.html's <head> (apple-touch-icon + manifest icons).
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { chromium } from "playwright-core";
+import { chromium } from "@playwright/test";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const SIZES = [180, 512];

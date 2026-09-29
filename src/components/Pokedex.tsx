@@ -64,6 +64,16 @@ function Selection() {
   );
   return (
     <>
+      <button
+        class="deselect-button"
+        type="button"
+        aria-label="Close these details and show what to catch next"
+        onClick={() => {
+          selectedDex.value = null;
+        }}
+      >
+        ← Catch next
+      </button>
       <div class="selected-title">
         <PokemonIcon id={selected} />
         <span>

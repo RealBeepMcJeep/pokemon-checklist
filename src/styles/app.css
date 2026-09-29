@@ -964,6 +964,16 @@ tbody tr:hover {
 .catch-next-jump:focus-visible {
   background: var(--control-hover);
 }
+.deselect-button {
+  display: block;
+  margin: 0 0 0.3rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-bright);
+  font-size: 0.78rem;
+  text-decoration: underline;
+}
 .catch-next-done {
   margin: 0;
   color: var(--muted);

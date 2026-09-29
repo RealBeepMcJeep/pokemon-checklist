@@ -572,6 +572,12 @@ test("shows a live catch-next card as the Pokédex's empty-selection state", asy
   await expect(
     page.locator('[data-location-id="melemele-island/route-1"][open]'),
   ).toHaveCount(1);
+
+  // Selecting a Pokémon replaces the card; the details header brings it back.
+  await page.locator('[data-action="select"][data-species="1"]').click();
+  await expect(catchNext).toHaveCount(0);
+  await page.locator("#dex-selection .deselect-button").click();
+  await expect(catchNext.locator("strong")).toHaveText("Catch next in Route 1");
   expect(errors).toEqual([]);
 });
 
