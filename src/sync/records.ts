@@ -46,6 +46,10 @@ const isStatus = (value: string): value is Status =>
 const isMode = (value: string): value is GameMode =>
   GAME_MODES.includes(value as GameMode);
 
+/** Whether a value clears its record: a tombstone, or a flag switched off. */
+export const isClearing = (value: string): boolean =>
+  value === TOMBSTONE || value === STAR_OFF;
+
 /**
  * What "cleared" looks like in a key's own vocabulary. Flags say "off" rather
  * than "none" so the stored document reads sensibly when inspected by hand;
@@ -68,8 +72,8 @@ export function mergeEntry(
   if (!local) return remote;
   if (!remote) return local;
   if (remote.at !== local.at) return remote.at > local.at ? remote : local;
-  const localClears = local.s === TOMBSTONE || local.s === STAR_OFF;
-  const remoteClears = remote.s === TOMBSTONE || remote.s === STAR_OFF;
+  const localClears = isClearing(local.s);
+  const remoteClears = isClearing(remote.s);
   if (localClears !== remoteClears) return remoteClears ? remote : local;
   if (remote.by === local.by) return local;
   return remote.by > local.by ? remote : local;
@@ -117,23 +121,6 @@ export function entriesFromState(
   return records;
 }
 
-/** Capture exactly the values that an intentional Reset changes. */
-export function clearedByReset(state: SavedState): [RecordKey, string][] {
-  const cleared: [RecordKey, string][] = [];
-  for (const [id, status] of Object.entries(state.species)) {
-    if (status !== "none") cleared.push([speciesKey(Number(id)), status]);
-  }
-  for (const [key, status] of Object.entries(state.forms)) {
-    if (status !== "none") cleared.push([formKey(key), status]);
-  }
-  for (const id of state.starred) cleared.push([starKey(id), STAR_ON]);
-  if (state.settings.mode !== DEFAULT_MODE) {
-    cleared.push([SETTING_MODE, state.settings.mode]);
-  }
-  if (state.settings.forms) cleared.push([SETTING_FORMS, STAR_ON]);
-  return cleared;
-}
-
 /**
  * Only the keys whose value actually differs, including tombstones for values
  * that were cleared. Publishing a whole save on every change would make every
@@ -155,6 +142,49 @@ export function diffEntries(
     }
   }
   return changed;
+}
+
+/**
+ * The before-image of a whole-checklist replacement (Reset, Restore): each record
+ * it changes, with the value it held before. This is what the sync log keeps so
+ * the replacement can be understood, and undone, later.
+ */
+export function beforeImage(
+  before: SavedState,
+  after: SavedState,
+): [RecordKey, string][] {
+  const old = entriesFromState(before, 0, "");
+  return Object.keys(diffEntries(old, entriesFromState(after, 0, ""))).map(
+    (key) => [key, old[key]?.s ?? clearedValue(key)],
+  );
+}
+
+/**
+ * `onto`, with only the records that changed between `from` and `to` changed the
+ * same way. Everything else keeps the value `onto` has, so replaying one change
+ * (an undo, or this tab's edit over another tab's newer save) never reverts
+ * unrelated progress that arrived in the meantime.
+ */
+export function rebaseState(
+  onto: SavedState,
+  from: SavedState,
+  to: SavedState,
+  validPokemon: ReadonlySet<number>,
+  validForms: ReadonlySet<string>,
+): SavedState {
+  const change = diffEntries(
+    entriesFromState(from, 0, ""),
+    entriesFromState(to, 0, ""),
+  );
+  return stateFromDocument(
+    {
+      schema: 1,
+      records: { ...entriesFromState(onto, 0, ""), ...change },
+      updatedAt: 0,
+    },
+    validPokemon,
+    validForms,
+  );
 }
 
 /**

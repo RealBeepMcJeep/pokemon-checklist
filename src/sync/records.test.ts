@@ -6,12 +6,13 @@ import {
   STAR_OFF,
   STAR_ON,
   TOMBSTONE,
-  clearedByReset,
+  beforeImage,
   diffEntries,
   entriesFromState,
   formKey,
   mergeDocument,
   mergeEntry,
+  rebaseState,
   speciesKey,
   starKey,
   stateFromDocument,
@@ -127,31 +128,57 @@ describe("entriesFromState", () => {
   });
 });
 
-describe("clearedByReset", () => {
-  it("captures only records that Reset changes", () => {
-    expect(
-      clearedByReset(
-        save({ settings: { forms: false, mode: "photonic-prismatic" } }),
-      ),
-    ).toEqual([]);
+describe("beforeImage", () => {
+  it("captures only records that Reset changes, with their old values", () => {
+    const blank = save({ settings: { forms: false, mode: "photonic-prismatic" } });
+    expect(beforeImage(blank, blank)).toEqual([]);
 
+    const image = beforeImage(
+      save({
+        species: { "1": "seen", "25": "caught" },
+        forms: { "25:alola": "caught" },
+        starred: [25],
+        settings: { forms: true, mode: "moon" },
+      }),
+      blank,
+    );
+    expect(image.sort()).toEqual(
+      [
+        [speciesKey(1), "seen"],
+        [speciesKey(25), "caught"],
+        [formKey("25:alola"), "caught"],
+        [starKey(25), STAR_ON],
+        [SETTING_MODE, "moon"],
+        [SETTING_FORMS, STAR_ON],
+      ].sort(),
+    );
+  });
+
+  it("records what a restore adds as previously cleared", () => {
     expect(
-      clearedByReset(
-        save({
-          species: { "1": "seen", "25": "caught" },
-          forms: { "25:alola": "caught" },
-          starred: [25],
-          settings: { forms: true, mode: "moon" },
-        }),
-      ),
-    ).toEqual([
-      [speciesKey(1), "seen"],
-      [speciesKey(25), "caught"],
-      [formKey("25:alola"), "caught"],
-      [starKey(25), STAR_ON],
-      [SETTING_MODE, "moon"],
-      [SETTING_FORMS, STAR_ON],
-    ]);
+      beforeImage(save(), save({ species: { "150": "caught" }, starred: [2] })).sort(),
+    ).toEqual([[speciesKey(150), TOMBSTONE], [starKey(2), STAR_OFF]].sort());
+  });
+});
+
+describe("rebaseState", () => {
+  it("replays one change without reverting anything else", () => {
+    const from = save({ species: { "25": "caught" } });
+    const to = save({ species: { "25": "seen" }, starred: [25] });
+    // Since the change, #150 arrived from elsewhere and the mode was switched.
+    const onto = save({
+      species: { "25": "caught", "150": "caught" },
+      settings: { forms: false, mode: "sun" },
+    });
+    expect(rebaseState(onto, from, to, POKEMON, FORMS)).toEqual(
+      save({
+        species: { "25": "seen", "150": "caught" },
+        starred: [25],
+        settings: { forms: false, mode: "sun" },
+      }),
+    );
+    // Undoing is the same call the other way round.
+    expect(rebaseState(onto, to, from, POKEMON, FORMS).starred).toEqual([]);
   });
 });
 

@@ -10,7 +10,10 @@ import {
   persist,
   isStarred,
   resetState,
+  restoreState,
+  savedNotice,
   setLocalChangeListener,
+  setLocalReplaceListener,
   setSyncAccount,
   starred,
   storageAvailable,
@@ -306,5 +309,192 @@ describe("storage migration", () => {
     expect(JSON.parse(upgraded!).schemaVersion).toBe(3);
     // The legacy entry stays put so an older build still finds its own data.
     expect(store.get("pokemon-checklist-state-v2")).toBeTruthy();
+  });
+});
+
+const saveOf = (species: Record<string, string>, extra: object = {}) =>
+  JSON.stringify({
+    schemaVersion: 3,
+    species,
+    forms: {},
+    starred: [],
+    settings: { forms: false, mode: "photonic-prismatic" },
+    ...extra,
+  });
+// A save this build cannot read, such as one written by a newer build.
+const FUTURE = JSON.stringify({ schemaVersion: 4, species: { "25": "caught" } });
+
+describe("a save that cannot be read never hides a good one", () => {
+  beforeEach(() => {
+    installStorage();
+    setSyncAccount(null);
+    resetState();
+  });
+
+  it("loads the last good copy and keeps the unreadable save aside", () => {
+    const store = installStorage();
+    cycleSpecies(150); // written as the save and as its last good copy
+    store.set(STORAGE_KEY, FUTURE);
+    applyState(JSON.parse(saveOf({})));
+
+    initializeState();
+
+    expect(exportState().species).toEqual({ "150": "caught" });
+    expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe(FUTURE);
+    expect(JSON.parse(store.get(STORAGE_KEY)!).species).toEqual({ "150": "caught" });
+    expect(notice.value.kind).toBe("error");
+    expect(notice.value.action?.label).toMatch(/unreadable copy/);
+    expect(storageAvailable.value).toBe(true);
+  });
+
+  it("falls back to an older build's save", () => {
+    const store = installStorage({
+      [STORAGE_KEY]: "{truncated",
+      "pokemon-checklist-state-v2": JSON.stringify({
+        schemaVersion: 2,
+        species: { "25": "seen" },
+        forms: {},
+        settings: { forms: false, mode: "sun" },
+      }),
+    });
+
+    initializeState();
+
+    expect(exportState().species).toEqual({ "25": "seen" });
+    expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe("{truncated");
+  });
+
+  it("starts fresh but keeps the unreadable save when nothing else can be read", () => {
+    const store = installStorage({ [STORAGE_KEY]: FUTURE });
+    initializeState();
+    cycleSpecies(1);
+    expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe(FUTURE);
+    expect(storageAvailable.value).toBe(true);
+  });
+
+  it("never writes the account's checklist over an unreadable device save on sign-out", () => {
+    const store = installStorage({ [STORAGE_KEY]: FUTURE });
+    setSyncAccount("uid-dad");
+    cycleSpecies(1); // the account's progress
+
+    setSyncAccount(null);
+
+    expect(exportState().species["1"]).toBeUndefined();
+    expect(store.get(`${STORAGE_KEY}:unreadable`)).toBe(FUTURE);
+    expect(store.get(STORAGE_KEY)).not.toContain('"1":"caught"');
+    expect(notice.value.kind).toBe("error");
+  });
+});
+
+describe("saving recovers and never hides a failure", () => {
+  beforeEach(() => {
+    installStorage();
+    setSyncAccount(null);
+    resetState();
+  });
+
+  it("tries storage again after a failed write", () => {
+    let full = true;
+    const store = new Map<string, string>();
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        if (full) throw new Error("quota exceeded");
+        store.set(key, value);
+      },
+      removeItem: (key: string) => void store.delete(key),
+    };
+    cycleSpecies(25);
+    expect(storageAvailable.value).toBe(false);
+
+    full = false;
+    cycleSpecies(1);
+
+    expect(storageAvailable.value).toBe(true);
+    expect(JSON.parse(store.get(STORAGE_KEY)!).species).toEqual({
+      "1": "caught",
+      "25": "caught",
+    });
+  });
+
+  it("does not cover a failed save with a success message", () => {
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+      removeItem: () => {},
+    };
+    toggleStar(25);
+    expect(notice.value.kind).toBe("error");
+    expect(notice.value.message).toMatch(/not saved/);
+  });
+});
+
+describe("two tabs of the same save", () => {
+  it("keeps another tab's newer save when this tab writes next", () => {
+    const store = installStorage();
+    setSyncAccount(null);
+    resetState();
+    initializeState();
+    cycleSpecies(25);
+    // Another tab saves while this one misses the event (a page restored from the
+    // back/forward cache does): it caught 150 and starred 1.
+    store.set(STORAGE_KEY, saveOf({ "25": "caught", "150": "caught" }, { starred: [1] }));
+
+    cycleSpecies(731);
+
+    const saved = JSON.parse(store.get(STORAGE_KEY)!);
+    expect(saved.species).toEqual({ "25": "caught", "150": "caught", "731": "caught" });
+    expect(saved.starred).toEqual([1]);
+    expect(exportState().species["150"]).toBe("caught");
+  });
+});
+
+describe("undo", () => {
+  beforeEach(() => {
+    installStorage();
+    setSyncAccount(null);
+    setLocalReplaceListener(null);
+    resetState();
+  });
+
+  it("offers one tap that reverts only the change it reports", () => {
+    cycleSpecies(25);
+    savedNotice("Status");
+    const action = notice.value.action;
+    expect(action?.label).toBe("Undo");
+    // Something else arrives before the tap (another device, another tab).
+    applyState(JSON.parse(saveOf({ "25": "caught", "150": "caught" })));
+
+    action!.run();
+
+    expect(exportState().species).toEqual({ "150": "caught" });
+    expect(notice.value.message).toBe("Undone.");
+    expect(notice.value.action).toBeUndefined();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).species).toEqual({ "150": "caught" });
+  });
+
+  it("does not offer to undo a change it did not report", () => {
+    cycleSpecies(25);
+    persist(); // anything saved in between ends that offer
+    savedNotice("Status");
+    expect(notice.value.action).toBeUndefined();
+  });
+
+  it("undoes a Reset or Restore as a restore that sync can log", () => {
+    const events: string[] = [];
+    setLocalReplaceListener((_, op) => events.push(op));
+    cycleSpecies(25);
+    toggleStar(25);
+    restoreState(JSON.parse(saveOf({ "1": "seen" })));
+    resetState();
+    savedNotice("Status");
+
+    notice.value.action!.run();
+
+    expect(exportState().species).toEqual({ "1": "seen" });
+    expect(events).toEqual(["restore", "reset", "restore"]);
+    setLocalReplaceListener(null);
   });
 });

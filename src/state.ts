@@ -4,7 +4,6 @@ import {
   DEFAULT_MODE,
   LEGACY_STORAGE_KEYS,
   STATE_VERSION,
-  STORAGE_KEY,
   buildFormDefinitions,
   canonicalState,
   cycleStatus,
@@ -12,11 +11,14 @@ import {
   validateState,
 } from "./domain";
 import type { GameMode, SavedState, Status } from "./types";
-import { saveKeyFor } from "./sync/outbox";
+import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
+import { rebaseState } from "./sync/records";
 
 export interface Notice {
   message: string;
   kind: "" | "good" | "error";
+  /** One tap beside the message, such as Undo. */
+  action?: { label: string; run: () => void };
 }
 
 export const formDefinitions = buildFormDefinitions(ENCOUNTERS_BY_MODE);
@@ -46,9 +48,6 @@ export const storageAvailable = signal(true);
 export const starred = signal<number[]>([]);
 
 export const activeEncounters = computed(() => ENCOUNTERS_BY_MODE[mode.value]);
-export const activeLocations = computed(() =>
-  activeEncounters.value.islands.flatMap((island) => island.locations),
-);
 /** Forms obtainable in the active mode only, e.g. 14-17 rather than all 54 across
  * every mode: the denominator a player can actually complete. */
 export const activeFormDefinitions = computed(() =>
@@ -80,7 +79,9 @@ export const formsCaught = computed(() => {
 
 let activeUid: string | null = null;
 let localChangeListener: ((state: SavedState) => void) | null = null;
-let localResetListener: ((before: SavedState) => void) | null = null;
+let localReplaceListener:
+  | ((before: SavedState, op: ReplaceOp) => void)
+  | null = null;
 
 /** The localStorage key the player's save belongs to right now. */
 export function activeSaveKey(): string {
@@ -97,10 +98,11 @@ export function setLocalChangeListener(
   localChangeListener = listener;
 }
 
-export function setLocalResetListener(
-  listener: ((before: SavedState) => void) | null,
+/** Told about a deliberate Reset or Restore, which sync publishes as one logged event. */
+export function setLocalReplaceListener(
+  listener: ((before: SavedState, op: ReplaceOp) => void) | null,
 ): void {
-  localResetListener = listener;
+  localReplaceListener = listener;
 }
 
 /**
@@ -113,29 +115,40 @@ export function setLocalResetListener(
  */
 export function setSyncAccount(
   uid: string | null,
-  { adopt = true }: { adopt?: boolean } = {},
+  { adopt = true, ifSaved = false }: { adopt?: boolean; ifSaved?: boolean } = {},
 ): boolean {
   if (uid === activeUid) return true;
+  const previous = activeUid;
   activeUid = uid;
+  let read: StoredSave | null = null;
   try {
-    const raw = localStorage.getItem(saveKeyFor(uid));
-    if (raw !== null) {
-      applyState(validateState(JSON.parse(raw), validPokemon, validForms));
+    read = readSave();
+  } catch {
+    // Unreadable storage: nothing is found, and nothing is written over it.
+    heldKey = activeSaveKey();
+  }
+  if (ifSaved && !read?.found) {
+    // Only switch to a save that is here and readable.
+    activeUid = previous;
+    return false;
+  }
+  if (read && useSave(read)) {
+    if (read.unreadable === null) {
       showNotice(
         uid
           ? "Signed in: showing this account's checklist."
           : "Signed out: showing this device's checklist.",
         "good",
       );
-      return true;
     }
-  } catch {
-    // An unreadable account save falls through to the adoption path.
+    return true;
   }
-  if (!adopt) {
+  if (!adopt || read?.unreadable != null) {
     // The account already has a collection elsewhere and this device has never
     // held it. Starting empty lets the account's own data arrive rather than
-    // pushing stale offline progress over it as a brand-new write.
+    // pushing stale offline progress over it as a brand-new write. Nor is another
+    // checklist ever carried over a save that could not be read: signing out once
+    // silently wrote the account's checklist over the device's own that way.
     applyState(defaultState());
   }
   persist();
@@ -155,7 +168,6 @@ export function formSignal(key: string): Signal<Status> {
 }
 
 export const speciesStatus = (id: number): Status => speciesSignal(id).value;
-export const formStatus = (key: string): Status => formSignal(key).value;
 
 export function defaultState(): SavedState {
   return {
@@ -199,54 +211,168 @@ export function applyState(state: SavedState): void {
   });
 }
 
-export function showNotice(message: string, kind: Notice["kind"] = ""): void {
-  notice.value = { message, kind };
+export function showNotice(
+  message: string,
+  kind: Notice["kind"] = "",
+  action?: Notice["action"],
+): void {
+  notice.value = action ? { message, kind, action } : { message, kind };
+}
+
+// --- saving ------------------------------------------------------------------
+//
+// A save that cannot be read is never written over and never hides a readable
+// one. Every write also refreshes a "last good" copy, which is what loads if the
+// save itself is later found unreadable; the unreadable text is kept aside.
+
+const lastGoodKey = (key: string): string => `${key}:last-good`;
+const unreadableKey = (key: string): string => `${key}:unreadable`;
+
+/** A key that must not be written: its unreadable save could not be kept aside. */
+let heldKey: string | null = null;
+/** What this tab last saw under the save key, to notice another tab's write. */
+let seen: { key: string; raw: string | null; state: SavedState } | null = null;
+
+interface StoredSave {
+  found: { key: string; state: SavedState } | null;
+  /** The save key's own text, when it holds something that cannot be read. */
+  unreadable: string | null;
+  raw: string | null;
+}
+
+function readSave(): StoredSave {
+  const key = activeSaveKey();
+  // Signed in, an account has its own save only. Signed out, an older build's key
+  // is still migrated on read.
+  const candidates = activeUid
+    ? [key, lastGoodKey(key)]
+    : [key, lastGoodKey(key), ...LEGACY_STORAGE_KEYS];
+  const raw = localStorage.getItem(key);
+  let unreadable: string | null = null;
+  for (const candidate of candidates) {
+    const text = candidate === key ? raw : localStorage.getItem(candidate);
+    if (text === null) continue;
+    try {
+      const state = validateState(JSON.parse(text), validPokemon, validForms);
+      return { found: { key: candidate, state }, unreadable, raw };
+    } catch {
+      if (candidate === key) unreadable = text;
+    }
+  }
+  return { found: null, unreadable, raw };
+}
+
+/** Put an unreadable save aside before anything can overwrite it. */
+function keepUnreadable(key: string, text: string): boolean {
+  try {
+    if (localStorage.getItem(unreadableKey(key)) !== text) {
+      localStorage.setItem(unreadableKey(key), text);
+    }
+    return true;
+  } catch {
+    heldKey = key;
+    return false;
+  }
+}
+
+/** Show what `readSave` found; whether a readable save was applied. */
+function useSave({ found, unreadable, raw }: StoredSave): boolean {
+  const key = activeSaveKey();
+  heldKey = null;
+  seen = { key, raw, state: found?.state ?? defaultState() };
+  const kept = unreadable === null || keepUnreadable(key, unreadable);
+  if (found) {
+    applyState(found.state);
+    // An older (or last good) copy rewrites itself under the current key. A legacy
+    // entry is deliberately left behind so an older build still finds its own data.
+    if (found.key !== key) persist();
+  }
+  if (unreadable !== null) {
+    showNotice(
+      `Your saved checklist could not be read, so ${
+        found ? "the last copy that could be read is shown" : "a fresh one is started"
+      }. ${
+        kept
+          ? "The unreadable copy is kept on this device."
+          : "Nothing will be saved over it."
+      }`,
+      "error",
+      {
+        label: "Download unreadable copy",
+        run: () => downloadText("pokemon-checklist-unreadable.json", unreadable),
+      },
+    );
+  }
+  return found !== null;
+}
+
+/** Hand the player a file: a copy kept for recovery. */
+export function downloadText(name: string, text: string): void {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
+}
+
+/**
+ * Lay this tab's change over another tab's newer save instead of writing a stale
+ * whole checklist over it. A tab can miss the other's storage event entirely — one
+ * restored from the back/forward cache does — and then its next tap wrote back an
+ * old copy, erasing everything the other tab had saved.
+ */
+function withOtherTabsChanges(key: string, state: SavedState): SavedState {
+  if (seen?.key !== key) return state;
+  const stored = localStorage.getItem(key);
+  if (stored === null || stored === seen.raw) return state;
+  const theirs = interpretStoredState(stored);
+  if (theirs.kind !== "apply") {
+    keepUnreadable(key, stored);
+    return state;
+  }
+  applyState(
+    rebaseState(theirs.state, seen.state, state, validPokemon, validForms),
+  );
+  return exportState();
 }
 
 export function persist(): void {
-  const state = exportState();
-  if (storageAvailable.value) {
+  lastChange = null;
+  let state = exportState();
+  const key = activeSaveKey();
+  try {
+    state = withOtherTabsChanges(key, state);
+    if (key === heldKey) throw new Error("the unreadable save could not be kept");
+    const raw = JSON.stringify(state);
+    localStorage.setItem(key, raw);
+    seen = { key, raw, state };
+    // Tried on every write, so one failure (a full quota) is not forever.
+    storageAvailable.value = true;
     try {
-      localStorage.setItem(activeSaveKey(), JSON.stringify(state));
+      localStorage.setItem(lastGoodKey(key), raw);
     } catch {
-      storageAvailable.value = false;
-      showNotice(
-        "Browser storage is unavailable; changes will disappear when this tab closes.",
-        "error",
-      );
+      // The save itself is what matters; this copy is a spare.
     }
+  } catch {
+    storageAvailable.value = false;
+    showNotice(
+      "Browser storage is unavailable; changes will disappear when this tab closes.",
+      "error",
+    );
   }
   // Sync must still receive an edit that lost local durability. Subsequent edits
   // also reach it while storageAvailable is false; offline-only has no listener.
   localChangeListener?.(state);
 }
 
-/** The most recent save on this origin, whichever schema version wrote it. */
-function readStoredState(): { key: string; raw: string } | null {
-  // Signed in, an account has exactly one save: its own. Signed out, an older
-  // build's key is still migrated on read.
-  const candidates: string[] = activeUid
-    ? [activeSaveKey()]
-    : [STORAGE_KEY, ...LEGACY_STORAGE_KEYS];
-  for (const key of candidates) {
-    const raw = localStorage.getItem(key);
-    if (raw !== null) return { key, raw };
-  }
-  return null;
-}
-
 export function initializeState(): void {
   try {
-    const stored = readStoredState();
-    if (stored) {
-      applyState(
-        validateState(JSON.parse(stored.raw), validPokemon, validForms),
-      );
-      // An older save rewrites itself under the current key. The legacy entry is
-      // deliberately left behind so an older build still finds its own data.
-      if (stored.key !== activeSaveKey()) persist();
-    }
+    useSave(readSave());
   } catch {
+    // Storage cannot even be read, so nothing may be written over what is there.
+    heldKey = activeSaveKey();
     applyState(defaultState());
     storageAvailable.value = false;
     showNotice(
@@ -256,13 +382,66 @@ export function initializeState(): void {
   }
 }
 
+// --- changes and undo -----------------------------------------------------------
+
+interface Change {
+  before: SavedState;
+  after: SavedState;
+  /** Reset or Restore: undone as a restore, so sync logs it as one event. */
+  replace: boolean;
+}
+
+/** The change that the next notice can offer to undo. */
+let lastChange: Change | null = null;
+
+function remember(before: SavedState, replace = false): void {
+  lastChange = { before, after: exportState(), replace };
+}
+
+/**
+ * Put back what one change changed, and nothing else: progress that arrived since
+ * (from another device or tab) stays. It goes through the ordinary save path, so
+ * sync sends an undo as the plain edits it is.
+ */
+function undo({ before, after, replace }: Change): void {
+  const target = rebaseState(exportState(), after, before, validPokemon, validForms);
+  if (replace) replaceState(target, "restore");
+  else {
+    applyState(target);
+    persist();
+  }
+  lastChange = null;
+  changeNotice("Undone.");
+}
+
+/**
+ * Report a change the player just made, offering Undo when it can be undone.
+ * A success message never hides that the change could not be saved.
+ */
+export function changeNotice(
+  message: string,
+  unsaved = `${message} Browser storage is unavailable, so this is not saved.`,
+): void {
+  const change = lastChange;
+  lastChange = null;
+  const saved = storageAvailable.value;
+  showNotice(
+    saved ? message : unsaved,
+    saved ? "good" : "error",
+    change ? { label: "Undo", run: () => undo(change) } : undefined,
+  );
+}
+
 export function cycleSpecies(id: number): void {
+  const before = exportState();
   const status = speciesSignal(id);
   status.value = cycleStatus(status.value);
   persist();
+  remember(before);
 }
 
 export function cycleForm(key: string): void {
+  const before = exportState();
   const status = formSignal(key);
   const next = cycleStatus(status.value);
   const form = formDefinitions.get(key);
@@ -275,6 +454,7 @@ export function cycleForm(key: string): void {
     }
   });
   persist();
+  remember(before);
 }
 
 export function setMode(nextMode: GameMode): void {
@@ -293,14 +473,15 @@ export function isStarred(id: number): boolean {
 
 /** Pin a species to the top of the Pokédex list, or release it again. */
 export function toggleStar(id: number): void {
+  const before = exportState();
   const pinned = isStarred(id);
   starred.value = pinned
     ? starred.value.filter((entry) => entry !== id)
     : [...starred.value, id].sort((a, b) => a - b);
   persist();
-  showNotice(
+  remember(before);
+  changeNotice(
     pinned ? "Unstarred." : "Starred. It stays at the top until you unstar it.",
-    "good",
   );
 }
 
@@ -314,24 +495,30 @@ export function parseState(text: string): SavedState {
   return validateState(parsed, validPokemon, validForms);
 }
 
-export function restoreState(state: SavedState): void {
+/**
+ * Replace the whole checklist on purpose. Sync publishes this as one logged event
+ * with a before-image, exempt from the guard that refuses accidental wipes.
+ */
+function replaceState(state: SavedState, op: ReplaceOp): void {
+  const before = exportState();
   applyState(state);
+  localReplaceListener?.(before, op);
   persist();
+  remember(before, true);
+}
+
+export function restoreState(state: SavedState): void {
+  replaceState(state, "restore");
 }
 
 export function resetState(): void {
-  const before = exportState();
-  applyState(defaultState());
-  localResetListener?.(before);
-  persist();
+  replaceState(defaultState(), "reset");
 }
 
 export function savedNotice(subject: "Status" | "Form status"): void {
-  showNotice(
-    storageAvailable.value
-      ? `${subject} saved.`
-      : `${subject} changed, but it will disappear when this tab closes.`,
-    storageAvailable.value ? "good" : "error",
+  changeNotice(
+    `${subject} saved.`,
+    `${subject} changed, but it will disappear when this tab closes.`,
   );
 }
 
@@ -370,12 +557,13 @@ export function syncFromStorage(event: StorageEvent): void {
   if (event.key !== activeSaveKey()) return;
   const synced = interpretStoredState(event.newValue);
   if (synced.kind === "ignore") return;
+  const state = synced.kind === "cleared" ? defaultState() : synced.state;
+  seen = { key: activeSaveKey(), raw: event.newValue, state };
+  applyState(state);
   if (synced.kind === "cleared") {
-    applyState(defaultState());
     showNotice("Progress was cleared in another tab.");
     return;
   }
-  applyState(synced.state);
   showNotice("Progress updated from another tab.", "good");
 }
 

@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { App } from "./App";
-import { watchSyncAccount } from "./sync/engine";
+import { followSignInFromOtherTabs, watchSyncAccount } from "./sync/engine";
 import { availableStorage, syncSessionExpected } from "./sync/outbox";
 import { firstIncompleteLocation } from "./domain";
 import {
@@ -23,6 +23,7 @@ watchOtherTabs();
 // break the promise that an offline-only player's device never talks to anyone. The
 // sign-in control calls watchSyncAccount() when someone actually chooses to sign in.
 if (syncSessionExpected(availableStorage())) watchSyncAccount();
+followSignInFromOtherTabs();
 document.documentElement.dataset.mode = mode.value;
 focusedLocation.value =
   firstIncompleteLocation(activeEncounters.value, speciesStatus)?.id || null;

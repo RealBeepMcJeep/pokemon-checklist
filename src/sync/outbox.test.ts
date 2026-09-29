@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../domain";
 import type { SavedState } from "../types";
 import {
+  CLOCK_SLACK,
   SYNC_STORE_KEY,
   deviceIdFor,
   emptyStore,
@@ -9,10 +10,10 @@ import {
   loadStore,
   localIntentChanges,
   pendingEntries,
-  pendingWithIntents,
   saveFromView,
   saveKeyFor,
   saveStore,
+  supersedes,
   viewWithLocalIntent,
   viewWithPending,
   type StorageLike,
@@ -91,6 +92,23 @@ describe("store persistence", () => {
       uid: "uid-a",
       email: "dad@example.com",
       base: document({ [speciesKey(25)]: entry("caught", 500) }),
+    };
+    saveStore(storage, store);
+    expect(loadStore(storage)).toEqual(store);
+    expect(storage.keys()).toEqual([SYNC_STORE_KEY]);
+  });
+
+  it("keeps a pending restore, unsent edits with their times, and the clock offset", () => {
+    const store = {
+      version: 1 as const,
+      deviceId: "dev-1",
+      uid: "uid-a",
+      email: null,
+      base: document({}),
+      reset: [[speciesKey(25), TOMBSTONE]] as [string, string][],
+      op: "restore" as const,
+      intents: { [speciesKey(25)]: entry("caught", 700) },
+      offset: -1_234,
     };
     saveStore(storage, store);
     expect(loadStore(storage)).toEqual(store);
@@ -185,12 +203,11 @@ describe("pending work is derived, not queued", () => {
 
   it("keeps the latest local reversal while the first value is in flight", () => {
     const caught = save({ species: { "25": "caught" } });
-    const clear = save();
-    const local = localIntentChanges(caught, clear, 9_001, "uid-a");
+    const local = localIntentChanges(caught, save(), 9_001, "uid-a");
+    expect(local[speciesKey(25)]).toEqual(entry(TOMBSTONE, 9_001, "uid-a"));
+    // The echo of the earlier "caught" is stamped later, but the view keeps the clear.
     const remote = document({ [speciesKey(25)]: entry("caught", 9_002, "uid-a") });
-    const pending = pendingWithIntents(remote, clear, local, 9_003, "uid-a");
-    expect(pending[speciesKey(25)]).toEqual(entry(TOMBSTONE, 9_001, "uid-a"));
-    expect(saveFromView(viewWithLocalIntent(remote, pending), POKEMON, FORMS).species).toEqual({});
+    expect(saveFromView(viewWithLocalIntent(remote, local), POKEMON, FORMS).species).toEqual({});
   });
 
   it("empties itself once the server echoes the write back", () => {
@@ -205,6 +222,25 @@ describe("pending work is derived, not queued", () => {
       echoed[key] = { ...value, at: 9_050 };
     }
     expect(pendingEntries(document(echoed), current, 9_100, "uid-a")).toEqual({});
+  });
+});
+
+describe("the edit made last wins", () => {
+  it("drops an edit that a clearly newer change replaced", () => {
+    expect(supersedes(entry("seen", 5_000, "chat"), entry("caught", 1_000))).toBe(true);
+    expect(supersedes(entry("seen", 1_000, "chat"), entry("caught", 5_000))).toBe(false);
+  });
+
+  it("never lets a clear win a close call against a value", () => {
+    const clear = entry(TOMBSTONE, 10_000);
+    // A value written just BEFORE the clear, by the clocks' reckoning, still survives.
+    expect(supersedes(entry("caught", 10_000 - CLOCK_SLACK / 2), clear)).toBe(true);
+    expect(supersedes(entry("caught", 10_000 - CLOCK_SLACK * 2), clear)).toBe(false);
+    // And a remote clear only beats a local value it is clearly newer than.
+    const value = entry("caught", 10_000);
+    expect(supersedes(entry(TOMBSTONE, 10_000 + CLOCK_SLACK / 2), value)).toBe(false);
+    expect(supersedes(entry(TOMBSTONE, 10_000 + CLOCK_SLACK * 2), value)).toBe(true);
+    expect(supersedes(entry("off", 10_000 + CLOCK_SLACK / 2), entry("on", 10_000))).toBe(false);
   });
 });
 
@@ -278,7 +314,18 @@ describe("the fail-safe against emptying an account", () => {
     expect(isWholeAccountClear(base, pending)).toBe(false);
   });
 
-  it("does not fire for a small account, where clearing it is plausible", () => {
+  it("fires for a small account emptied in one go", () => {
+    const base = document({
+      [speciesKey(1)]: entry("caught", 100),
+      [speciesKey(25)]: entry("seen", 100),
+      ...SETTINGS,
+    });
+    expect(isWholeAccountClear(base, pendingEntries(base, save(), 9_000, "uid-a"))).toBe(
+      true,
+    );
+  });
+
+  it("does not fire for clearing the only record, which is one ordinary tap", () => {
     const base = document({
       [speciesKey(1)]: entry("caught", 100),
       ...SETTINGS,
