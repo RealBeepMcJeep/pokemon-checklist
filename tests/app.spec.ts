@@ -634,3 +634,310 @@ test("always shows the evolution path, even next to a direct wild location", asy
   ).toHaveText(["Pichu", "Pikachu"]);
   expect(errors).toEqual([]);
 });
+
+test("opens a Pokémon's own location from the Pokédex even when it isn't the open one", async ({
+  page,
+}, testInfo) => {
+  // "Known places in this mode" links used to do nothing unless the target
+  // location happened to already be open; Bulbasaur's only location (Melemele
+  // Meadow) is never the location auto-opened at the start of a save (Route 1).
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#dex-search").fill("bulbasaur");
+  await page.locator('[data-action="select"][data-species="1"]').click();
+  const link = page.locator("#dex-selection .location-links a").first();
+  await expect(link).toContainText("Melemele Meadow");
+  const targetId = (await link.getAttribute("href"))?.slice(1);
+  if (!targetId) throw new Error("Location link has no target");
+  await link.click();
+  await expect(page.locator(`#${targetId}`)).toBeFocused();
+  await expect(
+    page.locator('[data-location-id="melemele-island/melemele-meadow"]'),
+  ).toHaveAttribute("open", "");
+  expect(errors).toEqual([]);
+});
+
+test("keeps the pokedex interactive after crossing the breakpoint via resize", async ({
+  page,
+}, testInfo) => {
+  // aria-hidden/inert used to be computed once from window.innerWidth during
+  // render and never revisited, so a resize or rotation across the 1000px
+  // breakpoint left the drawer either visible-but-inert or hidden-but-live.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const errors = await openApp(page, testInfo.project.name);
+  await expect(page.locator("#pokedex")).toHaveAttribute("aria-hidden", "false");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#pokedex")).toHaveAttribute("aria-hidden", "true");
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.locator("#pokedex")).toHaveAttribute("aria-hidden", "false");
+  // Not just the attribute: the panel must actually respond to input again.
+  await page.locator("#dex-search").fill("bulbasaur");
+  await expect(page.locator(VISIBLE_ROW)).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test("does not re-render every mounted dex row when only the selection changes", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  await expect(page.locator(".dex-row")).toHaveCount(807);
+  const bystander = page.locator('[data-action="select"][data-species="2"]');
+  const first = page.locator('[data-action="select"][data-species="1"]');
+  const second = page.locator('[data-action="select"][data-species="4"]');
+  const bystanderRenders = await bystander.getAttribute("data-renders");
+
+  await first.click();
+  await expect(first).toHaveAttribute("aria-current", "true");
+  await expect(bystander).toHaveAttribute("data-renders", bystanderRenders!);
+
+  await second.click();
+  await expect(second).toHaveAttribute("aria-current", "true");
+  await expect(first).toHaveAttribute("aria-current", "false");
+  // Only the previously and newly selected rows should have re-rendered; a row
+  // that was never involved must show the same render count throughout.
+  await expect(bystander).toHaveAttribute("data-renders", bystanderRenders!);
+  expect(errors).toEqual([]);
+});
+
+test("does not re-render every already-open location when only the focus moves", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  // Open a location that finishing Route 1 will not make the new focus, so any
+  // change to it can only be an unnecessary re-render.
+  const bystander = page.locator("details.location").nth(2);
+  await bystander.locator("summary").click();
+  await expect(bystander).toHaveAttribute("open", "");
+  const before = await bystander.getAttribute("data-renders");
+
+  const first = page.locator("details.location").first();
+  const speciesIds = await first
+    .locator('[data-action="species"]')
+    .evaluateAll((nodes) => [
+      ...new Set(nodes.map((node) => node.getAttribute("data-species"))),
+    ]);
+  for (const id of speciesIds) {
+    await first
+      .locator(`[data-action="species"][data-species="${id}"]`)
+      .first()
+      .click();
+  }
+  await expect(first.locator(".location-progress")).toContainText("Complete");
+
+  await expect(bystander).toHaveAttribute("data-renders", before!);
+  expect(errors).toEqual([]);
+});
+
+test("counts forms caught against the active mode's own obtainable forms", async ({
+  page,
+}, testInfo) => {
+  // The denominator used to be the 54-form union of all five modes in every mode,
+  // so Sun/Moon (14 forms) and the Ultra games (17) could never reach completion.
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#forms-toggle").click();
+  await page.locator("#mode-select").selectOption("sun");
+  await expect(page.locator("#form-progress")).toHaveText("Forms caught: 0 / 14");
+  await page.locator("#mode-select").selectOption("photonic-prismatic");
+  await expect(page.locator("#form-progress")).toHaveText("Forms caught: 0 / 48");
+  expect(errors).toEqual([]);
+});
+
+test("gives phone tap targets at least 44px without changing desktop", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  const compact = await page.locator("tbody .compact-status").first().boundingBox();
+  expect(compact!.width).toBeGreaterThanOrEqual(44);
+  expect(compact!.height).toBeGreaterThanOrEqual(44);
+
+  await page.locator("tbody .guide-pokemon-link").first().click();
+  const star = await page.locator(".dex-row .star-button").first().boundingBox();
+  const status = await page
+    .locator('.dex-row [data-action="species"]')
+    .first()
+    .boundingBox();
+  expect(star!.width).toBeGreaterThanOrEqual(44);
+  expect(star!.height).toBeGreaterThanOrEqual(44);
+  expect(status!.height).toBeGreaterThanOrEqual(44);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const desktopCompact = await page
+    .locator("tbody .compact-status")
+    .first()
+    .boundingBox();
+  expect(desktopCompact!.width).toBeLessThan(44);
+  expect(errors).toEqual([]);
+});
+
+test("keeps the mode select at 16px on phones to avoid iOS auto-zoom", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  const fontSize = await page
+    .locator("#mode-select")
+    .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(fontSize).toBeGreaterThanOrEqual(16);
+  expect(errors).toEqual([]);
+});
+
+test("uses dvh with a vh fallback for pokedex height calculations", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const hasDvh = await page.evaluate(() => {
+    const text = [...document.styleSheets]
+      .flatMap((sheet) => {
+        try {
+          return [...sheet.cssRules].map((rule) => rule.cssText);
+        } catch {
+          return [];
+        }
+      })
+      .join("\n");
+    return /dvh/.test(text);
+  });
+  expect(hasDvh).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("locks page scroll behind the mobile pokedex drawer", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+    .not.toBe("hidden");
+  await page.locator("tbody .guide-pokemon-link").first().click();
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+    .toBe("hidden");
+  await page.keyboard.press("Escape");
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+    .not.toBe("hidden");
+  expect(errors).toEqual([]);
+});
+
+test("focuses the selection panel, not search, when opened from a location link", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("tbody .guide-pokemon-link").first().click();
+  await expect(page.locator("#dex-selection")).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test("traps focus inside the drawer and keeps the page behind it inert", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("tbody .guide-pokemon-link").first().click();
+  await expect(page.locator("#pokedex")).toHaveAttribute("role", "dialog");
+  await expect(page.locator("#pokedex")).toHaveAttribute("aria-modal", "true");
+  expect(
+    await page.locator(".app-header").evaluate((el) => el.hasAttribute("inert")),
+  ).toBe(true);
+  expect(
+    await page.locator("#main-view").evaluate((el) => el.hasAttribute("inert")),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  expect(
+    await page.locator(".app-header").evaluate((el) => el.hasAttribute("inert")),
+  ).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test("keeps the sticky pokedex offset in sync with the header's real height", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const { headerHeight, varValue, pokedexTop } = await page.evaluate(() => {
+    const header = document.querySelector(".app-header")!;
+    return {
+      headerHeight: header.getBoundingClientRect().height,
+      varValue: parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--header-h"),
+      ),
+      pokedexTop: parseFloat(
+        getComputedStyle(document.querySelector("#pokedex")!).top,
+      ),
+    };
+  });
+  expect(varValue).toBeGreaterThan(0);
+  expect(Math.abs(varValue - headerHeight)).toBeLessThan(2);
+  expect(Math.abs(pokedexTop - headerHeight)).toBeLessThan(2);
+  expect(errors).toEqual([]);
+});
+
+test("names the resulting status in the status button's label", async ({
+  page,
+}, testInfo) => {
+  // The label used to say only the current status and "Activate to cycle status",
+  // never what pressing the button would actually change it to.
+  const errors = await openApp(page, testInfo.project.name);
+  const button = page.locator('[data-action="species"][data-species="1"]').first();
+  await expect(button).toHaveAttribute(
+    "aria-label",
+    /status: None\. Activate to mark as Caught\./,
+  );
+  await button.click();
+  await expect(button).toHaveAttribute(
+    "aria-label",
+    /status: Caught\. Activate to mark as Seen\./,
+  );
+  expect(errors).toEqual([]);
+});
+
+test("keeps grade badge colors at WCAG AA contrast against their white text", async ({
+  page,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const css = await page.evaluate(() =>
+    [...document.styleSheets]
+      .flatMap((sheet) => {
+        try {
+          return [...sheet.cssRules].map((rule) => rule.cssText);
+        } catch {
+          return [];
+        }
+      })
+      .join("\n"),
+  );
+
+  function luminance([r, g, b]: number[]): number {
+    const channel = [r, g, b].map((value) => {
+      const v = value / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * channel[0] + 0.7152 * channel[1] + 0.0722 * channel[2];
+  }
+  function contrast(a: number[], b: number[]): number {
+    const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+  function rgbStopsFor(selector: string): number[][] {
+    const rule = css.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`));
+    if (!rule) throw new Error(`${selector} rule not found in the built stylesheet`);
+    return [...rule[1].matchAll(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g)].map((match) => [
+      Number(match[1]),
+      Number(match[2]),
+      Number(match[3]),
+    ]);
+  }
+
+  const white = [255, 255, 255];
+  for (const selector of ["\\.grade-a", "\\.grade-b"]) {
+    const [color] = rgbStopsFor(selector);
+    expect(contrast(color, white)).toBeGreaterThanOrEqual(4.5);
+  }
+  const gradientStops = rgbStopsFor("\\.grade-sss");
+  expect(gradientStops.length).toBeGreaterThanOrEqual(2);
+  for (const stop of gradientStops) {
+    expect(contrast(stop, white)).toBeGreaterThanOrEqual(4.5);
+  }
+  expect(errors).toEqual([]);
+});

@@ -8,6 +8,8 @@ import {
   crossModeOccurrences,
   cycleStatus,
   firstIncompleteLocation,
+  formKey,
+  formsForMode,
   getOccurrences,
   locationProgress,
   uncaughtCatchNowRows,
@@ -250,5 +252,24 @@ describe("checklist domain", () => {
         [],
       );
     }
+  });
+
+  it("counts obtainable forms per active mode rather than the five-mode union", () => {
+    // "Forms caught" used to divide by the union (54) in every mode, so Sun/Moon
+    // and the Ultra games could never reach completion no matter what a player
+    // caught. Each mode's own count must be well under the union.
+    expect(formsForMode(ENCOUNTERS_BY_MODE.sun).size).toBe(14);
+    expect(formsForMode(ENCOUNTERS_BY_MODE.moon).size).toBe(14);
+    expect(formsForMode(ENCOUNTERS_BY_MODE["ultra-sun"]).size).toBe(17);
+    expect(formsForMode(ENCOUNTERS_BY_MODE["ultra-moon"]).size).toBe(17);
+    expect(formsForMode(ENCOUNTERS_BY_MODE["photonic-prismatic"]).size).toBe(48);
+    expect(forms.size).toBe(54);
+  });
+
+  it("builds the same key format every caller relies on", () => {
+    expect(formKey(19, "form", "alolan")).toBe("19:alolan");
+    expect(formKey(37, "ability", "drought")).toBe("37:ability-drought");
+    // The union map (built through the same helper) must resolve to these keys.
+    expect(forms.has(formKey(19, "form", "alolan"))).toBe(true);
   });
 });
