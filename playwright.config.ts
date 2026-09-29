@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// PW_PORT lets several checkouts (worktrees) run the suite at the same time.
+const port = Number(process.env.PW_PORT ?? 4173);
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
@@ -12,12 +15,12 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: "npm run dev -- --port 4173 --strictPort",
-    url: "http://127.0.0.1:4173",
+    command: `npm run dev -- --port ${port} --strictPort`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
   },
   projects: [
-    { name: "vite-dev", use: { baseURL: "http://127.0.0.1:4173" } },
+    { name: "vite-dev", use: { baseURL: `http://127.0.0.1:${port}` } },
     { name: "standalone-file" },
   ],
 });
