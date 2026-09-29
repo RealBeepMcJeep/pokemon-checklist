@@ -10,6 +10,16 @@ permissions:
   contents: read
 
 jobs:
+  # ubuntu-latest only, by choice: the maintainer already develops and runs the
+  # full suite on Windows locally before every push, and the two OS-specific
+  # risks that would justify a second job -- CRLF creeping into the committed
+  # index.html, and cache paths under a Windows-only directory -- are guarded
+  # by tools/publish.mjs's (now two-sided) line-ending normalization and by
+  # cache_support.py's per-OS cache directory helper, not by CI. A windows-latest
+  # job would roughly double this workflow's run time (a second full
+  # `npx playwright install --with-deps` and `npm run check`) for a personal,
+  # single-maintainer project; add one if a second contributor without local
+  # Windows access starts pushing changes.
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
