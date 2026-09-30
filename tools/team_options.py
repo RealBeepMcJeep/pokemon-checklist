@@ -232,7 +232,13 @@ def is_evolving(member: dict) -> bool:
 
 
 def evolution_opportunities(member: dict) -> int:
-    """Count not-yet-caught forms on the path from any owned stage to this endpoint."""
+    """Count new entries for a battler still being developed toward its endpoint.
+
+    An owned final is fielded as-is. Pokédex plans separately retain lower-stage
+    paths to unseen intermediates, even when that family's final is already owned.
+    """
+    if not is_evolving(member):
+        return 0
     path = list(member.get("evolution_path") or ())
     if not path:
         return int(is_evolving(member))
@@ -247,6 +253,8 @@ def evolution_opportunities(member: dict) -> int:
 
 
 def has_level_evolution_opportunity(member: dict) -> bool:
+    if not is_evolving(member):
+        return False
     path = list(member.get("evolution_path") or ())
     for index, stage in enumerate(path[:-1]):
         if not _stage_is_owned(member, stage):
@@ -325,64 +333,62 @@ def _objective_key(category: str, synergy: float, evolution: int,
 
 
 def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> list[dict]:
-    """Exhaustively scan the full pool while retaining only the best valid lineup."""
+    """Full-pool exact search: prepare once, retain one winner, expand its details."""
     searched = math.comb(len(pool), 5) if len(pool) >= 5 else 0
-    metrics = {
-        id(member): {
-            "caught": _caught_ids(member),
-            "opportunities": evolution_opportunities(member),
-            "level_evolving": has_level_evolution_opportunity(member),
-            "viability": practical_viability(member),
-            "new_entries": len(member.get("dex_plan", {}).get("new_entries", ())),
-            "favorite": bool(member.get("favorite")),
-        }
-        for member in pool
-    }
-    best = None
+    prepared = ts.PreparedStorySynergy([*pool, utility], chart)
+    utility_index = len(pool)
+    owned = [sum(1 << identifier for identifier in _caught_ids(p)) for p in pool]
+    opportunities = [evolution_opportunities(p) for p in pool]
+    viability = [practical_viability(p) for p in pool]
+    additions = [len(p.get('dex_plan', {}).get('new_entries', ())) for p in pool]
+    favorites = [bool(p.get('favorite')) for p in pool]
+    names = [str(p['final']) for p in pool]
+    best_key = best_indices = None
     independent = 0
-    for combo in itertools.combinations(pool, 5):
-        seen = set()
-        valid = True
-        for member in combo:
-            caught = metrics[id(member)]["caught"]
-            if seen.intersection(caught):
-                valid = False
+    for indices in itertools.combinations(range(len(pool)), 5):
+        seen = 0
+        for i in indices:
+            if seen & owned[i]:
                 break
-            seen.update(caught)
-        if not valid:
-            continue
-        independent += 1
-        core, core_detail = ts.story_synergy_score(list(combo), chart)
-        full, full_detail = ts.story_synergy_score([*combo, utility], chart)
-        synergy = round(0.65 * core + 0.35 * full, 4)
-        opportunity = sum(metrics[id(member)]["opportunities"] for member in combo)
-        new_entries = sum(metrics[id(member)]["new_entries"] for member in combo)
-        viability = round(sum(metrics[id(member)]["viability"] for member in combo) / 5, 4)
-        favorite_count = sum(metrics[id(member)]["favorite"] for member in combo)
-        names = tuple(sorted(str(member["final"]) for member in combo))
-        key = _objective_key(category, synergy, opportunity, viability,
-                             favorite_count, names, new_entries)
-        anchor = max(combo, key=lambda member: (metrics[id(member)]["viability"],
-                                                str(member["final"])))
-        evolving = sum(metrics[id(member)]["opportunities"] > 0 for member in combo)
-        level_evolving = sum(metrics[id(member)]["level_evolving"] for member in combo)
-        candidate = {
-            "category": category, "anchor": anchor["final"], "utility": utility["final"],
-            "members": list(names), "profiles": combo, "objective_key": key,
-            "synergy": synergy, "core_synergy": core, "six_synergy": full,
-            "core_synergy_detail": core_detail, "six_synergy_detail": full_detail,
-            "viability": viability, "evolution_opportunities": opportunity,
-            "new_entries": new_entries, "evolving": evolving,
-            "level_evolving": level_evolving,
-            "shared_types": full_detail["shared_types"],
-            "searched_combinations": searched,
-        }
-        if best is None or key < best["objective_key"]:
-            best = candidate
-    if best is None:
+            seen |= owned[i]
+        else:
+            independent += 1
+            quality = round(sum(viability[i] for i in indices) / 5, 4)
+            new_entries = sum(additions[i] for i in indices)
+            # Exact primary-objective pruning: inferior primary values can never win.
+            if best_key is not None:
+                if category == 'Best' and -quality > best_key[0]:
+                    continue
+                if category == 'Pokedex' and -new_entries > best_key[0]:
+                    continue
+            core = prepared.score(indices)
+            full = prepared.score((*indices, utility_index))
+            synergy = round(0.65 * core + 0.35 * full, 4)
+            key = _objective_key(category, synergy, sum(opportunities[i] for i in indices),
+                                 quality, sum(favorites[i] for i in indices),
+                                 tuple(sorted(names[i] for i in indices)), new_entries)
+            if best_key is None or key < best_key:
+                best_key, best_indices = key, indices
+    if best_indices is None:
         return []
-    best["independent_combinations"] = independent
-    return [best]
+    combo = tuple(pool[i] for i in best_indices)
+    core, core_detail = ts.story_synergy_score(list(combo), chart)
+    full, full_detail = ts.story_synergy_score([*combo, utility], chart)
+    anchor = max(combo, key=lambda p: (practical_viability(p), p['final']))
+    return [{
+        'category': category, 'anchor': anchor['final'], 'utility': utility['final'],
+        'members': sorted(p['final'] for p in combo), 'profiles': combo,
+        'objective_key': best_key, 'synergy': round(0.65 * core + 0.35 * full, 4),
+        'core_synergy': core, 'six_synergy': full,
+        'core_synergy_detail': core_detail, 'six_synergy_detail': full_detail,
+        'viability': round(sum(viability[i] for i in best_indices) / 5, 4),
+        'evolution_opportunities': sum(opportunities[i] for i in best_indices),
+        'new_entries': sum(additions[i] for i in best_indices),
+        'evolving': sum(opportunities[i] > 0 for i in best_indices),
+        'level_evolving': sum(has_level_evolution_opportunity(p) for p in combo),
+        'shared_types': full_detail['shared_types'], 'searched_combinations': searched,
+        'independent_combinations': independent,
+    }]
 
 
 def _stage_catalog(profiles: list[dict], roster: dict, chart: dict) -> dict[str, dict]:
@@ -397,16 +403,19 @@ def _stage_catalog(profiles: list[dict], roster: dict, chart: dict) -> dict[str,
             continue
         details = roster.get("det", {}).get(dex_id, {})
         row = roster.get("by_id", {}).get(dex_id, {})
-        tier = details.get("tier")
-        usage = float(details.get("usage") or 0.0)
+        tier = details.get("ownTier", details.get("tier"))
+        # App pre-evolutions inherit final-form viability for normal endgame views.
+        # A Pokédex plan stops here, so it must not borrow that final's tier/usage.
+        usage = (float(details.get("usage") or 0.0)
+                 if _norm(details.get("source", name)) == _norm(name) else 0.0)
         types = tb.types_of(roster["dex"], name) or details.get("types") or []
         raw = {
             "final": name, "endpoint_id": dex_id, "types": types,
             "stats": tb.stats_of(roster["dex"], name), "tier": tier,
             "usage": usage, "evo": tb.evo_of(roster["dex"], name),
             "abilities": tb.abilities_of(roster["dex"], name),
-            "rank": tb.tier_rank(tier), "points": ts.TIER_POINTS.get(tier, 0.0)
-            + min(usage, 3.0) * 0.15,
+            "rank": tb.tier_rank(tier) if tier in tb.TIER_ORDER else len(tb.TIER_ORDER),
+            "points": ts.TIER_POINTS.get(tier, 0.0) + min(usage, 3.0) * 0.15,
         }
         catalog[_norm(name)] = ts.profile(raw, chart, {}, {})
     return catalog

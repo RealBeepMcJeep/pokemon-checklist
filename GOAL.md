@@ -15,7 +15,7 @@ Type synergy is a separately exposed quality-independent measure of offensive ty
 Preserve existing non-story team_synergy.py CLI behavior. Reuse roster loading, parsers, pinned cache and existing Pillow sprite-card renderer. Add source caught IDs and objective/search-scope metadata to private structured snapshots. Prefer full eligible-pool search for Best; if any bound is essential, expose the excluded count, never call it exact, and validate pruning against fuller search where feasible. No arbitrary NU quality floor before synergy-first selection. Distinguish owned -> planned endpoint, already-caught final, unseen intermediates and pure-level vs item/other gates. Cache-backed tests must be portable. Old snapshots should render sensibly offline where feasible.
 
 ## Milestones
-- [ ] Baseline current upstream, archive superseded interrupted patch, commit this spec.
+- [x] Baseline current upstream, archive superseded interrupted patch, commit this spec.
 - [ ] RED tests, selector / CLI / card objective migration, focused + full Python gates; commit reviewed code.
 - [ ] Fresh live roster run; exactly five cards; acquisition and objective checks; visually inspect all five.
 - [ ] Re-read source caught set; equality or regenerate. Update docs/changelog, integrate to current main, push and read back exact hash; clean worktrees.

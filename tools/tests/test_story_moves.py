@@ -56,6 +56,13 @@ class StoryMovesTests(unittest.TestCase):
                              ("Gardevoir", "Ralts"), ("Scrafty", "Scraggy"),
                              ("Linoone", "Zigzagoon"), ("Slowbro", "Slowpoke"),
                              ("Raichu", "Pikachu"), ("Pidgeot", "Pidgey"),
+                             ("Alakazam", "Alakazam"), ("Poliwrath", "Poliwag"),
+                             ("Fearow", "Fearow"), ("Pelipper", "Pelipper"),
+                             ("Diggersby", "Bunnelby"), ("Skuntank", "Stunky"),
+                             ("Crabominable", "Crabrawler"), ("Luxray", "Shinx"),
+                             ("Magnezone", "Magnemite"), ("Decidueye", "Decidueye"),
+                             ("Vivillon", "Scatterbug"), ("Toucannon", "Pikipek"),
+                             ("Tentacruel", "Tentacool"),
                              ("Butterfree", "Butterfree")):
             with self.subTest(final=final):
                 targets = self.source.targets(final, owned)

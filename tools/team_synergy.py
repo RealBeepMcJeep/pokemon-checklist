@@ -272,6 +272,75 @@ def story_synergy_score(team: list[dict], chart: dict) -> tuple[float, dict]:
     }
 
 
+class PreparedStorySynergy:
+    """Exact story scores with per-member type work prepared once per search.
+
+    Bitmasks optimize the uniform STAB proxy; a vector fallback preserves arbitrary
+    move strengths for callers/tests. Reference scoring still expands winner details.
+    """
+
+    def __init__(self, profiles: list[dict], chart: dict):
+        types = sorted(set(ALL_TYPES) | {t for p in profiles
+                       for t in (*p['types'], *p['weak'], *p['resist'])})
+        bits = {typ: 1 << i for i, typ in enumerate(types)}
+        mask = lambda values: sum(bits[t] for t in set(values))
+        self.weak = [mask(p['weak']) for p in profiles]
+        self.resist = [mask(p['resist']) for p in profiles]
+        type_masks = [mask(p['types']) for p in profiles]
+        self.overlap = [[(a & b).bit_count() for b in type_masks] for a in type_masks]
+        self.disjoint = all(not (w & r) for w, r in zip(self.weak, self.resist))
+        self.coverage = []
+        for member in profiles:
+            self.coverage.append(tuple(max(
+                (share * min(bp, 120) / 120 for typ, bp, share in member['moves']
+                 if (chart.get(defender.lower(), {}).get(typ.lower()) or 0) == 1),
+                default=0.0) for defender in ALL_TYPES))
+        strengths = {v for row in self.coverage for v in row if v > 0}
+        self.uniform = len(strengths) <= 1
+        self.strength = next(iter(strengths), 0.0)
+        self.hit_masks = [sum(1 << i for i, v in enumerate(row) if v > 0)
+                          for row in self.coverage]
+
+    def score(self, indices: tuple[int, ...]) -> float:
+        size = len(indices)
+        if not size:
+            return 0.0
+        weak_union = resist_union = ones = twos = fours = hit = 0
+        shared_types = 0
+        for position, index in enumerate(indices):
+            w = self.weak[index]
+            weak_union |= w
+            resist_union |= self.resist[index]
+            carry_one = ones & w
+            ones ^= w
+            carry_two = twos & carry_one
+            twos ^= carry_one
+            fours ^= carry_two
+            hit |= self.hit_masks[index]
+            shared_types += sum(self.overlap[index][other] for other in indices[:position])
+        if self.uniform:
+            coverage = hit.bit_count() * self.strength / len(ALL_TYPES)
+        else:
+            coverage = sum(max(self.coverage[i][column] for i in indices)
+                           for column in range(len(ALL_TYPES))) / len(ALL_TYPES)
+        if self.disjoint:
+            covered = weak_union & resist_union
+        else:
+            # A member may not count itself as the switch covering its weakness.
+            covered = 0
+            for index in indices:
+                other_resist = 0
+                for other in indices:
+                    if other != index:
+                        other_resist |= self.resist[other]
+                covered |= self.weak[index] & other_resist
+        defence = covered.bit_count() / weak_union.bit_count() if weak_union else 1.0
+        worst = (6 if fours & twos else 5 if fours & ones else 4 if fours else
+                 3 if twos & ones else 2 if twos else 1 if ones else 0)
+        return round(4.0 * coverage + 2.5 * defence
+                     - 1.5 * shared_types / size - 1.5 * max(0, worst - 2) / size, 4)
+
+
 def member_replacements(first: tuple[str, ...], second: tuple[str, ...]) -> int:
     return len(set(first) - set(second))
 

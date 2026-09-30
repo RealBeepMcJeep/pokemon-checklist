@@ -44,6 +44,19 @@ GOALS = {
     "Gardevoir": ("Psychic", "Dazzling Gleam", "Calm Mind", "Magical Leaf"),
     "Scrafty": ("Brick Break", "Crunch", "Bulk Up", "Rock Tomb"),
     "Linoone": ("Belly Drum", "Extreme Speed", "Seed Bomb", "Stomping Tantrum"),
+    "Alakazam": ("Psychic", "Shadow Ball", "Dazzling Gleam", "Recover"),
+    "Poliwrath": ("Brick Break", "Waterfall", "Ice Punch", "Bulk Up"),
+    "Fearow": ("Drill Peck", "Steel Wing", "U-turn", "Roost"),
+    "Pelipper": ("Scald", "Air Slash", "U-turn", "Roost"),
+    "Diggersby": ("Return", "Earthquake", "Rock Slide", "U-turn"),
+    "Skuntank": ("Crunch", "Poison Jab", "Flamethrower", "Sucker Punch"),
+    "Crabominable": ("Brick Break", "Ice Hammer", "Rock Slide", "Bulk Up"),
+    "Luxray": ("Thunder Fang", "Crunch", "Ice Fang", "Thunder Wave"),
+    "Magnezone": ("Discharge", "Flash Cannon", "Volt Switch", "Thunder Wave"),
+    "Decidueye": ("Leaf Blade", "Shadow Claw", "False Swipe", "Roost"),
+    "Vivillon": ("Bug Buzz", "Hurricane", "Quiver Dance", "Roost"),
+    "Toucannon": ("Beak Blast", "Brick Break", "U-turn", "Roost"),
+    "Tentacruel": ("Water Pulse", "Sludge Wave", "Giga Drain", "Ice Beam"),
 }
 
 

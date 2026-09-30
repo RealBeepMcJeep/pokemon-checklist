@@ -61,6 +61,26 @@ def fit(draw: ImageDraw.ImageDraw, text: str, face: ImageFont.FreeTypeFont,
         text = text[:-1]
     return text.rstrip() + "…"
 
+def wrapped_lines(draw: ImageDraw.ImageDraw, text: str, face: ImageFont.FreeTypeFont,
+                  width: int, max_lines: int = 2) -> list[str]:
+    """Wrap essential text without truncating words, bounded by the row geometry."""
+    lines = []
+    current = ''
+    for word in text.split():
+        fit(draw, word, face, width, strict=True)
+        candidate = f'{current} {word}'.strip()
+        if current and draw.textlength(candidate, font=face) > width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    if len(lines) > max_lines:
+        raise ValueError(f'essential card text needs more than {max_lines} lines: {text}')
+    return lines
+
+
 def card_title(option: dict) -> str:
     if option["category"] != "Mixed":
         return option["category"].upper()
@@ -151,11 +171,11 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
         d.text((x, y + 18), fit(d, label, font(29, True), 570, strict=True),
                font=font(29, True), fill=WHITE)
         evolution = m["evolution"] if not catcher else "Sleep utility · cannot use False Swipe"
-        d.text((x, y + 65), fit(d, evolution, font(19), 570, strict=True),
-               font=font(19), fill=DIM)
+        for line_index, line in enumerate(wrapped_lines(d, evolution, font(19), 570)):
+            d.text((x, y + 57 + line_index * 22), line, font=font(19), fill=DIM)
         badges = m.get("tier", "")
         if m.get("favorite") and not catcher:
-            badges += "  ·  IN PARTY"
+            badges += "  ·  FAVORITE"
         if m.get("hidden_ability_caveat") and not catcher:
             share = m.get("hidden_ability_usage_share")
             badges += (f"  ·  H USAGE {share:.0%}" if share is not None else "  ·  H NOT ASSUMED")

@@ -39,6 +39,17 @@ class StoryTeamCardsTests(unittest.TestCase):
             cards.fit(draw, "Too long to lose the location behind an ellipsis",
                       cards.font(18), 80, strict=True)
 
+    def test_long_evolution_wrap_preserves_every_gate(self):
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(Image.new("RGB", (800, 100)))
+        text = "Magnemite → Magneton (L30) → Magnezone (Thunder Stone)"
+        lines = cards.wrapped_lines(draw, text, cards.font(19), 570)
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(" ".join(lines), text)
+        self.assertTrue(all(draw.textlength(line, font=cards.font(19)) <= 570 for line in lines))
+        with self.assertRaisesRegex(ValueError, "more than 2 lines"):
+            cards.wrapped_lines(draw, text * 4, cards.font(19), 570)
+
     def test_render_uses_project_atlas_and_writes_a_complete_image(self):
         atlas = Image.open(cards.ATLAS).convert("RGBA")
         moves = [{"name": name, "type": typ, "gate": gate} for name, typ, gate in

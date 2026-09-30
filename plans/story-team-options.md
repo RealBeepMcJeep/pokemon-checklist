@@ -1,11 +1,23 @@
-# Local story-team options
+# Local story-team options: approved objectives
 
-Scope: a read-only, opt-in mode of `tools/team_synergy.py`; no app UI, save-format, or site changes. Keep its existing CLI behavior unchanged. Reuse `team_builder.load_roster` and the existing verified Showdown/2019 Smogon profile and team scoring pipeline.
+Read-only opt-in mode of `tools/team_synergy.py`, using the shared synced roster and pinned Gen VII/Prismatic Standard data. No UI, save-format, site deployment or checklist writes. The current contract, commands and limitations are in `docs/story-team-options.md`.
 
-Input: current synced caught and favorites; the confirmed party is Butterfree, Joltik, Wingull, Scraggy, Monferno, Bunnelby. Inventory was reconciled to the owner's complete party+box list (58 caught). The four banned families remain Litten, Magnemite, Riolu, Abra. Butterfree is a fixed catcher. Other favorites are preferences, not locks.
+## Settled decisions
 
-Output: five five-battler cores plus the fixed catcher: strict OG-151-owned-stage and final-form option, no-OG-owned-stage-or-final option (the Butterfree exception is separate), three mixed options if viable. Show one anchor + four partners, each owned stage, evolution route and type, approximate coverage, and explicit caveats. Render one reusable, phone-readable PNG per team from the repo's Gen VII sprite atlas: catcher plus five battler rows, icon, owned/final name, final Dex number, types, evolution path, anchor/favorite labels, score, four acquisition-checked move/type/gate targets per Pokémon, and notes. Preserve a JSON snapshot for offline rerenders. Ranking should favor obtainable level evolutions and genuinely usable late-game members over a small raw competitive score gap. No assumed SOS hidden ability, egg-only move, unknown sex, regional form, or unobtained evolution item. State the search-pool bound; do not call a pruned search global optimum. Note that Butterfree cannot False Swipe and is sleep utility only.
+- Butterfree is fixed first on every six-member card, followed by five independently owned battler lines.
+- Exactly five objective slots: OG, Non-OG, Mixed, Pokédex, Best. Shared members and identical parties are permitted.
+- OG/Non-OG restrictions apply to the owned starting stage and proposed evolution stages/endpoints; Butterfree is the only fixed exception. Mixed has no generation-mix requirement.
+- For the first three: type synergy before uncaught evolution opportunities before viability. Separate synergy from tier/usage rather than disguising a weighted blend as priority order.
+- Pokédex requires remaining ordinary level-up steps adding new entries. Count unseen intermediates; plans may stop before a stone/friendship/other nonlevel gate. Maximize new entries before synergy and viability.
+- Best prioritizes practical endgame viability and then synergy, not Pokédex development. No assumed hidden ability, breeding-only move, unconfirmed sex/form or already-owned item. Use transparent heuristic caveats, not battle-equilibrium claims.
+- Previous family bans are cleared for now; optional explicit family exclusions remain supported. Read fresh favorites as exact-objective tie breakers, not party locks.
 
-Implementation: integrate the exploratory `tools/team_options.py` selector as a helper called only by `team_synergy.py --story-options --utility butterfree`, removing its competing CLI. Keep the old `team_synergy.py` output byte-for-byte compatible without the flag. Add deterministic tests for classification, distinctness, availability, score components, CLI routing; inspect all five options on the confirmed live roster. Check Prismatic Standard evolution and move overrides. Run the Python suite with `requirements-dev.txt`, app gates as appropriate for unchanged UI, commit on current remote main ancestry, push, and read back remote commit. Do not touch checklist caught/favorite state while running the team tool.
+## Acceptance
 
-Known draft limitations to correct: raw historical ladder move frequencies are not four-move/legal-set proof; forms default to Alolan even though the save stores no form; `evo` in pinned vanilla Showdown disagrees with hack methods; level evolution receives too little priority; overly strict lineup diversity can force weak teammates; favorite Monferno must be evaluated from the reconciled state, not the old Chimchar record.
+Regression-test priorities, generation boundaries, pure-level paths and side conditions, already-owned finals/unseen intermediates, repeated line ownership, default cleared bans, duplicate party allowance, normal/hidden ability caveats, source caught IDs and infeasible categories. Validate retained Standard references against their manifest and trace real consumers to pinned datasets.
+
+Run focused/full Python gates plus app check under declared runtimes. Exercise the live read-only CLI, acquisition-check four editorial moves per row and render five separate phone PNGs from the project atlas. Inspect all five; reject clipped critical text. Save roster snapshots privately outside git, reread ownership before delivery, and integrate tested reusable tools into current remote main with exact push readback. CLI-only work does not rebuild the site artifact.
+
+## Superseded
+
+The earlier three-mixed/forced-diversity mode, hardcoded family bans and small evolution bonuses inside one blended score are retired. Earlier party/count descriptions were historical inputs, not durable ownership facts. Ladder ability usage is evidence of set dependence, not an ordinary-build damage/strength percentage.

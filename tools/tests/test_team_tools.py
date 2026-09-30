@@ -113,6 +113,21 @@ class TeamOptionsTests(unittest.TestCase):
         self.assertFalse(options[0]["members"])
         self.assertIn("only 0", options[0]["warning"])
 
+    def test_pokedex_stage_uses_own_tier_not_final_inherited_strength(self):
+        roster = {"by_id": {281: {"name": "Kirlia"}}, "dex": "",
+                  "det": {281: {"tier": "RU", "ownTier": "NFE",
+                                "source": "Gardevoir", "usage": 1.7}}}
+        profiles = [{"evolution_path": [{"name": "Kirlia"}]}]
+        with mock.patch.object(tb, "types_of", return_value=["Psychic", "Fairy"]), \
+             mock.patch.object(tb, "stats_of", return_value=""), \
+             mock.patch.object(tb, "evo_of", return_value=""), \
+             mock.patch.object(tb, "abilities_of", return_value={}), \
+             mock.patch.object(ts, "profile", side_effect=lambda raw, *args: raw):
+            stage = opt._stage_catalog(profiles, roster, {})["kirlia"]
+        self.assertEqual(stage["tier"], "NFE")
+        self.assertEqual(stage["usage"], 0.0)
+        self.assertEqual(stage["points"], ts.TIER_POINTS.get("NFE", 0.0))
+
     def test_pokedex_plans_stop_before_nonlevel_gate_and_count_unseen_intermediate(self):
         member = {"final": "Vikavolt", "caught_ids": [736, 738],
                   "caught_as": ["Grubbin", "Vikavolt"],
@@ -143,6 +158,16 @@ class TeamOptionsTests(unittest.TestCase):
                           "evolution_path": [{"id": owned_id, "name": owned},
                                              {"id": target_id, "name": target, "method": method}]}
                 self.assertEqual(opt.pure_level_plans(member), [])
+
+    def test_owned_final_with_missing_intermediate_is_not_an_evolving_battler(self):
+        member = {"final": "Alakazam", "endpoint_id": 65,
+                  "caught_ids": [63, 65], "caught_as": ["Abra", "Alakazam"],
+                  "evolution_path": [{"id": 63, "name": "Abra"},
+                                     {"id": 64, "name": "Kadabra", "method": "Level 16"},
+                                     {"id": 65, "name": "Alakazam", "method": "friendship"}]}
+        self.assertEqual(opt.evolution_opportunities(member), 0)
+        self.assertFalse(opt.has_level_evolution_opportunity(member))
+        self.assertEqual(opt.pure_level_plans(member)[0]["new_entries"], ["Kadabra"])
 
     def test_owned_final_form_cannot_earn_a_second_evolution_entry(self):
         fearow = self._member("Fearow", 22, "Normal", owned="Spearow")

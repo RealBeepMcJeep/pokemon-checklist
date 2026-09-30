@@ -2,6 +2,8 @@
 
 ## 2026-09-29
 
+- Rebuilt the local gallery around five independent objectives: OG, Non-OG, unrestricted Mixed, ordinary-level Pokédex expansion, and practical endgame Best. Butterfree stays first; old family bans are cleared and shared members are allowed. Full eligible-pool search now prepares scores once instead of reparsing every party. Cards preserve long evolution gates, show supported move targets for the refreshed roster, and no longer count an already-owned final battler as still evolving just because an intermediate is uncaught.
+
 - Only one tab can change the checklist at a time. Any other open tab shows it read-only, with a banner that stays on screen (even over the phone Pokédex) saying "This checklist is being edited in another tab"; **Use this tab** moves editing there, and nothing unsent in the other tab is lost. This replaces the earlier arrangement in which every tab could edit and one of them sent the others' changes, which could let an older change overwrite a newer one.
 - A tab that hands editing over stops talking to the server at once, so a change still on its way can't overwrite a newer one made in the other tab; taking editing back reloads that tab first. A tab that was asleep in the background no longer undoes the other tab's last changes when it takes over.
 - Reset, Restore and sending held clears check again, after you confirm, that this tab still edits.
