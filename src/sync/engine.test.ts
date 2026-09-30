@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
+  goOffline: vi.fn(),
   onValue: vi.fn(),
   push: vi.fn(() => ({ key: "event-1" })),
   ref: vi.fn((db: unknown, path: string) => ({ db, path })),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("firebase/database", () => ({
   get: mocks.get,
+  goOffline: mocks.goOffline,
   onValue: mocks.onValue,
   push: mocks.push,
   ref: mocks.ref,
@@ -27,9 +29,11 @@ vi.mock("./firebase", () => ({
 }));
 
 import {
+  resolveHeldClears,
   startSync,
   stopSync,
   syncAccount,
+  syncHeld,
   syncMessage,
   syncPending,
   syncPhase,
@@ -1044,7 +1048,7 @@ describe("adversarial review", () => {
     expect(sentRecords()[0]).toEqual({ "star:807": "on" });
     await vi.waitFor(() => expect(syncPhase.value).toBe("error"));
     expect(syncPending.value).toBe(2);
-    expect(syncMessage.value).toMatch(/Held back 2 changes/);
+    expect(syncMessage.value).toMatch(/Held back clearing 2 Pokémon/);
   });
 
   it("L4: a refused re-send after a lost acknowledgement is retried with fresh log ids", async () => {
@@ -1054,5 +1058,177 @@ describe("adversarial review", () => {
     await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
     await vi.waitFor(() => expect(syncPhase.value).toBe("ready"));
     expect(sentRecords()[1]).toHaveProperty(speciesKey(25), "caught");
+  });
+});
+
+describe("held clears, recovery and replacements", () => {
+  const settings = {
+    "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
+    "setting:forms": { s: "off", at: 100, by: "uid-a" },
+  };
+  const two = {
+    ...settings,
+    [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
+    [speciesKey(4)]: { s: "caught", at: 100, by: "uid-a" },
+  };
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const sentRecords = () =>
+    Object.assign(
+      {},
+      ...mocks.update.mock.calls.map((call) =>
+        Object.fromEntries(
+          Object.entries(call[1] as Record<string, { s?: string }>)
+            .filter(([key]) => key.startsWith("state/records/"))
+            .map(([key, value]) => [key.slice("state/records/".length), value.s]),
+        ),
+      ),
+    ) as Record<string, string>;
+  const logOps = () =>
+    mocks.update.mock.calls.flatMap((call) =>
+      Object.entries(call[1] as Record<string, { op?: string }>)
+        .filter(([key]) => key.startsWith("log/"))
+        .map(([, value]) => value.op),
+    );
+
+  async function signedIn(records: Record<string, unknown>) {
+    resetState();
+    mocks.get.mockResolvedValue(snapshot(records));
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    connected[0]({ val: () => true });
+    mocks.update.mockClear();
+  }
+
+  /** Clear both of the account's records while offline, then reconnect. */
+  async function clearBothOffline(server: Record<string, unknown>) {
+    connected[0]({ val: () => false });
+    cycleSpecies(1);
+    cycleSpecies(1);
+    cycleSpecies(4);
+    cycleSpecies(4);
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(snapshot(server));
+    await vi.waitFor(() => expect(syncHeld.value).toBe(2));
+  }
+
+  it("N4: held clears stay held when the account gains a record, and across a reload", async () => {
+    await signedIn(two);
+    await clearBothOffline(two);
+    // Another device adds a record; the guard alone would now let both clears go.
+    const three = { ...two, [speciesKey(7)]: { s: "caught", at: 200, by: "uid-a" } };
+    recordsChanged.at(-1)!(snapshot(three));
+    cycleSpecies(40); // an unrelated edit still goes
+    await vi.waitFor(() => expect(sentRecords()[speciesKey(40)]).toBe("caught"));
+    expect(sentRecords()[speciesKey(1)]).toBeUndefined();
+    expect(sentRecords()[speciesKey(4)]).toBeUndefined();
+
+    stopSync();
+    mocks.update.mockClear();
+    mocks.get.mockResolvedValue(snapshot(three));
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+    expect(syncHeld.value).toBe(2);
+    expect(speciesStatus(1)).toBe("none");
+    expect(sentRecords()[speciesKey(1)]).toBeUndefined();
+  });
+
+  it("N4: held clears are sent only when the player says so, as a logged clear", async () => {
+    await signedIn(two);
+    await clearBothOffline(two);
+    resolveHeldClears(true);
+    await vi.waitFor(() => expect(sentRecords()[speciesKey(1)]).toBe("none"));
+    expect(sentRecords()[speciesKey(4)]).toBe("none");
+    expect(logOps()).toEqual(["reset"]);
+    expect(syncHeld.value).toBe(0);
+  });
+
+  it("will not send held clears while a Restore is still being sent", async () => {
+    await signedIn(two);
+    await clearBothOffline(two);
+    // A Restore (adding #7) goes out, and its write is not answered yet.
+    let fail!: (error: Error) => void;
+    mocks.update.mockImplementationOnce(
+      () => new Promise<void>((_resolve, reject) => (fail = reject)),
+    );
+    restoreState({
+      schemaVersion: 3,
+      species: { "7": "caught" },
+      forms: {},
+      starred: [],
+      settings: { forms: false, mode: "photonic-prismatic" },
+    });
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+
+    resolveHeldClears(true);
+    expect(notice.value.message).toMatch(/still being sent/);
+    expect(syncHeld.value).toBe(2);
+
+    // The Restore's write fails: sent again, still as the logged Restore it was.
+    fail(new Error("disconnected"));
+    connected[0]({ val: () => false });
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(snapshot(two));
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    expect(logOps().at(-1)).toBe("restore");
+  });
+
+  it("N4: putting held clears back restores those Pokémon", async () => {
+    await signedIn(two);
+    await clearBothOffline(two);
+    resolveHeldClears(false);
+    expect(speciesStatus(1)).toBe("caught");
+    expect(speciesStatus(4)).toBe("caught");
+    expect(syncHeld.value).toBe(0);
+    expect(syncPending.value).toBe(0);
+  });
+
+  it("N3: a recovered set that would empty the account keeps what it adds", async () => {
+    localStorage.setItem(
+      "pokemon-checklist-sync-v1",
+      JSON.stringify({ version: 1, deviceId: "dev", uid: "uid-a", email: null, base: { schema: 1, records: two, updatedAt: 0 } }),
+    );
+    localStorage.setItem(
+      ACCOUNT_SAVE,
+      JSON.stringify({
+        schemaVersion: 3,
+        species: { "6": "caught" },
+        forms: {},
+        starred: [],
+        settings: { forms: false, mode: "photonic-prismatic" },
+      }),
+    );
+    mocks.get.mockResolvedValue(snapshot(two));
+
+    await startSync({ uid: "uid-a", email: "realbeepmcjeep@gmail.com" });
+
+    await vi.waitFor(() => expect(sentRecords()[speciesKey(6)]).toBe("caught"));
+    expect(sentRecords()[speciesKey(1)]).toBeUndefined();
+    expect(speciesStatus(1)).toBe("caught");
+    expect(notice.value.message).toMatch(/not sent/);
+  });
+
+  it("N7: undoing a Reset still in flight logs the Restore with what the Reset left", async () => {
+    await signedIn(two);
+    let settle!: () => void;
+    mocks.update.mockImplementationOnce(
+      (_target: unknown, payload: Record<string, { s: string }>) => {
+        const shown: Record<string, unknown> = { ...two };
+        for (const [key, value] of Object.entries(payload)) {
+          if (key.startsWith("state/records/")) {
+            shown[key.slice("state/records/".length)] = { s: value.s, at: Date.now(), by: "uid-a" };
+          }
+        }
+        recordsChanged.at(-1)!(snapshot(shown));
+        return new Promise<void>((resolve) => (settle = resolve));
+      },
+    );
+    resetState();
+    savedNotice("Status");
+    notice.value.action!.run(); // Undo, while the Reset is in flight
+    settle();
+
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    const restore = Object.values(mocks.update.mock.calls[1][1] as Record<string, { op?: string; before?: unknown }>)
+      .find((value) => value.op === "restore")!;
+    expect(restore.before).toContainEqual([speciesKey(1), "none"]);
+    expect(restore.before).not.toContainEqual([speciesKey(1), "caught"]);
   });
 });

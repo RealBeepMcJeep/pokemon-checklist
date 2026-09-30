@@ -2,19 +2,23 @@ import { useState } from "preact/hooks";
 import {
   beginSignIn,
   cancelSignIn,
+  resolveHeldClears,
   syncAccount,
+  syncHeldKeys,
   syncMessage,
   syncOnline,
   syncPending,
   syncPhase,
 } from "../sync/engine";
+import { stillEditingAfterDialog, useThisTab } from "../editing";
+import { heldSummary } from "../sync/outbox";
 import { isAllowedAccount } from "../sync/config";
 import {
   prepareSignIn,
   signInWithGoogle,
   signOutOfSync,
 } from "../sync/firebase";
-import { showNotice } from "../state";
+import { readOnly, showNotice } from "../state";
 
 /**
  * The only control that can make the app touch the network, and it never fires on
@@ -40,8 +44,10 @@ function statusText(): string {
     case "error":
       return syncMessage.value || "Sync is not working";
     case "elsewhere":
-      // One tab per account talks to the server; this one hands its changes over.
-      return "Syncing in another tab";
+      // One tab per account edits and syncs; this one follows it.
+      return "Editing in another tab";
+    case "outdated":
+      return "A newer version is open";
   }
 }
 
@@ -180,4 +186,81 @@ export function SyncPanel() {
       )}
     </span>
   );
+}
+
+/**
+ * Shown while this tab may not edit: another tab of the account is the editor (and
+ * this one can take over), or a newer build of the app is open (reload).
+ */
+export function ViewOnlyBanner() {
+  const reason = readOnly.value;
+  if (!reason) return null;
+  return (
+    <div class="view-only" id="view-only" role="status">
+      <span>
+        {reason === "outdated"
+          ? "A newer version is open in another tab, so this one can no longer change anything."
+          : "This checklist is being edited in another tab."}
+      </span>
+      {reason === "outdated" ? (
+        <button class="action-button" type="button" onClick={() => location.reload()}>
+          Reload
+        </button>
+      ) : (
+        <button
+          class="action-button"
+          id="use-this-tab"
+          type="button"
+          onClick={useThisTab}
+        >
+          Use this tab
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Clears held back because together they would empty the account. Putting them
+ * back is the first, safe choice; sending them is spelled out before it happens.
+ */
+export function HeldClears() {
+  const keys = syncHeldKeys.value;
+  if (!syncAccount.value || keys.length === 0) return null;
+  const locked = readOnly.value !== null;
+  return (
+    <div class="held-clears" id="held-clears" role="alert">
+      <span>
+        Clearing {heldSummary(keys)} would empty the checklist on every device, so{" "}
+        {keys.length === 1 ? "it was" : "they were"} not sent.
+      </span>
+      <span class="held-actions">
+        <button
+          class="action-button"
+          id="held-put-back"
+          type="button"
+          disabled={locked}
+          onClick={() => resolveHeldClears(false)}
+        >
+          Put back
+        </button>
+        <button
+          class="action-button danger"
+          id="held-send"
+          type="button"
+          disabled={locked}
+          onClick={async () => {
+            if (!confirm(heldConfirmText(keys))) return;
+            if (await stillEditingAfterDialog()) resolveHeldClears(true);
+          }}
+        >
+          Send clears
+        </button>
+      </span>
+    </div>
+  );
+}
+
+export function heldConfirmText(keys: readonly string[]): string {
+  return `Clear ${heldSummary(keys)} on every device? This can't be undone here.`;
 }

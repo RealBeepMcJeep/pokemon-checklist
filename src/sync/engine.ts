@@ -1,6 +1,7 @@
-import { signal } from "@preact/signals";
+import { effect, signal } from "@preact/signals";
 import {
   get,
+  goOffline,
   onValue,
   push,
   ref,
@@ -13,8 +14,9 @@ import {
   applyState,
   downloadText,
   exportState,
-  interpretStoredState,
   persist,
+  readOnly,
+  reloadSave,
   setLocalChangeListener,
   setLocalReplaceListener,
   setOtherTabListener,
@@ -24,6 +26,13 @@ import {
   validPokemon,
 } from "../state";
 import { initFirebase, signOutOfSync, watchAuth } from "./firebase";
+import {
+  claimDeviceEditing,
+  claimEditing,
+  forgetTakeOver,
+  releaseEditing,
+  takeOverNeedsReload,
+} from "../editing";
 import type { User } from "firebase/auth";
 import type { SavedState } from "../types";
 import {
@@ -43,8 +52,10 @@ import {
   deviceIdFor,
   emptyDocument,
   forgetSyncSession,
+  heldSummary,
   isProgressClear,
   isWholeAccountClear,
+  SYNC_STORE_KEY,
   loadStore,
   localIntentChanges,
   pendingEntries,
@@ -78,9 +89,11 @@ import {
  * the acknowledgement the edit stays recorded (and saved for a reload), and the
  * value is never taken as confirmed.
  *
- * Only one tab per account syncs (a Web Lock elects it). The others save to the
- * account's checklist as usual, and the syncing tab takes their changes, read from
- * the storage event, as its own edits to send.
+ * Only one tab per account can change the checklist: the one holding the Web Lock
+ * `pokemon-checklist-sync:<uid>`. Every other tab of that account is view-only and
+ * follows the editor's saves; "Use this tab" steals the lock, and the tab it was
+ * taken from turns view-only at once. Its unsent edits are already in the sync
+ * store, where the new editor picks them up. Without Web Locks every tab edits.
  */
 
 export type SyncPhase =
@@ -89,11 +102,16 @@ export type SyncPhase =
   | "ready"
   | "pending"
   | "error"
-  | "elsewhere";
+  | "elsewhere"
+  | "outdated";
 
 export const syncPhase = signal<SyncPhase>("off");
 /** Edits not yet acknowledged by the server, including any in flight. */
 export const syncPending = signal(0);
+/** Clears held back because together they would empty the account. */
+export const syncHeld = signal(0);
+/** Which records those are, so they can be described. */
+export const syncHeldKeys = signal<RecordKey[]>([]);
 export const syncAccount = signal<{ uid: string; email: string } | null>(null);
 export const syncMessage = signal("");
 /** Whether the database connection is up; only meaningful while signed in. */
@@ -144,15 +162,19 @@ let inFlight: {
   sent: Record<RecordKey, RecordEntry>;
   before: Record<RecordKey, RecordEntry | undefined>;
 } | null = null;
-/** Clears held back by the whole-account guard. */
-let held = 0;
+/**
+ * Clears held back by the whole-account guard. They stay held, across reloads,
+ * until the player sends or discards them; nothing else releases them.
+ */
+const heldKeys = new Set<RecordKey>();
 let deniedRetried = false;
+/** The replacement whose write is in flight: an undo of it starts its own image. */
+let sentReplacement: ResetImage | null = null;
 /** "lock": the one tab syncing this account. "alone": no Web Locks, every tab syncs. */
 let leading: "lock" | "alone" | null = null;
-let releaseLeadership: (() => void) | null = null;
+
 
 const serverNow = (): number => Date.now() + serverOffset;
-const replaceKey = (uid: string): string => `pokemon-checklist-sync-replace:${uid}`;
 const lockName = (uid: string): string => `pokemon-checklist-sync:${uid}`;
 const sameEntry = (left?: RecordEntry, right?: RecordEntry): boolean =>
   left?.s === right?.s && left?.at === right?.at && left?.by === right?.by;
@@ -296,12 +318,76 @@ function writeBase(uid: string): void {
     ...(reset ? { reset } : {}),
     ...(reset && op === "restore" ? { op: "restore" as const } : {}),
     ...(Object.keys(intents).length > 0 ? { intents } : {}),
+    ...(heldKeys.size > 0 ? { held: [...heldKeys] } : {}),
     offset: serverOffset,
   });
 }
 
 function heldMessage(): string {
-  return `Held back ${held === 1 ? "1 change" : `${held} changes`} that would clear the whole checklist, in case that was a mistake; everything else is sent. Reset clears everything on purpose.`;
+  return `Held back clearing ${heldSummary(syncHeldKeys.value)}, which would empty the checklist on every device, in case that was a mistake. Everything else is sent.`;
+}
+
+function showHeld(keys: RecordKey[]): void {
+  syncHeldKeys.value = keys;
+  syncHeld.value = keys.length;
+}
+
+/**
+ * Forget held clears the player has since changed, or that newer changes replaced.
+ * Whether any were forgotten.
+ */
+function pruneHeld(): boolean {
+  const before = heldKeys.size;
+  for (const key of heldKeys) {
+    const intent = localIntents[key];
+    if (!intent || !isProgressClear(key, intent.s)) heldKeys.delete(key);
+  }
+  showHeld([...heldKeys]);
+  return heldKeys.size !== before;
+}
+
+/**
+ * The player's answer about held clears: put those Pokémon back as the account has
+ * them, or send the clears as one deliberate clear logged with what it cleared.
+ */
+export function resolveHeldClears(send: boolean): void {
+  const uid = activeUid;
+  if (!uid || heldKeys.size === 0 || readOnly.value) return;
+  if (send && sentReplacement) {
+    // Merging now would lose the before-image of the Reset or Restore in flight.
+    showNotice("A Reset or Restore is still being sent. Try again in a moment.", "error");
+    return;
+  }
+  if (send) {
+    const earlier = pendingReset && pendingReset !== sentReplacement ? pendingReset : [];
+    const known = new Set(earlier.map(([key]) => key));
+    const image: ResetImage = [...heldKeys]
+      .filter((key) => !known.has(key))
+      .map((key) => [key, base.records[key]?.s ?? clearedValue(key)]);
+    if (earlier.length === 0) pendingOp = "reset";
+    pendingReset = [...earlier, ...image];
+  } else {
+    for (const key of heldKeys) delete localIntents[key];
+  }
+  heldKeys.clear();
+  showHeld([]);
+  syncMessage.value = "";
+  if (syncPhase.value === "error") syncPhase.value = "pending";
+  if (!send) showView();
+  writeBase(uid);
+  void publish();
+}
+
+/** Show (and save) the confirmed document with this tab's unsent edits on top. */
+function showView(): void {
+  const ignoring = ignoreLocalEvents;
+  ignoreLocalEvents = true;
+  applyState(
+    saveFromView(viewWithLocalIntent(base, owed()), validPokemon, validForms),
+  );
+  persist();
+  ignoreLocalEvents = ignoring;
+  observedLocal = exportState();
 }
 
 /** Publish this device's edits that the confirmed document does not hold. */
@@ -333,25 +419,35 @@ async function publishNow(): Promise<void> {
   // published the difference between "empty" and "everything". What a Reset or
   // Restore replaces on purpose is exempt; everything else is judged, and clears
   // that would empty the account are held back while the rest is still sent.
-  const ordinary = Object.fromEntries(
+  // Clears already held count too, so holding some never lets the rest through;
+  // and once held, only the player releases them (a record arriving elsewhere,
+  // which would satisfy the guard, does not). A change in what is held is stored,
+  // so a view-only tab shows it too.
+  if (pruneHeld()) writeBase(uid);
+  const judged = Object.fromEntries(
     Object.entries(pending).filter(([key]) => !replaced.has(key)),
   );
-  const holding = isWholeAccountClear(base, ordinary)
-    ? new Set(
-        Object.keys(ordinary).filter((key) => isProgressClear(key, ordinary[key].s)),
-      )
-    : new Set<string>();
-  held = holding.size;
-  if (held > 0) {
+  if (isWholeAccountClear(base, judged)) {
+    const before = heldKeys.size;
+    for (const [key, entry] of Object.entries(judged)) {
+      if (isProgressClear(key, entry.s)) heldKeys.add(key);
+    }
+    showHeld([...heldKeys]);
+    if (heldKeys.size > before) {
+      writeBase(uid);
+      showNotice(heldMessage(), "error");
+    }
+  }
+  if (heldKeys.size > 0) {
     syncPhase.value = "error";
     syncMessage.value = heldMessage();
   }
   const keys = Object.keys(pending)
-    .filter((key) => !holding.has(key))
+    .filter((key) => !heldKeys.has(key))
     .sort((a, b) => a.localeCompare(b));
   if (keys.length === 0) {
     lastPushed = "";
-    if (held === 0) syncPhase.value = "ready";
+    if (heldKeys.size === 0) syncPhase.value = "ready";
     return;
   }
 
@@ -403,6 +499,7 @@ async function publishNow(): Promise<void> {
     };
   }
   const sentReset = image.length > 0 ? pendingReset : null;
+  sentReplacement = sentReset;
 
   lastPushed = signature;
   syncPhase.value = "pending";
@@ -419,14 +516,16 @@ async function publishNow(): Promise<void> {
     }
     // Written atomically with its log event, so the replacement is done.
     if (sentReset && pendingReset === sentReset) pendingReset = null;
+    sentReplacement = null;
     writeBase(uid);
     syncPending.value = unsentCount();
-    syncPhase.value = held > 0 ? "error" : "ready";
-    syncMessage.value = held > 0 ? heldMessage() : "";
+    syncPhase.value = heldKeys.size > 0 ? "error" : "ready";
+    syncMessage.value = heldKeys.size > 0 ? heldMessage() : "";
   } catch (error) {
     if (!isCurrent(run, uid)) return;
     // Firebase has already undone the write locally; the edits are still recorded.
     inFlight = null;
+    sentReplacement = null;
     lastPushed = "";
     writeBase(uid);
     syncPending.value = unsentCount();
@@ -463,8 +562,8 @@ async function publish(): Promise<void> {
   }
 }
 
-function recordLocalChange(uid: string, state: SavedState, fromOtherTab = false): void {
-  if (ignoreLocalEvents && !fromOtherTab) return;
+function recordLocalChange(uid: string, state: SavedState): void {
+  if (ignoreLocalEvents) return;
   const previous = observedLocal ?? state;
   for (const [key, entry] of Object.entries(
     localIntentChanges(previous, state, serverNow(), uid),
@@ -489,8 +588,9 @@ function recordReplace(
 ): void {
   if (ignoreLocalEvents || !activeUid || activeUid !== uid) return;
   // A replacement not sent yet merges into this one; its before-image is older, so
-  // it is the true "before" for the records both touch.
-  const earlier = pendingReset ?? [];
+  // it is the true "before" for the records both touch. One already in flight is
+  // not merged: an Undo of it logs what that replacement left, not what it found.
+  const earlier = pendingReset && pendingReset !== sentReplacement ? pendingReset : [];
   const known = new Set(earlier.map(([key]) => key));
   const image = [
     ...earlier,
@@ -502,25 +602,34 @@ function recordReplace(
 }
 
 /**
- * Another tab's save of this account was just shown here. Where this tab syncs for
- * all of them, what that tab changed is an edit to send like one made here. Where
- * every tab syncs for itself (no Web Locks), it is that tab's to send: this tab's
- * own unsent edits are laid back over it, and none of it is taken as an edit here.
+ * Another tab's save of this account arrived. The editor's own view is the
+ * account's: other tabs cannot edit, so a save from one (at sign-in, say) is only
+ * replaced by that view, never taken as edits. Where every tab edits (no Web
+ * Locks), the save is shown with this tab's unsent edits laid back over it, and
+ * none of it is taken as an edit here. It is saved back only where the other tab
+ * left a record as the account has it, so two tabs holding different edits of one
+ * record settle instead of overwriting each other for ever.
  */
-function onOtherTabSave(uid: string, state: SavedState): void {
+function onOtherTabSave(state: SavedState): boolean {
   if (leading === "lock") {
-    recordLocalChange(uid, state, true);
-    return;
+    showView();
+    return true;
   }
-  const records = { ...entriesFromState(state, 0, ""), ...localIntents };
+  const theirs = entriesFromState(state, 0, "");
+  const records = { ...theirs, ...localIntents };
   const ignoring = ignoreLocalEvents;
   ignoreLocalEvents = true;
   applyState(
     saveFromView({ schema: 1, records, updatedAt: 0 }, validPokemon, validForms),
   );
-  if (JSON.stringify(exportState()) !== JSON.stringify(state)) persist();
+  const missing = Object.entries(localIntents).some(([key, intent]) => {
+    const shown = theirs[key]?.s ?? clearedValue(key);
+    return shown !== intent.s && shown === (base.records[key]?.s ?? clearedValue(key));
+  });
+  if (missing) persist();
   ignoreLocalEvents = ignoring;
   observedLocal = exportState();
+  return true;
 }
 
 function armLocalListeners(uid: string): void {
@@ -529,7 +638,7 @@ function armLocalListeners(uid: string): void {
   setLocalReplaceListener((before, op) =>
     recordReplace(before, exportState(), op, uid),
   );
-  setOtherTabListener((state) => onOtherTabSave(uid, state));
+  setOtherTabListener(onOtherTabSave);
 }
 
 function applyRemote(uid: string, incoming: unknown, run: number): void {
@@ -543,6 +652,7 @@ function applyRemote(uid: string, incoming: unknown, run: number): void {
     updatedAt: Date.now(),
   };
   const dropped = dropSuperseded(previous);
+  pruneHeld();
   writeBase(uid);
 
   const pending = owed();
@@ -557,7 +667,7 @@ function applyRemote(uid: string, incoming: unknown, run: number): void {
   observedLocal = exportState();
   syncPending.value = unsentCount();
   supersededNotice(dropped);
-  if (held === 0 && syncPhase.value !== "error") {
+  if (heldKeys.size === 0 && syncPhase.value !== "error") {
     syncPhase.value =
       syncPending.value === 0 && !pendingReset ? "ready" : "pending";
   }
@@ -689,8 +799,19 @@ async function loadInitial(uid: string, run: number): Promise<void> {
       // rest of any difference is other devices' work. Without an account save there
       // are no known edits, and a set that would empty the account is never an edit.
       const save = exportState();
-      let edits = hadAccountSave ? recoveredEdits(confirmed, save, uid) : {};
-      if (!pendingReset && isWholeAccountClear(base, edits, 1)) edits = {};
+      const edits = hadAccountSave ? recoveredEdits(confirmed, save, uid) : {};
+      let discarded = 0;
+      if (!pendingReset && isWholeAccountClear(base, edits, 1)) {
+        // A recovered set that would empty the account is far likelier a stale copy
+        // than the player's doing: its clears are not sent (held ones excepted, the
+        // player decides those), but anything it adds still is.
+        for (const [key, edit] of Object.entries(edits)) {
+          if (isProgressClear(key, edit.s) && !heldKeys.has(key)) {
+            delete edits[key];
+            discarded += 1;
+          }
+        }
+      }
       localIntents = edits;
       dropped = dropSuperseded(confirmed.records);
       applyState(
@@ -717,6 +838,11 @@ async function loadInitial(uid: string, run: number): Promise<void> {
                 `${JSON.stringify(save, null, 2)}\n`,
               ),
           },
+        );
+      } else if (discarded > 0) {
+        showNotice(
+          `${discarded === 1 ? "1 Pokémon" : `${discarded} Pokémon`} cleared on this device ${discarded === 1 ? "was" : "were"} not sent, because clearing everything at once looked like a mistake; the account's checklist is shown. Use Reset to clear on purpose.`,
+          "error",
         );
       } else if (!hadAccountSave && deviceHasProgress) {
         // Otherwise it looks as if this device's progress was just deleted.
@@ -750,51 +876,72 @@ async function loadInitial(uid: string, run: number): Promise<void> {
 }
 
 /**
- * Wait to be the one tab that syncs this account, for as long as this run lasts.
- * Meanwhile this tab shows and saves the account's checklist, and the syncing tab
- * sends its changes. Without Web Locks (old browsers) every tab syncs for itself.
+ * Claim editing this account; the tab that holds it syncs. Until then (or after
+ * another tab takes it) this tab is view-only and follows the editor's saves.
+ * Resolves once this tab first edits.
  */
-function lead(uid: string, run: number): Promise<boolean> {
-  const locks = (globalThis as { navigator?: Navigator }).navigator?.locks;
-  if (!locks) {
-    leading = "alone";
-    return Promise.resolve(true);
-  }
-  return new Promise((resolve) => {
-    const hold = (lock: Lock | null): Promise<void> | void => {
-      if (!lock) {
-        syncElsewhere(uid);
-        locks.request(lockName(uid), hold).catch(() => resolve(false));
-        return;
-      }
-      if (run !== generation) {
-        resolve(false);
-        return;
-      }
-      leading = "lock";
-      resolve(true);
-      return new Promise<void>((release) => (releaseLeadership = release));
-    };
-    locks
-      .request(lockName(uid), { ifAvailable: true }, hold)
-      .catch(() => resolve(false));
+function claimAccount(uid: string): Promise<void> {
+  return new Promise((started) => {
+    claimEditing(lockName(uid), {
+      waiting: () => {
+        if (activeUid === uid) viewOnly(uid);
+      },
+      edit: (mode) => {
+        if (activeUid !== uid) return;
+        leading = mode;
+        void edit(uid, generation).finally(started);
+      },
+      lost: () => yieldEditing(uid),
+    });
   });
 }
 
-/** Another tab syncs this account; this one hands its Reset and Restore over. */
-function syncElsewhere(uid: string): void {
+/** Another tab edits this account: this one follows its saves and changes nothing. */
+function viewOnly(uid: string): void {
   syncPhase.value = "elsewhere";
-  setLocalReplaceListener((before, op) => {
-    if (activeSaveKey() !== saveKeyFor(uid)) return;
-    try {
-      localStorage.setItem(
-        replaceKey(uid),
-        JSON.stringify({ id: Math.random(), op, before, after: exportState() }),
-      );
-    } catch {
-      // The syncing tab still sends the change, as ordinary edits.
-    }
-  });
+  setLocalChangeListener(null);
+  setLocalReplaceListener(null);
+  setOtherTabListener(null);
+  showHeldFromStore(uid);
+}
+
+/**
+ * Stop editing (and syncing) here at once: another tab took the lock, or a newer
+ * build is open. Every unsent edit is already in the sync store (it is written on
+ * each change), where the next editor picks it up; nothing more is sent or stored
+ * from here.
+ */
+function yieldEditing(uid: string): void {
+  if (activeUid !== uid || !leading) return;
+  generation += 1;
+  // Shut this page's database connection for good. Writes still queued in it
+  // (sent, not yet acknowledged) would otherwise land later, after the new editor's
+  // newer ones, and win. Editing again from here needs a fresh page.
+  if (database) {
+    goOffline(database);
+    takeOverNeedsReload(lockName(uid));
+  }
+  lastPushed = "";
+  deniedRetried = false;
+  leading = null;
+  publishInFlight = null;
+  publishQueued = false;
+  unsubscribeValue?.();
+  unsubscribeConnection?.();
+  unsubscribeValue = null;
+  unsubscribeConnection = null;
+  database = null;
+  initialReadComplete = false;
+  initialReadInFlight = false;
+  inFlight = null;
+  syncOnline.value = false;
+  viewOnly(uid);
+}
+
+/** A view-only tab still shows that clears are held, from the editor's store. */
+function showHeldFromStore(uid: string): void {
+  showHeld(readStore(uid)?.held ?? []);
+  syncMessage.value = syncHeld.value > 0 ? heldMessage() : "";
 }
 
 /**
@@ -813,7 +960,6 @@ export async function startSync(account: {
     return;
   }
   stopSync();
-  const run = generation;
   const uid = account.uid;
   activeUid = uid;
   // From here on this device expects a session, so a reload may touch auth.
@@ -821,17 +967,30 @@ export async function startSync(account: {
   syncAccount.value = { uid, email: account.email ?? "" };
   syncPhase.value = "connecting";
   // When the account's own save is already here it is shown now, so play while
-  // connecting, offline, or while another tab syncs, lands on the account. Otherwise
-  // this device's own checklist stays on screen until the server answers, and
-  // nothing done to it (least of all a Reset) is taken as the account's.
+  // connecting, or offline, lands on the account. Otherwise this device's own
+  // checklist stays on screen until the server answers, and nothing done to it
+  // (least of all a Reset) is taken as the account's.
   setSyncAccount(uid, { ifSaved: true });
-  if (!(await lead(uid, run)) || run !== generation) return;
+  if (readOnly.value === "outdated") return newerBuildOpen();
+  await claimAccount(uid);
+}
 
+/** Become the tab that edits (and syncs) this account. */
+async function edit(uid: string, run: number): Promise<void> {
+  const storage = safeStorage();
+  if (!storage || run !== generation) return;
   syncPhase.value = "connecting";
-  setLocalReplaceListener(null);
+  // Nothing this tab pushed or retried before it last edited carries over.
+  lastPushed = "";
+  deniedRetried = false;
+  // Start from the save as stored: a tab that missed the last editor's final save
+  // (asleep in the background, say) would otherwise send reverts of it.
+  if (activeSaveKey() === saveKeyFor(uid)) reloadSave();
   const { db } = initFirebase();
   database = db;
   deviceId = deviceIdFor(storage);
+  // Everything is read from the store, including edits a previous editor had not
+  // sent: it stored each one as it was made.
   const stored = readStore(uid);
   base = stored?.base ?? emptyDocument();
   pendingReset = stored?.reset ?? null;
@@ -839,17 +998,30 @@ export async function startSync(account: {
   storedReset = pendingReset ? JSON.stringify(pendingReset) : "";
   serverOffset = stored?.offset ?? 0;
   // Last session's unsent edits (including any never acknowledged), with the times
-  // they were made.
+  // they were made, and clears still held for the player to decide on.
   localIntents = { ...(stored?.intents ?? {}) };
+  heldKeys.clear();
+  for (const key of stored?.held ?? []) heldKeys.add(key);
+  showHeld([...heldKeys]);
+  syncMessage.value = "";
   initialReadComplete = false;
   if (activeSaveKey() === saveKeyFor(uid)) armLocalListeners(uid);
   subscribeConnection(uid, run);
   await loadInitial(uid, run);
 }
 
+/** A newer build is open in another tab: this one stops editing for good. */
+function newerBuildOpen(): void {
+  if (!activeUid) return;
+  yieldEditing(activeUid);
+  syncPhase.value = "outdated";
+  syncMessage.value = "";
+}
+
 function onAuthState(user: User | null, allowed: boolean): void {
   if (!user) {
     if (signInPending) return;
+    forgetTakeOver();
     // A tab that only followed another tab's sign-in keeps that tab's session flag.
     stopSync(!(followedSignIn && !activeUid));
     return;
@@ -900,32 +1072,26 @@ function onStorage(event: StorageEvent): void {
   }
   const uid = activeUid;
   if (!uid || !event.key) return;
-  if (!leading && event.key === saveKeyFor(uid)) {
-    // The syncing tab has just written the account's first save here: show it.
+  if (leading) return;
+  if (event.key === saveKeyFor(uid)) {
+    // The editor has just written the account's first save here: show it.
     setSyncAccount(uid, { ifSaved: true });
-  } else if (leading === "lock" && event.key === replaceKey(uid) && event.newValue) {
-    // Another tab's Reset or Restore: sent from here as the deliberate replacement it is.
-    try {
-      const { op, before, after } = JSON.parse(event.newValue) as Record<string, unknown>;
-      const read = (value: unknown) => interpretStoredState(JSON.stringify(value));
-      const was = read(before);
-      const now = read(after);
-      if ((op === "reset" || op === "restore") && was.kind === "apply" && now.kind === "apply") {
-        recordReplace(was.state, now.state, op, uid);
-      }
-    } catch {
-      // Unreadable: the change still arrives as ordinary edits.
-    }
+  } else if (event.key === SYNC_STORE_KEY) {
+    showHeldFromStore(uid);
   }
 }
 
 /**
- * Follow what other tabs do: a sign-in begun elsewhere, and, while signed in, the
- * account's first save and a Reset or Restore made in a tab that does not sync.
- * Storage events are local, so a player who never signs in still contacts nobody.
+ * Follow what other tabs do: a sign-in begun elsewhere, and, while another tab
+ * edits, the account's first save and its held clears. A newer build opening in
+ * another tab ends editing here. Storage events are local, so a player who never
+ * signs in still contacts nobody.
  */
 export function followSignInFromOtherTabs(): void {
   window.addEventListener("storage", onStorage);
+  effect(() => {
+    if (readOnly.value === "outdated") newerBuildOpen();
+  });
 }
 
 /**
@@ -948,8 +1114,7 @@ export function cancelSignIn(): void {
 
 export function stopSync(forget = true): void {
   generation += 1;
-  releaseLeadership?.();
-  releaseLeadership = null;
+  releaseEditing();
   publishInFlight = null;
   publishQueued = false;
   unsubscribeValue?.();
@@ -983,8 +1148,12 @@ export function stopSync(forget = true): void {
   connectionDown = false;
   awaitingFresh = false;
   inFlight = null;
-  held = 0;
+  heldKeys.clear();
+  showHeld([]);
+  sentReplacement = null;
   deniedRetried = false;
+  // Signed out, one tab edits the device's own checklist.
+  claimDeviceEditing();
   // A signed-out device must go back to touching nothing at all.
   if (forget) forgetSyncSession(safeStorage());
   syncAccount.value = null;

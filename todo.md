@@ -32,7 +32,7 @@ built and deployed. Stage 2's repository side is built: `tools/pokemon_chat.py` 
 `tools/firebase-admin-rest.mjs` writes them with a service-account key kept outside the repository.
 
 - [ ] Undo from the sync log for the chat tooling (the app's own one-step Undo is built); Reset and Restore log entries carry before-images.
-- [ ] Several tabs of one account on one device: date a non-syncing tab's edits when they were made rather than when the syncing tab notices them, hand over only that tab's own edits (not its whole save), keep or report a Reset handed over just before the syncing tab closes, and stop held clears from being sent once the account gains a record.
+- [ ] Try several tabs on real browsers (desktop and phone): only one tab edits, the others follow it read-only, "Use this tab" moves editing without losing an unsent change, and a newly deployed build takes over from an older open tab.
 - [ ] Decide whether lowering a species below a caught form should be blocked.
 - [ ] Add the log's retention and compaction: roughly 500 events or 90 days, with Reset exempt so a reset stays undoable.
 - [ ] Stage 2: wire the chat tooling into Hermes and verify it end to end against the live account. Needs the service-account key at `/opt/data/firebase/service-account.json` (or `FIREBASE_SERVICE_ACCOUNT`) on the Hermes host; its presence there cannot be checked from this repository.

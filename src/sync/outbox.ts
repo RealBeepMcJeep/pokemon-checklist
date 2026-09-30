@@ -62,6 +62,8 @@ export interface SyncStore {
   intents?: Record<RecordKey, RecordEntry>;
   /** The last known difference between the server's clock and this device's. */
   offset?: number;
+  /** Clears held back until the player sends or discards them. */
+  held?: RecordKey[];
 }
 
 /**
@@ -189,6 +191,9 @@ export function loadStore(storage: StorageLike): SyncStore {
     if (parsed.version !== 1) return emptyStore();
     const records = entries(parsed.base?.records);
     const intents = entries(parsed.intents);
+    const held = Array.isArray(parsed.held)
+      ? parsed.held.filter((key): key is string => typeof key === "string")
+      : [];
     const reset = Array.isArray(parsed.reset)
       ? parsed.reset.filter(
           (entry): entry is [string, string] =>
@@ -210,6 +215,7 @@ export function loadStore(storage: StorageLike): SyncStore {
       ...(typeof parsed.offset === "number" && Number.isFinite(parsed.offset)
         ? { offset: parsed.offset }
         : {}),
+      ...(held.length > 0 ? { held } : {}),
     };
   } catch {
     return emptyStore();
@@ -375,4 +381,23 @@ function isLive(key: string, status: string): boolean {
 /** A cleared star is "off", not a tombstone: the two keys clear differently. */
 function isCleared(key: string, status: string): boolean {
   return key.startsWith("star:") ? status === "off" : status === TOMBSTONE;
+}
+
+/**
+ * Held clears in words: Pokémon (species and forms) and favourites (stars) apart,
+ * e.g. "2 Pokémon and 1 favourite".
+ */
+export function heldSummary(keys: readonly RecordKey[]): string {
+  const favourites = keys.filter((key) => key.startsWith("star:")).length;
+  const pokemon = keys.filter(
+    (key) => key.startsWith("species:") || key.startsWith("form:"),
+  ).length;
+  const parts: string[] = [];
+  if (pokemon > 0 || favourites === 0) {
+    parts.push(pokemon === 1 ? "1 Pokémon" : `${pokemon} Pokémon`);
+  }
+  if (favourites > 0) {
+    parts.push(favourites === 1 ? "1 favourite" : `${favourites} favourites`);
+  }
+  return parts.join(" and ");
 }

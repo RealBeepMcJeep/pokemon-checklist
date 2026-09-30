@@ -11,6 +11,7 @@ import {
   formsTracked,
   isStarred,
   mode,
+  readOnly,
   searchTerm,
   seenCount,
   selectedDex,
@@ -240,6 +241,7 @@ function StarButton({ id, name }: { id: number; name: string }) {
       type="button"
       class="star-button"
       data-action="star"
+      disabled={readOnly.value !== null}
       data-species={id}
       aria-pressed={pinned}
       aria-label={

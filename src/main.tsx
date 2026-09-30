@@ -1,10 +1,12 @@
 import { render } from "preact";
 import { App } from "./App";
 import { followSignInFromOtherTabs, watchSyncAccount } from "./sync/engine";
+import { claimDeviceEditing } from "./editing";
 import { availableStorage, syncSessionExpected } from "./sync/outbox";
 import { firstIncompleteLocation } from "./domain";
 import {
   activeEncounters,
+  announceBuild,
   focusedLocation,
   initializeState,
   mode,
@@ -17,6 +19,10 @@ import "./styles/responsive.css";
 
 initializeState();
 watchOtherTabs();
+// Any older build still open in another tab stops editing when this one arrives.
+announceBuild();
+// One tab edits this device's checklist; any other open tab only follows it.
+claimDeviceEditing();
 // Sign-in is what turns sync on. Auth is initialised on load only when this device
 // has signed in before: Firebase Auth fetches its sign-in iframe and GAPI helper on
 // mobile user agents even for a signed-out visitor, so watching auth eagerly would

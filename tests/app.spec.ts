@@ -314,23 +314,25 @@ test("mirrors progress between two tabs of the same site", async ({
 
   const pikipek = '[data-action="species"][data-species="731"]';
 
-  // Act in the first tab; the second tab must follow without any user action.
+  // Act in the first tab; the second (view-only: one tab edits) must follow
+  // without any user action.
   await page.locator(pikipek).first().click();
   await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
   await expect(other.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
   await expect(other.locator(pikipek).first()).toContainText("Caught");
 
-  // Act in the second tab; the first must follow in the other direction.
+  // Take editing to the second tab; the first must follow in the other direction.
   // Cycling continues Caught → Seen, so Caught stops counting toward progress.
+  await other.locator("#use-this-tab").click();
   await other.locator(pikipek).first().click();
   await expect(other.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
   await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
   await expect(page.locator(pikipek).first()).toContainText("Seen");
 
   // Stars travel between tabs the same way statuses do.
-  await page.locator('[data-action="star"][data-species="807"]').click();
+  await other.locator('[data-action="star"][data-species="807"]').click();
   await expect(
-    other.locator(`${VISIBLE_ROW} .dex-name`).first(),
+    page.locator(`${VISIBLE_ROW} .dex-name`).first(),
   ).toContainText("807");
 
   expect(errors).toEqual([]);
@@ -1040,5 +1042,101 @@ test("fills the phone screen with the Pokédex drawer even for a short list", as
     () => document.querySelector("#pokedex")!.getBoundingClientRect().height,
   );
   expect(height).toBeGreaterThanOrEqual(840);
+  expect(errors).toEqual([]);
+});
+
+test("lets one tab edit, shows the other view-only, and hands editing over", async ({
+  page,
+  context,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const other = await context.newPage();
+  await openApp(other, testInfo.project.name);
+  const pikipek = '[data-action="species"][data-species="731"]';
+
+  // The first tab edits; the second says so and cannot change anything.
+  await expect(page.locator("#view-only")).toHaveCount(0);
+  await expect(other.locator("#view-only")).toContainText(
+    "This checklist is being edited in another tab.",
+  );
+  await expect(other.locator(pikipek).first()).toBeDisabled();
+  await expect(other.locator("#reset-button")).toBeDisabled();
+  await expect(other.locator('[data-action="star"][data-species="25"]')).toBeDisabled();
+  await other.locator(pikipek).first().click({ force: true });
+  await expect(other.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+
+  // "Use this tab" moves editing: the first tab turns view-only at once.
+  await other.locator("#use-this-tab").click();
+  await expect(other.locator("#view-only")).toHaveCount(0);
+  await expect(page.locator("#view-only")).toBeVisible();
+  await expect(page.locator(pikipek).first()).toBeDisabled();
+  await other.locator(pikipek).first().click();
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+
+  // Closing the editing tab lets the other one edit again.
+  await other.close();
+  await expect(page.locator("#view-only")).toHaveCount(0);
+  await expect(page.locator(pikipek).first()).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
+test("keeps the view-only banner readable on small phones", async ({
+  page,
+  context,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const other = await context.newPage();
+  await openApp(other, testInfo.project.name);
+  for (const width of [320, 390]) {
+    await other.setViewportSize({ width, height: 700 });
+    const banner = await other.locator("#view-only").boundingBox();
+    const button = await other.locator("#use-this-tab").boundingBox();
+    // The button gets a row of its own, inside the banner, and a real target.
+    expect(button!.x + button!.width).toBeLessThanOrEqual(banner!.x + banner!.width + 1);
+    expect(button!.width).toBeGreaterThan(banner!.width * 0.8);
+    expect(button!.height).toBeGreaterThanOrEqual(30);
+    expect(
+      await other.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    ).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});
+
+test("keeps the view-only banner on screen on a phone, scrolled or under the drawer", async ({
+  page,
+  context,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const other = await context.newPage();
+  await other.setViewportSize({ width: 390, height: 844 });
+  await openApp(other, testInfo.project.name);
+  // On screen, and the topmost thing where it is drawn (not behind the drawer).
+  const bannerShown = () =>
+    other.evaluate(() => {
+      const banner = document.querySelector("#view-only");
+      if (!banner) return false;
+      const box = banner.getBoundingClientRect();
+      const top = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      );
+      return box.top >= 0 && box.bottom <= innerHeight && banner.contains(top);
+    });
+
+  // Jump to a location far down the page, as the location links do.
+  await other.locator("tbody .guide-pokemon-link").last().click();
+  await other.locator("#dex-selection .location-links a").last().click();
+  await expect(other.locator("#pokedex")).not.toHaveClass(/drawer-open/);
+  expect(await other.evaluate(() => scrollY)).toBeGreaterThan(500);
+  expect(await bannerShown()).toBe(true);
+
+  // With the Pokédex drawer open, the banner and its button still work.
+  await other.locator("#sidebar-toggle").click();
+  await expect(other.locator("#pokedex")).toHaveClass(/drawer-open/);
+  expect(await bannerShown()).toBe(true);
+  await other.locator("#use-this-tab").click();
+  await expect(other.locator("#view-only")).toHaveCount(0);
+  await expect(page.locator("#view-only")).toBeVisible();
   expect(errors).toEqual([]);
 });

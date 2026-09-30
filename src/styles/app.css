@@ -227,6 +227,58 @@ progress {
 .notice-action.error {
   border-color: #ff9a9a;
 }
+/* A view-only tab (another tab edits, or a newer build is open) changes nothing,
+   and its editing controls say so. */
+.action-button:disabled,
+.status-button:disabled,
+.star-button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.view-only,
+.held-clears {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+.held-clears {
+  margin-top: 0.45rem;
+  border-color: #ff9a9a;
+}
+/* Pinned to the bottom of the screen, above the phone drawer (30) and its
+   backdrop, so the reason nothing reacts is always in sight. */
+.view-only {
+  position: fixed;
+  z-index: 40;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  width: min(36rem, calc(100vw - 1.5rem));
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+}
+/* The Undo bar sits above it when both are shown. */
+body:has(.view-only) .notice-action {
+  bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+}
+.held-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* Sending held clears empties the checklist everywhere: it looks like it. */
+.action-button.danger {
+  border-color: #ff9a9a;
+  color: #ff9a9a;
+  font-weight: 600;
+}
 .notice-action .action-button {
   flex: 0 0 auto;
   min-height: 2.75rem;

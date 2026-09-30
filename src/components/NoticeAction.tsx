@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { notice, type Notice } from "../state";
+import { notice, readOnly, type Notice } from "../state";
 
 /**
  * The notice's one-tap action (Undo, or a recovery download), floating at the bottom
@@ -25,6 +25,8 @@ export function NoticeAction() {
         class="action-button"
         id="notice-action"
         type="button"
+        // An Undo in a view-only tab would change nothing; Reload still works.
+        disabled={current.action.label === "Undo" && readOnly.value !== null}
         onClick={current.action.run}
       >
         {current.action.label}

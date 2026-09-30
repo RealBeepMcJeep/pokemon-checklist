@@ -17,6 +17,7 @@ import {
   speciesStatus,
 } from "./state";
 import { firstIncompleteLocation, MODE_LABELS } from "./domain";
+import { stillEditingAfterDialog } from "./editing";
 import type { GameMode, Location } from "./types";
 
 export const DRAWER_BREAKPOINT = 1000;
@@ -198,6 +199,7 @@ export async function importFile(event: Event): Promise<void> {
   try {
     const imported = parseState(await file.text());
     if (!confirm("Replace your current checklist with this backup?")) return;
+    if (!(await stillEditingAfterDialog())) return;
     restoreState(imported);
     focusedLocation.value = firstIncomplete()?.id || null;
     changeNotice("Backup restored.");
@@ -209,13 +211,14 @@ export async function importFile(event: Event): Promise<void> {
   }
 }
 
-export function reset(): void {
+export async function reset(): Promise<void> {
   if (
     !confirm(
       "Clear all caught and seen statuses, tracked forms, starred Pokémon, and settings?",
     )
   )
     return;
+  if (!(await stillEditingAfterDialog())) return;
   resetState();
   focusedLocation.value = firstIncomplete()?.id || null;
   changeNotice("Checklist reset.");

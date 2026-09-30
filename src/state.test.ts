@@ -539,3 +539,44 @@ describe("undo", () => {
     setLocalReplaceListener(null);
   });
 });
+
+describe("a newer build open in another tab", () => {
+  it("announces this build, and ignores another tab of the same build", async () => {
+    const store = installStorage();
+    const state = await import("./state");
+    const { BUILD_LABEL } = await import("./version");
+    state.announceBuild();
+    expect(JSON.parse(store.get("pokemon-checklist-build")!).build).toBe(BUILD_LABEL);
+  });
+
+  it("makes this tab view-only, with a Reload action, once a different build announces itself", async () => {
+    installStorage();
+    const listeners: ((event: StorageEvent) => void)[] = [];
+    const window = globalThis as { window?: unknown };
+    window.window = { addEventListener: (_: string, listener: (event: StorageEvent) => void) => listeners.push(listener) };
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    const state = await import("./state");
+    state.watchOtherTabs();
+    const { BUILD_LABEL } = await import("./version");
+    const hear = (build: string) =>
+      listeners.forEach((listener) =>
+        listener({
+          key: "pokemon-checklist-build",
+          newValue: JSON.stringify({ build, at: 1 }),
+        } as StorageEvent),
+      );
+
+    hear(BUILD_LABEL);
+    expect(state.readOnly.value).toBeNull();
+    hear("v9.9.9 - newer");
+    expect(state.readOnly.value).toBe("outdated");
+    expect(state.notice.value.action?.label).toBe("Reload");
+    state.cycleSpecies(25);
+    expect(state.speciesStatus(25)).toBe("none");
+    // Sync saying this tab may edit again does not undo that.
+    state.setEditable(true);
+    expect(state.readOnly.value).toBe("outdated");
+    delete window.window;
+  });
+});
