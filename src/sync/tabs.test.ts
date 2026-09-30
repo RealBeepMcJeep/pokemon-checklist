@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
+  goOffline: vi.fn(),
   onValue: vi.fn(),
   push: vi.fn(() => ({ key: `event-${Math.random()}` })),
   ref: vi.fn((db: unknown, path: string) => ({ db, path })),
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("firebase/database", () => ({
   get: mocks.get,
+  goOffline: mocks.goOffline,
   onValue: mocks.onValue,
   push: mocks.push,
   ref: mocks.ref,
@@ -62,6 +64,9 @@ let server: Record<string, unknown> = {};
 let clock = 1_000_000;
 /** Writes that never reach the server (a dead connection) while set. */
 let dead = false;
+/** Page reloads asked for; a reload is modelled by opening a fresh tab. */
+let reloads = 0;
+let session = new Map<string, string>();
 
 /** A Web Locks manager shared by the tabs: one holder per name; `steal` takes it. */
 function fakeLocks() {
@@ -183,6 +188,14 @@ beforeEach(() => {
   storage = new Map();
   tabs = [];
   queued = [];
+  reloads = 0;
+  session = new Map();
+  vi.stubGlobal("sessionStorage", {
+    getItem: (key: string) => session.get(key) ?? null,
+    setItem: (key: string, value: string) => void session.set(key, value),
+    removeItem: (key: string) => void session.delete(key),
+  });
+  vi.stubGlobal("location", { reload: () => void (reloads += 1) });
   server = { ...settings };
   clock = 1_000_000;
   dead = false;
@@ -292,9 +305,17 @@ describe("one tab edits an account", () => {
     expect(recordsSent()).toEqual([["species:25", "caught"]]);
     expect(a.state.speciesStatus(25)).toBe("caught");
 
-    // And it can take editing back the same way.
+    // Its database connection was shut, so taking editing back reloads the page,
+    // and the fresh page takes the lock as it arrives.
+    expect(mocks.goOffline).toHaveBeenCalledTimes(1);
     await inTab(a, () => a.editing.useThisTab());
-    expect(a.state.readOnly.value).toBeNull();
+    expect(reloads).toBe(1);
+    expect(a.state.readOnly.value).toBe("elsewhere");
+    await inTab(a, () => a.engine.stopSync(false));
+    tabs = tabs.filter((tab) => tab !== a);
+    const reloaded = await openTab();
+    await signIn(reloaded);
+    expect(reloaded.state.readOnly.value).toBeNull();
     expect(b.state.readOnly.value).toBe("elsewhere");
   });
 
@@ -382,6 +403,167 @@ describe("one tab edits an account", () => {
     await inTab(a, () => a.state.cycleSpecies(25));
     await inTab(b, () => b.state.cycleSpecies(4));
     expect(recordsSent()).toEqual([["species:4", "caught"]]);
+  });
+});
+
+describe("fourth review: moving editing between tabs", () => {
+  async function twoTabs() {
+    const a = await openTab();
+    const b = await openTab();
+    await signIn(a);
+    await signIn(b);
+    mocks.update.mockClear();
+    return { a, b };
+  }
+  /** A fresh page for a tab that asked to reload. */
+  async function reload(tab: Tab): Promise<Tab> {
+    await inTab(tab, () => tab.engine.stopSync(false));
+    tabs = tabs.filter((other) => other !== tab);
+    const fresh = await openTab();
+    await signIn(fresh);
+    return fresh;
+  }
+
+  it("P6b: sends a change made while another tab edited, once editing comes back", async () => {
+    const { a, b } = await twoTabs();
+    await inTab(a, () => a.state.cycleSpecies(25)); // caught, acknowledged
+    await inTab(b, () => b.editing.useThisTab());
+    await inTab(b, () => b.state.cycleSpecies(25)); // seen, acknowledged
+    await inTab(b, () => b.connected.at(-1)?.({ val: () => false }));
+    await inTab(b, () => {
+      b.state.cycleSpecies(25);
+      b.state.cycleSpecies(25); // none, then caught again: offline, unsent
+    });
+    mocks.update.mockClear();
+    await inTab(a, () => a.editing.useThisTab());
+    const fresh = await reload(a);
+
+    expect(fresh.state.readOnly.value).toBeNull();
+    expect(recordsSent()).toEqual([["species:25", "caught"]]);
+  });
+
+  it("P2: shuts the old editor's database connection, so its queued writes never land late", async () => {
+    const { a, b } = await twoTabs();
+    dead = true; // A's write is stuck in its Firebase client
+    await inTab(a, () => a.state.cycleSpecies(25));
+    dead = false;
+    expect(mocks.goOffline).not.toHaveBeenCalled();
+
+    await inTab(b, () => b.editing.useThisTab());
+
+    expect(mocks.goOffline).toHaveBeenCalledTimes(1);
+    expect(a.state.readOnly.value).toBe("elsewhere");
+  });
+
+  it("reloads, rather than editing without sync, when editing comes back by itself", async () => {
+    const { a, b } = await twoTabs();
+    await inTab(b, () => b.editing.useThisTab());
+    await inTab(b, () => b.engine.stopSync(false)); // the editing tab closes
+
+    expect(reloads).toBe(1);
+    expect(a.state.readOnly.value).toBe("elsewhere");
+    const fresh = await reload(a);
+    await inTab(fresh, () => fresh.state.cycleSpecies(7));
+    expect(recordsSent()).toContainEqual(["species:7", "caught"]);
+  });
+
+  it("P7: pressing Use this tab repeatedly still leaves one editor", async () => {
+    const { a, b } = await twoTabs();
+    await inTab(a, () => a.connected[0]?.({ val: () => false }));
+    await inTab(a, () => a.state.cycleSpecies(25));
+    await inTab(b, () => {
+      b.editing.useThisTab();
+      b.editing.useThisTab();
+      b.editing.useThisTab();
+    });
+    await inTab(b, () => b.state.cycleSpecies(4));
+
+    expect(b.state.readOnly.value).toBeNull();
+    expect(a.state.readOnly.value).toBe("elsewhere");
+    expect(recordsSent()).toEqual([
+      ["species:25", "caught"],
+      ["species:4", "caught"],
+    ]);
+  });
+
+  it("P1: a tab that missed the editor's last save does not send a revert of it", async () => {
+    // Other catches too, so a revert would not look like emptying the account.
+    server = {
+      ...server,
+      "species:1": { s: "caught", at: 900_000, by: "uid-a" },
+      "species:4": { s: "caught", at: 900_000, by: "uid-a" },
+    };
+    const { a, b } = await twoTabs();
+    await inTab(a, () => a.state.cycleSpecies(25), true); // B never sees this save
+    expect(b.state.speciesStatus(25)).toBe("none");
+    mocks.update.mockClear();
+
+    await inTab(b, () => b.editing.useThisTab());
+
+    expect(recordsSent()).toEqual([]);
+    expect(b.state.speciesStatus(25)).toBe("caught");
+    expect((server["species:25"] as { s: string }).s).toBe("caught");
+  });
+
+  it("keeps a signed-out tab editing, and its Undo, when sync stops", async () => {
+    const a = await openTab();
+    await inTab(a, () => a.editing.claimDeviceEditing());
+    expect(a.state.readOnly.value).toBeNull();
+    await inTab(a, () => {
+      a.state.cycleSpecies(25);
+      a.state.savedNotice("Status");
+    });
+    const seen: unknown[] = [];
+    const stop = a.state.readOnly.subscribe((value) => seen.push(value));
+
+    await inTab(a, () => a.engine.stopSync());
+
+    stop();
+    expect(seen.every((value) => value === null)).toBe(true);
+    expect(a.state.notice.value.action?.label).toBe("Undo");
+  });
+
+  it("never makes a second editor when a later lock request is refused", async () => {
+    let calls = 0;
+    vi.stubGlobal("navigator", {
+      locks: {
+        request: (_name: string, _options: unknown, callback: (lock: unknown) => unknown) => {
+          calls += 1;
+          // Another tab holds the lock; the request to wait for it then fails.
+          if (calls === 1) return Promise.resolve(callback(null));
+          return Promise.reject(new Error("The request was refused"));
+        },
+      },
+    });
+    const a = await openTab();
+    await signIn(a);
+
+    expect(calls).toBe(2);
+    expect(a.state.readOnly.value).toBe("elsewhere");
+    await inTab(a, () => a.state.cycleSpecies(25));
+    expect(recordsSent()).toEqual([]);
+  });
+
+  it("keeps a view-only tab's count of held clears current", async () => {
+    const { a, b } = await twoTabs();
+    server = {
+      ...server,
+      "species:1": { s: "caught", at: 900_000, by: "uid-a" },
+      "species:4": { s: "caught", at: 900_000, by: "uid-a" },
+    };
+    await inTab(a, () => a.records.at(-1)!(snapshot(server)));
+    await inTab(a, () => a.connected[0]?.({ val: () => false }));
+    await inTab(a, () => {
+      for (const id of [1, 1, 4, 4]) a.state.cycleSpecies(id);
+    });
+    await inTab(a, () => a.connected[0]?.({ val: () => true }));
+    await inTab(a, () => a.records.at(-1)!(snapshot(server)));
+    expect(b.engine.syncHeld.value).toBe(2);
+
+    await inTab(a, () => a.state.cycleSpecies(1)); // caught again: no longer held
+
+    expect(a.engine.syncHeld.value).toBe(1);
+    expect(b.engine.syncHeld.value).toBe(1);
   });
 });
 

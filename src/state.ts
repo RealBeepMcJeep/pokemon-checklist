@@ -453,6 +453,18 @@ export function persist(): void {
   localChangeListener?.(state);
 }
 
+/**
+ * Show the active save as stored, not as this tab last saw it: a tab that was
+ * asleep may have missed another tab's last write.
+ */
+export function reloadSave(): void {
+  try {
+    useSave(readSave());
+  } catch {
+    // Unreadable storage: keep what is on screen.
+  }
+}
+
 export function initializeState(): void {
   try {
     useSave(readSave());

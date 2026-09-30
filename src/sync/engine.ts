@@ -1,6 +1,7 @@
 import { effect, signal } from "@preact/signals";
 import {
   get,
+  goOffline,
   onValue,
   push,
   ref,
@@ -15,6 +16,7 @@ import {
   exportState,
   persist,
   readOnly,
+  reloadSave,
   setLocalChangeListener,
   setLocalReplaceListener,
   setOtherTabListener,
@@ -24,7 +26,12 @@ import {
   validPokemon,
 } from "../state";
 import { initFirebase, signOutOfSync, watchAuth } from "./firebase";
-import { claimDeviceEditing, claimEditing, releaseEditing } from "../editing";
+import {
+  claimDeviceEditing,
+  claimEditing,
+  releaseEditing,
+  takeOverNeedsReload,
+} from "../editing";
 import type { User } from "firebase/auth";
 import type { SavedState } from "../types";
 import {
@@ -44,6 +51,7 @@ import {
   deviceIdFor,
   emptyDocument,
   forgetSyncSession,
+  heldSummary,
   isProgressClear,
   isWholeAccountClear,
   SYNC_STORE_KEY,
@@ -101,6 +109,8 @@ export const syncPhase = signal<SyncPhase>("off");
 export const syncPending = signal(0);
 /** Clears held back because together they would empty the account. */
 export const syncHeld = signal(0);
+/** Which records those are, so they can be described. */
+export const syncHeldKeys = signal<RecordKey[]>([]);
 export const syncAccount = signal<{ uid: string; email: string } | null>(null);
 export const syncMessage = signal("");
 /** Whether the database connection is up; only meaningful while signed in. */
@@ -313,17 +323,26 @@ function writeBase(uid: string): void {
 }
 
 function heldMessage(): string {
-  const count = syncHeld.value;
-  return `Held back ${count === 1 ? "1 clear" : `${count} clears`} that would empty the checklist on every device, in case that was a mistake. Everything else is sent.`;
+  return `Held back clearing ${heldSummary(syncHeldKeys.value)}, which would empty the checklist on every device, in case that was a mistake. Everything else is sent.`;
 }
 
-/** Forget held clears the player has since changed, or that newer changes replaced. */
-function pruneHeld(): void {
+function showHeld(keys: RecordKey[]): void {
+  syncHeldKeys.value = keys;
+  syncHeld.value = keys.length;
+}
+
+/**
+ * Forget held clears the player has since changed, or that newer changes replaced.
+ * Whether any were forgotten.
+ */
+function pruneHeld(): boolean {
+  const before = heldKeys.size;
   for (const key of heldKeys) {
     const intent = localIntents[key];
     if (!intent || !isProgressClear(key, intent.s)) heldKeys.delete(key);
   }
-  syncHeld.value = heldKeys.size;
+  showHeld([...heldKeys]);
+  return heldKeys.size !== before;
 }
 
 /**
@@ -333,6 +352,11 @@ function pruneHeld(): void {
 export function resolveHeldClears(send: boolean): void {
   const uid = activeUid;
   if (!uid || heldKeys.size === 0 || readOnly.value) return;
+  if (send && sentReplacement) {
+    // Merging now would lose the before-image of the Reset or Restore in flight.
+    showNotice("A Reset or Restore is still being sent. Try again in a moment.", "error");
+    return;
+  }
   if (send) {
     const earlier = pendingReset && pendingReset !== sentReplacement ? pendingReset : [];
     const known = new Set(earlier.map(([key]) => key));
@@ -345,7 +369,7 @@ export function resolveHeldClears(send: boolean): void {
     for (const key of heldKeys) delete localIntents[key];
   }
   heldKeys.clear();
-  syncHeld.value = 0;
+  showHeld([]);
   syncMessage.value = "";
   if (syncPhase.value === "error") syncPhase.value = "pending";
   if (!send) showView();
@@ -396,8 +420,9 @@ async function publishNow(): Promise<void> {
   // that would empty the account are held back while the rest is still sent.
   // Clears already held count too, so holding some never lets the rest through;
   // and once held, only the player releases them (a record arriving elsewhere,
-  // which would satisfy the guard, does not).
-  pruneHeld();
+  // which would satisfy the guard, does not). A change in what is held is stored,
+  // so a view-only tab shows it too.
+  if (pruneHeld()) writeBase(uid);
   const judged = Object.fromEntries(
     Object.entries(pending).filter(([key]) => !replaced.has(key)),
   );
@@ -406,7 +431,7 @@ async function publishNow(): Promise<void> {
     for (const [key, entry] of Object.entries(judged)) {
       if (isProgressClear(key, entry.s)) heldKeys.add(key);
     }
-    syncHeld.value = heldKeys.size;
+    showHeld([...heldKeys]);
     if (heldKeys.size > before) {
       writeBase(uid);
       showNotice(heldMessage(), "error");
@@ -888,6 +913,15 @@ function viewOnly(uid: string): void {
 function yieldEditing(uid: string): void {
   if (activeUid !== uid || !leading) return;
   generation += 1;
+  // Shut this page's database connection for good. Writes still queued in it
+  // (sent, not yet acknowledged) would otherwise land later, after the new editor's
+  // newer ones, and win. Editing again from here needs a fresh page.
+  if (database) {
+    goOffline(database);
+    takeOverNeedsReload(lockName(uid));
+  }
+  lastPushed = "";
+  deniedRetried = false;
   leading = null;
   publishInFlight = null;
   publishQueued = false;
@@ -905,7 +939,7 @@ function yieldEditing(uid: string): void {
 
 /** A view-only tab still shows that clears are held, from the editor's store. */
 function showHeldFromStore(uid: string): void {
-  syncHeld.value = readStore(uid)?.held?.length ?? 0;
+  showHeld(readStore(uid)?.held ?? []);
   syncMessage.value = syncHeld.value > 0 ? heldMessage() : "";
 }
 
@@ -945,6 +979,12 @@ async function edit(uid: string, run: number): Promise<void> {
   const storage = safeStorage();
   if (!storage || run !== generation) return;
   syncPhase.value = "connecting";
+  // Nothing this tab pushed or retried before it last edited carries over.
+  lastPushed = "";
+  deniedRetried = false;
+  // Start from the save as stored: a tab that missed the last editor's final save
+  // (asleep in the background, say) would otherwise send reverts of it.
+  if (activeSaveKey() === saveKeyFor(uid)) reloadSave();
   const { db } = initFirebase();
   database = db;
   deviceId = deviceIdFor(storage);
@@ -961,7 +1001,7 @@ async function edit(uid: string, run: number): Promise<void> {
   localIntents = { ...(stored?.intents ?? {}) };
   heldKeys.clear();
   for (const key of stored?.held ?? []) heldKeys.add(key);
-  syncHeld.value = heldKeys.size;
+  showHeld([...heldKeys]);
   syncMessage.value = "";
   initialReadComplete = false;
   if (activeSaveKey() === saveKeyFor(uid)) armLocalListeners(uid);
@@ -1107,7 +1147,7 @@ export function stopSync(forget = true): void {
   awaitingFresh = false;
   inFlight = null;
   heldKeys.clear();
-  syncHeld.value = 0;
+  showHeld([]);
   sentReplacement = null;
   deniedRetried = false;
   // Signed out, one tab edits the device's own checklist.

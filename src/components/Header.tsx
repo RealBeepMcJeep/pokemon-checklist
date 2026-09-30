@@ -15,7 +15,7 @@ import {
 import { GAME_MODES } from "../types";
 import type { GameMode } from "../types";
 import { BUILD_LABEL } from "../version";
-import { HeldClears, SyncPanel, ViewOnlyBanner } from "./SyncPanel";
+import { HeldClears, SyncPanel } from "./SyncPanel";
 import {
   changeMode,
   exportJSON,
@@ -139,14 +139,13 @@ export function Header({ inert = false }: { inert?: boolean }) {
               id="reset-button"
               disabled={locked}
               type="button"
-              onClick={reset}
+              onClick={() => void reset()}
             >
               Reset
             </button>
             <SyncPanel />
           </div>
         </div>
-        <ViewOnlyBanner />
         <HeldClears />
         <div class="progress-row">
           <label for="overall-progress">Overall caught</label>

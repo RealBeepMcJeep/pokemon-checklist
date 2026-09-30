@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
+  goOffline: vi.fn(),
   onValue: vi.fn(),
   push: vi.fn(() => ({ key: "event-1" })),
   ref: vi.fn((db: unknown, path: string) => ({ db, path })),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("firebase/database", () => ({
   get: mocks.get,
+  goOffline: mocks.goOffline,
   onValue: mocks.onValue,
   push: mocks.push,
   ref: mocks.ref,
@@ -1046,7 +1048,7 @@ describe("adversarial review", () => {
     expect(sentRecords()[0]).toEqual({ "star:807": "on" });
     await vi.waitFor(() => expect(syncPhase.value).toBe("error"));
     expect(syncPending.value).toBe(2);
-    expect(syncMessage.value).toMatch(/Held back 2 clears/);
+    expect(syncMessage.value).toMatch(/Held back clearing 2 Pokémon/);
   });
 
   it("L4: a refused re-send after a lost acknowledgement is retried with fresh log ids", async () => {
@@ -1136,6 +1138,36 @@ describe("held clears, recovery and replacements", () => {
     expect(sentRecords()[speciesKey(4)]).toBe("none");
     expect(logOps()).toEqual(["reset"]);
     expect(syncHeld.value).toBe(0);
+  });
+
+  it("will not send held clears while a Restore is still being sent", async () => {
+    await signedIn(two);
+    await clearBothOffline(two);
+    // A Restore (adding #7) goes out, and its write is not answered yet.
+    let fail!: (error: Error) => void;
+    mocks.update.mockImplementationOnce(
+      () => new Promise<void>((_resolve, reject) => (fail = reject)),
+    );
+    restoreState({
+      schemaVersion: 3,
+      species: { "7": "caught" },
+      forms: {},
+      starred: [],
+      settings: { forms: false, mode: "photonic-prismatic" },
+    });
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+
+    resolveHeldClears(true);
+    expect(notice.value.message).toMatch(/still being sent/);
+    expect(syncHeld.value).toBe(2);
+
+    // The Restore's write fails: sent again, still as the logged Restore it was.
+    fail(new Error("disconnected"));
+    connected[0]({ val: () => false });
+    connected[0]({ val: () => true });
+    recordsChanged.at(-1)!(snapshot(two));
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    expect(logOps().at(-1)).toBe("restore");
   });
 
   it("N4: putting held clears back restores those Pokémon", async () => {

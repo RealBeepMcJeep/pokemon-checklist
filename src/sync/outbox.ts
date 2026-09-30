@@ -382,3 +382,22 @@ function isLive(key: string, status: string): boolean {
 function isCleared(key: string, status: string): boolean {
   return key.startsWith("star:") ? status === "off" : status === TOMBSTONE;
 }
+
+/**
+ * Held clears in words: Pokémon (species and forms) and favourites (stars) apart,
+ * e.g. "2 Pokémon and 1 favourite".
+ */
+export function heldSummary(keys: readonly RecordKey[]): string {
+  const favourites = keys.filter((key) => key.startsWith("star:")).length;
+  const pokemon = keys.filter(
+    (key) => key.startsWith("species:") || key.startsWith("form:"),
+  ).length;
+  const parts: string[] = [];
+  if (pokemon > 0 || favourites === 0) {
+    parts.push(pokemon === 1 ? "1 Pokémon" : `${pokemon} Pokémon`);
+  }
+  if (favourites > 0) {
+    parts.push(favourites === 1 ? "1 favourite" : `${favourites} favourites`);
+  }
+  return parts.join(" and ");
+}

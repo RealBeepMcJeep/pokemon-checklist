@@ -1102,3 +1102,41 @@ test("keeps the view-only banner readable on small phones", async ({
   }
   expect(errors).toEqual([]);
 });
+
+test("keeps the view-only banner on screen on a phone, scrolled or under the drawer", async ({
+  page,
+  context,
+}, testInfo) => {
+  const errors = await openApp(page, testInfo.project.name);
+  const other = await context.newPage();
+  await other.setViewportSize({ width: 390, height: 844 });
+  await openApp(other, testInfo.project.name);
+  // On screen, and the topmost thing where it is drawn (not behind the drawer).
+  const bannerShown = () =>
+    other.evaluate(() => {
+      const banner = document.querySelector("#view-only");
+      if (!banner) return false;
+      const box = banner.getBoundingClientRect();
+      const top = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      );
+      return box.top >= 0 && box.bottom <= innerHeight && banner.contains(top);
+    });
+
+  // Jump to a location far down the page, as the location links do.
+  await other.locator("tbody .guide-pokemon-link").last().click();
+  await other.locator("#dex-selection .location-links a").last().click();
+  await expect(other.locator("#pokedex")).not.toHaveClass(/drawer-open/);
+  expect(await other.evaluate(() => scrollY)).toBeGreaterThan(500);
+  expect(await bannerShown()).toBe(true);
+
+  // With the Pokédex drawer open, the banner and its button still work.
+  await other.locator("#sidebar-toggle").click();
+  await expect(other.locator("#pokedex")).toHaveClass(/drawer-open/);
+  expect(await bannerShown()).toBe(true);
+  await other.locator("#use-this-tab").click();
+  await expect(other.locator("#view-only")).toHaveCount(0);
+  await expect(page.locator("#view-only")).toBeVisible();
+  expect(errors).toEqual([]);
+});

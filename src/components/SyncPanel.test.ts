@@ -15,7 +15,7 @@ vi.mock("../sync/engine", async () => {
     cancelSignIn: vi.fn(),
     resolveHeldClears: vi.fn(),
     syncAccount: signal({ uid: "uid-a", email: "x" }),
-    syncHeld: signal(3),
+    syncHeldKeys: signal(["species:1", "species:4", "form:37:alolan", "star:25"]),
     syncMessage: signal(""),
     syncOnline: signal(true),
     syncPending: signal(0),
@@ -27,6 +27,8 @@ import { HeldClears, heldConfirmText } from "./SyncPanel";
 import { resolveHeldClears } from "../sync/engine";
 import { readOnly } from "../state";
 
+const HELD = ["species:1", "species:4", "form:37:alolan", "star:25"];
+
 /** The buttons a component renders, in order. */
 function buttons(node: unknown): VNode<Record<string, unknown>>[] {
   if (!node || typeof node !== "object") return [];
@@ -34,6 +36,13 @@ function buttons(node: unknown): VNode<Record<string, unknown>>[] {
   const vnode = node as VNode<Record<string, unknown>>;
   const own = vnode.type === "button" ? [vnode] : [];
   return [...own, ...buttons(vnode.props?.children)];
+}
+
+function text(node: unknown): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (!node || typeof node !== "object") return "";
+  if (Array.isArray(node)) return node.map(text).join("");
+  return text((node as VNode<{ children?: unknown }>).props?.children);
 }
 
 afterEach(() => {
@@ -51,20 +60,38 @@ describe("held clears", () => {
     expect(String(second.props.class)).toContain("danger");
   });
 
-  it("spells out what sending does, and sends nothing unless confirmed", () => {
-    expect(heldConfirmText(3)).toBe(
-      "Clear 3 Pokémon on every device? This can't be undone here.",
+  it("counts Pokémon and favourites apart", () => {
+    expect(text(HeldClears())).toContain("Clearing 3 Pokémon and 1 favourite would empty");
+    expect(heldConfirmText(HELD)).toBe(
+      "Clear 3 Pokémon and 1 favourite on every device? This can't be undone here.",
     );
+    expect(heldConfirmText(["star:1", "star:2"])).toBe(
+      "Clear 2 favourites on every device? This can't be undone here.",
+    );
+  });
+
+  it("sends nothing unless confirmed", async () => {
     const asked: string[] = [];
-    vi.stubGlobal("confirm", (text: string) => (asked.push(text), false));
+    vi.stubGlobal("confirm", (question: string) => (asked.push(question), false));
     const [, send] = buttons(HeldClears());
-    (send.props.onClick as () => void)();
-    expect(asked).toEqual([heldConfirmText(3)]);
+    await (send.props.onClick as () => Promise<void>)();
+    expect(asked).toEqual([heldConfirmText(HELD)]);
     expect(resolveHeldClears).not.toHaveBeenCalled();
 
     vi.stubGlobal("confirm", () => true);
-    (send.props.onClick as () => void)();
+    await (send.props.onClick as () => Promise<void>)();
     expect(resolveHeldClears).toHaveBeenCalledWith(true);
+  });
+
+  it("sends nothing if editing moved to another tab while the dialog was open", async () => {
+    vi.stubGlobal("confirm", () => {
+      // The steal happened while the dialog blocked the tab; its news is queued.
+      setTimeout(() => (readOnly.value = "elsewhere"), 0);
+      return true;
+    });
+    const [, send] = buttons(HeldClears());
+    await (send.props.onClick as () => Promise<void>)();
+    expect(resolveHeldClears).not.toHaveBeenCalled();
   });
 
   it("shows held clears in a view-only tab too, with the choices disabled", () => {

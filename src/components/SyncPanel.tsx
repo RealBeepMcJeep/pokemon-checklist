@@ -4,13 +4,14 @@ import {
   cancelSignIn,
   resolveHeldClears,
   syncAccount,
-  syncHeld,
+  syncHeldKeys,
   syncMessage,
   syncOnline,
   syncPending,
   syncPhase,
 } from "../sync/engine";
-import { useThisTab } from "../editing";
+import { stillEditingAfterDialog, useThisTab } from "../editing";
+import { heldSummary } from "../sync/outbox";
 import { isAllowedAccount } from "../sync/config";
 import {
   prepareSignIn,
@@ -224,15 +225,14 @@ export function ViewOnlyBanner() {
  * back is the first, safe choice; sending them is spelled out before it happens.
  */
 export function HeldClears() {
-  const count = syncHeld.value;
-  if (!syncAccount.value || count === 0) return null;
-  const pokemon = count === 1 ? "1 Pokémon" : `${count} Pokémon`;
+  const keys = syncHeldKeys.value;
+  if (!syncAccount.value || keys.length === 0) return null;
   const locked = readOnly.value !== null;
   return (
     <div class="held-clears" id="held-clears" role="alert">
       <span>
-        Clearing {pokemon} would empty the checklist on every device, so{" "}
-        {count === 1 ? "it was" : "they were"} not sent.
+        Clearing {heldSummary(keys)} would empty the checklist on every device, so{" "}
+        {keys.length === 1 ? "it was" : "they were"} not sent.
       </span>
       <span class="held-actions">
         <button
@@ -249,8 +249,9 @@ export function HeldClears() {
           id="held-send"
           type="button"
           disabled={locked}
-          onClick={() => {
-            if (confirm(heldConfirmText(count))) resolveHeldClears(true);
+          onClick={async () => {
+            if (!confirm(heldConfirmText(keys))) return;
+            if (await stillEditingAfterDialog()) resolveHeldClears(true);
           }}
         >
           Send clears
@@ -260,6 +261,6 @@ export function HeldClears() {
   );
 }
 
-export function heldConfirmText(count: number): string {
-  return `Clear ${count === 1 ? "1 Pokémon" : `${count} Pokémon`} on every device? This can't be undone here.`;
+export function heldConfirmText(keys: readonly string[]): string {
+  return `Clear ${heldSummary(keys)} on every device? This can't be undone here.`;
 }

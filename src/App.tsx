@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { LocationList } from "./components/Locations";
 import { NoticeAction } from "./components/NoticeAction";
 import { Pokedex } from "./components/Pokedex";
+import { ViewOnlyBanner } from "./components/SyncPanel";
 import { drawerOpen, mode, sidebarHidden } from "./state";
 import { closeDrawer } from "./ui";
 
@@ -51,6 +52,9 @@ export function App() {
         <LocationList inert={modalOpen} />
         <Pokedex />
       </div>
+      {/* Outside the header, which scrolls away on a phone and is inert under the
+          drawer: a view-only tab must say so wherever the player is. */}
+      <ViewOnlyBanner />
       <NoticeAction />
     </>
   );
