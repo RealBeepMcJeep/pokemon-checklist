@@ -72,11 +72,16 @@ def card_title(option: dict) -> str:
 
 
 def blurb(option: dict) -> str:
-    if option["category"] == "OG-151":
-        return "Kanto-only challenge · stones and friendship needed · lower-tier fillers"
-    if option["category"] == "No OG-151":
-        return "All five battlers evolve by level · strongest low-friction progression pick"
-    return "Mixed roster · type balance, late-game potential and evolution opportunities"
+    labels = {
+        "OG": "Original-151 battlers only",
+        "Non-OG": "No original-151 battlers",
+        "Mixed": "Unrestricted Dex range",
+        "Pokedex": f"Pure level-only Pokédex path · {option.get('new_entries', 0)} new entries",
+        "Best": "Buildable endgame heuristic",
+    }
+    label = labels.get(option["category"], "Story team")
+    return (f"{label} · {option.get('evolving', 0)}/5 can still evolve · "
+            f"{option.get('level_evolving', 0)}/5 by level")
 
 
 def add_move_targets(report: dict, cache: Path | None) -> dict:
@@ -113,14 +118,14 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
             *sorted(members, key=lambda m: (m["final"] != option["anchor"], m["final"]))]
     canvas = Image.new("RGB", SIZE, BG)
     d = ImageDraw.Draw(canvas)
-    accent = "#d6b969" if option["category"] == "OG-151" else (
-        "#7dcbd5" if option["category"] == "No OG-151" else "#c19ce8")
+    accent = {"OG": "#d6b969", "Non-OG": "#7dcbd5", "Mixed": "#c19ce8",
+              "Pokedex": "#80d398", "Best": "#f18759"}.get(option["category"], "#c19ce8")
     d.rounded_rectangle((26, 25, 1234, 2108), radius=34, fill=PANEL, outline=LINE, width=2)
     d.rounded_rectangle((48, 44, 346, 82), radius=18, fill=accent)
     d.text((65, 49), f"{option['category'].upper()}  /  {number:02d} OF 05", fill=BG, font=font(20, True))
     d.text((52, 103), fit(d, card_title(option), font(45, True), 1135, strict=True),
            fill=WHITE, font=font(45, True))
-    d.text((54, 170), fit(d, blurb(option), font(22), 1140), fill=DIM, font=font(22))
+    d.text((54, 170), fit(d, blurb(option), font(22), 1140, strict=True), fill=DIM, font=font(22))
     d.line((50, 215, 1210, 215), fill=LINE, width=2)
     d.text((58, 233), "OWNED → ENDGAME  /  FOUR MOVE TARGETS + HOW TO GET THEM", font=font(18, True), fill=DIM)
     d.text((917, 233), "TYPE", font=font(18, True), fill=DIM)
@@ -151,7 +156,11 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
         badges = m.get("tier", "")
         if m.get("favorite") and not catcher:
             badges += "  ·  IN PARTY"
-        d.text((x, y + 105), badges, font=font(18, True), fill=color)
+        if m.get("hidden_ability_caveat") and not catcher:
+            share = m.get("hidden_ability_usage_share")
+            badges += (f"  ·  H USAGE {share:.0%}" if share is not None else "  ·  H NOT ASSUMED")
+        d.text((x, y + 105), fit(d, badges, font(18, True), 570, strict=True),
+               font=font(18, True), fill=color)
         for t_index, typ in enumerate(m["types"]):
             ty = y + 28 + t_index * 47
             shade = PALETTE.get(typ, DIM)
@@ -173,8 +182,8 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
                    font=font(18), fill=DIM)
     y = 1934
     d.line((54, y, 1206, y), fill=LINE, width=2)
-    d.text((56, y + 12), f"ANCHOR  {option['anchor'].upper()}     •     {option['evolving']}/5 EVOLVABLE     •     {option['level_evolving']}/5 LEVEL-BASED", font=font(20, True), fill=accent)
-    d.text((56, y + 51), f"5-BATTLER SCORE {option['core_score']:.2f}  /  WITH BUTTERFREE {option['six_score']:.2f}     ·     {report['caught_records']} CAUGHT", font=font(19, True), fill=WHITE)
+    d.text((56, y + 12), f"ANCHOR  {option['anchor'].upper()}     •     {option['evolving']}/5 CAN ADD ENTRIES     •     {option['level_evolving']}/5 BY LEVEL", font=font(20, True), fill=accent)
+    d.text((56, y + 51), f"TYPE SYNERGY {option['core_synergy']:.2f} / WITH BUTTERFREE {option['six_synergy']:.2f}     ·     {report['caught_records']} CAUGHT", font=font(19, True), fill=WHITE)
     d.text((56, y + 86), "MOVES: Prismatic Standard + Gen VII · LATER / ENDGAME = progression gate.", font=font(18), fill=DIM)
     d.text((56, y + 111), "Scores use type potential, not these moves. Items and abilities unrecorded.", font=font(18), fill=DIM)
     d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=font(17), fill=DIM)

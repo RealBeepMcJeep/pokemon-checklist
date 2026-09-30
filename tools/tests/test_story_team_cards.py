@@ -13,6 +13,16 @@ import showdown_data
 
 
 class StoryTeamCardsTests(unittest.TestCase):
+    def test_objective_subtitles_use_live_counts_without_old_category_claims(self):
+        option = {"category": "Non-OG", "evolving": 2, "level_evolving": 1,
+                  "new_entries": 4}
+
+        subtitle = cards.blurb(option)
+
+        self.assertIn("2/5", subtitle)
+        self.assertIn("1/5", subtitle)
+        self.assertNotIn("All five battlers evolve by level", subtitle)
+
     def test_mixed_titles_name_the_actual_anchor_and_first_partner(self):
         base = {"category": "Mixed", "anchor": "Gengar"}
         for partner in ("Feraligatr", "Infernape", "Slowbro"):
@@ -44,8 +54,9 @@ class StoryTeamCardsTests(unittest.TestCase):
                    [("Gengar", 94, "Ghost"), ("Arcanine", 59, "Fire"),
                     ("Raichu", 26, "Electric"), ("Pidgeot", 18, "Flying"),
                     ("Slowbro", 80, "Water")]]
-        option = {"category": "OG-151", "anchor": "Gengar", "members": members,
-                  "evolving": 5, "level_evolving": 2, "core_score": 6.8, "six_score": 6.6}
+        option = {"category": "OG", "anchor": "Gengar", "members": members,
+                  "evolving": 5, "level_evolving": 2, "new_entries": 5,
+                  "core_synergy": 6.8, "six_synergy": 6.6}
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "cards" / "team-01.png"
             cards.render_card(report, option, 1, atlas, dest, generated="test")

@@ -126,6 +126,22 @@ def load_movesets(cache: Path, tier: str | None = None) -> dict[str, dict[str, f
     return out
 
 
+def load_ability_usage(cache: Path, tier: str | None = None) -> dict[str, dict[str, float]]:
+    """Load the same tier-local chaos ability weights used to qualify story viability."""
+    path, _ = _chaos_path(cache, tier)
+    if path is None:
+        return {}
+    blob = json.loads(path.read_text())
+    return {
+        tb.normalize(name): {
+            tb.normalize(ability): float(weight)
+            for ability, weight in (entry.get("Abilities") or {}).items()
+        }
+        for name, entry in (blob.get("data") or {}).items()
+        if entry.get("Abilities")
+    }
+
+
 def move_info(cache: Path) -> dict:
     moves = dict(top_blocks(require_cache(cache).get_text("moves")))
     out = {}
@@ -242,6 +258,20 @@ def score_team(team: list[dict], chart: dict) -> tuple[float, dict]:
                    "missed": sorted(set(ALL_TYPES) - hit)}
 
 
+def story_synergy_score(team: list[dict], chart: dict) -> tuple[float, dict]:
+    """Return the quality-independent type/switching score for story selection."""
+    _, detail = score_team(team, chart)
+    size = max(1, len(team))
+    score = (4.0 * detail["coverage"] + 2.5 * detail["defence"]
+             - 1.5 * detail["shared_types"] / size
+             - 1.5 * detail["shared_weak_penalty"])
+    return round(score, 4), {
+        "coverage": detail["coverage"], "defence": detail["defence"],
+        "shared_types": detail["shared_types"], "shared_weak": detail["shared_weak"],
+        "score": round(score, 4),
+    }
+
+
 def member_replacements(first: tuple[str, ...], second: tuple[str, ...]) -> int:
     return len(set(first) - set(second))
 
@@ -302,7 +332,7 @@ def main() -> int:
             raise ValueError("--story-options requires five battlers plus the fixed catcher")
         minimum = tb.normalise_tier(args.min_tier)
         overrides = tb.parse_form_overrides(args.form_override)
-        off_limits = args.off_limits or ("litten,magnemite,riolu,abra" if args.story_options else "")
+        off_limits = args.off_limits
         roster = tb.load_roster(args.uid, Path(args.cache), off_limits=off_limits, no_gen1=args.no_gen1,
                                 keep_alolan=args.keep_alolan, min_tier=minimum, form_overrides=overrides)
         chart = load_typechart(Path(args.cache))
@@ -313,14 +343,23 @@ def main() -> int:
 
     profiles = []
     moveset_cache: dict[str, dict] = {}
+    ability_cache: dict[str, dict[str, dict[str, float]]] = {}
     for line in roster["pool"]:
         provenance = moveset_provenance(Path(args.cache), line.get("tier"))
         cache_key = provenance.get("path", "")
         if cache_key not in moveset_cache:
             moveset_cache[cache_key] = load_movesets(Path(args.cache), line.get("tier")) if cache_key else {}
-        profiles.append(profile(line, chart, moveset_cache[cache_key], mtype, provenance))
+        member = profile(line, chart, moveset_cache[cache_key], mtype, provenance)
+        if args.story_options:
+            if cache_key not in ability_cache:
+                ability_cache[cache_key] = (load_ability_usage(Path(args.cache), line.get("tier"))
+                                            if cache_key else {})
+            member["competitive_ability_usage"] = ability_cache[cache_key].get(
+                tb.normalize(line["final"]), {})
+        profiles.append(member)
     if args.story_options:
         import team_options as opt
+        profiles = opt.attach_evolution_paths(profiles, roster)
         stars = opt.starred_ids(roster)
         for member in profiles:
             member["favorite"] = bool(stars.intersection(member["caught_ids"]))
@@ -329,7 +368,10 @@ def main() -> int:
         if utility is None:
             print(f"error: utility {args.utility!r} is not caught or is off limits", file=sys.stderr)
             return 2
-        options = opt.choose_options(profiles, utility, chart)
+        pokedex_profiles = opt.conservative_profiles(
+            opt.build_pokedex_profiles(profiles, roster, chart))
+        options = opt.choose_options(profiles, utility, chart,
+                                     pokedex_profiles=pokedex_profiles)
         report = opt.story_report(roster, options, utility)
         if args.json:
             print(json.dumps(report, indent=2))

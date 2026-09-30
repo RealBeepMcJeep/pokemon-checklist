@@ -32,7 +32,7 @@ class TeamOptionsTests(unittest.TestCase):
              mock.patch.object(sys, "argv", ["team_synergy.py", "--uid", "uid", "--story-options"]), \
              contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(ts.main(), 0)
-        self.assertEqual(load.call_args.kwargs["off_limits"], "litten,magnemite,riolu,abra")
+        self.assertEqual(load.call_args.kwargs["off_limits"], "")
         self.assertEqual(choose.call_args.args[1]["final"], "Butterfree")
 
     def _member(self, name, dex, typ, points=4, owned=None):
@@ -50,21 +50,133 @@ class TeamOptionsTests(unittest.TestCase):
         utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
         options = opt.choose_options(old + new, utility, {}, min_changes=1)
         self.assertEqual([o["category"] for o in options],
-                         ["OG-151", "No OG-151", "Mixed", "Mixed", "Mixed"])
-        self.assertTrue(all(o["utility"] == "Butterfree" and len(o["members"]) == 5
-                            and o["anchor"] in o["members"] for o in options))
+                         ["OG", "Non-OG", "Mixed", "Pokedex", "Best"])
+        self.assertTrue(all(o["utility"] == "Butterfree" for o in options))
+        self.assertEqual(len(options[0]["profiles"]), 5)
+        self.assertEqual(len(options[1]["profiles"]), 5)
         self.assertTrue(all(m["endpoint_id"] <= 151 for m in options[0]["profiles"]))
         self.assertTrue(all(m["endpoint_id"] > 151 for m in options[1]["profiles"]))
-        self.assertTrue(all(opt.is_evolving(m) for o in options for m in o["profiles"]))
+        self.assertEqual(len(options[2]["profiles"]), 5)
+        self.assertEqual(len(options[4]["profiles"]), 5)
+        self.assertFalse(options[3]["profiles"])
+        self.assertTrue(options[3]["warning"])
+
+    def test_synergy_precedes_quality_but_best_reverses_that_priority(self):
+        distinct = [self._member(name, 200 + index, typ, points=1)
+                    for index, (name, typ) in enumerate(zip(
+                        ("A", "B", "C", "D", "E"),
+                        ("Normal", "Fire", "Water", "Electric", "Grass")))]
+        high_quality = self._member("Quality", 250, "Bug", points=100)
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+        pool = [*distinct, high_quality]
+
+        synergy_first = opt._rank(pool, utility, {}, category="Mixed")[0]
+        viability_first = opt._rank(pool, utility, {}, category="Best")[0]
+
+        self.assertNotIn("Quality", synergy_first["members"])
+        self.assertIn("Quality", viability_first["members"])
+
+    def test_pokedex_new_entries_precede_synergy(self):
+        baseline = [self._member(name, 300 + index, typ, points=8)
+                    for index, (name, typ) in enumerate(zip(
+                        ("A", "B", "C", "D", "E"),
+                        ("Normal", "Fire", "Water", "Electric", "Grass")))]
+        for item in baseline:
+            item["dex_plan"] = {"new_entries": [item["final"]]}
+        high_entries = self._member("ManyEntries", 350, "Bug", points=0)
+        high_entries["dex_plan"] = {"new_entries": ["One", "Two", "Three"]}
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+
+        ranked = opt._rank([*baseline, high_entries], utility, {}, category="Pokedex")
+
+        self.assertIn("ManyEntries", ranked[0]["members"])
+        self.assertEqual(ranked[0]["new_entries"], 7)
+
+    def test_mixed_objective_does_not_require_both_generation_groups(self):
+        old = [self._member(f"Kanto{i}", 30 + i, typ) for i, typ in
+               enumerate(["Normal", "Fire", "Water", "Electric", "Grass"])]
+        utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+
+        options = opt.choose_options(old, utility, {})
+
+        self.assertEqual(options[2]["category"], "Mixed")
+        self.assertEqual(len(options[2]["members"]), 5)
+        self.assertTrue(all(name.startswith("Kanto") for name in options[2]["members"]))
 
     def test_og_attempt_is_reported_instead_of_fabricating_five_members(self):
         modern = [self._member(f"New{i}", 200 + i, typ) for i, typ in
+
                   enumerate(["Normal", "Fire", "Water", "Electric", "Grass", "Ice"])]
         utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
         options = opt.choose_options(modern, utility, {}, min_changes=1)
-        self.assertEqual(options[0]["category"], "OG-151")
+        self.assertEqual(options[0]["category"], "OG")
         self.assertFalse(options[0]["members"])
         self.assertIn("only 0", options[0]["warning"])
+
+    def test_pokedex_plans_stop_before_nonlevel_gate_and_count_unseen_intermediate(self):
+        member = {"final": "Vikavolt", "caught_ids": [736, 738],
+                  "caught_as": ["Grubbin", "Vikavolt"],
+                  "evolution_path": [
+                      {"id": 736, "name": "Grubbin"},
+                      {"id": 737, "name": "Charjabug", "method": "Level 20"},
+                      {"id": 738, "name": "Vikavolt", "method": "Thunder Stone"},
+                  ]}
+
+        plans = opt.pure_level_plans(member)
+
+        self.assertEqual(len(plans), 1)
+        self.assertEqual(plans[0]["owned"], "Grubbin")
+        self.assertEqual(plans[0]["planned_final"], "Charjabug")
+        self.assertEqual(plans[0]["new_entries"], ["Charjabug"])
+
+    def test_pokedex_rejects_level_methods_with_day_sex_stat_or_branch_conditions(self):
+        cases = [
+            ("Yungoos", "Gumshoos", 734, 735, "Level 20"),
+            ("Kirlia", "Gallade", 281, 475, "Level 30"),
+            ("Tyrogue", "Hitmontop", 236, 237, "Level 20"),
+            ("Nincada", "Shedinja", 290, 292, "Level 20"),
+            ("Wurmple", "Silcoon", 265, 266, "Level 7"),
+        ]
+        for owned, target, owned_id, target_id, method in cases:
+            with self.subTest(target=target):
+                member = {"final": target, "caught_ids": [owned_id], "caught_as": [owned],
+                          "evolution_path": [{"id": owned_id, "name": owned},
+                                             {"id": target_id, "name": target, "method": method}]}
+                self.assertEqual(opt.pure_level_plans(member), [])
+
+    def test_owned_final_form_cannot_earn_a_second_evolution_entry(self):
+        fearow = self._member("Fearow", 22, "Normal", owned="Spearow")
+        fearow["caught_ids"] = [21, 22]
+        fearow["caught_as"] = ["Spearow", "Fearow"]
+        roster = {"by_id": {21: {"name": "Spearow"}, 22: {"name": "Fearow"}},
+                  "det": {22: {"evolution": [{"name": "Spearow"},
+                                              {"name": "Fearow", "method": "Level 20"}]}}}
+
+        self.assertFalse(opt.is_evolving(fearow))
+        self.assertEqual(opt.evolution_opportunities(fearow), 0)
+        self.assertEqual(opt.evolution_chain(fearow, roster), ("Fearow", "Fearow"))
+
+    def test_hidden_ability_caveat_is_derived_from_slots_not_species_allowlist(self):
+        hidden = self._member("Unlistedmon", 999, "Psychic", points=4)
+        hidden["abilities"] = "Mind Reader, Meta Force(H)"
+        ordinary = self._member("Ordinarymon", 998, "Psychic", points=4)
+        ordinary["abilities"] = "Mind Reader"
+
+        self.assertTrue(opt.has_hidden_ability_caveat(hidden))
+        self.assertFalse(opt.has_hidden_ability_caveat(ordinary))
+        self.assertLess(opt.practical_viability(hidden), opt.practical_viability(ordinary))
+
+    def test_hidden_ability_penalty_tracks_usage_share_of_h_slot(self):
+        hidden_dependent = self._member("HiddenBuild", 999, "Ground", points=5)
+        hidden_dependent["abilities"] = "Pickup, Huge Power(H)"
+        hidden_dependent["competitive_ability_usage"] = {"pickup": 1.0, "hugepower": 99.0}
+        ordinary_build = {**hidden_dependent, "competitive_ability_usage":
+                          {"pickup": 99.0, "hugepower": 1.0}}
+
+        hidden_score = opt.practical_viability(hidden_dependent)
+        ordinary_score = opt.practical_viability(ordinary_build)
+        self.assertGreaterEqual(hidden_score, 4.0)
+        self.assertLess(hidden_score, ordinary_score)
 
     def test_anchor_rejects_hidden_ability_dependency_and_finalized_species(self):
         strong = self._member("Diggersby", 660, "Ground", points=5.5)
@@ -107,7 +219,7 @@ class TeamOptionsTests(unittest.TestCase):
         usable = opt.eligible_for_easy_run(species)
         self.assertEqual([p["final"] for p in usable], ["Gardevoir", "Vikavolt"])
 
-    def test_non_og_options_do_not_use_pu_filler_when_nu_pool_is_viable(self):
+    def test_no_early_tier_floor_removes_candidates_before_story_objectives(self):
         old = [self._member(f"Old{i}", 20 + i, typ) for i, typ in
                enumerate(["Normal", "Fire", "Water", "Electric", "Grass"])]
         new = [self._member(f"New{i}", 200 + i, typ) for i, typ in
@@ -115,9 +227,11 @@ class TeamOptionsTests(unittest.TestCase):
         weak = self._member("Gumshoos", 735, "Dark", points=9)
         weak["tier"] = "(PU)"
         utility = self._member("Butterfree", 12, "Bug", owned="Butterfree")
+
         options = opt.choose_options(old + new + [weak], utility, {}, min_changes=1)
-        self.assertNotIn("Gumshoos", options[1]["members"])
-        self.assertTrue(all("Gumshoos" not in o["members"] for o in options[2:]))
+
+        self.assertIn("Gumshoos", options[1]["members"])
+        self.assertIn("Gumshoos", options[4]["members"])
 
     def test_story_coverage_does_not_credit_unverified_ladder_moves(self):
         line = self._member("Infernape", 392, "Fire")
@@ -253,6 +367,31 @@ class TeamSynergyTests(unittest.TestCase):
         # with different memberships (team_synergy's TIER_POINTS was missing "AG").
         # Every tier in the one shared TIER_ORDER must have a point value.
         self.assertEqual(set(ts.TIER_POINTS), set(tb.TIER_ORDER))
+
+    def test_story_synergy_is_independent_of_competitive_quality(self):
+        member = {"final": "TypePotential", "points": 1, "types": ["Water"],
+                  "moves": [("Water", 80, 1.0)], "weak": {"Electric"},
+                  "resist": {"Fire"}, "atk": 80, "spa": 90, "bulk": 260, "spe": 75}
+        low, low_detail = ts.story_synergy_score([member], {})
+        strong = {**member, "points": 999}
+        high, high_detail = ts.story_synergy_score([strong], {})
+
+        self.assertEqual(low, high)
+        self.assertEqual(low_detail, high_detail)
+        self.assertEqual(set(low_detail), {"coverage", "defence", "shared_types",
+                                          "shared_weak", "score"})
+
+    def test_tier_local_ability_usage_is_loaded_without_merging_tiers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            (cache / "chaos-gen7uu-1630.json").write_text(json.dumps({
+                "data": {"Feraligatr": {"Abilities": {"Torrent": 23, "Sheer Force": 1709}}}}))
+            (cache / "chaos-gen7ru-1630.json").write_text(json.dumps({
+                "data": {"Feraligatr": {"Abilities": {"Torrent": 999}}}}))
+
+            usage = ts.load_ability_usage(cache, "UU")
+
+        self.assertEqual(usage["feraligatr"], {"torrent": 23.0, "sheerforce": 1709.0})
 
     def test_tier_local_chaos_file_does_not_merge_other_tiers(self):
         with tempfile.TemporaryDirectory() as tmp:
