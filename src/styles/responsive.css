@@ -109,6 +109,15 @@
   .app-header {
     position: static;
   }
+  /* On a phone the choices get a row of their own, each an easy target. */
+  .held-actions,
+  .view-only .action-button {
+    flex: 1 1 100%;
+  }
+  .held-actions .action-button {
+    flex: 1 1 0;
+    min-height: 2.75rem;
+  }
   .header-inner {
     padding: 0.55rem 0.65rem 0.45rem;
   }

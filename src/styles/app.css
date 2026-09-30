@@ -227,6 +227,42 @@ progress {
 .notice-action.error {
   border-color: #ff9a9a;
 }
+/* A view-only tab (another tab edits, or a newer build is open) changes nothing,
+   and its editing controls say so. */
+.action-button:disabled,
+.status-button:disabled,
+.star-button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.view-only,
+.held-clears {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-top: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+.held-clears {
+  border-color: #ff9a9a;
+}
+.held-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* Sending held clears empties the checklist everywhere: it looks like it. */
+.action-button.danger {
+  border-color: #ff9a9a;
+  color: #ff9a9a;
+  font-weight: 600;
+}
 .notice-action .action-button {
   flex: 0 0 auto;
   min-height: 2.75rem;

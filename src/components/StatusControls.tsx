@@ -5,6 +5,7 @@ import {
   formDefinitions,
   formSignal,
   formsTracked,
+  readOnly,
   savedNotice,
   speciesSignal,
 } from "../state";
@@ -54,6 +55,7 @@ export function StatusButton({
       type="button"
       class={`status-button status-${status} ${compact ? "compact-status" : ""}`}
       data-action="species"
+      disabled={readOnly.value !== null}
       data-species={id}
       aria-label={label}
       onClick={() => changeSpecies(id)}
@@ -91,6 +93,7 @@ export function FormStatusButton({
       type="button"
       class={`status-button form-status status-${status}`}
       data-action="form"
+      disabled={readOnly.value !== null}
       data-form={formKey}
       aria-label={label}
       onClick={() => {

@@ -8,13 +8,14 @@ import {
   formsTracked,
   mode,
   notice,
+  readOnly,
   sidebarHidden,
   toggleForms,
 } from "../state";
 import { GAME_MODES } from "../types";
 import type { GameMode } from "../types";
 import { BUILD_LABEL } from "../version";
-import { SyncPanel } from "./SyncPanel";
+import { HeldClears, SyncPanel, ViewOnlyBanner } from "./SyncPanel";
 import {
   changeMode,
   exportJSON,
@@ -29,6 +30,8 @@ export function Header({ inert = false }: { inert?: boolean }) {
   const trackForms = formsTracked.value;
   const currentMode = mode.value;
   const currentNotice = notice.value;
+  // A view-only tab (another tab edits, or a newer build is open) changes nothing.
+  const locked = readOnly.value !== null;
   return (
     <header class="app-header" inert={inert}>
       <div class="header-inner">
@@ -79,6 +82,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
             <select
               class="action-button"
               id="mode-select"
+              disabled={locked}
               aria-label="Game mode"
               value={currentMode}
               onChange={(event) =>
@@ -94,6 +98,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
             <button
               class="action-button"
               id="forms-toggle"
+              disabled={locked}
               type="button"
               aria-pressed={trackForms}
               onClick={toggleForms}
@@ -111,6 +116,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
             <button
               class="action-button"
               id="import-button"
+              disabled={locked}
               type="button"
               onClick={() =>
                 document
@@ -131,6 +137,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
             <button
               class="action-button"
               id="reset-button"
+              disabled={locked}
               type="button"
               onClick={reset}
             >
@@ -139,6 +146,8 @@ export function Header({ inert = false }: { inert?: boolean }) {
             <SyncPanel />
           </div>
         </div>
+        <ViewOnlyBanner />
+        <HeldClears />
         <div class="progress-row">
           <label for="overall-progress">Overall caught</label>
           <progress id="overall-progress" max={POKEMON.length} value={caught}>

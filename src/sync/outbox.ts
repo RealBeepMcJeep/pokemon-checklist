@@ -62,6 +62,8 @@ export interface SyncStore {
   intents?: Record<RecordKey, RecordEntry>;
   /** The last known difference between the server's clock and this device's. */
   offset?: number;
+  /** Clears held back until the player sends or discards them. */
+  held?: RecordKey[];
 }
 
 /**
@@ -189,6 +191,9 @@ export function loadStore(storage: StorageLike): SyncStore {
     if (parsed.version !== 1) return emptyStore();
     const records = entries(parsed.base?.records);
     const intents = entries(parsed.intents);
+    const held = Array.isArray(parsed.held)
+      ? parsed.held.filter((key): key is string => typeof key === "string")
+      : [];
     const reset = Array.isArray(parsed.reset)
       ? parsed.reset.filter(
           (entry): entry is [string, string] =>
@@ -210,6 +215,7 @@ export function loadStore(storage: StorageLike): SyncStore {
       ...(typeof parsed.offset === "number" && Number.isFinite(parsed.offset)
         ? { offset: parsed.offset }
         : {}),
+      ...(held.length > 0 ? { held } : {}),
     };
   } catch {
     return emptyStore();

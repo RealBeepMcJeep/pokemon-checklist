@@ -13,6 +13,7 @@ import {
 import type { GameMode, SavedState, Status } from "./types";
 import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
 import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
+import { BUILD_LABEL } from "./version";
 
 export interface Notice {
   message: string;
@@ -44,6 +45,11 @@ export const drawerOpen = signal(false);
 export const sidebarHidden = signal(false);
 export const notice = signal<Notice>({ message: "", kind: "" });
 export const storageAvailable = signal(true);
+/**
+ * Why this tab may not change the checklist, or null when it may: another tab of
+ * the account is the one editing it, or a newer build of the app is open.
+ */
+export const readOnly = signal<null | "elsewhere" | "outdated">(null);
 /** Dex numbers pinned to the top of the Pokédex list, ascending. */
 export const starred = signal<number[]>([]);
 
@@ -82,7 +88,7 @@ let localChangeListener: ((state: SavedState) => void) | null = null;
 let localReplaceListener:
   | ((before: SavedState, op: ReplaceOp) => void)
   | null = null;
-let otherTabListener: ((state: SavedState) => void) | null = null;
+let otherTabListener: ((state: SavedState) => boolean) | null = null;
 
 /** The localStorage key the player's save belongs to right now. */
 export function activeSaveKey(): string {
@@ -106,11 +112,55 @@ export function setLocalReplaceListener(
   localReplaceListener = listener;
 }
 
-/** Told when another tab's save of the same checklist has just been applied here. */
+/**
+ * Given another tab's save of the same checklist to show. Returning true means the
+ * listener has shown what belongs on screen itself (sync may know better than
+ * that save); otherwise the save is shown as it is.
+ */
 export function setOtherTabListener(
-  listener: ((state: SavedState) => void) | null,
+  listener: ((state: SavedState) => boolean) | null,
 ): void {
   otherTabListener = listener;
+}
+
+/** Sync says whether this tab may edit. A newer build open elsewhere still wins. */
+export function setEditable(editable: boolean): void {
+  if (readOnly.value === "outdated") return;
+  readOnly.value = editable ? null : "elsewhere";
+  if (!editable) expireUndo();
+}
+
+// --- builds -------------------------------------------------------------------
+//
+// Two builds must never edit one checklist at once: an older one does not know the
+// newer one's rules. Each tab announces its build when it loads. The tab that loads
+// last runs what is deployed, so a tab that hears of a different build announced
+// after it stops editing and asks to be reloaded.
+
+const BUILD_KEY = "pokemon-checklist-build";
+
+export function announceBuild(): void {
+  try {
+    localStorage.setItem(BUILD_KEY, JSON.stringify({ build: BUILD_LABEL, at: Date.now() }));
+  } catch {
+    // Without storage there is nothing for two tabs to share either.
+  }
+}
+
+function hearBuild(event: StorageEvent): void {
+  if (event.key !== BUILD_KEY || event.newValue === null) return;
+  try {
+    const { build } = JSON.parse(event.newValue) as { build?: unknown };
+    if (typeof build !== "string" || build === BUILD_LABEL) return;
+  } catch {
+    return;
+  }
+  readOnly.value = "outdated";
+  expireUndo();
+  showNotice("A newer version is open in another tab. Reload this one to keep using it.", "error", {
+    label: "Reload",
+    run: () => location.reload(),
+  });
 }
 
 /**
@@ -365,8 +415,7 @@ function withOtherTabsChanges(key: string, state: SavedState): SavedState {
   // First take the other tab's save as its storage event would have delivered it
   // (sync must learn of it the same way), then lay this tab's change on top.
   seen = { key, raw: stored, state: theirs.state };
-  applyState(theirs.state);
-  otherTabListener?.(theirs.state);
+  if (!otherTabListener?.(theirs.state)) applyState(theirs.state);
   applyState(
     rebaseState(exportState(), base, state, validPokemon, validForms),
   );
@@ -464,6 +513,7 @@ function expireUndo(): void {
  * the ordinary save path, so sync sends an undo as the plain edits it is.
  */
 function undo(done: Change): void {
+  if (readOnly.value) return;
   undoable = null;
   const target = rebaseState(
     exportState(),
@@ -492,6 +542,10 @@ export function changeNotice(
 ): void {
   const done = lastChange;
   lastChange = null;
+  if (readOnly.value) {
+    showReadOnly();
+    return;
+  }
   const saved = storageAvailable.value;
   showNotice(
     saved ? message : unsaved,
@@ -501,7 +555,18 @@ export function changeNotice(
   undoable = done;
 }
 
+/** Say why nothing changed, when a view-only tab is tapped. */
+export function showReadOnly(): void {
+  showNotice(
+    readOnly.value === "outdated"
+      ? "A newer version is open in another tab. Reload this one to keep using it."
+      : "This checklist is being edited in another tab.",
+    "error",
+  );
+}
+
 export function cycleSpecies(id: number): void {
+  if (readOnly.value) return;
   const before = exportState();
   const status = speciesSignal(id);
   status.value = cycleStatus(status.value);
@@ -511,6 +576,7 @@ export function cycleSpecies(id: number): void {
 }
 
 export function cycleForm(key: string): void {
+  if (readOnly.value) return;
   const before = exportState();
   const status = formSignal(key);
   const next = cycleStatus(status.value);
@@ -529,11 +595,13 @@ export function cycleForm(key: string): void {
 }
 
 export function setMode(nextMode: GameMode): void {
+  if (readOnly.value) return;
   mode.value = nextMode;
   persist();
 }
 
 export function toggleForms(): void {
+  if (readOnly.value) return;
   formsTracked.value = !formsTracked.value;
   persist();
 }
@@ -544,6 +612,7 @@ export function isStarred(id: number): boolean {
 
 /** Pin a species to the top of the Pokédex list, or release it again. */
 export function toggleStar(id: number): void {
+  if (readOnly.value) return;
   const before = exportState();
   const pinned = isStarred(id);
   starred.value = pinned
@@ -572,6 +641,7 @@ export function parseState(text: string): SavedState {
  * with a before-image, exempt from the guard that refuses accidental wipes.
  */
 function replaceState(state: SavedState, op: ReplaceOp): void {
+  if (readOnly.value) return;
   const before = exportState();
   applyState(state);
   const done = change(before, exportState(), true);
@@ -639,8 +709,10 @@ export function syncFromStorage(event: StorageEvent): void {
   if (synced.kind === "ignore") return;
   const state = synced.kind === "cleared" ? defaultState() : synced.state;
   seen = { key: activeSaveKey(), raw: event.newValue, state };
-  applyState(state);
-  otherTabListener?.(state);
+  if (!otherTabListener?.(state)) applyState(state);
+  // An Undo still on offer is worth more than this message (and it has already
+  // been withdrawn if the update touched what it would put back).
+  if (undoable) return;
   if (synced.kind === "cleared") {
     showNotice("Progress was cleared in another tab.");
     return;
@@ -650,4 +722,5 @@ export function syncFromStorage(event: StorageEvent): void {
 
 export function watchOtherTabs(): void {
   window.addEventListener("storage", syncFromStorage);
+  window.addEventListener("storage", hearBuild);
 }
