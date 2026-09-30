@@ -135,12 +135,20 @@ export function useThisTab(): void {
 }
 
 function reloadAndTake(name: string): void {
+  // View-only until the fresh page loads: this page holds no lock and has no sync.
+  setEditable(false);
   try {
     sessionStorage.setItem(TAKE_OVER_KEY, name);
   } catch {
-    return;
+    // Without the flag the fresh page simply waits its turn for the lock; reloading
+    // is still right, since this page must never edit again.
   }
   location.reload();
+}
+
+/** Signed out: a take-over the reload carried in is for an account no longer here. */
+export function forgetTakeOver(): void {
+  stealOnArrival = null;
 }
 
 /** This page's database connection for this lock has been shut for good. */

@@ -467,6 +467,36 @@ describe("fourth review: moving editing between tabs", () => {
     expect(recordsSent()).toContainEqual(["species:7", "caught"]);
   });
 
+  it("still reloads, view-only, when session storage refuses the take-over flag", async () => {
+    const { a, b } = await twoTabs();
+    await inTab(b, () => b.editing.useThisTab());
+    vi.stubGlobal("sessionStorage", {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota");
+      },
+      removeItem: () => {},
+    });
+    await inTab(b, () => b.engine.stopSync(false)); // the editing tab closes
+
+    // Stranded before: it released the lock, never reloaded, and nobody edited.
+    expect(reloads).toBe(1);
+    expect(a.state.readOnly.value).toBe("elsewhere");
+    await inTab(a, () => a.editing.useThisTab());
+    expect(reloads).toBe(2);
+  });
+
+  it("forgets a take-over carried into a page that comes up signed out", async () => {
+    const { a } = await twoTabs();
+    session.set("pokemon-checklist-take-over", "pokemon-checklist-sync:uid-a");
+    const late = await openTab(); // reads the flag as it loads
+    await inTab(late, () => late.editing.forgetTakeOver()); // what signing out does
+    await signIn(late);
+
+    expect(a.state.readOnly.value).toBeNull();
+    expect(late.state.readOnly.value).toBe("elsewhere");
+  });
+
   it("P7: pressing Use this tab repeatedly still leaves one editor", async () => {
     const { a, b } = await twoTabs();
     await inTab(a, () => a.connected[0]?.({ val: () => false }));

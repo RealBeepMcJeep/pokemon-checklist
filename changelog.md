@@ -2,6 +2,12 @@
 
 ## 2026-09-29
 
+- Only one tab can change the checklist at a time. Any other open tab shows it read-only, with a banner that stays on screen (even over the phone Pokédex) saying "This checklist is being edited in another tab"; **Use this tab** moves editing there, and nothing unsent in the other tab is lost. This replaces the earlier arrangement in which every tab could edit and one of them sent the others' changes, which could let an older change overwrite a newer one.
+- A tab that hands editing over stops talking to the server at once, so a change still on its way can't overwrite a newer one made in the other tab; taking editing back reloads that tab first. A tab that was asleep in the background no longer undoes the other tab's last changes when it takes over.
+- Reset, Restore and sending held clears check again, after you confirm, that this tab still edits.
+- If a newer version of the app is opened in another tab, an older tab stops editing and asks to be reloaded. After an update, reload the app on every device before pressing **Use this tab**.
+- Clearing a whole checklist by accident stays held back until you choose: **Put back** is the first choice, and **Send clears** says exactly what it clears ("3 Pokémon and 1 favourite") and asks first. The choice survives a reload and shows in other tabs.
+- After a reload, a stale copy that would empty the account no longer throws away new catches along with its clears; undoing a Reset that was still being sent records the right "before"; Undo no longer disappears when another tab changes something unrelated.
 - Added a read-only story-team mode to the local team-synergy tool: Butterfree stays in the catching slot while five suggestions cover OG-151-only, no-OG-151 and three mixed battler lineups from the current caught roster. It shows owned-stage evolution paths and treats party favorites as preferences, not locks.
 - Added a repeatable five-card image renderer using the project's Gen VII pixel-sprite atlas. Each phone-sized card labels the catcher, anchor and partners with Dex numbers, types, evolution paths, ranks and caveats; the saved JSON can be rendered again offline. No website or checklist save-format change.
 - Added four acquisition-checked move targets and their types to each Pokémon on those cards, prioritizing Prismatic Standard level-ups and obtainable TMs/tutors while labeling late-game gates and moves to teach before evolution. Egg/event-only moves are not silently recommended.

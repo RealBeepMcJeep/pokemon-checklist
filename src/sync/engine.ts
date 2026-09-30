@@ -29,6 +29,7 @@ import { initFirebase, signOutOfSync, watchAuth } from "./firebase";
 import {
   claimDeviceEditing,
   claimEditing,
+  forgetTakeOver,
   releaseEditing,
   takeOverNeedsReload,
 } from "../editing";
@@ -1020,6 +1021,7 @@ function newerBuildOpen(): void {
 function onAuthState(user: User | null, allowed: boolean): void {
   if (!user) {
     if (signInPending) return;
+    forgetTakeOver();
     // A tab that only followed another tab's sign-in keeps that tab's session flag.
     stopSync(!(followedSignIn && !activeUid));
     return;
