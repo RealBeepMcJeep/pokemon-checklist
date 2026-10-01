@@ -2,6 +2,8 @@
 
 ## 2026-10-01
 
+- Added a repeatable, read-only six-option catch-utility card in first-encounter order, with four verified moves and acquisition gates per row. Includes Butterfree, Kricketune, Gallade, Smeargle, Breloom and Parasect; labels delayed evolution, ordinary ability precautions, the male/stone gate and Smeargle's Sketch-donor setup instead of assuming breeding or SOS-only abilities. Private ownership labels refresh from the live roster; a sanitized fixture verifies offline rendering without Firebase or a data cache.
+
 - Added acquisition-checked Metagross move targets to the local team-card generator: Meteor Mash, Zen Headbutt and Bullet Punch carry their Metang level gates, while Earthquake is labeled as a later Tapu Village TM. Cards now support a Beldum-to-Metagross plan without assuming hidden abilities or breeding.
 
 ## 2026-09-29

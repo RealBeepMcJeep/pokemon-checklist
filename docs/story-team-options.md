@@ -41,3 +41,20 @@ Editorial move targets are independently validated against Standard level-ups (w
 Enriched JSON freezes acquisition labels for repeatable offline redraws. To refresh labels, remove `utility_moves` and each member's `moves` from a **private copy**, then rerender with the verified cache. Preserve the original. Legacy snapshots describe historical inputs, not current ownership.
 
 Reports expose source caught IDs, objective rules and search scope. Full-pool results are optimal only within the declared deterministic model/input assumptions. Disclose any candidate pruning and excluded counts. Before delivery, re-read caught IDs and compare against the snapshot; regenerate on change. No workflow command modifies statuses/favorites. Omit `--story-options` for the unchanged competitive mode.
+
+## Six catch-utility options on one card
+
+```bash
+python tools/catch_utility_card.py --uid <account-uid> \
+  --cache <verified-showdown-cache> --output-dir <output-directory>
+python tools/catch_utility_card.py --report-json <catch-utility.json> \
+  --output-dir <offline-output-directory>
+```
+
+Writes `catch-utility.png` in the same six-row pixel-art style and a private `catch-utility.json` snapshot. These are six **curated catching prospects**, including uncaught options, not a six-member battle party or the raw vanilla catcher score. The list is sorted by the base species' first unconditional regular encounter in the ordered Prismatic documentation: Butterfree (Caterpie), Kricketune (Kricketot), Gallade (Ralts), Smeargle, Breloom (Shroomish), Parasect (Paras). This is **first catch location**, not readiness of a complete four-move set. Encounter/time restrictions and level, TM, stone and setup gates remain visible.
+
+Every option has four distinct, acquisition-checked moves and exactly one sleep move. Butterfree cannot learn False Swipe and needs an HP-control partner; the other five can provide both. Kricketune's Sing is less reliable. Gallade requires a male, a Konikoni Dawn Stone and delaying Ralts evolution for Hypnosis L37. Breloom needs Spore on Shroomish L40 before evolving. Paras can use Spore L22 before evolving at L24. Avoid Effect Spore on Parasect/Breloom: it can accidentally poison the intended catch; Dry Skin/Poison Heal are ordinary slots, not SOS-only hidden abilities. A Capsule to switch between normal slots is sold after two trials; ownership labels do not prove an individual's sex, ability, level or available items.
+
+Smeargle is the specialist **setup project**, not a Route-2-ready complete catcher: all four moves come from separate Sketch copies and checked donors. It uses Spore / False Swipe / Soak / Mean Look rather than duplicate sleep/paralysis moves. The card labels donor species, levels and locations (and Iki Town for the donor's False Swipe TM); Sketch reappears at L11/21/31/.../91. Soak handles Grass-type powder immunity and Ghost-type False Swipe immunity, but does not remove sleep-blocking abilities. No set requires breeding, eggs or hidden-ability farming. Combat moves supplement the sets only when no further critical catching control is included; do not use them to perform safe 1-HP reduction.
+
+The generator validates the Standard replacement level lists, pinned move types/learnsets, ordinary ability slots and encounter provenance, rejecting unavailable sources or clipped labels. The JSON freezes those checks for offline redraws. Images and live roster snapshots remain outside git; the checked test fixture removes all personal ownership data. No website, roster or favorite data is changed.

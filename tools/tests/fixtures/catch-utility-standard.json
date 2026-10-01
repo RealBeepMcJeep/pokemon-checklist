@@ -1,0 +1,461 @@
+{
+  "schema": 1,
+  "source_caught_ids": [],
+  "caught_records": 0,
+  "rows": [
+    {
+      "base": "Caterpie",
+      "final": "Butterfree",
+      "owned_dex": 10,
+      "dex": 12,
+      "evolution": "Caterpie \u2192 Metapod L7 \u2192 Butterfree L10",
+      "note": "Compound Eyes: sleep 97.5%; needs a separate False Swipe user.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Bug",
+        "Flying"
+      ],
+      "encounter": {
+        "order": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "label": "Route 1 \u00b7 Grass 2 \u00b7 L2\u20133",
+        "location": "Route 1",
+        "species_id": 10,
+        "page": 4,
+        "rates": {
+          "single": 15
+        }
+      },
+      "moves": [
+        {
+          "name": "Sleep Powder",
+          "type": "Grass",
+          "source": {
+            "via": "level",
+            "form": "Butterfree",
+            "level": 13
+          },
+          "gate": "Butterfree L13",
+          "category": "sleep"
+        },
+        {
+          "name": "Bug Buzz",
+          "type": "Bug",
+          "source": {
+            "via": "level",
+            "form": "Butterfree",
+            "level": 31
+          },
+          "gate": "Butterfree L31",
+          "category": "combat/control"
+        },
+        {
+          "name": "Air Slash",
+          "type": "Flying",
+          "source": {
+            "via": "level",
+            "form": "Butterfree",
+            "level": 43
+          },
+          "gate": "Butterfree L43",
+          "category": "combat/control"
+        },
+        {
+          "name": "Roost",
+          "type": "Flying",
+          "source": {
+            "via": "TM",
+            "form": "Butterfree"
+          },
+          "gate": "TM19 \u00b7 Route 3",
+          "category": "combat/control"
+        }
+      ]
+    },
+    {
+      "base": "Kricketot",
+      "final": "Kricketune",
+      "owned_dex": 401,
+      "dex": 402,
+      "evolution": "Kricketot \u2192 Kricketune L10",
+      "note": "Sing: 55%; solo sleep + 1 HP. Swarm is fine; no hidden ability.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Bug"
+      ],
+      "encounter": {
+        "order": [
+          0,
+          0,
+          1,
+          6
+        ],
+        "label": "Route 1 \u00b7 Grass 2 \u00b7 night \u00b7 L2\u20133",
+        "location": "Route 1",
+        "species_id": 401,
+        "page": 4,
+        "rates": {
+          "day": 0,
+          "night": 15
+        }
+      },
+      "moves": [
+        {
+          "name": "Sing",
+          "type": "Normal",
+          "source": {
+            "via": "level",
+            "form": "Kricketune",
+            "level": 18
+          },
+          "gate": "Kricketune L18",
+          "category": "sleep"
+        },
+        {
+          "name": "False Swipe",
+          "type": "Normal",
+          "source": {
+            "via": "TM",
+            "form": "Kricketune"
+          },
+          "gate": "TM54 \u00b7 Iki Town",
+          "category": "falseswipe"
+        },
+        {
+          "name": "Taunt",
+          "type": "Dark",
+          "source": {
+            "via": "level",
+            "form": "Kricketune",
+            "level": 38
+          },
+          "gate": "Kricketune L38",
+          "category": "combat/control"
+        },
+        {
+          "name": "X-Scissor",
+          "type": "Bug",
+          "source": {
+            "via": "level",
+            "form": "Kricketune",
+            "level": 30
+          },
+          "gate": "Kricketune L30",
+          "category": "combat/control"
+        }
+      ]
+    },
+    {
+      "base": "Ralts",
+      "final": "Gallade",
+      "owned_dex": 280,
+      "dex": 475,
+      "evolution": "Ralts (Hypnosis L37) \u2192 Kirlia \u2192 Gallade (male + Dawn Stone)",
+      "note": "Keep male Ralts to L37; Dawn Stone: Konikoni City mart.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Psychic",
+        "Fighting"
+      ],
+      "encounter": {
+        "order": [
+          0,
+          0,
+          2,
+          4
+        ],
+        "label": "Route 1 \u00b7 Grass 3 \u00b7 L2\u20133",
+        "location": "Route 1",
+        "species_id": 280,
+        "page": 4,
+        "rates": {
+          "single": 15
+        }
+      },
+      "moves": [
+        {
+          "name": "Hypnosis",
+          "type": "Psychic",
+          "source": {
+            "via": "level",
+            "form": "Ralts",
+            "level": 37
+          },
+          "gate": "Ralts L37 \u00b7 before evolving \u00b7 delay evolution",
+          "category": "sleep"
+        },
+        {
+          "name": "False Swipe",
+          "type": "Normal",
+          "source": {
+            "via": "TM",
+            "form": "Gallade"
+          },
+          "gate": "TM54 \u00b7 Iki Town",
+          "category": "falseswipe"
+        },
+        {
+          "name": "Taunt",
+          "type": "Dark",
+          "source": {
+            "via": "TM",
+            "form": "Ralts"
+          },
+          "gate": "TM12 \u00b7 Route 13",
+          "category": "combat/control"
+        },
+        {
+          "name": "Psycho Cut",
+          "type": "Psychic",
+          "source": {
+            "via": "evolution",
+            "form": "Gallade",
+            "level": 0
+          },
+          "gate": "On evolution \u2192 Gallade",
+          "category": "combat/control"
+        }
+      ]
+    },
+    {
+      "base": "Smeargle",
+      "final": "Smeargle",
+      "owned_dex": 235,
+      "dex": 235,
+      "evolution": "Catch on Route 2; four Sketch copies required for the complete kit",
+      "note": "Setup project: Spore donor is on Akala; use Own Tempo or Technician.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Normal"
+      ],
+      "encounter": {
+        "order": [
+          0,
+          4,
+          0,
+          4
+        ],
+        "label": "Route 2 \u00b7 Grass 1 \u00b7 L8\u201311",
+        "location": "Route 2",
+        "species_id": 235,
+        "page": 8,
+        "rates": {
+          "single": 15
+        }
+      },
+      "moves": [
+        {
+          "name": "Spore",
+          "type": "Grass",
+          "source": {
+            "via": "sketch",
+            "donor": "Paras",
+            "donor_source": {
+              "via": "level",
+              "form": "Paras",
+              "level": 22
+            }
+          },
+          "gate": "Sketch \u2190 Paras L22 \u00b7 Brooklet Hill",
+          "category": "sleep"
+        },
+        {
+          "name": "False Swipe",
+          "type": "Normal",
+          "source": {
+            "via": "sketch",
+            "donor": "Kricketune",
+            "donor_source": {
+              "via": "TM",
+              "form": "Kricketune"
+            }
+          },
+          "gate": "Sketch \u2190 Kricketune TM54 \u00b7 Iki Town",
+          "category": "falseswipe"
+        },
+        {
+          "name": "Soak",
+          "type": "Water",
+          "source": {
+            "via": "sketch",
+            "donor": "Psyduck",
+            "donor_source": {
+              "via": "level",
+              "form": "Psyduck",
+              "level": 31
+            }
+          },
+          "gate": "Sketch \u2190 Psyduck L31 \u00b7 Sandy Cave",
+          "category": "antighost"
+        },
+        {
+          "name": "Mean Look",
+          "type": "Normal",
+          "source": {
+            "via": "sketch",
+            "donor": "Gastly",
+            "donor_source": {
+              "via": "level",
+              "form": "Gastly",
+              "level": 8
+            }
+          },
+          "gate": "Sketch \u2190 Gastly L8 \u00b7 Hau'oli Cemetery",
+          "category": "trapping"
+        }
+      ]
+    },
+    {
+      "base": "Shroomish",
+      "final": "Breloom",
+      "owned_dex": 285,
+      "dex": 286,
+      "evolution": "Shroomish \u2192 Breloom: delay evolution until AFTER Spore L40",
+      "note": "Use normal Poison Heal; avoid Effect Spore accidentally poisoning targets.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Grass",
+        "Fighting"
+      ],
+      "encounter": {
+        "order": [
+          1,
+          2,
+          0,
+          2
+        ],
+        "label": "Route 5 \u00b7 Grass 1 \u00b7 L18\u201321",
+        "location": "Route 5",
+        "species_id": 285,
+        "page": 21,
+        "rates": {
+          "single": 15
+        }
+      },
+      "moves": [
+        {
+          "name": "Spore",
+          "type": "Grass",
+          "source": {
+            "via": "level",
+            "form": "Shroomish",
+            "level": 40
+          },
+          "gate": "Shroomish L40 \u00b7 before evolving \u00b7 delay evolution",
+          "category": "sleep"
+        },
+        {
+          "name": "False Swipe",
+          "type": "Normal",
+          "source": {
+            "via": "TM",
+            "form": "Shroomish"
+          },
+          "gate": "TM54 \u00b7 Iki Town",
+          "category": "falseswipe"
+        },
+        {
+          "name": "Mach Punch",
+          "type": "Fighting",
+          "source": {
+            "via": "evolution",
+            "form": "Breloom",
+            "level": 0
+          },
+          "gate": "On evolution \u2192 Breloom",
+          "category": "combat/control"
+        },
+        {
+          "name": "Seed Bomb",
+          "type": "Grass",
+          "source": {
+            "via": "level",
+            "form": "Shroomish",
+            "level": 36
+          },
+          "gate": "Shroomish L36 \u00b7 before evolving",
+          "category": "combat/control"
+        }
+      ]
+    },
+    {
+      "base": "Paras",
+      "final": "Parasect",
+      "owned_dex": 46,
+      "dex": 47,
+      "evolution": "Paras \u2192 Parasect L24; Spore works on Paras already at L22",
+      "note": "Use normal Dry Skin; avoid Effect Spore accidentally poisoning targets.",
+      "ownership": "NOT CAUGHT",
+      "types": [
+        "Bug",
+        "Grass"
+      ],
+      "encounter": {
+        "order": [
+          1,
+          3,
+          0,
+          5
+        ],
+        "label": "Brooklet Hill \u00b7 Grass 1 (By entrance) \u00b7 day \u00b7 L20\u201323",
+        "location": "Brooklet Hill",
+        "species_id": 46,
+        "page": 23,
+        "rates": {
+          "day": 15,
+          "night": 0
+        }
+      },
+      "moves": [
+        {
+          "name": "Spore",
+          "type": "Grass",
+          "source": {
+            "via": "level",
+            "form": "Paras",
+            "level": 22
+          },
+          "gate": "Paras L22 \u00b7 before evolving",
+          "category": "sleep"
+        },
+        {
+          "name": "False Swipe",
+          "type": "Normal",
+          "source": {
+            "via": "TM",
+            "form": "Paras"
+          },
+          "gate": "TM54 \u00b7 Iki Town",
+          "category": "falseswipe"
+        },
+        {
+          "name": "Swords Dance",
+          "type": "Normal",
+          "source": {
+            "via": "TM",
+            "form": "Paras"
+          },
+          "gate": "TM75 \u00b7 Tapu Village (later)",
+          "category": "combat/control"
+        },
+        {
+          "name": "Seed Bomb",
+          "type": "Grass",
+          "source": {
+            "via": "level",
+            "form": "Parasect",
+            "level": 29
+          },
+          "gate": "Parasect L29",
+          "category": "combat/control"
+        }
+      ]
+    }
+  ],
+  "order_basis": "first regular encounter, not full moveset readiness",
+  "selection": "six curated utility prospects; not a battle optimizer or raw vanilla score"
+}
