@@ -57,6 +57,7 @@ GOALS = {
     "Vivillon": ("Bug Buzz", "Hurricane", "Quiver Dance", "Roost"),
     "Toucannon": ("Beak Blast", "Brick Break", "U-turn", "Roost"),
     "Tentacruel": ("Water Pulse", "Sludge Wave", "Giga Drain", "Ice Beam"),
+    "Metagross": ("Meteor Mash", "Zen Headbutt", "Bullet Punch", "Earthquake"),
 }
 
 

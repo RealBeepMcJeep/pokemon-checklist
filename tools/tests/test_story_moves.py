@@ -41,6 +41,17 @@ class StoryMovesTests(unittest.TestCase):
         self.assertTrue(any(s["via"] == "level" and s["form"] == "Monferno" and
                             s["level"] == 19 for s in infernape["flamewheel"]["sources"]))
 
+    def test_beldum_targets_preserve_pre_evolution_levels_and_late_tm_gate(self):
+        targets = {m["name"]: m for m in self.source.targets("Metagross", "Beldum")}
+        self.assertEqual(len(targets), 4)
+        self.assertEqual(targets["Meteor Mash"]["type"], "Steel")
+        self.assertEqual(targets["Meteor Mash"]["gate"], "Metang L44 · before evolving")
+        self.assertEqual(targets["Zen Headbutt"]["gate"], "Metang L32 · before evolving")
+        self.assertEqual(targets["Bullet Punch"]["gate"], "Metang L26 · before evolving")
+        self.assertEqual(targets["Earthquake"]["type"], "Ground")
+        self.assertEqual(targets["Earthquake"]["gate"], "TM26 · Tapu Village (later)")
+        self.assertTrue(all(m["source"]["via"] in ("level", "TM") for m in targets.values()))
+
     def test_not_breeding_event_or_overwritten_tm(self):
         zoroark = self.source.candidates("Zoroark", "Zorua")
         self.assertNotIn("sludgebomb", zoroark)

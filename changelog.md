@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01
+
+- Added acquisition-checked Metagross move targets to the local team-card generator: Meteor Mash, Zen Headbutt and Bullet Punch carry their Metang level gates, while Earthquake is labeled as a later Tapu Village TM. Cards now support a Beldum-to-Metagross plan without assuming hidden abilities or breeding.
+
 ## 2026-09-29
 
 - Rebuilt the local gallery around five independent objectives: OG, Non-OG, unrestricted Mixed, ordinary-level Pokédex expansion, and practical endgame Best. Butterfree stays first; old family bans are cleared and shared members are allowed. Full eligible-pool search now prepares scores once instead of reparsing every party. Cards preserve long evolution gates, show supported move targets for the refreshed roster, and no longer count an already-owned final battler as still evolving just because an intermediate is uncaught.
