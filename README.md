@@ -31,7 +31,8 @@ Open the separate [QR gallery](qr.html), also available at
 Its ordinary-code catalogue contains 244 attributed original images from the
 Bulbagarden Sun/Moon and Ultra Sun/Ultra Moon libraries, covering 198 species
 and their included forms—not the entire National Pokédex. Search by name or
-Dex number, filter by type or source library, and tap a card or QR to open a
+Dex number, sort by number or name in either direction (number ascending by default),
+filter by type or source library, and tap a card or QR to open a
 full-screen scanning view. It is a self-contained offline file; it has no
 account connection and does not read or change checklist progress.
 
@@ -63,6 +64,26 @@ python tools/qr_codec.py generate 25 --template references/qr-codes/images/30491
 ```
 
 Generated codes are labeled locally generated, not official or console-tested.
+
+### Experimental generated QR page
+
+The separate [experimental page](qr-experimental.html) covers all 807 Gen I–VII
+species and the alternate-form rows in the pinned Gen VII personal table. It
+shares the archive's card renderer, sorting, filters, full-screen scan viewer,
+checklist type-chip colors and pixel-sprite atlas. Sprites depict the base species,
+not necessarily the selected form. This page does not modify checklist progress.
+
+Every generated image is decoded back to raw bytes and its ordinary-code signature,
+species and form are checked during compilation. These are software checks, **not
+proof of in-game acceptance**. Numeric form rows may include battle-only or otherwise
+unsupported scanner forms; this is not every gender/shiny combination and it does
+not generate event gifts. The page includes staged console-test suggestions and
+distinguishes intended recognition, Wonder QR fallback and rejection.
+
+Live pages:
+- Checklist: <https://realbeepmcjeep.github.io/pokemon-checklist/>
+- Original QR archive: <https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>
+- Experimental QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
 They are not event-gift codes and are not mixed into the original-image gallery.
 
 ## Develop
