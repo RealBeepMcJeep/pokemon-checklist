@@ -329,8 +329,13 @@ class StoryCacheCLITests(unittest.TestCase):
     def test_card_live_command_forwards_bypass_into_real_story_cli(self):
         import story_team_cards as cards
         import subprocess
+        real_run = subprocess.run
         routed = []
         def run(command, **kwargs):
+            # subprocess is shared across modules: allow the real native kernel
+            # to run instead of routing its invocation back into the story CLI.
+            if len(command) < 2 or Path(command[1]).name != "team_synergy.py":
+                return real_run(command, **kwargs)
             routed.append(command)
             flags = ["--no-result-cache"] if "--no-result-cache" in command else []
             code, stdout, stderr = self.cli(*flags)
