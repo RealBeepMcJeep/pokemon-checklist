@@ -1,7 +1,7 @@
 import { byDex } from "../data";
 import { firstIncompleteLocation, uncaughtCatchNowRows } from "../domain";
 import { activeEncounters, focusedLocation, speciesStatus } from "../state";
-import { closeDrawer } from "../ui";
+import { closeDrawer, isMobile } from "../ui";
 import { PokemonIcon, StatusButton } from "./StatusControls";
 
 /**
@@ -23,8 +23,8 @@ export function CatchNext() {
   }
   const rows = uncaughtCatchNowRows(location, speciesStatus);
   return (
-    <div class="catch-next">
-      <strong>Catch next in {location.name}</strong>
+    <details class="catch-next" open={!isMobile.value}>
+      <summary><strong>Catch next in {location.name}</strong></summary>
       <ul>
         {rows.map((row) => {
           const name =
@@ -48,6 +48,6 @@ export function CatchNext() {
       >
         Go to {location.name}
       </button>
-    </div>
+    </details>
   );
 }

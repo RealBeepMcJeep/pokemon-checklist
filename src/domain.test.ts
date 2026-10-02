@@ -241,6 +241,24 @@ describe("checklist domain", () => {
     );
   });
 
+  it("prioritizes unseen catch-next rows without reordering either status group", () => {
+    const location = ENCOUNTERS_BY_MODE[DEFAULT_MODE].islands[0].locations[0];
+    const rows = catchNowRows(location);
+    const original = JSON.stringify(location);
+    const seen = new Set([rows[0].speciesId!, rows[2].speciesId!]);
+    const caught = rows[rows.length - 1].speciesId!;
+    const status = (id: number): Status => id === caught ? "caught" : seen.has(id) ? "seen" : "none";
+    const expected = [
+      ...rows.filter(row => status(row.speciesId!) === "none"),
+      ...rows.filter(row => status(row.speciesId!) === "seen"),
+    ];
+    expect(uncaughtCatchNowRows(location, status)).toEqual(expected);
+    expect(uncaughtCatchNowRows(location, () => "seen")).toEqual(rows);
+    expect(uncaughtCatchNowRows(location, () => "none")).toEqual(rows);
+    expect(uncaughtCatchNowRows(location, () => "caught")).toEqual([]);
+    expect(JSON.stringify(location)).toBe(original);
+  });
+
   it("finds a species in other game modes without repeating the current one", () => {
     const elsewhere = crossModeOccurrences(ENCOUNTERS_BY_MODE, DEFAULT_MODE, 731);
     expect(elsewhere.every((entry) => entry.mode !== DEFAULT_MODE)).toBe(true);

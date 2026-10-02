@@ -548,6 +548,65 @@ test("keeps the atlas out of computed styles and crops the right frame", async (
   expect(errors).toEqual([]);
 });
 
+test("keeps catch-next collapsed and out of the way when browsing the mobile Pokédex", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#sidebar-toggle").click();
+  await expect(page.locator("#pokedex.drawer-open")).toBeVisible();
+  const card = page.locator("#dex-selection .catch-next");
+  await expect(card).not.toHaveAttribute("open", "");
+  await expect(card.locator("summary")).toBeVisible();
+  await expect(card.locator("li").first()).toBeHidden();
+  for (const viewport of [{ width: 360, height: 480 }, { width: 360, height: 640 }, { width: 390, height: 844 }, { width: 412, height: 732 }]) {
+    await page.setViewportSize(viewport);
+    const panel = await page.locator("#dex-selection").boundingBox();
+    expect(panel!.height).toBeLessThan(120);
+    await expect(page.locator('[data-action="select"][data-species="1"]')).toBeInViewport();
+  }
+  await card.locator("summary").click();
+  await expect(card.locator("li").first()).toBeVisible();
+  const scrollResult = await page.locator(".dex-content").evaluate(container => {
+    const card = container.querySelector(".catch-next")!;
+    const before = card.getBoundingClientRect().top;
+    container.scrollTop = 500;
+    return { before, after: card.getBoundingClientRect().top, scroll: container.scrollTop };
+  });
+  expect(scrollResult.scroll).toBeGreaterThan(0);
+  expect(scrollResult.after).toBeLessThan(scrollResult.before - 100);
+  await page.locator(".dex-content").evaluate(container => { container.scrollTop = 0; });
+  await card.locator("summary").click();
+  await expect(card.locator("li").first()).toBeHidden();
+  await page.locator('[data-action="select"][data-species="1"]').click();
+  await expect(page.locator("#dex-selection .selected-title")).toContainText("Bulbasaur");
+  await page.locator("#dex-selection .deselect-button").click();
+  await expect(card.locator("li").first()).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test("updates unseen-first catch-next order live without changing the route or closing suggestions", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#sidebar-toggle").click();
+  const card = page.locator("#dex-selection .catch-next");
+  await card.locator("summary").click();
+  const names = await card.locator(".catch-next-name").allTextContents();
+  await card.locator("li").first().locator('[data-action="species"]').click();
+  await page.locator('#dex-list [data-action="species"][data-species="731"]').click();
+  await page.locator(".dex-content").evaluate(container => { container.scrollTop = 0; });
+  await expect(card).toHaveAttribute("open", "");
+  await expect(card.locator("strong")).toHaveText("Catch next in Route 1");
+  await expect(card.locator(".catch-next-name")).toHaveText([...names.slice(1), names[0]]);
+  await expect(card.locator("li").last().locator('[data-species="731"]')).toContainText("👁");
+  await card.locator("summary").click();
+  await page.screenshot({ path: testInfo.outputPath("catch-next-mobile-collapsed.png") });
+  await card.locator("summary").click();
+  await page.screenshot({ path: testInfo.outputPath("catch-next-mobile-expanded.png") });
+  await card.locator(".catch-next-jump").click();
+  await expect(page.locator("#pokedex.drawer-open")).toHaveCount(0);
+  await expect(page.locator('[data-location-id="melemele-island/route-1"][open]')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
 test("shows a live catch-next card as the Pokédex's empty-selection state", async ({
   page,
 }, testInfo) => {

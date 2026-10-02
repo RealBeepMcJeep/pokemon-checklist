@@ -69,12 +69,27 @@ function DexCount({ filtered }: { filtered: number }) {
   );
 }
 
+// Keep selection subscriptions inside this panel: selecting a species must not
+// invalidate the parent that mounts all 807 Pokédex rows.
+function SelectionPanel() {
+  return (
+    <div
+      class={`dex-selection ${selectedDex.value === null ? "dex-selection-empty" : ""}`}
+      id="dex-selection"
+      tabIndex={-1}
+      aria-live="polite"
+    >
+      <Selection />
+    </div>
+  );
+}
+
 function Selection() {
   const selected = selectedDex.value;
   if (!selected) {
     return (
       <div class="empty">
-        <p>Select a Pokémon to see its status and wild locations.</p>
+        <p class="selection-hint">Select a Pokémon to see its status and wild locations.</p>
         <CatchNext />
       </div>
     );
@@ -399,14 +414,7 @@ export function Pokedex() {
           </details>
         </div>
         <div class="dex-content">
-          <div
-            class="dex-selection"
-            id="dex-selection"
-            tabIndex={-1}
-            aria-live="polite"
-          >
-            <Selection />
-          </div>
+          <SelectionPanel />
           <div class="dex-list" id="dex-list">
             {rows.slice(0, mountedRows).map((pokemon) => (
               <div class="dex-row" key={pokemon.id} hidden={!matches(pokemon)}>

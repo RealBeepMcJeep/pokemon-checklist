@@ -1011,10 +1011,12 @@ tbody tr:hover {
   background: var(--link-bg);
   font-size: 0.78rem;
 }
-.catch-next > strong {
-  display: block;
-  margin-bottom: 0.35rem;
+.catch-next > summary {
+  cursor: pointer;
   color: var(--accent-bright);
+}
+.catch-next[open] > summary {
+  margin-bottom: 0.35rem;
 }
 .catch-next ul {
   display: grid;

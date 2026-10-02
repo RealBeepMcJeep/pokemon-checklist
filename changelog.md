@@ -2,6 +2,8 @@
 
 ## 2026-10-02
 
+- Mobile Pokédex catch suggestions now start collapsed and scroll away instead of pinning over the list. Expand them with one tap; desktop suggestions remain expanded. Unseen Pokémon are listed before seen Pokémon within the suggested route, without changing route order.
+
 - QR galleries now default to National Pokédex number order, with number/name sorting in both directions, and use the checklist's shared type-chip colors.
 - Added a separate experimental generated-code page for all 807 Gen I–VII species and pinned alternate-form rows, with software signature/PNG verification and a staged in-game test guide. Console recognition is explicitly untested; ordinary codes do not grant Pokémon.
 - Added a separate offline QR gallery with 244 attributed original Pokédex codes, pixel sprites, form-aware types, search/source-library filters and a full-screen scanning view. The checklist and its saved progress remain unchanged. Catalogue provenance is explicitly distinguished from game acceptance; Ultra-only codes in original Sun/Moon remain untested.

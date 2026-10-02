@@ -371,9 +371,12 @@ export function uncaughtCatchNowRows(
   location: Location,
   statusOf: (id: number) => Status,
 ): EncounterRow[] {
-  return catchNowRows(location).filter(
-    (row) => row.speciesId && statusOf(row.speciesId) !== "caught",
-  );
+  return catchNowRows(location)
+    .filter((row) => row.speciesId && statusOf(row.speciesId) !== "caught")
+    .sort((a, b) =>
+      Number(statusOf(a.speciesId!) === "seen") -
+      Number(statusOf(b.speciesId!) === "seen"),
+    );
 }
 
 /**

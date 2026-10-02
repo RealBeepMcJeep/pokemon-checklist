@@ -41,6 +41,20 @@
     max-height: calc(100vh - 9rem);
     max-height: calc(100dvh - 9rem);
   }
+  /* Catch suggestions are optional content, not a second sticky header above
+     the list. Expanded suggestions must scroll away, even on short phones. */
+  .dex-selection-empty {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+  .dex-selection-empty .selection-hint {
+    display: none;
+  }
+  .catch-next > summary {
+    min-height: 2.75rem;
+    align-content: center;
+  }
   .backdrop {
     position: fixed;
     z-index: 20;
