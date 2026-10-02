@@ -63,11 +63,43 @@ async function openGallery(page: Page, project: string): Promise<string[]> {
   return errors;
 }
 
+test("gift cards use the shared mobile viewer with separate navigation and accessible close/back", async ({ page }, testInfo) => {
+  const errors = await openGallery(page, testInfo.project.name);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("#search").fill("not a Pokémon");
+  const gifts = page.locator("#promotional-gifts .gift-card");
+  await expect(gifts).toHaveCount(2);
+  const opener = gifts.first().locator(".card-open");
+  await gifts.first().locator(".qr-original").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.locator("#scan-title")).toHaveText("Magearna · Event gift");
+  await expect(page.locator("#scan-details")).toContainText("US/American-region");
+  await expect(page.locator("#scan-image")).toHaveJSProperty("naturalWidth", 147);
+  await expect(page.locator("#scan-close")).toBeFocused();
+  await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#scan-source-link")).toBeFocused();
+  await page.locator("#scan-next").click();
+  await expect(page.locator("#scan-title")).toHaveText("Partner Cap Pikachu · Event gift");
+  await expect(page.locator("#scan-details")).toContainText("Pikachu Valley");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#scan-title")).toHaveText("Magearna · Event gift");
+  await page.locator("#scan-close").click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(opener).toBeFocused();
+  await expect(page.locator("html")).not.toHaveCSS("overflow", "hidden");
+  await opener.click();
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(opener).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
 test("renders the complete offline source archive and composes search/type/library filters", async ({ page }, testInfo) => {
   const errors = await openGallery(page, testInfo.project.name);
-  await expect(page.locator(".qr-original")).toHaveCount(244);
+  await expect(page.locator("#ordinary-gallery .qr-original")).toHaveCount(244);
   await expect(page.locator(".sprite-atlas").first()).toHaveJSProperty("naturalWidth", 1280);
-  await expect(page.locator("#promotional-gifts")).toContainText("No verified promotional gift records are included");
+  await expect(page.locator("#promotional-gifts .gift-card")).toHaveCount(2);
   await expect(page.locator("#ordinary-gallery")).toContainText("Rowlet");
 
   for (const width of [360, 390, 1440]) {
