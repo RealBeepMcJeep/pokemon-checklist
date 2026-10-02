@@ -24,9 +24,9 @@
     .control input:focus-visible, .control select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #8be1d9; outline-offset: 2px; }
     .result-count { min-height: 24px; margin: 10px 0 14px; color: #abb7c7; font-size: .9rem; }
     .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 14px; align-items: stretch; }
-    .qr-card { min-width: 0; overflow: hidden; border: 1px solid #334155; border-radius: 15px; background: linear-gradient(145deg, #1b2431, #151b26); box-shadow: 0 5px 18px #0003; }
+    .qr-card, .gift-card { min-width: 0; overflow: hidden; border: 1px solid #334155; border-radius: 15px; background: linear-gradient(145deg, #1b2431, #151b26); box-shadow: 0 5px 18px #0003; }
     .card-open { display: flex; width: 100%; height: 100%; min-width: 0; flex-direction: column; align-items: stretch; gap: 10px; padding: 10px; border: 0; background: transparent; color: inherit; text-align: left; cursor: zoom-in; }
-    .qr-card:hover { border-color: #7186a3; transform: translateY(-1px); }
+    .qr-card:hover, .gift-card:hover { border-color: #7186a3; transform: translateY(-1px); }
     .qr-frame { display: grid; width: 100%; aspect-ratio: 1; place-items: center; overflow: hidden; border-radius: 9px; background: #fff; }
     .qr-original { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
     .card-meta { display: grid; min-width: 0; width: 100%; gap: 8px; }
@@ -44,6 +44,10 @@
     .gift-section { margin: 30px 0 24px; padding: 18px; border: 1px solid #536071; border-radius: 13px; background: #171d27; }
     .gift-section h2, .credits h2 { margin: 0 0 6px; font-size: 1rem; }
     .gift-section p, .credits p { margin: 0; color: #b7c1cf; line-height: 1.5; }
+    .gift-details, .gift-sources { font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .gift-sources { padding: 10px; }
+    .gift-sources a { color: #9be4dc; }
+    #gift-cards { margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
     .credits { margin: 0 0 28px; padding: 16px 0 26px; border-top: 1px solid #344154; }
     .credits a, .scan-credits a { color: #9be4dc; text-underline-offset: 3px; overflow-wrap: anywhere; }
     .credits ul { display: grid; gap: 7px; margin: 10px 0 0; padding-left: 20px; color: #bdc8d7; font-size: .88rem; }
@@ -68,7 +72,7 @@
       .control:first-child { grid-column: 1 / -1; }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .card-open { gap: 7px; padding: 7px; }
-      .qr-card { border-radius: 11px; }
+      .qr-card, .gift-card { border-radius: 11px; }
       .qr-frame { border-radius: 7px; }
       .card-meta { gap: 6px; }
       .species-name { font-size: .91rem; }
@@ -109,11 +113,12 @@
     </section>
     <section id="promotional-gifts" class="gift-section" aria-labelledby="gift-heading">
       <h2 id="gift-heading">Promotional gift QR codes — separate collection</h2>
-      <p>No verified promotional gift records are included in this build. Gift codes are kept separate from the ordinary Pokédex archive and will only appear here when their source records are independently verified.</p>
+      <p>Gift codes are kept separate from the ordinary Pokédex archive. Two source-backed gifts: source hashes and raw QR payloads verified offline; event signature and console acceptance not tested. Magearna uses a verified square crop of the preserved original source image.</p>
+      <div id="gift-cards" class="cards">__GIFT_CARDS__</div>
     </section>
     <footer class="credits" aria-labelledby="credits-heading">
       <h2 id="credits-heading">Credits &amp; provenance</h2>
-      <p>The scan view preserves each original PNG. Source links and attribution stay outside the white QR panel.</p>
+      <p>The ordinary scan view preserves each original PNG; gift scans use their verified presentation images. Source links and attribution stay outside the white QR panel.</p>
       <ul>
         <li>Original image archive: <a href="https://archives.bulbagarden.net/wiki/Category:Pok%C3%A9mon_Sun_and_Moon_QR_codes" target="_blank" rel="noopener noreferrer">Bulbagarden Archives — Sun/Moon QR category</a> and <a href="https://archives.bulbagarden.net/wiki/Category:Pok%C3%A9mon_Ultra_Sun_and_Ultra_Moon_QR_codes" target="_blank" rel="noopener noreferrer">Ultra Sun/Ultra Moon QR category</a>.</li>
         <li>Types and form rows: <a href="https://github.com/kwsch/PKHeX/tree/542111fc8584ff29c9d1455553b8acd0e1f8a59a" target="_blank" rel="noopener noreferrer">PKHeX</a>, pinned commit <code>542111fc8584ff29c9d1455553b8acd0e1f8a59a</code>; local derived form-type metadata includes its source-table hash.</li>
@@ -141,7 +146,8 @@
     (() => {
       "use strict";
       const atlasSource = "__ATLAS_DATA_URI__";
-      const cards = Array.from(document.querySelectorAll(".qr-card"));
+      const cards = Array.from(document.querySelectorAll("#ordinary-gallery .qr-card"));
+      const allScanCards = Array.from(document.querySelectorAll(".qr-card, .gift-card"));
       const search = document.getElementById("search");
       const typeFilter = document.getElementById("type-filter");
       const libraryFilter = document.getElementById("library-filter");
@@ -190,7 +196,7 @@
       typeFilter.addEventListener("change", applyFilters);
       libraryFilter.addEventListener("change", applyFilters);
 
-      function visibleCards() { return cards.filter((card) => !card.hidden); }
+      function visibleCards() { return allScanCards.filter((card) => !card.hidden && Boolean(card.dataset.gift) === Boolean(selectedCard?.dataset.gift)); }
       function setCard(card) {
         selectedCard = card;
         const dex = Number(card.dataset.dex);
@@ -199,12 +205,12 @@
         const types = (card.dataset.types || "").split(" ").join(" / ");
         const sourceImage = card.querySelector(".qr-original");
         scanTitle.textContent = `${name} · ${form}`;
-        scanDetails.textContent = `National Pokédex #${String(dex).padStart(3, "0")} · ${types} type${types.includes(" / ") ? "s" : ""}`;
+        scanDetails.textContent = card.dataset.scanDetails || `National Pokédex #${String(dex).padStart(3, "0")} · ${types} type${types.includes(" / ") ? "s" : ""}`;
         scanImage.src = sourceImage.src;
-        scanImage.alt = `${name}, ${form} form, original Pokédex QR code`;
+        scanImage.alt = sourceImage.alt;
         scanSource.href = card.dataset.sourceUrl;
         scanSource.textContent = card.dataset.sourceTitle;
-        scanLibraries.textContent = `Listed in: ${card.dataset.libraryLabels}`;
+        scanLibraries.textContent = card.dataset.gift ? "Source-backed event gift; signature/console not tested" : `Listed in: ${card.dataset.libraryLabels}`;
         const listed = visibleCards();
         prevButton.disabled = listed.length < 2;
         nextButton.disabled = listed.length < 2;
@@ -256,9 +262,9 @@
         const index = listed.indexOf(selectedCard);
         setCard(listed[(index + delta + listed.length) % listed.length]);
       }
-      document.getElementById("cards").addEventListener("click", (event) => {
+      document.querySelector("main").addEventListener("click", (event) => {
         const button = event.target.closest(".card-open");
-        if (button) openViewer(button.closest(".qr-card"));
+        if (button) openViewer(button.closest(".qr-card, .gift-card"));
       });
       closeButton.addEventListener("click", () => closeViewer());
       prevButton.addEventListener("click", () => step(-1));

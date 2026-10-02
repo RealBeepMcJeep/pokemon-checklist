@@ -12,6 +12,12 @@ from pathlib import Path
 import re
 import sys
 from typing import Any
+from urllib.parse import urlsplit
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.build_qr_catalog import verify_catalog
+from tools.qr_codec import decode_png
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "references" / "qr-codes"
@@ -148,7 +154,9 @@ def _load_source_data(root: Path) -> tuple[list[dict[str, Any]], list[str], byte
         image_relpath = image.get("file")
         if not isinstance(image_relpath, str) or Path(image_relpath).is_absolute() or ".." in Path(image_relpath).parts:
             raise GalleryBuildError(f"Invalid original image path for {name}")
-        image_path = catalog / image_relpath
+        image_path = (catalog / image_relpath).resolve()
+        if not image_path.is_relative_to(catalog.resolve()):
+            raise GalleryBuildError(f"Unsafe original image path for {name}")
         try:
             image_bytes = image_path.read_bytes()
         except OSError as error:
@@ -180,6 +188,9 @@ def _load_source_data(root: Path) -> tuple[list[dict[str, Any]], list[str], byte
         })
     if counts != EXPECTED_CATEGORY_COUNTS:
         raise GalleryBuildError(f"Source-library membership counts changed: {counts!r}")
+    report = verify_catalog(catalog)
+    if not report["ok"] or report["checked"] != EXPECTED_RECORDS or report["signatureVerified"] != EXPECTED_RECORDS:
+        raise GalleryBuildError(f"Ordinary QR offline verification failed: {report}")
     return normalized, type_names, atlas
 
 
@@ -214,9 +225,86 @@ def _render_card(record: dict[str, Any]) -> str:
     )
 
 
+def _load_gifts(root: Path) -> list[dict[str, Any]]:
+    catalog = root / "references/qr-gifts"
+    manifest = _read_json(catalog / "manifest.json", "promotional gift manifest")
+    events = manifest.get("events")
+    expected = {"magearna-us-american-region": (801, 5, "MagearnaEvent"),
+                "partner-cap-pikachu-na-pal": (25, 9, "CapPikachuEvent")}
+    if not isinstance(events, list) or len(events) != 2 or {e.get("id") for e in events} != set(expected):
+        raise GalleryBuildError("Expected exactly the two source-backed promotional gifts")
+    types = _read_json(root / "references/qr-codes/gen7-form-types.json", "canonical types")["typesBySpeciesForm"]
+    hosts = {"www.pokemon.com", "mcdn.pokemon.com", "bulbapedia.bulbagarden.net",
+             "archives.bulbagarden.net", "www.nintendo-insider.com", "www.serebii.net", "raw.githubusercontent.com"}
+    def source_url(value: str) -> None:
+        parsed = urlsplit(value)
+        if parsed.scheme != "https" or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 443):
+            raise GalleryBuildError(f"Unsafe gift source URL: {value!r}")
+    def asset(relative: str, digest: str) -> tuple[Path, bytes]:
+        if not isinstance(relative, str) or Path(relative).is_absolute() or ".." in Path(relative).parts:
+            raise GalleryBuildError("Unsafe gift asset path")
+        path = (catalog / relative).resolve()
+        if not path.is_relative_to(catalog.resolve()):
+            raise GalleryBuildError("Unsafe gift asset path")
+        data = path.read_bytes()
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest) or hashlib.sha256(data).hexdigest() != digest:
+            raise GalleryBuildError(f"Gift asset hash mismatch: {relative}")
+        return path, data
+    cards = []
+    for event in events:
+        dex, key, family = expected[event["id"]]
+        obs = event["payload_observations"]
+        for url in [event["image_page_source"], event["image_direct_source"], obs["family_mapping_source"], *[s["source"] for s in event["source_quotes"]]]:
+            source_url(url)
+        image_path, _ = asset(event["asset_path"], event["asset_sha256"])
+        _, raw = asset(event["raw_payload_path"], event["raw_payload_sha256"])
+        scan_path, scan = asset(event["presentation_image"], event.get("presentation_sha256", event["asset_sha256"]))
+        if (event["dex_number"] != dex or len(raw) != 106 or raw.hex() != event["raw_payload_hex"]
+                or raw[96:100] != b"POKE" or int.from_bytes(raw[100:104], "little") != key
+                or obs["qr_count"] != 1 or obs["payload_bytes"] != 106 or obs["POKE_marker_offset"] != 96
+                or obs["MemeCrypto_key_index_observed"] != key or obs["event_family_name_in_pinned_PKHeX_enum"] != family
+                or obs["signature_verified"] is not False or obs["console_scan_tested"] is not False):
+            raise GalleryBuildError("Gift payload/family evidence drift")
+        if decode_png(image_path) != raw or decode_png(scan_path) != raw:
+            raise GalleryBuildError("Gift source/presentation raw payload mismatch")
+        with Image.open(image_path) as original, Image.open(scan_path) as presentation:
+            if presentation.size != (147, 147):
+                raise GalleryBuildError("Gift scanning image must preserve its verified square")
+            crop = event.get("presentation_crop_box")
+            if crop is not None and (crop != [216, 20, 363, 167] or original.crop(crop).convert("RGB").tobytes() != presentation.convert("RGB").tobytes()):
+                raise GalleryBuildError("Gift presentation crop drift")
+        event = dict(event)
+        event["types"] = types[f"{dex}:0"]
+        event["image_data"] = "data:image/png;base64," + base64.b64encode(scan).decode("ascii")
+        cards.append(event)
+    return cards
+
+
+def _render_gift(event: dict[str, Any]) -> str:
+    steps = " ".join(event["unlock_and_redeem"])
+    details = "Eligible games: " + ", ".join(event["eligible_games"]) + ". Region: " + event["region_applicability"] + " Prerequisites and redemption: " + steps
+    sprite_note = "Base species icon; cap not pictured." if event["dex_number"] == 25 else "Base species icon."
+    card = _render_card({"id": event["dex_number"], "name": event["display_name"], "form_label": "Event gift",
+        "form_id": 0, "types": event["types"], "categories": [], "source_url": event["image_page_source"],
+        "source_title": event["display_name"] + " distribution source", "image_data": event["image_data"]})
+    card = card.replace('class="qr-card"', f'class="gift-card" data-gift="{_escape(event["id"])}" data-scan-details="{_escape(details)}"')
+    card = card.replace('Source library membership', 'Promotional gift — not an ordinary Dex scan')
+    card = card.replace('Pokédex QR code', 'promotional gift QR code').replace('Original ', 'Source-backed ')
+    info = f'<span class="dex-form">{_escape(sprite_note)}</span><span class="gift-details">{_escape(details)}</span>'
+    info += f'<span class="gift-details">{_escape(event["expiry"])} Repeat/per-save limit unknown.</span>'
+    card = card.replace('</span></button>', info + '</span></button>')
+    urls = list(dict.fromkeys([event["image_page_source"], *[s["source"] for s in event["source_quotes"]]]))
+    links = " · ".join(f'<a href="{_escape(url)}" target="_blank" rel="noopener noreferrer">{_escape(urlsplit(url).hostname)}</a>' for url in urls)
+    return card.replace('</article>', f'<p class="gift-sources">Sources: {links}</p></article>')
+
+
 def compile_gallery(root: Path = ROOT) -> str:
     root = Path(root).resolve()
-    records, type_names, atlas = _load_source_data(root)
+    try:
+        gifts = _load_gifts(root)
+        records, type_names, atlas = _load_source_data(root)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise GalleryBuildError(f"Source verification failed: {error}") from error
     try:
         template = (root / "tools" / "qr_gallery_template.html").read_text(encoding="utf-8")
     except OSError as error:
@@ -227,6 +315,7 @@ def compile_gallery(root: Path = ROOT) -> str:
             f'<option value="{_escape(type_name)}">{_escape(type_name)}</option>'
             for type_name in type_names
         ), 1),
+        "__GIFT_CARDS__": ("\n".join(_render_gift(event) for event in gifts), 1),
         "__CARDS__": ("\n".join(_render_card(record) for record in records), 1),
         "__ATLAS_DATA_URI__": ("data:image/png;base64," + base64.b64encode(atlas).decode("ascii"), 1),
     }

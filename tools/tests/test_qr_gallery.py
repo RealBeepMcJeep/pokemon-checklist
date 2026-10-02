@@ -7,11 +7,12 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.build_qr_gallery import compile_gallery, main
+from tools.build_qr_gallery import GalleryBuildError, compile_gallery, main
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = ROOT / "references/qr-codes/manifest.json"
@@ -100,7 +101,13 @@ class QRGalleryCompilerTests(unittest.TestCase):
         self.assertIn('id="promotional-gifts"', self.html)
         gift_section = self.html.split('id="promotional-gifts"', 1)[1].split("</section>", 1)[0]
         self.assertNotIn('class="qr-card', gift_section)
-        self.assertIn("No verified promotional gift records are included", gift_section)
+        self.assertEqual(gift_section.count('class="gift-card"'), 2)
+        self.assertIn("Hau’oli", gift_section)
+        self.assertIn("Pikachu Valley", gift_section)
+        self.assertIn("cap not pictured", gift_section)
+        self.assertIn("US/American-region", gift_section)
+        self.assertIn("American/North American and PAL", gift_section)
+        self.assertIn("signature", gift_section)
         self.assertIn("gift codes are kept separate from the ordinary pokédex archive", self.html.lower())
 
     def test_generated_document_is_offline_self_contained_and_credits_are_not_in_scan_image(self):
@@ -113,6 +120,35 @@ class QRGalleryCompilerTests(unittest.TestCase):
         self.assertIn("archives.bulbagarden.net", self.html)
         self.assertIn("PokeAPI/sprites", self.html)
         self.assertIn('aria-modal="true"', self.html)
+
+    def test_gift_and_ordinary_evidence_drift_fails_closed(self):
+        cases = ["path", "url", "hash", "binary", "hex", "key", "family", "decoded", "signature"]
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for folder in ("references", "tools", "data", "assets"):
+                    shutil.copytree(ROOT / folder, root / folder)
+                gift_path = root / "references/qr-gifts/manifest.json"
+                gifts = json.loads(gift_path.read_text())
+                event = gifts["events"][0]
+                if case == "path": event["asset_path"] = "../qr-codes/manifest.json"
+                elif case == "url": event["source_quotes"][0]["source"] = "javascript:alert(1)"
+                elif case == "hash": event["asset_sha256"] = "0" * 64
+                elif case == "binary":
+                    (root / "references/qr-gifts" / event["raw_payload_path"]).write_bytes(b"bad")
+                elif case == "hex": event["raw_payload_hex"] = "00" * 106
+                elif case == "key": event["payload_observations"]["MemeCrypto_key_index_observed"] = 3
+                elif case == "family": event["payload_observations"]["event_family_name_in_pinned_PKHeX_enum"] = "ordinary-dex"
+                else:
+                    path = root / "references/qr-codes/manifest.json"
+                    manifest = json.loads(path.read_text())
+                    row = manifest["records"][0]
+                    if case == "decoded": row["decoded"]["genderCode"] ^= 1
+                    else: row["payload"]["bodyHex"] = "00" * (len(row["payload"]["bodyHex"]) // 2)
+                    path.write_text(json.dumps(manifest))
+                gift_path.write_text(json.dumps(gifts))
+                with self.assertRaises(GalleryBuildError):
+                    compile_gallery(root)
 
     def test_cli_build_and_check_are_deterministic_and_check_fails_on_drift(self):
         with tempfile.TemporaryDirectory() as directory:
