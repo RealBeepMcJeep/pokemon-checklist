@@ -25,8 +25,8 @@ Latest compatibility hypothesis to investigate: the user suspects Ultra accepts 
 ## Acceptance checkpoints
 
 - [x] Fetch clean baseline; local main matches origin/main; deployed checklist bytes match origin/main:index.html; baseline npm run check passes (184 app tests, 147 Python tests, 11 Node tests).
-- [ ] M1 Protocol: real PNG raw decode + signature/decryption + field parsing; mutation/truncation tests; generated binary PNG round-trips; attributed source fixtures; user-facing format/compatibility report.
-- [ ] M2 Catalogue: complete paginated import, inventory reconciliation, all-record statuses, offline hash verification/rebuild, game/form/type evidence.
+- [x] M1 Protocol: real PNG raw decode + signature/decryption + field parsing; mutation/truncation tests; generated binary PNG round-trips; attributed source fixtures; user-facing format/compatibility report. Parent re-ran 24 focused tests and independently checked the reviewed implementation.
+- [x] M2 Catalogue: complete paginated import, inventory reconciliation, all-record statuses, offline hash verification/rebuild, game/form/type evidence. 244 ordinary images/payloads, 198 species; all signatures verified. Parent independently reconciled 1,116 form-type rows with the pinned USUM personal table.
 - [ ] M3 Gallery: real full catalogue renders; standalone and HTTP search/type/catalogue filters; whole-card/QR viewer; keyboard/touch close/navigation; no overflow at 360/390/1440 widths; no external resource requests, including offline operation.
 - [ ] Screenshot software-decode checks of both an actual card and large viewer reproduce original bytes; visual PNG review. Explicitly distinguish these from unperformed physical-console tests.
 - [ ] Combined project gates and both browser projects pass; build/check reproducibility; committed checklist index.html remains byte-identical to baseline unless an explicit unrelated build-stamp normalization is necessary (avoid it).

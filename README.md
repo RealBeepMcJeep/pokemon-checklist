@@ -42,6 +42,14 @@ original Sun/Moon remains unverified; points or successful software decoding
 are not proof that the intended species was recognized. Promotional gifts
 and Island Scan are different mechanisms.
 
+Promotional gifts are in a separate section: an American-region Magearna code
+for all four games after becoming Champion, and the shared American/PAL
+Partner Cap Pikachu code for Ultra Sun/Ultra Moon after reaching Akala Island.
+The cards give the region, game eligibility and claim steps. These are
+source-backed original event codes, not generated gifts; their raw PNG
+payloads were checked, but no console redemption or event-signature
+verification was performed. See the [gift research and sources](references/qr-gifts/report.md).
+
 The [protocol and catalogue documentation](references/qr-codes/PROTOCOL.md)
 explains raw-byte decoding, signature verification, locally generated codes,
 source provenance, and the limits of these out-of-game checks. Refreshing the

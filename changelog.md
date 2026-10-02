@@ -3,6 +3,7 @@
 ## 2026-10-02
 
 - Added a separate offline QR gallery with 244 attributed original Pokédex codes, pixel sprites, form-aware types, search/source-library filters and a full-screen scanning view. The checklist and its saved progress remain unchanged. Catalogue provenance is explicitly distinguished from game acceptance; Ultra-only codes in original Sun/Moon remain untested.
+- Added separate source-backed Magearna and Partner Cap Pikachu promotional gift codes, with regional restrictions, eligible games and redemption steps. Event QR payloads remain distinct from ordinary seen-entry scans and are not presented as locally generated or console-tested.
 - Added a reproducible ordinary-code inspection/generation toolkit and offline source-image, raw-byte and signature checks. Generated codes are not event gifts or a promise of console acceptance.
 
 ## 2026-10-01
