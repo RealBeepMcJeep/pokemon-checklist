@@ -1,6 +1,8 @@
 # Approved goal: reverse-engineered Gen VII QR toolkit and standalone gallery
 
-User approval: research and build the reverse-engineering route FIRST, then publish a separate qr.html beside the unchanged checklist on GitHub Pages. Explain that Gen VII games support older-generation species; distinguish shared QR format from regional-Pokédex applicability and special event eligibility. Do not claim stock SM and USUM are generally incompatible.
+User approval: research and build the reverse-engineering route FIRST, then publish a separate qr.html beside the unchanged checklist on GitHub Pages. Explain that Gen VII games support older-generation species; distinguish shared QR format from regional-Pokédex applicability and special event eligibility. Do not infer universal compatibility or incompatibility from category names.
+
+Latest compatibility hypothesis to investigate: the user suspects Ultra accepts regular codes while Sun rejects Ultra codes. Required comparison: shared Rowlet/Butterfree codes versus USUM-category-only older species such as Ampharos/Buneary, plus genuinely Ultra-introduced species/forms where available. Fresh API inspection confirms all 186 SM files have the same File-page IDs in the 244-file USUM category (58 additional files); catalogue overlap is verified, in-game acceptance is not. Compare actual binary framing/keys/fields and independently research regional-Dex handling. Signature validity alone is not console acceptance.
 
 ## Scope and order
 
