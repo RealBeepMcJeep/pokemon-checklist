@@ -393,6 +393,8 @@ def main() -> int:
     parser.add_argument("--story-options", action="store_true",
                         help="five read-only story teams: fixed catcher, anchor + four partners")
     parser.add_argument("--utility", default="butterfree", help="fixed story catcher (default: butterfree)")
+    parser.add_argument("--no-result-cache", action="store_true",
+                        help="bypass story selection cache (fresh reads always run)")
     parser.add_argument("--json", action="store_true", help="JSON report for --story-options")
     args = parser.parse_args()
     try:
@@ -439,8 +441,12 @@ def main() -> int:
             return 2
         pokedex_profiles = opt.conservative_profiles(
             opt.build_pokedex_profiles(profiles, roster, chart))
-        options = opt.choose_options(profiles, utility, chart,
-                                     pokedex_profiles=pokedex_profiles)
+        from story_cache import choose_cached
+        options = choose_cached(profiles, utility, chart,
+                                pokedex_profiles=pokedex_profiles,
+                                selector=opt.choose_options,
+                                cache_dir=Path(args.cache) / "story-selection-v1",
+                                enabled=not args.no_result_cache)
         report = opt.story_report(roster, options, utility)
         if args.json:
             print(json.dumps(report, indent=2))

@@ -215,6 +215,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uid", help="Firebase account UID (read-only live roster)")
     parser.add_argument("--cache", help="verified Gen VII Showdown cache")
+    parser.add_argument("--no-result-cache", action="store_true",
+                        help="bypass live story selection cache")
     parser.add_argument("--report-json", type=Path, help="render an existing --story-options --json snapshot")
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -225,6 +227,8 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("live render requires --uid and --cache")
         command = [sys.executable, str(ROOT / "tools/team_synergy.py"), "--story-options", "--json",
                    "--uid", args.uid, "--cache", args.cache]
+        if args.no_result_cache:
+            command.append("--no-result-cache")
         result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
         report = json.loads(result.stdout)
     if len(report.get("options", [])) != 5:
