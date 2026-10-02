@@ -343,32 +343,46 @@ def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> lis
     additions = [len(p.get('dex_plan', {}).get('new_entries', ())) for p in pool]
     favorites = [bool(p.get('favorite')) for p in pool]
     names = [str(p['final']) for p in pool]
+    import story_native
+    native = story_native.search(
+        prepared, owned=owned, opportunities=opportunities, viability=viability,
+        additions=additions, favorites=favorites, names=names, category=category)
     best_key = best_indices = None
     independent = 0
-    for indices in itertools.combinations(range(len(pool)), 5):
-        seen = 0
-        for i in indices:
-            if seen & owned[i]:
-                break
-            seen |= owned[i]
-        else:
-            independent += 1
-            quality = round(sum(viability[i] for i in indices) / 5, 4)
-            new_entries = sum(additions[i] for i in indices)
-            # Exact primary-objective pruning: inferior primary values can never win.
-            if best_key is not None:
-                if category == 'Best' and -quality > best_key[0]:
-                    continue
-                if category == 'Pokedex' and -new_entries > best_key[0]:
-                    continue
-            core = prepared.score(indices)
-            full = prepared.score((*indices, utility_index))
-            synergy = round(0.65 * core + 0.35 * full, 4)
-            key = _objective_key(category, synergy, sum(opportunities[i] for i in indices),
-                                 quality, sum(favorites[i] for i in indices),
-                                 tuple(sorted(names[i] for i in indices)), new_entries)
-            if best_key is None or key < best_key:
-                best_key, best_indices = key, indices
+    if native is not None:
+        independent = native['independent_combinations']
+        if native['indices'] is not None:
+            best_indices = tuple(native['indices'])
+            best_key = _objective_key(
+                category, native['synergy'], sum(opportunities[i] for i in best_indices),
+                native['quality'], sum(favorites[i] for i in best_indices),
+                tuple(sorted(names[i] for i in best_indices)),
+                sum(additions[i] for i in best_indices))
+    else:
+        for indices in itertools.combinations(range(len(pool)), 5):
+            seen = 0
+            for i in indices:
+                if seen & owned[i]:
+                    break
+                seen |= owned[i]
+            else:
+                independent += 1
+                quality = round(sum(viability[i] for i in indices) / 5, 4)
+                new_entries = sum(additions[i] for i in indices)
+                # Exact primary-objective pruning: inferior primary values can never win.
+                if best_key is not None:
+                    if category == 'Best' and -quality > best_key[0]:
+                        continue
+                    if category == 'Pokedex' and -new_entries > best_key[0]:
+                        continue
+                core = prepared.score(indices)
+                full = prepared.score((*indices, utility_index))
+                synergy = round(0.65 * core + 0.35 * full, 4)
+                key = _objective_key(category, synergy, sum(opportunities[i] for i in indices),
+                                     quality, sum(favorites[i] for i in indices),
+                                     tuple(sorted(names[i] for i in indices)), new_entries)
+                if best_key is None or key < best_key:
+                    best_key, best_indices = key, indices
     if best_indices is None:
         return []
     combo = tuple(pool[i] for i in best_indices)
@@ -388,6 +402,10 @@ def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> lis
         'level_evolving': sum(has_level_evolution_opportunity(p) for p in combo),
         'shared_types': full_detail['shared_types'], 'searched_combinations': searched,
         'independent_combinations': independent,
+        **({'native_search': {'engine': 'rust',
+                             'scored_combinations': native['scored_combinations'],
+                             'primary_skips': native['primary_skips']}}
+           if native is not None else {}),
     }]
 
 
