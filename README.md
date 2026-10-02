@@ -24,6 +24,39 @@ Opening the checklist in more than one tab keeps them in sync: a change made in 
 
 **Sign in to sync** is optional and off until you press it. Unsigned/offline mode remains fully local: it never contacts the network and the checklist still works from `file://` without a server. While signed in, a change on one device appears on the others on its own; a change made offline is sent when the connection returns; and if two devices change the same species, the one that reaches the server later wins. The first sign-in on a device adopts the progress already on that device rather than discarding it, and signing out returns that device to its own checklist without deleting anything. Each account keeps its own separate checklist, because progress belongs to a person.
 
+## QR gallery
+
+Open the separate [QR gallery](qr.html), also available at
+<https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>.
+Its ordinary-code catalogue contains 244 attributed original images from the
+Bulbagarden Sun/Moon and Ultra Sun/Ultra Moon libraries, covering 198 species
+and their included forms—not the entire National Pokédex. Search by name or
+Dex number, filter by type or source library, and tap a card or QR to open a
+full-screen scanning view. It is a self-contained offline file; it has no
+account connection and does not read or change checklist progress.
+
+An ordinary Pokédex QR registers a seen entry where applicable; it does not
+deliver the pictured Pokémon. Source-library filters describe provenance, not
+exclusive game compatibility. Acceptance of Ultra-only catalogue entries by
+original Sun/Moon remains unverified; points or successful software decoding
+are not proof that the intended species was recognized. Promotional gifts
+and Island Scan are different mechanisms.
+
+The [protocol and catalogue documentation](references/qr-codes/PROTOCOL.md)
+explains raw-byte decoding, signature verification, locally generated codes,
+source provenance, and the limits of these out-of-game checks. Refreshing the
+source catalogue is explicit and networked; normal rebuilds are offline:
+
+```text
+python tools/build_qr_catalog.py --verify-only
+npm run build:qr
+npm run check:qr
+python tools/qr_codec.py generate 25 --out Pikachu.png
+```
+
+Generated codes are labeled locally generated, not official or console-tested.
+They are not event-gift codes and are not mixed into the original-image gallery.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

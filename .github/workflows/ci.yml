@@ -52,5 +52,8 @@ jobs:
           tools/catcher_score.py
           tools/pokemon_ops.py
           tools/team_builder.py
+          tools/qr_codec.py
+          tools/build_qr_catalog.py
+          tools/build_qr_gallery.py
       - run: npm run check
       - run: npm run test:e2e

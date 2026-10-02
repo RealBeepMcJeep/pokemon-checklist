@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-02
+
+- Added a separate offline QR gallery with 244 attributed original Pokédex codes, pixel sprites, form-aware types, search/source-library filters and a full-screen scanning view. The checklist and its saved progress remain unchanged. Catalogue provenance is explicitly distinguished from game acceptance; Ultra-only codes in original Sun/Moon remain untested.
+- Added a reproducible ordinary-code inspection/generation toolkit and offline source-image, raw-byte and signature checks. Generated codes are not event gifts or a promise of console acceptance.
+
 ## 2026-10-01
 
 - Added a repeatable, read-only six-option catch-utility card in first-encounter order, with four verified moves and acquisition gates per row. Includes Butterfree, Kricketune, Gallade, Smeargle, Breloom and Parasect; labels delayed evolution, ordinary ability precautions, the male/stone gate and Smeargle's Sketch-donor setup instead of assuming breeding or SOS-only abilities. Private ownership labels refresh from the live roster; a sanitized fixture verifies offline rendering without Firebase or a data cache.
