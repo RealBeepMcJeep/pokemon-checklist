@@ -1,0 +1,136 @@
+{
+  "manifest_version": 1,
+  "scope": "Archived original QR images for Gen VII QR-scanner events that directly unlock receipt of a Pokémon in Sun/Moon or Ultra Sun/Ultra Moon. No event code was generated or altered.",
+  "events": [
+    {
+      "id": "magearna-us-american-region",
+      "pokemon": "Magearna",
+      "event_type": "QR Scanner event gift (not ordinary Pokédex QR, Island Scan, or serial/password Mystery Gift)",
+      "eligible_games": [
+        "Pokémon Sun",
+        "Pokémon Moon",
+        "Pokémon Ultra Sun",
+        "Pokémon Ultra Moon"
+      ],
+      "region_applicability": "US/American-region QR asset. Codes are region-specific; do not assume this copy works on another region's game.",
+      "other_documented_region_variants": [
+        "Japanese",
+        "Taiwanese",
+        "American",
+        "PAL",
+        "Korean"
+      ],
+      "unlock_and_redeem": [
+        "Complete the main story / become Alola Champion.",
+        "Open QR Scanner and scan the Magearna event QR code while pressing R.",
+        "Collect Magearna from the deliveryman at the Antiquities of the Ages shop in Hau’oli City; save the game."
+      ],
+      "expiry": "The official Pokémon US announcement says this code works indefinitely.",
+      "per_save_or_repeat_limit": "Not established from the primary source reviewed; do not claim repeatable or state a per-save cap based on this research.",
+      "source_quotes": [
+        {
+          "source": "https://www.pokemon.com/us/news/nows-your-chance-for-magearna",
+          "quote": "Those who have completed the main story in Pokémon Sun or Pokémon Moon can now get the Mythical Pokémon Magearna via the QR Scanner feature by scanning the QR Code below."
+        },
+        {
+          "source": "https://www.pokemon.com/us/news/nows-your-chance-for-magearna",
+          "quote": "This code will continue to work indefinitely, so there’s no rush to beat the game!"
+        },
+        {
+          "source": "https://bulbapedia.bulbagarden.net/wiki/QR_Scanner",
+          "quote": "A Magearna QR Code event was specially distributed for Sun, Moon, Ultra Sun, and Ultra Moon. Unlike most other QR Codes, it unlocks an event in the player's game, and each of the QR Codes below only works for games from a specific region."
+        }
+      ],
+      "image_page_source": "https://www.pokemon.com/us/news/nows-your-chance-for-magearna",
+      "image_direct_source": "https://mcdn.pokemon.com/pokemon-prod/image/upload/c_limit,w_1920/f_auto/v1/live/static-assets/content-assets/cms2/img/video-games/_tiles/magearna_distro/magearna_distribution_qr_code.png",
+      "asset_path": "assets/magearna.png",
+      "asset_sha256": "7ebcfcf427b6fe90da47823f5326112ab4c8da7e9ebd2a6b99ef92ba2fb7f95e",
+      "raw_payload_path": "assets/magearna.payload.bin",
+      "raw_payload_sha256": "69c1e67b90b24aacd4893f40e00ed43ed4a0d8ddb803bc6f4da68859e7f2fde7",
+      "raw_payload_hex": "a6c32566fa3132ba701be2fc971d0315a5cf33f4341f463fd2f060c098b6cae2e1c4a6b6d029fc15df600753706c7d0e560dfa41ef1c9236d5fbacb566cf4a5962916f46037bd91fa1956df03591956965e57dde4164f5b5f44805d7800e2ea1504f4b45050000000000",
+      "payload_observations": {
+        "decoder": "zxing-cpp",
+        "qr_count": 1,
+        "payload_bytes": 106,
+        "POKE_marker_offset": 96,
+        "MemeCrypto_key_index_observed": 5,
+        "event_family_name_in_pinned_PKHeX_enum": "MagearnaEvent",
+        "family_mapping_source": "https://raw.githubusercontent.com/kwsch/PKHeX/542111fc8584ff29c9d1455553b8acd0e1f8a59a/PKHeX.Core/Saves/Encryption/MemeCrypto/MemeKeyIndex.cs",
+        "signature_verified": false,
+        "console_scan_tested": false
+      },
+      "display_name": "Magearna",
+      "dex_number": 801,
+      "presentation_image": "assets/magearna-scan.png",
+      "presentation_sha256": "3f32575f9505118a60d8b7df377da4bc2d14c9d97a8dfb3d62a55b0504680e43",
+      "presentation_crop_box": [216, 20, 363, 167]
+    },
+    {
+      "id": "partner-cap-pikachu-na-pal",
+      "pokemon": "Partner Cap Pikachu (Ash's I Choose You! cap; #025)",
+      "event_type": "QR Scanner event gift (not ordinary Pokédex QR, Island Scan, or serial/password Mystery Gift)",
+      "eligible_games": [
+        "Pokémon Ultra Sun",
+        "Pokémon Ultra Moon"
+      ],
+      "ineligible_games": [
+        "Pokémon Sun",
+        "Pokémon Moon"
+      ],
+      "region_applicability": "American/North American and PAL share this same archived QR code.",
+      "other_documented_region_variants": [
+        "Japanese",
+        "American and PAL",
+        "Taiwanese",
+        "Korean"
+      ],
+      "unlock_and_redeem": [
+        "Reach Akala Island.",
+        "Open QR Scanner and scan the Partner Cap Pikachu event QR code.",
+        "Visit Pikachu Valley on Akala Island near Route 4 and speak to the delivery person to receive Pikachu; save the game."
+      ],
+      "expiry": "Serebii's USUM QR-event page states that the QR codes never expire. The original movie-theater handout window has ended; that is separate from the code's reported in-game redeemability.",
+      "per_save_or_repeat_limit": "Not established from the sources reviewed; do not claim repeatable or state a per-save cap based on this research.",
+      "source_quotes": [
+        {
+          "source": "https://bulbapedia.bulbagarden.net/wiki/QR_Scanner",
+          "quote": "In Pokémon Ultra Sun and Ultra Moon, another QR Code for a Partner Cap Pikachu was added to the game. Like Magearna, these codes are region-specific, with the exception of the American and PAL region sharing the same code. They cannot be used until the player reaches Akala Island."
+        },
+        {
+          "source": "https://www.nintendo-insider.com/ash-pikachu-qr-code-for-pokemon-ultra-sun-and-ultra-moon/",
+          "quote": "When this QR code is scanned, players will unlock an in-game event that leads them to Pikachu Valley on Akala Island where a delivery person is waiting to give them their very own Pikachu wearing a Trainer’s Cap."
+        },
+        {
+          "source": "https://archives.bulbagarden.net/wiki/File:Partner_Cap_Pikachu_distribution_QR_Code_NA_PAL.png",
+          "quote": "QR Code to obtain Pikachu (Partner Cap) in American and PAL region games"
+        },
+        {
+          "source": "https://www.serebii.net/ultrasunultramoon/qrevents.shtml",
+          "quote": "The QR Codes never expire"
+        }
+      ],
+      "image_page_source": "https://archives.bulbagarden.net/wiki/File:Partner_Cap_Pikachu_distribution_QR_Code_NA_PAL.png",
+      "image_direct_source": "https://archives.bulbagarden.net/media/upload/f/f6/Partner_Cap_Pikachu_distribution_QR_Code_NA_PAL.png",
+      "asset_path": "assets/pikachu.png",
+      "asset_sha256": "3506311b6ed9b03b1811aac34090833bd700cf0cf3a3811ea04a2f2f54a3ea54",
+      "raw_payload_path": "assets/pikachu.payload.bin",
+      "raw_payload_sha256": "e168c34f63949d65cd383647b85a14acb1b7671d0c12813f413a61030c564047",
+      "raw_payload_hex": "a96e2d8d9b99dbfb934939c097e3ac101c7d48cec52fca717b14b19890208592045c430035dd09a31446142e9ea33cf3e6b6e69484b6d2eed500b8389048013491602403dbe7b814ea069667cfadafe74895217d78037b4a456fab2cafd71e69504f4b45090000000000",
+      "payload_observations": {
+        "decoder": "zxing-cpp",
+        "qr_count": 1,
+        "payload_bytes": 106,
+        "POKE_marker_offset": 96,
+        "MemeCrypto_key_index_observed": 9,
+        "event_family_name_in_pinned_PKHeX_enum": "CapPikachuEvent",
+        "family_mapping_source": "https://raw.githubusercontent.com/kwsch/PKHeX/542111fc8584ff29c9d1455553b8acd0e1f8a59a/PKHeX.Core/Saves/Encryption/MemeCrypto/MemeKeyIndex.cs",
+        "signature_verified": false,
+        "console_scan_tested": false
+      },
+      "display_name": "Partner Cap Pikachu",
+      "dex_number": 25,
+      "presentation_image": "assets/pikachu.png"
+    }
+  ],
+  "presentation_note": "Original source PNGs retained. Magearna scanning image is a square crop preserving the complete QR and original four-module white quiet zone; cropped and original payloads must match exactly."
+}
