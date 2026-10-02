@@ -17,7 +17,7 @@
     h1 { max-width: 850px; margin: 0; font-size: clamp(1.8rem, 5vw, 3.15rem); line-height: 1.04; letter-spacing: -.035em; }
     .lede { max-width: 780px; margin: 14px 0 0; color: #c3ccd8; line-height: 1.55; }
     .compatibility { max-width: 980px; margin: 16px 0 0; padding: 12px 14px; border-left: 3px solid #e9bd69; border-radius: 0 10px 10px 0; background: #222331; color: #e4dfd2; line-height: 1.45; }
-    .filters { display: grid; grid-template-columns: minmax(200px, 1.5fr) repeat(2, minmax(180px, 1fr)); gap: 12px; margin: 22px 0 10px; }
+    .filters { display: grid; grid-template-columns: minmax(200px, 1.5fr) repeat(3, minmax(140px, 1fr)); gap: 12px; margin: 22px 0 10px; }
     .control { display: grid; min-width: 0; gap: 5px; }
     .control label { color: #b8c3d2; font-size: .79rem; font-weight: 700; }
     .control input, .control select { width: 100%; min-width: 0; padding: 9px 12px; border: 1px solid #3d4a5d; border-radius: 10px; background: #171e2a; color: #f6f7fb; }
@@ -37,7 +37,7 @@
     .species-name { overflow-wrap: anywhere; font-size: 1.03rem; line-height: 1.15; }
     .dex-form { color: #b3c0d1; font-size: .77rem; }
     .type-list, .source-list { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; }
-    .type-chip { padding: 3px 8px; border: 1px solid #58687b; border-radius: 999px; background: #273648; color: #f0f4fb; font-size: .72rem; font-weight: 750; }
+    __TYPE_STYLES__
     .source-chip { padding: 3px 7px; border-radius: 5px; background: #29312e; color: #cde0d2; font-size: .67rem; line-height: 1.3; }
     .source-label { margin: 0; color: #9eacbc; font-size: .67rem; font-weight: 750; }
     .empty-state { margin: 20px 0; padding: 22px; border: 1px dashed #526176; border-radius: 12px; color: #c0cada; text-align: center; }
@@ -71,7 +71,7 @@
     @media (max-width: 700px) {
       .page { width: min(calc(100% - 20px), 1360px); }
       .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-      .control:first-child { grid-column: 1 / -1; }
+      .control:first-child, .control:last-child { grid-column: 1 / -1; }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .card-open { gap: 7px; padding: 7px; }
       .qr-card, .gift-card { border-radius: 11px; }
@@ -102,8 +102,9 @@
       <h1>Generation VII Pokédex QR archive</h1>
       <p class="lede">Browse original ordinary Pokédex QR images listed by the Bulbagarden Archives. Older-generation species appear in this Gen VII format too; species origin, regional Pokédex inclusion, and special-event eligibility are separate questions.</p>
       <p class="compatibility"><strong>Compatibility note:</strong> archive-category membership is provenance, not an in-game test. Whether a USUM-category-only ordinary code is accepted in Sun/Moon is unknown here; the categories do not establish universal compatibility or incompatibility. Ordinary Pokédex codes are not promotional gift codes and do not deliver the pictured Pokémon.</p>
-      <div class="filters" aria-label="Filter ordinary QR archive">
+      <div class="filters" aria-label="Filter and sort ordinary QR archive">
         <div class="control"><label for="search">Search name, Pokédex number, or form</label><input id="search" type="search" autocomplete="off" placeholder="e.g. Rowlet, 722, Alola"></div>
+        <div class="control"><label for="sort-order">Sort by</label><select id="sort-order"><option value="dex-asc" selected>Pokédex number: low to high</option><option value="dex-desc">Pokédex number: high to low</option><option value="name-asc">Name: A–Z</option><option value="name-desc">Name: Z–A</option></select></div>
         <div class="control"><label for="type-filter">Pokémon type</label><select id="type-filter"><option value="">All types</option>__TYPE_OPTIONS__</select></div>
         <div class="control"><label for="library-filter">Source library membership</label><select id="library-filter"><option value="">All source libraries</option><option value="sun-moon">Sun / Moon category</option><option value="ultra-sun-ultra-moon">Ultra Sun / Ultra Moon category</option></select></div>
       </div>
@@ -149,7 +150,11 @@
       "use strict";
       const atlasSource = "__ATLAS_DATA_URI__";
       const cards = Array.from(document.querySelectorAll("#ordinary-gallery .qr-card"));
-      const allScanCards = Array.from(document.querySelectorAll(".qr-card, .gift-card"));
+      const giftCards = Array.from(document.querySelectorAll(".gift-card"));
+      const sourceOrder = new Map(cards.map((card, index) => [card, index]));
+      const cardGrid = document.getElementById("cards");
+      const sortOrder = document.getElementById("sort-order");
+      const nameOrder = new Intl.Collator("en", { sensitivity: "base" });
       const search = document.getElementById("search");
       const typeFilter = document.getElementById("type-filter");
       const libraryFilter = document.getElementById("library-filter");
@@ -178,6 +183,18 @@
       });
 
       const fold = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase();
+      function applySort() {
+        const order = sortOrder.value;
+        const direction = order.endsWith("desc") ? -1 : 1;
+        cards.sort((left, right) => {
+          const dex = Number(left.dataset.dex) - Number(right.dataset.dex);
+          const primary = order.startsWith("name") ? nameOrder.compare(left.dataset.name, right.dataset.name) : dex;
+          return direction * primary || dex
+            || Number(left.dataset.form) - Number(right.dataset.form)
+            || sourceOrder.get(left) - sourceOrder.get(right);
+        });
+        cardGrid.append(...cards);
+      }
       function applyFilters() {
         const terms = fold(search.value.trim()).split(/\s+/).filter(Boolean);
         const selectedType = typeFilter.value;
@@ -197,8 +214,9 @@
       search.addEventListener("input", applyFilters);
       typeFilter.addEventListener("change", applyFilters);
       libraryFilter.addEventListener("change", applyFilters);
+      sortOrder.addEventListener("change", applySort);
 
-      function visibleCards() { return allScanCards.filter((card) => !card.hidden && Boolean(card.dataset.gift) === Boolean(selectedCard?.dataset.gift)); }
+      function visibleCards() { return (selectedCard?.dataset.gift ? giftCards : cards).filter((card) => !card.hidden); }
       function setCard(card) {
         selectedCard = card;
         const dex = Number(card.dataset.dex);
@@ -294,6 +312,7 @@
           }
         }
       });
+      applySort();
       applyFilters();
     })();
   </script>

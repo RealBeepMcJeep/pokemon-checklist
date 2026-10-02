@@ -191,7 +191,21 @@ def _load_source_data(root: Path) -> tuple[list[dict[str, Any]], list[str], byte
     report = verify_catalog(catalog)
     if not report["ok"] or report["checked"] != EXPECTED_RECORDS or report["signatureVerified"] != EXPECTED_RECORDS:
         raise GalleryBuildError(f"Ordinary QR offline verification failed: {report}")
+    normalized.sort(key=lambda record: (record["id"], record["form_id"]))
     return normalized, type_names, atlas
+
+
+def shared_type_styles(root: Path = ROOT) -> str:
+    """Inline the checklist's actual type component rules, without a second palette."""
+    stylesheet = (root / "src/styles/app.css").read_text(encoding="utf-8")
+    names = ("normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground",
+             "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy")
+    selectors = {".type-marks", ".type-mark", ".type-labels .type-mark", *(".type-" + name for name in names)}
+    rules = {match[1].strip(): match[0] for match in re.finditer(r"(?m)^([^{}\n]+)\{[^{}]*\}", stylesheet)
+             if match[1].strip() in selectors}
+    if set(rules) != selectors:
+        raise GalleryBuildError("Checklist type component CSS is incomplete")
+    return "\n".join(rules.values())
 
 
 def _render_card(record: dict[str, Any]) -> str:
@@ -202,7 +216,8 @@ def _render_card(record: dict[str, Any]) -> str:
     categories = record["categories"]
     library_labels = [CATEGORY_LABELS[category] for category in categories]
     search_terms = " ".join((name, str(dex), f"{dex:03d}", f"#{dex:03d}", form))
-    type_tags = "".join(f'<span class="type-chip">{_escape(value)}</span>' for value in types)
+    type_tags = "".join(f'<span class="type-chip type-mark type-{_escape(value.lower())}" '
+                        f'title="{_escape(value)} type" aria-hidden="true">{_escape(value)}</span>' for value in types)
     sources = "".join(f'<span class="source-chip">{_escape(value)} archive</span>' for value in library_labels)
     aria = f"Open scan view for #{dex:03d} {name}, {form} form"
     return (
@@ -219,7 +234,7 @@ def _render_card(record: dict[str, Any]) -> str:
         f'<img class="sprite-atlas" data-dex="{dex}" alt=""></span>'
         f'<span class="names"><strong class="species-name">{_escape(name)}</strong>'
         f'<span class="dex-form">National Pokédex #{dex:03d} · { _escape(form) } form</span></span></span>'
-        f'<span class="type-list" aria-label="Types: {_escape(" and ".join(types))}">{type_tags}</span>'
+        f'<span class="type-list type-marks type-labels" aria-label="Types: {_escape(" and ".join(types))}">{type_tags}</span>'
         f'<span><span class="source-label">Source library membership</span><span class="source-list">{sources}</span></span>'
         f'</span></button></article>'
     )
@@ -310,6 +325,7 @@ def compile_gallery(root: Path = ROOT) -> str:
     except OSError as error:
         raise GalleryBuildError(f"Cannot read gallery template under {root}") from error
     values = {
+        "__TYPE_STYLES__": (shared_type_styles(root), 1),
         "__CARD_COUNT__": (str(len(records)), 2),
         "__TYPE_OPTIONS__": ("".join(
             f'<option value="{_escape(type_name)}">{_escape(type_name)}</option>'

@@ -50,10 +50,12 @@ class QRGalleryCompilerTests(unittest.TestCase):
         cls.parsed = GalleryParser()
         cls.parsed.feed(cls.html)
 
-    def test_compiles_all_244_original_records_in_manifest_order(self):
+    def test_compiles_all_244_original_records_in_dex_order(self):
         self.assertEqual(len(self.manifest["records"]), 244)
         self.assertEqual(len(self.parsed.cards), 244)
-        for source, card in zip(self.manifest["records"], self.parsed.cards, strict=True):
+        sources = sorted(self.manifest["records"], key=lambda row: (
+            row["decoded"]["species"]["id"], row["decoded"]["formId"]))
+        for source, card in zip(sources, self.parsed.cards, strict=True):
             species = source["decoded"]["species"]
             self.assertEqual(int(card["data-dex"]), species["id"])
             self.assertEqual(card["data-name"], species["name"])
@@ -63,6 +65,24 @@ class QRGalleryCompilerTests(unittest.TestCase):
             image_bytes = base64.b64decode(src.partition(",")[2], validate=True)
             image_path = ROOT / "references/qr-codes" / source["image"]["file"]
             self.assertEqual(image_bytes, image_path.read_bytes())
+
+    def test_type_chips_reuse_checklist_styles_and_component_markup(self):
+        stylesheet = (ROOT / "src/styles/app.css").read_text(encoding="utf-8")
+        expected = {".type-marks", ".type-mark", ".type-labels .type-mark"}
+        expected.update(".type-" + name.lower() for name in (
+            "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground",
+            "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"))
+        for match in re.finditer(r"(?m)^([^{}\n]+)\{[^{}]*\}", stylesheet):
+            if match[1].strip() in expected:
+                self.assertIn(match[0], self.html)
+        chips = [attrs for tag, attrs in self.parsed.tags
+                 if tag == "span" and "type-chip" in attrs.get("class", "").split()]
+        self.assertGreater(len(chips), 244)
+        for attrs in chips:
+            self.assertIn("type-mark", attrs["class"].split())
+            self.assertEqual(attrs["aria-hidden"], "true")
+            self.assertIn("type-" + attrs["title"].removesuffix(" type").lower(), attrs["class"].split())
+        self.assertIn('class="type-list type-marks type-labels"', self.html)
 
     def test_source_membership_is_presented_as_catalogue_provenance_not_compatibility(self):
         shared = next(card for card in self.parsed.cards if card["data-name"] == "Rowlet")
@@ -126,7 +146,7 @@ class QRGalleryCompilerTests(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                for folder in ("references", "tools", "data", "assets"):
+                for folder in ("references", "tools", "data", "assets", "src"):
                     shutil.copytree(ROOT / folder, root / folder)
                 gift_path = root / "references/qr-gifts/manifest.json"
                 gifts = json.loads(gift_path.read_text())

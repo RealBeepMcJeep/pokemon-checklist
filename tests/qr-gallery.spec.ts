@@ -63,6 +63,49 @@ async function openGallery(page: Page, project: string): Promise<string[]> {
   return errors;
 }
 
+test("sorts by number by default and supports both directions and name ordering with filtered viewer navigation", async ({ page }, testInfo) => {
+  const errors = await openGallery(page, testInfo.project.name);
+  const visible = page.locator("#ordinary-gallery .qr-card:not([hidden])");
+  const rows = () => visible.evaluateAll(cards => cards.map(card => ({
+    dex: Number((card as HTMLElement).dataset.dex),
+    form: Number((card as HTMLElement).dataset.form),
+    name: (card as HTMLElement).dataset.name!,
+    label: (card as HTMLElement).dataset.formLabel!,
+  })));
+  const initial = await rows();
+  expect(initial.map(row => row.dex)).toEqual(initial.map(row => row.dex).sort((a, b) => a - b));
+  await expect(page.getByLabel("Sort by")).toHaveValue("dex-asc");
+  const giftNames = await page.locator(".gift-card .species-name").allTextContents();
+  for (const order of ["dex-desc", "name-asc", "name-desc", "dex-asc"]) {
+    await page.getByLabel("Sort by").selectOption(order);
+    const current = await rows();
+    expect(current).toHaveLength(244);
+    const collator = new Intl.Collator("en", { sensitivity: "base" });
+    for (let index = 1; index < current.length; index++) {
+      const previous = current[index - 1], next = current[index];
+      const direction = order.endsWith("desc") ? -1 : 1;
+      const primary = order.startsWith("dex") ? previous.dex - next.dex : collator.compare(previous.name, next.name);
+      expect(direction * primary).toBeLessThanOrEqual(0);
+      if (previous.dex === next.dex) expect(previous.form).toBeLessThanOrEqual(next.form);
+    }
+    expect(await page.locator(".gift-card .species-name").allTextContents()).toEqual(giftNames);
+  }
+  await page.locator("#type-filter").selectOption("Electric");
+  await page.locator("#library-filter").selectOption("ultra-sun-ultra-moon");
+  await page.getByLabel("Sort by").selectOption("dex-desc");
+  const filtered = await rows();
+  expect(filtered.length).toBeGreaterThan(1);
+  expect(filtered.map(row => row.dex)).toEqual(filtered.map(row => row.dex).sort((a, b) => b - a));
+  await visible.first().locator(".card-open").click();
+  await page.locator("#scan-next").click();
+  await expect(page.locator("#scan-title")).toHaveText(`${filtered[1].name} · ${filtered[1].label}`);
+  await page.locator("#scan-prev").click();
+  await expect(page.locator("#scan-title")).toHaveText(`${filtered[0].name} · ${filtered[0].label}`);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test("gift cards use the shared mobile viewer with separate navigation and accessible close/back", async ({ page }, testInfo) => {
   const errors = await openGallery(page, testInfo.project.name);
   await page.setViewportSize({ width: 390, height: 844 });
