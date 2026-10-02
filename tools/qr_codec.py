@@ -133,6 +133,12 @@ def verify_ordinary_payload(raw_payload: bytes) -> DecodedQR:
     marker = raw_payload.rfind(b"POKE")
     if marker < 0 or marker + 10 > len(raw_payload):
         raise ValueError("invalid or truncated POKE framing")
+    if marker != 0x62 or len(raw_payload) != 0x6C:
+        raise ValueError("invalid ordinary Dex framing length")
+    if raw_payload[0x60:0x62] != b"\x00\x00":
+        raise ValueError("invalid ordinary Dex padding")
+    if raw_payload[marker + 8:] != b"\x00\x00":
+        raise ValueError("invalid ordinary Dex trailer")
     key_index = int.from_bytes(raw_payload[marker + 4:marker + 8], "little")
     if key_index != 3:
         raise ValueError(f"unsupported MemeCrypto key index {key_index}")
@@ -181,13 +187,10 @@ def generate_ordinary_payload(
     if not 1 <= species_id <= 807:
         raise ValueError("species_id must be in the supported Gen I-VII range 1..807")
     if template is None:
-        body = bytearray(_RSA_BYTES)
-        form = 0 if form is None else form
-        gender = 0 if gender is None else gender
-        shiny = False if shiny is None else shiny
-        both_genders = False if both_genders is None else both_genders
-    else:
-        body = bytearray(verify_ordinary_payload(template).body)
+        raise ValueError(
+            "a verified ordinary Dex template is required to preserve unknown header bytes"
+        )
+    body = bytearray(verify_ordinary_payload(template).body)
     if form is not None and not 0 <= form <= 255:
         raise ValueError("form must fit in one byte")
     if gender is not None and gender not in (0, 1, 2):
@@ -202,7 +205,7 @@ def generate_ordinary_payload(
     if both_genders is not None:
         body[0x2D] = int(both_genders)
     signed = _sign_ordinary_body(bytes(body))
-    return signed + b"\x00\x00POKE" + (3).to_bytes(4, "little") + b"\x00" * 4
+    return signed + b"\x00\x00POKE" + (3).to_bytes(4, "little") + b"\x00\x00"
 
 
 def write_qr_png(raw_payload: bytes, path: str | Path) -> None:
@@ -231,7 +234,8 @@ def main() -> int:
     generate.add_argument("--gender", type=int, choices=(0, 1, 2))
     generate.add_argument("--shiny", action="store_true", default=None)
     generate.add_argument("--both-genders", action="store_true", default=None)
-    generate.add_argument("--template", type=Path, help="verified source QR PNG template")
+    generate.add_argument("--template", required=True, type=Path,
+                          help="verified source QR PNG template (preserves unknown bytes)")
     args = parser.parse_args()
     try:
         if args.command == "inspect":

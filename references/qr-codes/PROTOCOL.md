@@ -8,19 +8,21 @@ Run in the repository's dev environment after installing `requirements-dev.txt`:
 
 ```sh
 python tools/qr_codec.py inspect path/to/code.png
-python tools/qr_codec.py generate 25 --out /path/to/Pikachu.png
+python tools/qr_codec.py generate 25 --template references/qr-codes/images/304912.png --out /path/to/Pikachu.png
 python tools/qr_codec.py generate 722 --template references/qr-codes/images/304912.png --out /path/to/Rowlet.png
 python tools/build_qr_catalog.py --root . --catalog references/qr-codes
 python tools/build_qr_catalog.py --root . --catalog references/qr-codes --verify-only
 ```
 
-`inspect` emits the exact transport bytes as hex, their SHA-256, the decrypted 96-byte body, the verified key index and field values. `generate` signs one ordinary record, writes a standard black/white QR with a four-module quiet zone, then checks both its signature and binary QR round-trip before reporting success. The optional template must itself be an authenticated ordinary record; recognized fields are changed only when requested, unknown bytes are kept, and the signature hash is recomputed. Without a template the body starts zero-filled. The generated record is **locally cryptographically and transport verified, not console-tested or guaranteed accepted by a particular game**.
+`inspect` emits the exact transport bytes as hex, their SHA-256, the decrypted 96-byte body, the verified key index and field values. `generate` requires an authenticated ordinary-record template because the meaning of all header bytes is not known; recognized fields are changed only when requested, unknown bytes are kept, and the signature hash is recomputed. It writes a standard black/white QR with a four-module quiet zone, then checks signature and binary QR round-trip before reporting success. The generated record is **locally cryptographically and transport verified, not console-tested or guaranteed accepted by a particular game**.
 
 The catalogue command explicitly refreshes the two MediaWiki category inventories and original files; it paginates API continuation tokens, requests original `imageinfo` URLs, uses a descriptive User-Agent, 30-second timeouts, three bounded attempts and at most four concurrent media downloads. A matching existing source SHA-1 is a successful-file checkpoint. `--verify-only` is offline: it rechecks original-file hashes, decodes each PNG to raw bytes, rechecks stored payload hashes and re-verifies every row marked ordinary.
 
 ## Protocol evidence and parser scope
 
 PKHeX source revision `542111fc8584ff29c9d1455553b8acd0e1f8a59a` was inspected at `PKHeX.Core/Saves/Encryption/MemeCrypto/MemeCrypto.cs`, `MemeKey.cs`, `MemeKeyIndex.cs`, and `PKHeX.Core/Editing/PKM/QR/QRPK7.cs`. The Python verifier follows the ordinary key-index-3 path: RSA public exponentiation, the source-defined AES-ECB block/XOR transform, the truncated SHA-1 check, then field extraction from the authenticated 0x60-byte body. The source's two-byte Pokédex edge case is accepted. The corpus's ordinary examples use a 108-byte QR byte stream: a signed 96-byte record, two `00` bytes before the `POKE` marker, little-endian key index 3, and two final `00` bytes. The full byte stream and exact framing are saved per item rather than normalized through text.
+
+The observed ordinary transport framing is a 96-byte signed body, two zero padding bytes before `POKE` at offset 98, key index 3, and two trailing zero bytes (108 bytes total). The verifier accepts this known framing only and rejects other marker positions, padding, trailer bytes, and unsupported key indices; it does not treat a valid signature as proof of game acceptance.
 
 The documented body fields are little-endian species ID at `0x28`, form at `0x2A`, gender code at `0x2B`, shiny flag at `0x2C`, and both-genders registration flag at `0x2D`. Unknown bytes are retained in `bodyHex`; the final eight hash bytes are regenerated on signing. `genderCode` is intentionally recorded as a raw code, not guessed into a label. Species names are looked up by the authenticated species ID in `data/pokemon.json`; filenames never override decrypted identity. Form is the protocol's numeric form code, accompanied by the exact source title.
 

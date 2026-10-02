@@ -49,12 +49,41 @@ class QRCodecTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "framing|truncated"):
             verify_ordinary_payload(ROWLET_PAYLOAD[:-1])
 
+    def test_noncanonical_trailer_bytes_are_rejected(self):
+        damaged = bytearray(ROWLET_PAYLOAD)
+        damaged[-1] = 1
+        with self.assertRaisesRegex(ValueError, "framing|trailer"):
+            verify_ordinary_payload(bytes(damaged))
+
+    def test_nonzero_pre_marker_padding_is_rejected(self):
+        damaged = bytearray(ROWLET_PAYLOAD)
+        damaged[96] = 1
+        with self.assertRaisesRegex(ValueError, "framing|padding"):
+            verify_ordinary_payload(bytes(damaged))
+
+    def test_unobserved_short_framing_variant_is_rejected(self):
+        shortened = ROWLET_PAYLOAD[:96] + ROWLET_PAYLOAD[98:]
+        with self.assertRaisesRegex(ValueError, "framing"):
+            verify_ordinary_payload(shortened)
+
+    def test_generation_requires_verified_template_for_unknown_header_bytes(self):
+        with self.assertRaisesRegex(ValueError, "template"):
+            generate_ordinary_payload(25)
+
+    def test_generation_uses_canonical_108_byte_trailer(self):
+        payload = generate_ordinary_payload(25, template=ROWLET_PAYLOAD)
+        self.assertEqual(len(payload), 108)
+        self.assertEqual(payload[96:98], b"\x00\x00")
+        marker = payload.rfind(b"POKE")
+        self.assertEqual(marker, 98)
+        self.assertEqual(payload[marker + 8:], b"\x00\x00")
+
     def test_generated_older_and_gen7_codes_roundtrip_through_png(self):
         import tempfile
 
         with tempfile.TemporaryDirectory(dir="/opt/data/cache/scratch") as directory:
             for species_id in (25, 722):
-                payload = generate_ordinary_payload(species_id)
+                payload = generate_ordinary_payload(species_id, template=ROWLET_PAYLOAD)
                 record = verify_ordinary_payload(payload)
                 self.assertEqual(record.species_id, species_id)
                 path = Path(directory) / f"species-{species_id}.png"
@@ -69,7 +98,8 @@ class QRCodecTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir="/opt/data/cache/scratch") as directory:
             output = Path(directory) / "Pikachu.png"
             generated = subprocess.run(
-                [sys.executable, str(cli), "generate", "25", "--out", str(output)],
+                [sys.executable, str(cli), "generate", "25", "--template",
+                 str(FIXTURES / "Rowlet_VII_QR.png"), "--out", str(output)],
                 cwd=root, capture_output=True, text=True,
             )
             self.assertEqual(generated.returncode, 0, generated.stderr)
@@ -91,6 +121,7 @@ class QRCodecTests(unittest.TestCase):
         generated = verify_ordinary_payload(
             generate_ordinary_payload(25, template=ROWLET_PAYLOAD)
         ).body
+        self.assertEqual(generated[:0x28], original[:0x28])
         self.assertEqual(generated[0x10:0x28], original[0x10:0x28])
         self.assertEqual(generated[0x2E:0x58], original[0x2E:0x58])
         self.assertEqual(generated[0x28:0x2A], b"\x19\x00")

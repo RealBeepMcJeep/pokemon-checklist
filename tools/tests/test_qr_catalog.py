@@ -1,6 +1,8 @@
 from pathlib import Path
+import copy
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -75,6 +77,35 @@ class QRCatalogTests(unittest.TestCase):
         )
         self.assertEqual(report["signatureVerified"], expected_verified)
 
+    def test_offline_verifier_rejects_decoded_and_length_metadata_drift(self):
+        root = Path(__file__).resolve().parents[2]
+        source_catalog = root / "references/qr-codes"
+        source_manifest = json.loads((source_catalog / "manifest.json").read_text())
+        source_row = next(
+            row for row in source_manifest["records"]
+            if row["source"]["title"] == "File:Rowlet VII QR.png"
+        )
+        mutations = (
+            ("decoded", "bothGendersFlag", "decoded-fields-mismatch"),
+            ("image", "bytes", "image-size-mismatch"),
+            ("payload", "byteLength", "payload-length-mismatch"),
+        )
+        for section, field, expected_status in mutations:
+            with self.subTest(section=section, field=field), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                (target / "images").mkdir()
+                row = copy.deepcopy(source_row)
+                source_image = source_catalog / row["image"]["file"]
+                shutil.copyfile(source_image, target / "images" / "rowlet.png")
+                row["image"]["file"] = "images/rowlet.png"
+                row[section][field] = row[section][field] ^ 1
+                (target / "manifest.json").write_text(
+                    json.dumps({"records": [row]})
+                )
+                report = verify_catalog(target)
+                self.assertFalse(report["ok"])
+                self.assertEqual(report["errors"][0]["status"], expected_status)
+
     def test_record_keeps_memberships_source_hashes_and_verified_fields(self):
         names = {722: "Rowlet"}
         record = inspect_source_image(
@@ -136,6 +167,16 @@ class QRCatalogTests(unittest.TestCase):
             {722: "Rowlet"},
         )
         self.assertEqual(record["decoded"]["species"]["name"], "Rowlet")
+        self.assertTrue(record["audit"]["sourceLabelMismatch"])
+
+    def test_source_label_prefix_must_match_species_name(self):
+        record = inspect_source_image(
+            FIXTURE,
+            {"pageid": 1, "title": "File:Not Rowlet VII QR.png",
+             "original": "https://example.invalid/Not-Rowlet.png", "sha1": "not-used"},
+            {"sun-moon"},
+            {722: "Rowlet"},
+        )
         self.assertTrue(record["audit"]["sourceLabelMismatch"])
 
 

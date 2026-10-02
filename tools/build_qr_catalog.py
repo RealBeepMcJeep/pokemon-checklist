@@ -122,8 +122,12 @@ def _source_label(title: str) -> str:
     return re.sub(r"\s+VII\s+QR$", "", label, flags=re.IGNORECASE).strip()
 
 
-def _normalize_label(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", value.lower())
+def _source_label_matches_species(source_label: str, species_name: str) -> bool:
+    source_tokens = re.findall(r"[a-z0-9]+", source_label.casefold())
+    species_tokens = re.findall(r"[a-z0-9]+", species_name.casefold())
+    if not species_tokens:
+        return False
+    return source_tokens[:len(species_tokens)] == species_tokens
 
 
 def inspect_source_image(
@@ -179,9 +183,8 @@ def inspect_source_image(
         return record
     canonical_name = species_names.get(decoded.species_id)
     source_label = _source_label(info["title"])
-    mismatch = (
-        None if canonical_name is None
-        else _normalize_label(canonical_name) not in _normalize_label(source_label)
+    mismatch = None if canonical_name is None else not _source_label_matches_species(
+        source_label, canonical_name
     )
     record["payload"]["bodyHex"] = decoded.body.hex()
     record["decoded"] = {
@@ -377,6 +380,9 @@ def verify_catalog(catalog_dir: str | Path) -> dict:
             errors.append({"title": title, "status": "image-missing"})
             continue
         image_bytes = image_path.read_bytes()
+        if record.get("image", {}).get("bytes") != len(image_bytes):
+            errors.append({"title": title, "status": "image-size-mismatch"})
+            continue
         if sha256(image_bytes).hexdigest() != record["imageSha256"]:
             errors.append({"title": title, "status": "image-hash-mismatch"})
             continue
@@ -396,7 +402,13 @@ def verify_catalog(catalog_dir: str | Path) -> dict:
         ):
             errors.append({"title": title, "status": "payload-mismatch"})
             continue
+        if payload and len(raw) != payload.get("byteLength"):
+            errors.append({"title": title, "status": "payload-length-mismatch"})
+            continue
         if record["audit"]["status"] == "verified-ordinary-dex":
+            if not payload:
+                errors.append({"title": title, "status": "payload-missing"})
+                continue
             try:
                 decoded = verify_ordinary_payload(raw)
             except ValueError as error:
@@ -405,10 +417,15 @@ def verify_catalog(catalog_dir: str | Path) -> dict:
             expected = record.get("decoded") or {}
             if (
                 decoded.body.hex() != payload.get("bodyHex")
+                or decoded.family != record["audit"].get("family")
+                or decoded.key_index != record["audit"].get("keyIndex")
+                or len(decoded.body) != expected.get("bodyBytes")
                 or decoded.species_id != expected.get("species", {}).get("id")
                 or decoded.form != expected.get("formId")
                 or decoded.gender != expected.get("genderCode")
                 or decoded.shiny_flag != expected.get("shinyFlag")
+                or (decoded.shiny_flag != 0) != expected.get("shiny")
+                or decoded.both_genders_flag != expected.get("bothGendersFlag")
             ):
                 errors.append({"title": title, "status": "decoded-fields-mismatch"})
                 continue
