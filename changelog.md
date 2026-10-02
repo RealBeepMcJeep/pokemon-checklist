@@ -2,6 +2,8 @@
 
 ## 2026-10-02
 
+- Team cards now support acquisition-checked move targets for Blaziken, Exploud, Gastrodon, Hypno, Meganium, Shiftry and Vikavolt. Pre-evolution moves and late TMs remain explicitly gated; no breeding or hidden ability is required by these move targets.
+
 - Mobile Pokédex catch suggestions now start collapsed and scroll away instead of pinning over the list. Expand them with one tap; desktop suggestions remain expanded. Unseen Pokémon are listed before seen Pokémon within the suggested route, without changing route order.
 
 - QR galleries now default to National Pokédex number order, with number/name sorting in both directions, and use the checklist's shared type-chip colors.

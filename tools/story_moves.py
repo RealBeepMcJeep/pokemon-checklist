@@ -58,6 +58,13 @@ GOALS = {
     "Toucannon": ("Beak Blast", "Brick Break", "U-turn", "Roost"),
     "Tentacruel": ("Water Pulse", "Sludge Wave", "Giga Drain", "Ice Beam"),
     "Metagross": ("Meteor Mash", "Zen Headbutt", "Bullet Punch", "Earthquake"),
+    "Blaziken": ("Blaze Kick", "Brick Break", "Bulk Up", "Rock Slide"),
+    "Exploud": ("Boomburst", "Flamethrower", "Surf", "Ice Beam"),
+    "Gastrodon": ("Muddy Water", "Earth Power", "Recover", "Ice Beam"),
+    "Hypno": ("Psychic", "Shadow Ball", "Thunder Wave", "Dazzling Gleam"),
+    "Meganium": ("Energy Ball", "Reflect", "Light Screen", "Synthesis"),
+    "Shiftry": ("Leaf Blade", "Feint Attack", "Brick Break", "Swords Dance"),
+    "Vikavolt": ("Thunderbolt", "Bug Buzz", "Energy Ball", "Roost"),
 }
 
 

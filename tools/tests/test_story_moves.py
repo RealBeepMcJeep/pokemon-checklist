@@ -52,6 +52,32 @@ class StoryMovesTests(unittest.TestCase):
         self.assertEqual(targets["Earthquake"]["gate"], "TM26 · Tapu Village (later)")
         self.assertTrue(all(m["source"]["via"] in ("level", "TM") for m in targets.values()))
 
+    def test_new_endpoints_have_four_verified_story_targets(self):
+        paths = {"Blaziken": "Torchic", "Exploud": "Whismur", "Gastrodon": "Shellos",
+                 "Hypno": "Drowzee", "Meganium": "Chikorita", "Shiftry": "Seedot",
+                 "Vikavolt": "Grubbin"}
+        for final, owned in paths.items():
+            with self.subTest(final=final):
+                self.assertIn(final, moves.GOALS)
+                targets = self.source.targets(final, owned)
+                self.assertEqual(len(targets), 4)
+                self.assertEqual(len({m["name"] for m in targets}), 4)
+                self.assertTrue(all(m["type"] in moves.TYPE_NAMES and m["gate"] for m in targets))
+                self.assertTrue(all(m["source"]["via"] in ("level", "evolution", "TM", "tutor", "reminder")
+                                    for m in targets))
+        blaziken = {m["name"]: m for m in self.source.targets("Blaziken", "Torchic")}
+        self.assertEqual(blaziken["Bulk Up"]["gate"], "Combusken L31 · before evolving")
+        self.assertEqual(blaziken["Blaze Kick"]["gate"], "On evolution → Blaziken")
+        shiftry = {m["name"]: m for m in self.source.targets("Shiftry", "Seedot")}
+        self.assertEqual(shiftry["Leaf Blade"]["gate"], "Nuzleaf L28 · before evolving")
+        self.assertIn("Feint Attack", shiftry)
+        self.assertNotIn("nightslash", self.source.candidates("Shiftry", "Seedot"))
+        for final, owned in (("Exploud", "Whismur"), ("Gastrodon", "Shellos")):
+            ice_beam = next(m for m in self.source.targets(final, owned) if m["name"] == "Ice Beam")
+            self.assertIn("LATER", ice_beam["gate"])
+        vikavolt = self.source.targets("Vikavolt", "Grubbin")
+        self.assertEqual([m["source"]["via"] for m in vikavolt[:2]], ["evolution", "evolution"])
+
     def test_not_breeding_event_or_overwritten_tm(self):
         zoroark = self.source.candidates("Zoroark", "Zorua")
         self.assertNotIn("sludgebomb", zoroark)
