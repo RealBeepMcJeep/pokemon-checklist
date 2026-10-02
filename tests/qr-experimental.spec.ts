@@ -29,7 +29,8 @@ assert raw==decode(Image.open(BytesIO(base64.b64decode(data['png'].split(',')[1]
 d=verify_ordinary_payload(raw)
 assert (d.species_id,d.form,d.gender,d.shiny_flag,d.both_genders_flag,d.key_index)==(data['dex'],data['form'],0,0,0,3)
 print('Screenshot raw payload and signed fields verified')`;
-  const result = execFileSync('uv', ['run', '--no-project', '--with-requirements', 'requirements-dev.txt', 'python', '-c', code], {
+  // Use the configured dev interpreter locally and setup-python's interpreter in CI.
+  const result = execFileSync(process.env.QR_TEST_PYTHON ?? 'python', ['-c', code], {
     input: JSON.stringify({ path, png: imageData, dex, form }), encoding: 'utf8', timeout: 30_000,
   });
   expect(result).toContain('Screenshot raw payload and signed fields verified');

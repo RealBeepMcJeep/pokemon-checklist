@@ -75,6 +75,14 @@ test("sorts by number by default and supports both directions and name ordering 
   const initial = await rows();
   expect(initial.map(row => row.dex)).toEqual(initial.map(row => row.dex).sort((a, b) => a - b));
   await expect(page.getByLabel("Sort by")).toHaveValue("dex-asc");
+  await page.setViewportSize({ width: 360, height: 900 });
+  const sortWidth = await page.locator("#sort-order").evaluate(select => {
+    const element = select as HTMLSelectElement;
+    const context = document.createElement("canvas").getContext("2d")!;
+    context.font = getComputedStyle(element).font;
+    return { available: element.clientWidth - 50, needed: context.measureText(element.selectedOptions[0].text).width };
+  });
+  expect(sortWidth.available).toBeGreaterThanOrEqual(sortWidth.needed);
   const giftNames = await page.locator(".gift-card .species-name").allTextContents();
   for (const order of ["dex-desc", "name-asc", "name-desc", "dex-asc"]) {
     await page.getByLabel("Sort by").selectOption(order);

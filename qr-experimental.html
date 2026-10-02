@@ -158,7 +158,7 @@
     @media (max-width: 700px) {
       .page { width: min(calc(100% - 20px), 1360px); }
       .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-      .control:first-child, .control:last-child { grid-column: 1 / -1; }
+      .control:first-child, .control:nth-child(2) { grid-column: 1 / -1; }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .card-open { gap: 7px; padding: 7px; }
       .qr-card, .gift-card { border-radius: 11px; }
@@ -1321,6 +1321,7 @@
       <h2 id="credits-heading">Credits &amp; provenance</h2>
       <p><span id="generation-provenance">locally generated / signature+PNG verified / console untested. Source template: File:Caterpie VII QR.png, species #010 form 0, key 3. Original PNG SHA-256 <code>ba45158d80e6b903773b41dc972ca26ad1dfd6320fbd0562670bf5298a45dc14</code>; raw payload SHA-256 <code>c3c7118b6c99dd2cc424cfcf52282d4d7c2d3689b82350f4e771b4d66e64fa73</code>. The existing codec preserves all unknown template bytes; only requested identity/flags and signature change. Neutral default form 0; nonzero rows explicitly experimental. Base species icons are not form art.</span></p>
       <ul>
+        <li>Pages: <a href="index.html">Checklist</a> · <a href="qr.html">Original QR archive</a> · <a href="qr-experimental.html">Experimental generated codes</a>.</li>
         <li>Source template archive (generated codes are not archive members): <a href="https://archives.bulbagarden.net/wiki/Category:Pok%C3%A9mon_Sun_and_Moon_QR_codes" target="_blank" rel="noopener noreferrer">Bulbagarden Archives — Sun/Moon QR category</a> and <a href="https://archives.bulbagarden.net/wiki/Category:Pok%C3%A9mon_Ultra_Sun_and_Ultra_Moon_QR_codes" target="_blank" rel="noopener noreferrer">Ultra Sun/Ultra Moon QR category</a>.</li>
         <li>Types and form rows: <a href="https://github.com/kwsch/PKHeX/tree/542111fc8584ff29c9d1455553b8acd0e1f8a59a" target="_blank" rel="noopener noreferrer">PKHeX</a>, pinned commit <code>542111fc8584ff29c9d1455553b8acd0e1f8a59a</code>; local derived form-type metadata includes its source-table hash.</li>
         <li>Sprite atlas: <a href="https://github.com/PokeAPI/sprites/tree/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4" target="_blank" rel="noopener noreferrer">PokeAPI/sprites</a>, pinned commit <code>6e3e7c43e86db0e1b2277795cfee41b11e8df2a4</code>; see the repository's PokeAPI sprite license notice.</li>

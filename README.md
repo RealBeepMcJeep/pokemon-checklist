@@ -84,7 +84,6 @@ Live pages:
 - Checklist: <https://realbeepmcjeep.github.io/pokemon-checklist/>
 - Original QR archive: <https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>
 - Experimental QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
-They are not event-gift codes and are not mixed into the original-image gallery.
 
 ## Develop
 
