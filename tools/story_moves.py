@@ -65,6 +65,7 @@ GOALS = {
     "Meganium": ("Energy Ball", "Reflect", "Light Screen", "Synthesis"),
     "Shiftry": ("Leaf Blade", "Feint Attack", "Brick Break", "Swords Dance"),
     "Vikavolt": ("Thunderbolt", "Bug Buzz", "Energy Ball", "Roost"),
+    "Torterra": ("Earthquake", "Wood Hammer", "Crunch", "Synthesis"),
 }
 
 

@@ -2,6 +2,8 @@
 
 ## 2026-10-02
 
+- Team cards now support Turtwig → Torterra with acquisition-checked Standard moves: Earthquake on evolution, Synthesis at level 39, Crunch at level 45, and Wood Hammer at level 48. These targets require no breeding, hidden ability, or late TM.
+
 - Team cards now support acquisition-checked move targets for Blaziken, Exploud, Gastrodon, Hypno, Meganium, Shiftry and Vikavolt. Pre-evolution moves and late TMs remain explicitly gated; no breeding or hidden ability is required by these move targets.
 
 - Mobile Pokédex catch suggestions now start collapsed and scroll away instead of pinning over the list. Expand them with one tap; desktop suggestions remain expanded. Unseen Pokémon are listed before seen Pokémon within the suggested route, without changing route order.

@@ -52,6 +52,22 @@ class StoryMovesTests(unittest.TestCase):
         self.assertEqual(targets["Earthquake"]["gate"], "TM26 · Tapu Village (later)")
         self.assertTrue(all(m["source"]["via"] in ("level", "TM") for m in targets.values()))
 
+    def test_turtwig_targets_use_standard_evolution_and_level_gates(self):
+        self.assertIn("Torterra", moves.GOALS)
+        targets = {m["name"]: m for m in self.source.targets("Torterra", "Turtwig")}
+        self.assertEqual(len(targets), 4)
+        expected = {"Earthquake": ("Ground", "On evolution → Torterra", "evolution"),
+                    "Wood Hammer": ("Grass", "Torterra L48", "level"),
+                    "Crunch": ("Dark", "Torterra L45", "level"),
+                    "Synthesis": ("Grass", "Torterra L39", "level")}
+        self.assertEqual(set(targets), set(expected))
+        for name, (typ, gate, via) in expected.items():
+            with self.subTest(move=name):
+                self.assertEqual(targets[name]["type"], typ)
+                self.assertEqual(targets[name]["gate"], gate)
+                self.assertEqual(targets[name]["source"]["via"], via)
+                self.assertEqual(targets[name]["source"]["form"], "Torterra")
+
     def test_new_endpoints_have_four_verified_story_targets(self):
         paths = {"Blaziken": "Torchic", "Exploud": "Whismur", "Gastrodon": "Shellos",
                  "Hypno": "Drowzee", "Meganium": "Chikorita", "Shiftry": "Seedot",
