@@ -51,7 +51,7 @@ source catalogue is explicit and networked; normal rebuilds are offline:
 python tools/build_qr_catalog.py --verify-only
 npm run build:qr
 npm run check:qr
-python tools/qr_codec.py generate 25 --out Pikachu.png
+python tools/qr_codec.py generate 25 --template references/qr-codes/images/304912.png --out Pikachu.png
 ```
 
 Generated codes are labeled locally generated, not official or console-tested.

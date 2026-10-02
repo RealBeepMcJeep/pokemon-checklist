@@ -81,7 +81,7 @@ class QRCodecTests(unittest.TestCase):
     def test_generated_older_and_gen7_codes_roundtrip_through_png(self):
         import tempfile
 
-        with tempfile.TemporaryDirectory(dir="/opt/data/cache/scratch") as directory:
+        with tempfile.TemporaryDirectory() as directory:
             for species_id in (25, 722):
                 payload = generate_ordinary_payload(species_id, template=ROWLET_PAYLOAD)
                 record = verify_ordinary_payload(payload)
@@ -95,7 +95,7 @@ class QRCodecTests(unittest.TestCase):
 
         root = Path(__file__).resolve().parents[2]
         cli = root / "tools" / "qr_codec.py"
-        with tempfile.TemporaryDirectory(dir="/opt/data/cache/scratch") as directory:
+        with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "Pikachu.png"
             generated = subprocess.run(
                 [sys.executable, str(cli), "generate", "25", "--template",
