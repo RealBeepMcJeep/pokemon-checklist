@@ -85,6 +85,46 @@ Live pages:
 - Original QR archive: <https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>
 - Experimental QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
 
+## Local five-team search
+
+The read-only story tools select OG, Non-OG, Mixed, ordinary-level Pokédex and
+Best parties with Butterfree fixed as the catcher. Python prepares roster/data
+inputs, expands reports and renders cards; an optional dependency-free Rust
+executable accelerates only the exact search. Candidate pools, ranking priorities,
+ownership constraints and tie-breaking are unchanged; no shortlist is used.
+
+Build the release executable explicitly with an installed Rust/Cargo toolchain:
+
+```text
+python native/story-search/build.py
+python tools/team_synergy.py --story-options --json --uid <uid> --cache <verified-cache>
+python tools/story_team_cards.py --uid <uid> --cache <verified-cache> --output-dir <private-directory>
+```
+
+The build is offline and writes outside git under
+`$XDG_CACHE_HOME/pokemon-checklist/story-search/<source-hash>/` (or `~/.cache/`).
+Routine searches never invoke Cargo or download a binary. Missing, failed or
+unsupported native execution falls back to the Python reference.
+`STORY_NATIVE_DISABLE=1` forces that reference; `STORY_NATIVE_BINARY` overrides
+the executable path. The current build helper targets baseline x86-64.
+
+Selection results are cached privately under `<verified-cache>/story-selection-v1`
+**after** fresh roster/favorites, settings and data preparation. Keys cover all
+prepared ranking inputs, implementation sources, Python runtime, and the actual
+selected executable's path/content and native enable/availability state. Corrupt
+or inaccessible cache entries trigger recomputation. Atomic JSON writes preserve
+report types, repair private permissions, cap each entry at 8 MiB and retain at
+most 32 entries. Both commands accept `--no-result-cache` for a bypass; this does
+not disable the Rust search or the verified source-data cache.
+
+A controlled all-five benchmark on identical frozen inputs measured 991.36 seconds
+with the Python reference and 6.60 seconds with Rust (about 150× search-only),
+with matching winners and detailed scores. End-to-end runs still include fresh
+account reads, preparation, acquisition checks and rendering; warm-cache latency
+is not zero. Growth still depends on each eligible pool's `C(n, 5)` search space.
+Newly selected endpoints without curated acquisition-checked move targets
+intentionally stop card generation rather than inventing a move set.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:
