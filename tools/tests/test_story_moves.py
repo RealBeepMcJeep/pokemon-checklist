@@ -94,6 +94,39 @@ class StoryMovesTests(unittest.TestCase):
         vikavolt = self.source.targets("Vikavolt", "Grubbin")
         self.assertEqual([m["source"]["via"] for m in vikavolt[:2]], ["evolution", "evolution"])
 
+    def test_litwick_chandelure_targets_preserve_acquisition_gates(self):
+        self.assertIn('Chandelure', moves.GOALS)
+        targets = {m["name"]: m for m in self.source.targets('Chandelure', 'Litwick')}
+        expected = {'Shadow Ball': ('Ghost', 'Lampent L53 · before evolving', 'level'), 'Flamethrower': ('Fire', 'TM35 · Vast Poni Canyon · LATER', 'TM'), 'Energy Ball': ('Grass', 'TM53 · Route 8', 'TM'), 'Will-O-Wisp': ('Fire', 'Litwick L16 · before evolving', 'level')}
+        self.assertEqual(set(targets), set(expected))
+        for name, (typ, gate, via) in expected.items():
+            with self.subTest(move=name):
+                self.assertEqual(targets[name]["type"], typ)
+                self.assertEqual(targets[name]["gate"], gate)
+                self.assertEqual(targets[name]["source"]["via"], via)
+
+    def test_spheal_walrein_targets_preserve_acquisition_gates(self):
+        self.assertIn('Walrein', moves.GOALS)
+        targets = {m["name"]: m for m in self.source.targets('Walrein', 'Spheal')}
+        expected = {'Surf': ('Water', 'TM94 · Tapu Village (later)', 'TM'), 'Ice Beam': ('Ice', 'TM13 · Mount Lanakila · LATER', 'TM'), 'Body Slam': ('Normal', 'Spheal L26 · before evolving', 'level'), 'Encore': ('Normal', 'Spheal L9 · before evolving', 'level')}
+        self.assertEqual(set(targets), set(expected))
+        for name, (typ, gate, via) in expected.items():
+            with self.subTest(move=name):
+                self.assertEqual(targets[name]["type"], typ)
+                self.assertEqual(targets[name]["gate"], gate)
+                self.assertEqual(targets[name]["source"]["via"], via)
+
+    def test_cyndaquil_typhlosion_targets_preserve_acquisition_gates(self):
+        self.assertIn('Typhlosion', moves.GOALS)
+        targets = {m["name"]: m for m in self.source.targets('Typhlosion', 'Cyndaquil')}
+        expected = {'Flamethrower': ('Fire', 'Typhlosion L48', 'level'), 'Extrasensory': ('Psychic', 'On evolution → Quilava', 'evolution'), 'Focus Blast': ('Fighting', 'TM52 · Seafolk Village PokéMart · LATER', 'TM'), 'Sunny Day': ('Fire', 'TM11 · Royal Avenue PokéMart', 'TM')}
+        self.assertEqual(set(targets), set(expected))
+        for name, (typ, gate, via) in expected.items():
+            with self.subTest(move=name):
+                self.assertEqual(targets[name]["type"], typ)
+                self.assertEqual(targets[name]["gate"], gate)
+                self.assertEqual(targets[name]["source"]["via"], via)
+
     def test_not_breeding_event_or_overwritten_tm(self):
         zoroark = self.source.candidates("Zoroark", "Zorua")
         self.assertNotIn("sludgebomb", zoroark)

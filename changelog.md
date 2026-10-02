@@ -2,6 +2,8 @@
 
 ## 2026-10-02
 
+- Team cards now support acquisition-checked move targets for Chandelure, Walrein and Typhlosion, preserving pre-evolution learning and later TM gates. Move targets do not require breeding or hidden abilities; team scores and website files are unchanged.
+
 - Local five-team selection now supports an optional exact Rust search and a fresh-input-keyed private result cache. The controlled all-five search measured about 150× faster with unchanged winners/scores; Python still handles roster preparation and cards, and the website/save format is unchanged. Cache invalidation includes the actual native executable and Python runtime; `--no-result-cache` bypasses saved selections.
 
 - Team cards now support Turtwig → Torterra with acquisition-checked Standard moves: Earthquake on evolution, Synthesis at level 39, Crunch at level 45, and Wood Hammer at level 48. These targets require no breeding, hidden ability, or late TM.

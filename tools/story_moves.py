@@ -66,6 +66,9 @@ GOALS = {
     "Shiftry": ("Leaf Blade", "Feint Attack", "Brick Break", "Swords Dance"),
     "Vikavolt": ("Thunderbolt", "Bug Buzz", "Energy Ball", "Roost"),
     "Torterra": ("Earthquake", "Wood Hammer", "Crunch", "Synthesis"),
+    'Typhlosion': ('Flamethrower', 'Extrasensory', 'Focus Blast', 'Sunny Day'),
+    'Walrein': ('Surf', 'Ice Beam', 'Body Slam', 'Encore'),
+    'Chandelure': ('Shadow Ball', 'Flamethrower', 'Energy Ball', 'Will-O-Wisp'),
 }
 
 
