@@ -69,6 +69,16 @@ test("gift cards use the shared mobile viewer with separate navigation and acces
   await page.locator("#search").fill("not a Pokémon");
   const gifts = page.locator("#promotional-gifts .gift-card");
   await expect(gifts).toHaveCount(2);
+  for (const width of [360, 390, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    const sourceVisibility = await gifts.evaluateAll(cards => cards.map(card => {
+      const outer = card.getBoundingClientRect();
+      const sources = card.querySelector(".gift-sources")!.getBoundingClientRect();
+      return card.querySelectorAll(".gift-sources a").length > 0 && sources.top >= outer.top && sources.bottom <= outer.bottom;
+    }));
+    expect(sourceVisibility).toEqual([true, true]);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   const opener = gifts.first().locator(".card-open");
   await gifts.first().locator(".qr-original").click();
   await expect(page.getByRole("dialog")).toBeVisible();
