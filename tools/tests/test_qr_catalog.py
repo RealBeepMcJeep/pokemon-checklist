@@ -131,7 +131,7 @@ class QRCatalogTests(unittest.TestCase):
         raw = bytearray(decode_png(FIXTURE))
         marker = raw.rfind(b"POKE")
         raw[marker + 4:marker + 8] = (4).to_bytes(4, "little")
-        with tempfile.TemporaryDirectory(dir="/opt/data/cache/scratch") as directory:
+        with tempfile.TemporaryDirectory() as directory:
             image = Path(directory) / "unsupported.png"
             write_qr_png(bytes(raw), image)
             record = inspect_source_image(
