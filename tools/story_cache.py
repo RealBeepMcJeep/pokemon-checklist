@@ -10,8 +10,11 @@ import inspect
 import json
 import os
 import stat
+import sys
 import tempfile
 from pathlib import Path
+
+import story_native
 
 SCHEMA = 1
 MAX_BYTES = 8 * 1024 * 1024
@@ -51,10 +54,11 @@ def _unpack(value, profiles):
 
 
 def implementation_identity(selector, *, root=None):
-    """Hash dirty Python/Rust sources and local native executable contents.
+    """Hash sources, Python runtime, and the actual runtime-selected executable.
 
     Ignore dependency/build intermediates, but include target release/debug main
-    binaries. New, removed, rebuilt, or unavailable native engines change the key.
+    binaries and the selected external/cache-built executable. Native disable,
+    override, availability and same-path replacement all change the key.
     An uninspectable selector (e.g. a test mock) deliberately disables caching.
     """
     source = inspect.getsourcefile(selector)
@@ -73,6 +77,16 @@ def implementation_identity(selector, *, root=None):
                     or (not path.suffix and os.access(path, os.X_OK) and path.is_file())):
                 paths.add(path.resolve())
     digest = hashlib.sha256()
+    binary = story_native.binary_path()
+    mode = ("disabled" if os.environ.get("STORY_NATIVE_DISABLE") == "1"
+            else "available" if binary is not None else "unavailable")
+    digest.update(_json({"python": [sys.implementation.name, list(sys.version_info)],
+                         "native_mode": mode,
+                         "native_override": os.environ.get("STORY_NATIVE_BINARY"),
+                         "native_binary": str(binary.resolve()) if binary is not None else None,
+                         "native_protocol": story_native.PROTOCOL}).encode())
+    if binary is not None:
+        paths.add(binary.resolve())
     # Different supplied callables in one file must not share results.
     digest.update(str(getattr(selector, "__qualname__", "")).encode())
     for path in sorted(paths):

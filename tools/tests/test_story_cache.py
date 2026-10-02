@@ -189,6 +189,56 @@ class StoryCacheTests(unittest.TestCase):
                 after = cache.implementation_identity(opt.choose_options, root=root)
                 self.assertNotEqual(before, after)
 
+    def test_external_runtime_binary_replacement_override_and_disable_invalidate(self):
+        calls = []
+        def selector(*args, **kwargs):
+            calls.append(True)
+            return opt.choose_options(*args, **kwargs)
+        binary = Path(self.tmp.name) / "external-engine"
+        binary.write_bytes(b"not a runnable engine: version one")
+        binary.chmod(0o700)
+        with mock.patch.dict(os.environ, {"STORY_NATIVE_BINARY": str(binary),
+                                          "STORY_NATIVE_DISABLE": "0"}):
+            self.select(selector=selector)
+            self.select(selector=selector)
+            self.assertEqual(len(calls), 1)
+            binary.write_bytes(b"not a runnable engine: version two")
+            self.select(selector=selector)
+            self.assertEqual(len(calls), 2, "same-path binary replacement must miss")
+            os.environ["STORY_NATIVE_DISABLE"] = "1"
+            self.select(selector=selector)
+            self.assertEqual(len(calls), 3, "disabled native mode must miss")
+            os.environ["STORY_NATIVE_DISABLE"] = "0"
+            binary.unlink()
+            self.select(selector=selector)
+            self.assertEqual(len(calls), 4, "unavailable native mode must miss")
+            other = Path(self.tmp.name) / "other-external-engine"
+            other.write_bytes(b"not a runnable engine: version two")
+            other.chmod(0o700)
+            os.environ["STORY_NATIVE_BINARY"] = str(other)
+            self.select(selector=selector)
+            self.assertEqual(len(calls), 5, "a different executable path must miss")
+
+    def test_default_out_of_repo_runtime_binary_contents_change_identity(self):
+        import story_native
+        with mock.patch.dict(os.environ, {"STORY_NATIVE_BINARY": "",
+                                          "STORY_NATIVE_DISABLE": "0",
+                                          "XDG_CACHE_HOME": str(Path(self.tmp.name) / "runtime")}):
+            binary = story_native.build_directory() / "release/story-search"
+            binary.parent.mkdir(parents=True)
+            binary.write_bytes(b"default engine one")
+            binary.chmod(0o700)
+            before = self.cache().implementation_identity(opt.choose_options)
+            binary.write_bytes(b"default engine two")
+            after = self.cache().implementation_identity(opt.choose_options)
+            self.assertNotEqual(before, after)
+
+    def test_python_runtime_version_changes_implementation_identity(self):
+        before = self.cache().implementation_identity(opt.choose_options)
+        with mock.patch.object(sys, "version_info", (3, 11, 0, "final", 0)):
+            after = self.cache().implementation_identity(opt.choose_options)
+        self.assertNotEqual(before, after)
+
     def test_retention_keeps_at_most_32_entries(self):
         for version in range(35):
             self.select(implementation=str(version))
