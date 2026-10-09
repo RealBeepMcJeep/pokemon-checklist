@@ -45,10 +45,12 @@ class ExperimentalTests(unittest.TestCase):
 
     def test_every_form_row_is_a_card_or_a_blocked_row(self):
         cards, blocked = self.parser.cards, self.parser.blocked
-        self.assertEqual((len(cards), len(blocked)), (1082, 34))
-        rows = {f"{c['data-dex']}:{c['data-form']}" for c in cards + blocked}
+        self.assertEqual((len(cards), len(blocked)), (1082, 28))
+        blocked_rows = {(int(b['data-dex']), int(f)) for b in blocked for f in b['data-forms'].split()}
+        self.assertEqual(len(blocked_rows), 34)
+        rows = {f"{c['data-dex']}:{c['data-form']}" for c in cards} | {f'{d}:{f}' for d, f in blocked_rows}
         self.assertEqual(rows, set(self.meta['typesBySpeciesForm']))
-        self.assertEqual({(int(b['data-dex']), int(b['data-form'])) for b in blocked},
+        self.assertEqual(blocked_rows,
                          {(25, f) for f in range(1, 8)} | {(d, f) for d in SCANNER_EXCLUDED for f in range(self.meta['formCounts'][str(d)])})
         for c in cards:
             self.assertEqual(c['data-name'], self.names[int(c['data-dex'])])
@@ -107,16 +109,26 @@ class ExperimentalTests(unittest.TestCase):
         self.assertEqual({k: v for k, v in self.form_ratios.items() if not k.startswith('25:')}, {'658:1': 0, '658:2': 0})
         self.assertEqual((cards[(658, 0)]['data-genders'], cards[(658, 1)]['data-genders'], cards[(658, 2)]['data-genders']), ('mf', 'm', 'm'))
 
+    def test_form_names_from_pkhex(self):
+        labels = {(int(c['data-dex']), int(c['data-form'])): c['data-form-label'] for c in self.parser.cards}
+        self.assertEqual((labels[(1, 0)], labels[(3, 1)], labels[(6, 1)], labels[(6, 2)], labels[(20, 1)], labels[(20, 2)]),
+                         ('Standard', 'Mega', 'Mega X', 'Mega Y', 'Alolan', 'Totem'))
+        self.assertEqual((labels[(201, 0)], labels[(666, 19)], labels[(670, 5)], labels[(745, 2)], labels[(774, 7)]),
+                         ('A', 'Poké Ball', 'Eternal', 'Dusk', 'Red Core'))
+        self.assertNotIn('Form 1', ' '.join(labels.values()))
+        alola = [c for c in self.parser.cards if 'Alola' in c['data-search'].split()]
+        self.assertTrue(len(alola) >= 18)
+
     def test_console_tested_badges(self):
         tested = {(int(c['data-dex']), int(c['data-form'])) for c in self.parser.cards}
         self.assertTrue(CONSOLE_TESTED <= tested)
-        self.assertEqual(self.text.count('Console-tested</span>'), len(CONSOLE_TESTED))
+        self.assertEqual(self.text.count('Tested on 3DS</span>'), len(CONSOLE_TESTED))
 
     def test_page_text_controls_and_inlined_library(self):
         self.assertIn(shared_type_styles(ROOT), self.text)
         self.assertIn(load_qr_library(ROOT), self.text)
-        for phrase in ['784 species', '1082 cards', 'Can\'t be added with a QR code (34)', 'Scans as plain Pikachu', 'Blocked by the scanner',
-                       'Original Cap', 'qr.html', 'role="switch"', 'aria-label="Male. Switch to female"', 'data-card-action="gender"', 'data-card-action="shiny"', 'Genderless', 'Female only', 'Male only']:
+        for phrase in ['784 species', '1082 cards', 'Can’t be added with a QR code (28)', 'Scans as plain Pikachu', 'The scanner swaps it for a random Pokémon',
+                       'Original Cap', '7 Cap forms', 'National Pokédex #003 · Mega', 'National Pokédex #658 · Ash-Greninja', 'Red Core', 'qr.html', 'role="switch"', 'aria-label="Male. Switch to female"', 'data-card-action="gender"', 'data-card-action="shiny"', 'Genderless', 'Female only', 'Male only']:
             self.assertIn(phrase, self.text)
         self.assertNotIn('data:image/png;base64,iVBORw0KGgo', self.text.replace(self.text[self.text.index('const atlasSource'):][:80], ''))
         self.assertNotIn('class="gift-card"', self.text)
@@ -141,9 +153,10 @@ class ExperimentalTests(unittest.TestCase):
     def test_changed_pins_and_missing_metadata_fail_closed(self):
         metadata = json.loads((ROOT / 'references/qr-codes/gen7-form-types.json').read_text())
         genders = json.loads((ROOT / 'references/qr-codes/gen7-gender-ratios.json').read_text())
+        form_names = json.loads((ROOT / 'references/qr-codes/gen7-form-names.json').read_text())
         manifest = json.loads((ROOT / 'references/qr-codes/manifest.json').read_text())
         names = (ROOT / 'data/pokemon.json').read_text()
-        for case in ['source-pin', 'gender-pin', 'missing-gender', 'missing-species', 'missing-form', 'template-hash']:
+        for case in ['source-pin', 'gender-pin', 'missing-gender', 'name-pin', 'missing-name', 'missing-species', 'missing-form', 'template-hash']:
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 catalog = root / 'references/qr-codes'
@@ -158,6 +171,10 @@ class ExperimentalTests(unittest.TestCase):
                 if case == 'missing-form': del meta['typesBySpeciesForm']['19:1']
                 (catalog / 'gen7-form-types.json').write_text(json.dumps(meta))
                 (catalog / 'gen7-gender-ratios.json').write_text(json.dumps(gmeta))
+                names_meta = json.loads(json.dumps(form_names))
+                if case == 'name-pin': names_meta['source']['commit'] = '0' * 40
+                if case == 'missing-name': names_meta['formNames']['201'].pop()
+                (catalog / 'gen7-form-names.json').write_text(json.dumps(names_meta))
                 (catalog / 'manifest.json').write_text(json.dumps(manifest))
                 if case == 'template-hash':
                     (catalog / 'images').mkdir()

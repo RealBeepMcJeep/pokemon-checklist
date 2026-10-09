@@ -61,13 +61,16 @@ async function open(page: Page, project: string, hash = '') {
   await page.route(/^https?:/, route => route.request().url() === hosted ? route.continue() : route.abort());
   await page.goto(url + hash);
   await expect(page.locator('.qr-card')).toHaveCount(1082);
-  await expect(page.locator('.blocked-row')).toHaveCount(34);
+  await expect(page.locator('.blocked-row')).toHaveCount(28);
   return { network, errors };
 }
 
 test('every scannable form row is a card, blocked rows sit apart, and sort and filters cover both', async ({ page }, info) => {
   const logs = await open(page, info.project.name);
-  const rows = await page.locator('.qr-card, .blocked-row').evaluateAll(items => items.map(item => `${(item as HTMLElement).dataset.dex}:${(item as HTMLElement).dataset.form}`));
+  const rows = await page.locator('.qr-card, .blocked-row').evaluateAll(items => items.flatMap(item => {
+    const d = (item as HTMLElement).dataset;
+    return (d.forms ?? d.form!).split(' ').map(form => `${d.dex}:${form}`);
+  }));
   expect(rows.sort()).toEqual(Object.keys(metadata.typesBySpeciesForm).sort());
   const blocked = await page.locator('.blocked-row').evaluateAll(items => items.map(item => Number((item as HTMLElement).dataset.dex)));
   expect(blocked).toEqual([...blocked].sort((a, b) => a - b));
@@ -92,11 +95,19 @@ test('every scannable form row is a card, blocked rows sit apart, and sort and f
   await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(1);
   await expect(page.locator('#qr-19-1')).toBeVisible();
   await page.locator('#type-filter').selectOption('');
+  await page.locator('#search').fill('');
+  await page.locator('#tested-filter').selectOption('tested');
+  await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(11);
+  await expect(page.locator('#not-scannable')).toBeHidden();
+  await page.locator('#tested-filter').selectOption('');
   await page.locator('#search').fill('Tapu');
   await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(0);
-  await expect(page.locator('#empty-state')).toBeVisible();
+  await expect(page.locator('#empty-state')).toContainText('in the list below');
   await expect(page.locator('.blocked-row:not([hidden])')).toHaveCount(4);
+  await expect(page.locator('#blocked-heading')).toHaveText('Can’t be added with a QR code (4)');
   await expect(page.locator('#result-count')).toContainText('4 more below');
+  await page.locator('#search').fill('mega charizard');
+  await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(2);
   expect(logs).toEqual({ network: [], errors: [] });
 });
 
@@ -161,7 +172,7 @@ test('360, 390 and 1440 layout, full viewport viewer with switches, and screensh
     await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
     await page.locator('#scan-shiny').click();
     await expect(page.locator('#qr-1-0 .shiny-switch')).toHaveAttribute('aria-checked', 'true');
-    await expect(page.locator('#scan-details')).toContainText('shiny');
+    await expect(page.locator('#scan-variant')).toContainText('Shiny');
     await page.locator('#scan-gender').click();
     await expect(page.locator('#qr-1-0')).toHaveAttribute('data-gender', 'f');
     await expect.poll(() => page.locator('#scan-image').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
@@ -184,12 +195,15 @@ test('touch-mobile deep links open a card or point at a blocked row', async ({ b
   const logs = await open(page, info.project.name, '#qr-150-0');
   expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
   await expect(page.locator('#scan-title')).toContainText('Mewtwo');
-  await expect(page.locator('#scan-details')).toContainText('genderless');
+  await expect(page.locator('#scan-variant')).toContainText('Genderless');
   await page.locator('#scan-close').click();
   await page.goto((info.project.name === 'standalone-file' ? file : hosted) + '#qr-807-0');
   await expect(page.locator('#scan-view')).toBeHidden();
   await expect(page.locator('#qr-807-0')).toHaveClass(/is-target/);
   await expect(page.locator('#qr-807-0')).toBeInViewport();
+  await page.goto((info.project.name === 'standalone-file' ? file : hosted) + '#qr-25-3');
+  await expect(page.locator('#qr-25-1')).toHaveClass(/is-target/);
+  await expect(page.locator('#qr-807-0')).not.toHaveClass(/is-target/);
   expect(logs).toEqual({ network: [], errors: [] });
   await context.close();
 });
