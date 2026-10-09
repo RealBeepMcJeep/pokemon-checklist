@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-09
+
+- The generated QR page now has a working code for every Pokémon and form the QR Scanner accepts (784 species, 1,082 cards), with a ♂/♀ switch and a shiny switch on each card. Codes now claim each species' real gender, which fixes Mewtwo, Type: Null, Mew, Eternal Floette and every other genderless or single-gender Pokémon (they previously became a random Wonder QR Pokémon). Species #785–807 and Pikachu's Cap forms, which no code can register, are listed separately at the bottom. QR codes are drawn in the browser from verified payloads, and cards confirmed on a real Ultra Moon are marked.
+
 ## 2026-10-02
 
 - Team cards now support acquisition-checked move targets for Chandelure, Walrein and Typhlosion, preserving pre-evolution learning and later TM gates. Move targets do not require breeding or hidden abilities; team scores and website files are unchanged.

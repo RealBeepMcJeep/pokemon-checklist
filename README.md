@@ -65,25 +65,27 @@ python tools/qr_codec.py generate 25 --template references/qr-codes/images/30491
 
 Generated codes are labeled locally generated, not official or console-tested.
 
-### Experimental generated QR page
+### Generated QR codes for every Pokémon
 
-The separate [experimental page](qr-experimental.html) covers all 807 Gen I–VII
-species and the alternate-form rows in the pinned Gen VII personal table. It
-shares the archive's card renderer, sorting, filters, full-screen scan viewer,
-checklist type-chip colors and pixel-sprite atlas. Sprites depict the base species,
-not necessarily the selected form. This page does not modify checklist progress.
+The [generated codes page](qr-experimental.html) has a working code for every species and
+form the Gen VII QR Scanner accepts: 784 species and 1,082 species/form cards. Each card has
+a gender switch (♂/♀, or a fixed "male only", "female only" or "genderless" marker) and a
+shiny switch; each gender and shiny version registers separately in the Pokédex. The 34 rows
+no code can register (species #785–807, which the scanner blocks, and Pikachu's Cap forms,
+which it resets to plain Pikachu) are listed greyed out at the bottom without codes.
 
-Every generated image is decoded back to raw bytes and its ordinary-code signature,
-species and form are checked during compilation. These are software checks, **not
-proof of in-game acceptance**. Numeric form rows may include battle-only or otherwise
-unsupported scanner forms; this is not every gender/shiny combination and it does
-not generate event gifts. The page includes staged console-test suggestions and
-distinguishes intended recognition, Wonder QR fallback and rejection.
+The scanner rules come from reverse-engineering the Ultra Moon v1.2 QR Scanner and running its
+own code; codes marked "Console-tested" were scanned on a real Ultra Moon. A code claims the
+species' real gender (`references/qr-codes/gen7-gender-ratios.json`, derived from the pinned
+PKHeX personal table by `tools/derive_gen7_gender.py`) and sets only the matching Pokédex
+registration lane. Codes are signed and verified at build time (signature, identity fields,
+unchanged template bytes and the scanner rule), stored as payloads and drawn in the browser
+with the vendored qrcode-generator (`tools/vendor/`). Sun, Moon and Ultra Sun are untested.
 
 Live pages:
 - Checklist: <https://realbeepmcjeep.github.io/pokemon-checklist/>
 - Original QR archive: <https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>
-- Experimental QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
+- Generated QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
 
 ## Local five-team search
 

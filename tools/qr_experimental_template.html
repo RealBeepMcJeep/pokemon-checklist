@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10141e">
+  <title>Pokédex QR codes for every Pokémon · Gen VII</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #10141e; color: #f3f5fa;
+      --male: #6fb3ec; --male-bg: #16283a; --female: #f294bd; --female-bg: #33202c; --gold: #e7c262; --gold-deep: #b98d2c; --line: #3d4a5d; --switch-line: #5d6c82; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: radial-gradient(ellipse at 20% 0%, #1c2b3b 0, #10141e 52rem); }
+    button, input, select { font: inherit; }
+    input, select { min-height: 44px; }
+    .page { width: min(calc(100% - 32px), 1360px); margin: 0 auto; }
+    .hero { padding: clamp(24px, 5vw, 56px) 0 20px; }
+    .eyebrow { margin: 0 0 8px; color: #86d4d0; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(1.8rem, 5vw, 3.15rem); line-height: 1.04; letter-spacing: -.035em; }
+    .lede { max-width: 780px; margin: 14px 0 0; color: #c3ccd8; line-height: 1.55; }
+    .compatibility { max-width: 980px; margin: 16px 0 0; padding: 12px 14px; border-left: 3px solid #86d4d0; border-radius: 0 10px 10px 0; background: #1a2430; color: #dfe7ef; line-height: 1.5; }
+    .compatibility summary { font-weight: 750; cursor: pointer; }
+    .compatibility ul { margin: 6px 0 0; padding-left: 20px; }
+    .filters { display: grid; grid-template-columns: minmax(200px, 1.6fr) repeat(2, minmax(150px, 1fr)); gap: 12px; margin: 22px 0 10px; }
+    .control { display: grid; min-width: 0; gap: 5px; }
+    .control label { color: #b8c3d2; font-size: .79rem; font-weight: 700; }
+    .control input, .control select { width: 100%; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: #171e2a; color: #f6f7fb; }
+    .control input:focus-visible, .control select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #8be1d9; outline-offset: 2px; }
+    .result-count { min-height: 24px; margin: 10px 0 14px; color: #abb7c7; font-size: .9rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 14px; align-items: stretch; }
+    .qr-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid #334155; border-radius: 15px; background: linear-gradient(145deg, #1b2431, #151b26); box-shadow: 0 5px 18px #0003; transition: border-color .15s; }
+    .qr-card[hidden], .blocked-row[hidden] { display: none; }
+    .qr-card:hover { border-color: #7186a3; }
+    .qr-card.is-shiny { border-color: #6b5a2e; }
+    .card-open { display: flex; width: 100%; min-width: 0; flex: 1; flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 10px 6px; border: 0; background: transparent; color: inherit; text-align: left; cursor: zoom-in; }
+    .qr-frame { display: grid; width: 100%; aspect-ratio: 1; place-items: center; overflow: hidden; border-radius: 9px; background: #fff; }
+    .qr-original { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+    .card-meta { display: grid; min-width: 0; width: 100%; gap: 8px; }
+    .identity { display: flex; min-width: 0; align-items: center; gap: 9px; }
+    .sprite-crop { position: relative; display: block; width: 40px; height: 30px; flex: 0 0 40px; overflow: hidden; contain: paint; }
+    .sprite-atlas { position: absolute; top: 0; left: 0; width: 1280px; height: 780px; max-width: none; image-rendering: pixelated; }
+    .names { display: grid; min-width: 0; gap: 2px; }
+    .species-name { overflow-wrap: anywhere; font-size: 1.03rem; line-height: 1.15; }
+    .dex-form { color: #b3c0d1; font-size: .77rem; }
+    .type-list { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; }
+    __TYPE_STYLES__
+    .tested { display: inline-flex; align-items: center; gap: 4px; justify-self: start; padding: 2px 7px; border: 1px solid #2f5e59; border-radius: 999px; background: #15302e; color: #9fe3da; font-size: .66rem; font-weight: 700; }
+    .card-controls { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px 8px; }
+    .switch { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: #c6d0dc; font-size: .74rem; font-weight: 650; cursor: pointer; }
+    .card-open:focus-visible { outline-offset: -3px; border-radius: 15px; }
+    .switch-track { position: relative; display: block; width: 50px; height: 26px; flex: 0 0 50px; border: 1px solid var(--switch-line); border-radius: 999px; background: #121926; transition: background .18s, border-color .18s; }
+    .icon { display: block; width: 12px; height: 12px; fill: currentColor; }
+    .tested .icon { width: 10px; height: 10px; }
+    .switch-knob { position: absolute; top: 2px; left: 2px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; font-size: .8rem; font-weight: 800; line-height: 1; transition: transform .18s, background .18s, color .18s; }
+    .switch[aria-checked="true"] .switch-knob, .switch[data-on="true"] .switch-knob { transform: translateX(24px); }
+    .gender-switch .switch-track { border-color: #3b6286; background: var(--male-bg); }
+    .gender-switch .switch-knob { background: var(--male); color: #0e1a26; }
+    .gender-switch[data-on="true"] .switch-track { border-color: #8a4d6b; background: var(--female-bg); }
+    .gender-switch[data-on="true"] .switch-knob { background: var(--female); color: #2a0f1d; }
+    .gender-fixed { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; color: #9eacbc; font-size: .72rem; font-weight: 650; }
+    .gender-fixed .symbol { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: #1d2633; font-size: .8rem; font-weight: 800; }
+    .gender-fixed .symbol.male { color: var(--male); }
+    .gender-fixed .symbol.female { color: var(--female); }
+    .gender-fixed .symbol.none { color: #9eacbc; }
+    .shiny-switch .switch-knob { background: #2a3443; color: #8a96a6; }
+    .shiny-switch[aria-checked="true"] .switch-track { border-color: var(--gold-deep); background: linear-gradient(90deg, #3b3018, #4c3d1b); }
+    .shiny-switch[aria-checked="true"] .switch-knob { background: var(--gold); color: #3b2c06; box-shadow: 0 0 8px #e7c26255; }
+    .shiny-switch[aria-checked="true"] .switch-label { color: var(--gold); }
+    .empty-state { margin: 20px 0; padding: 22px; border: 1px dashed #526176; border-radius: 12px; color: #c0cada; text-align: center; }
+    .blocked-section { margin: 34px 0 24px; padding: 18px; border: 1px solid #3a4352; border-radius: 13px; background: #141a23; }
+    .blocked-section h2, .credits h2 { margin: 0 0 6px; font-size: 1rem; }
+    .blocked-section > p, .credits p { margin: 0; color: #aab5c3; line-height: 1.5; }
+    .blocked-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .blocked-row { display: flex; min-width: 0; align-items: center; gap: 9px; padding: 8px 10px; border: 1px dashed #3a4454; border-radius: 10px; background: #151a22; }
+    .blocked-row .sprite-atlas { filter: grayscale(1); opacity: .55; }
+    .blocked-row .species-name { color: #c9d2dd; }
+    .blocked-row .dex-form { color: #a3afbe; }
+    .blocked-row .names { gap: 1px; }
+    .blocked-row .species-name { font-size: .9rem; }
+    .blocked-reason { color: #a3afbe; font-size: .7rem; font-style: italic; }
+    .blocked-row.is-target { border-style: solid; border-color: #8be1d9; }
+    .credits { margin: 0 0 28px; padding: 16px 0 26px; border-top: 1px solid #344154; }
+    .credits a, .scan-credits a, .compatibility a { color: #9be4dc; text-underline-offset: 3px; overflow-wrap: anywhere; }
+    .credits ul { display: grid; gap: 7px; margin: 10px 0 0; padding-left: 20px; color: #bdc8d7; font-size: .88rem; }
+    .credits li, .credits code { min-width: 0; overflow-wrap: anywhere; }
+    .scan-overlay[hidden] { display: none; }
+    .scan-overlay { position: fixed; z-index: 20; inset: 0; display: flex; width: 100vw; height: 100vh; height: 100dvh; flex-direction: column; padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); overflow: auto; overscroll-behavior: contain; background: #080b11f7; touch-action: pan-y; }
+    .scan-header { display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 12px; }
+    .scan-title-wrap { min-width: 0; }
+    .scan-header h2 { margin: 0; overflow-wrap: anywhere; font-size: clamp(1.05rem, 3vw, 1.45rem); }
+    .scan-header p { margin: 3px 0 0; color: #bdc8d6; font-size: .78rem; }
+    .icon-button { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; border: 1px solid #566175; border-radius: 12px; background: #18202c; color: #fff; font-size: 1.55rem; cursor: pointer; }
+    .scan-stage { display: flex; min-height: 0; flex: 1 1 auto; align-items: center; justify-content: center; gap: clamp(4px, 2vw, 24px); padding: 3px 0; }
+    .scan-sheet { display: grid; width: min(76vw, 66vh, 760px); max-width: calc(100% - 108px); max-height: 100%; aspect-ratio: 1; flex: 0 1 auto; place-items: center; padding: clamp(12px, 3.5vw, 32px); background: #fff; box-shadow: 0 8px 50px #0009; }
+    .scan-image { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; user-select: none; -webkit-user-drag: none; }
+    .scan-nav { width: 44px; height: 52px; flex: 0 0 44px; border: 1px solid #566175; border-radius: 10px; background: #18202c; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .scan-nav:disabled { opacity: .45; }
+    .scan-controls { display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 22px; }
+    .scan-credits { display: flex; min-height: 36px; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; color: #bac5d3; font-size: .78rem; text-align: center; }
+    @media (max-width: 700px) {
+      .page { width: min(calc(100% - 20px), 1360px); }
+      .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+      .control:first-child { grid-column: 1 / -1; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .card-open { gap: 7px; padding: 7px 7px 4px; }
+      .card-controls { gap: 4px; padding: 0 7px 5px; }
+      .gender-switch .switch-label { display: none; }
+      .switch, .gender-fixed { font-size: .66rem; gap: 4px; }
+      .switch-track { width: 44px; flex-basis: 44px; }
+      .switch[aria-checked="true"] .switch-knob, .switch[data-on="true"] .switch-knob { transform: translateX(18px); }
+      .qr-card { border-radius: 11px; }
+      .qr-frame { border-radius: 7px; }
+      .card-meta { gap: 6px; }
+      .species-name { font-size: .91rem; }
+      .dex-form { font-size: .68rem; }
+      .type-chip { padding: 2px 6px; font-size: .65rem; }
+      .scan-overlay { padding-left: max(6px, env(safe-area-inset-left)); padding-right: max(6px, env(safe-area-inset-right)); }
+      .scan-stage { gap: 3px; }
+      .scan-sheet { width: calc(100vw - 112px); max-width: calc(100% - 94px); max-height: 100%; padding: 12px; }
+      .scan-nav { width: 40px; flex-basis: 40px; }
+    }
+    @media (max-width: 350px) {
+      .page { width: calc(100% - 14px); }
+      .cards { gap: 6px; }
+      .card-open { padding: 5px 5px 3px; }
+      .switch-track { width: 44px; flex-basis: 44px; }
+      .switch[aria-checked="true"] .switch-knob { transform: translateX(18px); }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">__EYEBROW__</p>
+      <h1>Pokédex QR codes for every Pokémon you can scan</h1>
+      __INTRO__
+      <div class="filters" aria-label="Filter and sort QR codes">
+        <div class="control"><label for="search">Search name, Pokédex number, or form</label><input id="search" type="search" autocomplete="off" placeholder="e.g. Mewtwo, 150, Alola"></div>
+        <div class="control"><label for="sort-order">Sort by</label><select id="sort-order"><option value="dex-asc" selected>Pokédex number: low to high</option><option value="dex-desc">Pokédex number: high to low</option><option value="name-asc">Name: A–Z</option><option value="name-desc">Name: Z–A</option></select></div>
+        <div class="control"><label for="type-filter">Pokémon type</label><select id="type-filter"><option value="">All types</option>__TYPE_OPTIONS__</select></div>
+      </div>
+      <p id="result-count" class="result-count" aria-live="polite">Showing __CARD_COUNT__ of __CARD_COUNT__ QR codes</p>
+    </header>
+    <section id="ordinary-gallery" aria-label="Scannable Pokédex QR codes">
+      <div id="cards" class="cards">__CARDS__</div>
+      <p id="empty-state" class="empty-state" hidden>No QR codes match those filters.</p>
+    </section>
+    <section id="not-scannable" class="blocked-section" aria-labelledby="blocked-heading">
+      <h2 id="blocked-heading">Can't be added with a QR code (__BLOCKED_COUNT__)</h2>
+      __BLOCKED_INTRO__
+      <ul id="blocked-list" class="blocked-list">__BLOCKED__</ul>
+    </section>
+    <footer class="credits" aria-labelledby="credits-heading">
+      <h2 id="credits-heading">Credits &amp; provenance</h2>
+      __CREDITS__
+    </footer>
+  </main>
+  <div id="scan-view" class="scan-overlay" role="dialog" aria-modal="true" aria-labelledby="scan-title" aria-describedby="scan-details" hidden>
+    <header class="scan-header">
+      <div class="scan-title-wrap"><h2 id="scan-title"></h2><p id="scan-details"></p></div>
+      <button id="scan-close" class="icon-button" type="button" aria-label="Close scan viewer" title="Close (Escape)">×</button>
+    </header>
+    <div class="scan-stage">
+      <button id="scan-prev" class="scan-nav" type="button" aria-label="Previous visible QR code" title="Previous (←)">‹</button>
+      <div class="scan-sheet"><img id="scan-image" class="scan-image" alt="" draggable="false"></div>
+      <button id="scan-next" class="scan-nav" type="button" aria-label="Next visible QR code" title="Next (→)">›</button>
+    </div>
+    <div class="scan-controls">
+      <span id="scan-gender-slot"></span>
+      <button id="scan-shiny" class="switch shiny-switch" type="button" role="switch" aria-checked="false" aria-label="Shiny"><span class="switch-label">Shiny</span><span class="switch-track" aria-hidden="true"><span class="switch-knob"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0.8 9.7 6.3 15.2 8 9.7 9.7 8 15.2 6.3 9.7 0.8 8 6.3 6.3Z"/></svg></span></span></button>
+    </div>
+    <div class="scan-credits"><span id="scan-provenance">__PROVENANCE__</span></div>
+  </div>
+  <script>__QR_LIBRARY__</script>
+  <script>
+    (() => {
+      "use strict";
+      const atlasSource = "__ATLAS_DATA_URI__";
+      const cards = Array.from(document.querySelectorAll("#ordinary-gallery .qr-card"));
+      const blockedRows = Array.from(document.querySelectorAll("#blocked-list .blocked-row"));
+      const sourceOrder = new Map(cards.map((card, index) => [card, index]));
+      const cardGrid = document.getElementById("cards");
+      const sortOrder = document.getElementById("sort-order");
+      const nameOrder = new Intl.Collator("en", { sensitivity: "base" });
+      const search = document.getElementById("search");
+      const typeFilter = document.getElementById("type-filter");
+      const resultCount = document.getElementById("result-count");
+      const emptyState = document.getElementById("empty-state");
+      const dialog = document.getElementById("scan-view");
+      const scanTitle = document.getElementById("scan-title");
+      const scanDetails = document.getElementById("scan-details");
+      const scanImage = document.getElementById("scan-image");
+      const scanGenderSlot = document.getElementById("scan-gender-slot");
+      const scanShiny = document.getElementById("scan-shiny");
+      const closeButton = document.getElementById("scan-close");
+      const prevButton = document.getElementById("scan-prev");
+      const nextButton = document.getElementById("scan-next");
+      const GENDER_WORDS = { m: "male", f: "female", u: "genderless" };
+      const imageCache = new Map();
+      let selectedCard = null;
+      let returnFocus = null;
+      let historyEntryOpen = false;
+      let oldHtmlOverflow = "";
+      let oldBodyOverflow = "";
+      let oldBodyPaddingRight = "";
+
+      document.querySelectorAll(".sprite-atlas").forEach((image) => {
+        const dex = Number(image.dataset.dex);
+        image.src = atlasSource;
+        image.style.transform = `translate(-${((dex - 1) % 32) * 40}px, -${Math.floor((dex - 1) / 32) * 30}px)`;
+      });
+
+      function variantKey(card) { return card.dataset.gender + (card.dataset.shiny === "1" ? "s" : ""); }
+      function qrDataUrl(card) {
+        const key = variantKey(card);
+        const payload = card.dataset["qr" + key[0].toUpperCase() + key.slice(1)];
+        const cacheKey = card.id + ":" + key;
+        if (!imageCache.has(cacheKey)) {
+          const code = qrcode(0, "L");
+          code.addData(atob(payload), "Byte");
+          code.make();
+          imageCache.set(cacheKey, code.createDataURL(8, 32));
+        }
+        return imageCache.get(cacheKey);
+      }
+      function variantText(card) {
+        return [GENDER_WORDS[card.dataset.gender], card.dataset.shiny === "1" ? "shiny" : ""].filter(Boolean).join(", ");
+      }
+      function renderCard(card) {
+        const image = card.querySelector(".qr-original");
+        image.src = qrDataUrl(card);
+        image.alt = `${card.dataset.name} ${card.dataset.formLabel} Pokédex QR code (${variantText(card)})`;
+        card.dataset.rendered = "1";
+      }
+      function syncSwitches(card) {
+        const genderSwitch = card.querySelector(".gender-switch");
+        if (genderSwitch) {
+          const female = card.dataset.gender === "f";
+          genderSwitch.dataset.on = String(female);
+          genderSwitch.setAttribute("aria-label", female ? "Female. Switch to male" : "Male. Switch to female");
+          genderSwitch.querySelector(".switch-knob").textContent = female ? "♀" : "♂";
+          genderSwitch.querySelector(".switch-label").textContent = female ? "Female" : "Male";
+        }
+        const shiny = card.dataset.shiny === "1";
+        card.querySelector(".shiny-switch").setAttribute("aria-checked", String(shiny));
+        card.classList.toggle("is-shiny", shiny);
+      }
+      function toggle(card, what) {
+        if (what === "gender") card.dataset.gender = card.dataset.gender === "f" ? "m" : "f";
+        else card.dataset.shiny = card.dataset.shiny === "1" ? "0" : "1";
+        syncSwitches(card);
+        renderCard(card);
+        if (selectedCard === card) setCard(card);
+      }
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) { renderCard(entry.target); observer.unobserve(entry.target); }
+          }
+        }, { rootMargin: "800px 0px" });
+        cards.forEach((card) => observer.observe(card));
+      } else {
+        cards.forEach(renderCard);
+      }
+
+      const fold = (value) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase();
+      function applySort() {
+        const order = sortOrder.value;
+        const direction = order.endsWith("desc") ? -1 : 1;
+        cards.sort((left, right) => {
+          const dex = Number(left.dataset.dex) - Number(right.dataset.dex);
+          const primary = order.startsWith("name") ? nameOrder.compare(left.dataset.name, right.dataset.name) : dex;
+          return direction * primary || dex
+            || Number(left.dataset.form) - Number(right.dataset.form)
+            || sourceOrder.get(left) - sourceOrder.get(right);
+        });
+        cardGrid.append(...cards);
+      }
+      function matches(element, terms, selectedType) {
+        const haystack = fold(element.dataset.search || "");
+        return terms.every((term) => haystack.includes(term))
+          && (!selectedType || (element.dataset.types || "").split(" ").includes(selectedType));
+      }
+      function applyFilters() {
+        const terms = fold(search.value.trim()).split(/\s+/).filter(Boolean);
+        const selectedType = typeFilter.value;
+        let visible = 0;
+        for (const card of cards) {
+          const match = matches(card, terms, selectedType);
+          card.hidden = !match;
+          if (match) visible++;
+        }
+        let blocked = 0;
+        for (const row of blockedRows) {
+          const match = matches(row, terms, selectedType);
+          row.hidden = !match;
+          if (match) blocked++;
+        }
+        resultCount.textContent = `Showing ${visible} of ${cards.length} QR codes` + (blocked ? ` · ${blocked} more below can't be scanned` : "");
+        emptyState.hidden = visible !== 0;
+      }
+      search.addEventListener("input", applyFilters);
+      typeFilter.addEventListener("change", applyFilters);
+      sortOrder.addEventListener("change", applySort);
+
+      function visibleCards() { return cards.filter((card) => !card.hidden); }
+      function setCard(card) {
+        selectedCard = card;
+        if (!card.dataset.rendered) renderCard(card);
+        const dex = Number(card.dataset.dex);
+        const types = (card.dataset.types || "").split(" ").join(" / ");
+        scanTitle.textContent = `${card.dataset.name} · ${card.dataset.formLabel}`;
+        scanDetails.textContent = `National Pokédex #${String(dex).padStart(3, "0")} · ${types} · ${variantText(card)}`;
+        scanImage.src = qrDataUrl(card);
+        scanImage.alt = card.querySelector(".qr-original").alt;
+        const cardGender = card.querySelector(".gender-switch, .gender-fixed");
+        const viewerGender = cardGender.cloneNode(true);
+        viewerGender.removeAttribute("data-card-action");
+        if (viewerGender.matches(".gender-switch")) viewerGender.id = "scan-gender";
+        scanGenderSlot.replaceChildren(viewerGender);
+        const shiny = card.dataset.shiny === "1";
+        scanShiny.setAttribute("aria-checked", String(shiny));
+        const listed = visibleCards();
+        prevButton.disabled = listed.length < 2;
+        nextButton.disabled = listed.length < 2;
+      }
+      function lockScroll() {
+        oldHtmlOverflow = document.documentElement.style.overflow;
+        oldBodyOverflow = document.body.style.overflow;
+        oldBodyPaddingRight = document.body.style.paddingRight;
+        const width = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        if (width) document.body.style.paddingRight = `${width}px`;
+      }
+      function unlockScroll() {
+        document.documentElement.style.overflow = oldHtmlOverflow;
+        document.body.style.overflow = oldBodyOverflow;
+        document.body.style.paddingRight = oldBodyPaddingRight;
+      }
+      function openViewer(card) {
+        if (dialog.hidden) {
+          returnFocus = document.activeElement;
+          lockScroll();
+          try {
+            history.pushState({ ...(history.state || {}), qrGalleryViewer: true }, "", "#scan");
+            historyEntryOpen = true;
+          } catch { historyEntryOpen = false; }
+          dialog.hidden = false;
+        }
+        setCard(card);
+        closeButton.focus();
+      }
+      function closeViewer(fromPopState = false) {
+        if (dialog.hidden) return;
+        dialog.hidden = true;
+        scanImage.removeAttribute("src");
+        selectedCard = null;
+        unlockScroll();
+        const shouldPop = historyEntryOpen && !fromPopState;
+        historyEntryOpen = false;
+        if (shouldPop) {
+          try { history.back(); } catch { /* file and embedded contexts may not expose history navigation */ }
+        }
+        if (returnFocus && typeof returnFocus.focus === "function") returnFocus.focus();
+        returnFocus = null;
+      }
+      function step(delta) {
+        const listed = visibleCards();
+        if (listed.length < 2 || !selectedCard) return;
+        const index = listed.indexOf(selectedCard);
+        setCard(listed[(index + delta + listed.length) % listed.length]);
+      }
+      document.querySelector("main").addEventListener("click", (event) => {
+        const action = event.target.closest("[data-card-action]");
+        if (action) { toggle(action.closest(".qr-card"), action.dataset.cardAction); return; }
+        const button = event.target.closest(".card-open");
+        if (button) openViewer(button.closest(".qr-card"));
+      });
+      scanGenderSlot.addEventListener("click", (event) => {
+        if (selectedCard && event.target.closest(".gender-switch")) { toggle(selectedCard, "gender"); document.getElementById("scan-gender")?.focus(); }
+      });
+      scanShiny.addEventListener("click", () => { if (selectedCard) toggle(selectedCard, "shiny"); });
+      closeButton.addEventListener("click", () => closeViewer());
+      prevButton.addEventListener("click", () => step(-1));
+      nextButton.addEventListener("click", () => step(1));
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) closeViewer();
+      });
+      window.addEventListener("popstate", () => {
+        if (!dialog.hidden && historyEntryOpen) closeViewer(true);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (dialog.hidden) return;
+        if (event.key === "Escape") { event.preventDefault(); closeViewer(); return; }
+        if (event.key === "ArrowLeft") { event.preventDefault(); step(-1); return; }
+        if (event.key === "ArrowRight") { event.preventDefault(); step(1); return; }
+        if (event.key === "Tab") {
+          const focusable = Array.from(dialog.querySelectorAll("button:not([disabled]), a[href]"));
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+            event.preventDefault(); last.focus();
+          } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+            event.preventDefault(); first.focus();
+          }
+        }
+      });
+      cards.forEach(syncSwitches);
+      const howItWorks = document.getElementById("how-it-works");
+      if (howItWorks && matchMedia("(max-width: 700px)").matches) howItWorks.open = false;
+      applySort();
+      applyFilters();
+      function openTarget(target) {
+        const element = document.getElementById(target);
+        if (!element) return;
+        search.value = "";
+        typeFilter.value = "";
+        applyFilters();
+        if (element.matches(".qr-card")) { openViewer(element); return; }
+        blockedRows.forEach((row) => row.classList.remove("is-target"));
+        element.classList.add("is-target");
+        element.scrollIntoView({ block: "center" });
+      }
+      if (/^#qr-\d+-\d+$/.test(location.hash)) openTarget(location.hash.slice(1));
+      window.addEventListener("hashchange", () => {
+        if (/^#qr-\d+-\d+$/.test(location.hash)) openTarget(location.hash.slice(1));
+      });
+    })();
+  </script>
+</body>
+</html>

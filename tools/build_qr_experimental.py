@@ -1,37 +1,82 @@
 #!/usr/bin/env python3
-"""Build locally signed experimental ordinary Dex QRs; console acceptance unknown."""
+"""Build the generated Pokédex QR page: every species/form the Gen VII QR Scanner accepts.
+
+Each card carries precomputed, signed payloads for its gender and shiny variants; the page draws
+the QR code in the browser (vendored qrcode-generator). Every payload is verified here: signature,
+identity fields, unchanged template bytes, and the scanner's acceptance rule below.
+"""
 from __future__ import annotations
 
 import argparse
 import base64
 import hashlib
-from io import BytesIO
 import json
 from pathlib import Path
 import re
 import sys
 from typing import Any
 
-from PIL import Image
-import qrcode
-import zxingcpp
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.build_qr_gallery import GalleryBuildError, PKHEX_COMMIT, _escape, _form_label, _render_card, shared_type_styles
+from tools.build_qr_gallery import GalleryBuildError, PKHEX_COMMIT, _escape, _form_label, shared_type_styles
 from tools.qr_codec import decode_png, generate_ordinary_payload, verify_ordinary_payload
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'qr-experimental.html'
+TEMPLATE = ROOT / 'tools/qr_experimental_template.html'
+QR_LIBRARY = ROOT / 'tools/vendor/qrcode-generator-2.0.4.js'
+QR_LIBRARY_HASH = '79ec86f82856005b1c887905cfccfcfbec3821ca61c7fd5a952faa5f778f791c'
 TEMPLATE_IMAGE_HASH = 'ba45158d80e6b903773b41dc972ca26ad1dfd6320fbd0562670bf5298a45dc14'
 TEMPLATE_PAYLOAD_HASH = 'c3c7118b6c99dd2cc424cfcf52282d4d7c2d3689b82350f4e771b4d66e64fa73'
 TABLE_HASH = '78a0d3ba8de87a9d36900d88b6f56a62bc48c86d1d555573fbc25160af7484a8'
-PROVENANCE = 'locally generated / signature+PNG verified / console untested'
+
+# Scanner rules, reverse-engineered from Ultra Moon v1.2's QR Scanner
+# (NetApp::QR::QRUtility::AnalyzeQRBinaryForApp) and checked by running its own code.
+SCANNER_EXCLUDED = range(785, 808)  # in-code exclusion table: always a Wonder QR
+PIKACHU = 25                        # form reset to 0 after validation
+GENDER_CODE = {'m': 0, 'f': 1, 'u': 2}
+GENDER_WORD = {'m': 'male', 'f': 'female', 'u': 'genderless'}
+# Species/forms whose acceptance was seen on a real Ultra Moon (Prismatic Moon Standard), 2026-10.
+CONSOLE_TESTED = {(1, 0), (3, 1), (25, 0), (130, 0), (150, 0), (151, 0), (592, 0), (658, 2), (666, 19), (745, 2), (772, 0)}
+PIKACHU_CAPS = {1: 'Original Cap', 2: 'Hoenn Cap', 3: 'Sinnoh Cap', 4: 'Unova Cap', 5: 'Kalos Cap', 6: 'Alola Cap', 7: 'Partner Cap'}
+PROVENANCE = 'Generated from the official Caterpie code (key 3); signature, identity fields and scanner rule verified at build time.'
 
 
-def checked_replace(text: str, old: str, new: str, count: int = 1) -> str:
-    if text.count(old) != count:
-        raise GalleryBuildError(f'Shared renderer changed: expected {count} instances of {old[:80]!r}')
-    return text.replace(old, new)
+def gender_options(ratio: int) -> list[str]:
+    """Gender variants the scanner accepts, from the species' base personal gender ratio."""
+    return {0: ['m'], 254: ['f'], 255: ['u']}.get(ratio, ['m', 'f'])
+
+
+def card_genders(record: dict[str, Any]) -> list[str]:
+    """Variants worth offering: accepted for the species, and shown as that gender for this form."""
+    options = gender_options(record['gender_ratio'])
+    shown = gender_options(record.get('form_gender_ratio', record['gender_ratio']))
+    return [g for g in options if g in shown] or options
+
+
+def registration_masks(gender: str, shiny: bool, form: int) -> tuple[int, int, int, int]:
+    """One Pokédex registration lane: normal ♂/genderless, normal ♀, shiny ♂/genderless, shiny ♀."""
+    masks = [0, 0, 0, 0]
+    masks[(1 if gender == 'f' else 0) + (2 if shiny else 0)] = 1 << form
+    return masks[0], masks[1], masks[2], masks[3]
+
+
+def scanner_outcome(species: int, form: int, gender: int, shiny: int, both: int,
+                    masks: tuple[int, int, int, int], form_count: int, ratio: int) -> str:
+    """'accepted', 'base-form' (shown as form 0) or 'wonder' for an ordinary key-3 record."""
+    if not 1 <= species <= 807 or species in SCANNER_EXCLUDED or form >= form_count:
+        return 'wonder'
+    if (masks[0] | masks[1] | masks[2] | masks[3]).bit_length() > form_count:
+        return 'wonder'
+    lanes = {0: (0, 1, 3), 254: (1, 0, 2), 255: (2, 1, 3)}.get(ratio)
+    if lanes:
+        required, a, b = lanes
+        if gender != required or (masks[a] + masks[b]) % (1 << 32) or both == 1:
+            return 'wonder'
+    elif gender not in (0, 1):
+        return 'wonder'
+    if shiny not in (0, 1) or both not in (0, 1):
+        return 'wonder'
+    return 'base-form' if species == PIKACHU and form else 'accepted'
 
 
 def load_inputs(root: Path = ROOT) -> tuple[list[dict[str, Any]], list[str], bytes, bytes]:
@@ -39,9 +84,16 @@ def load_inputs(root: Path = ROOT) -> tuple[list[dict[str, Any]], list[str], byt
     catalog = root / 'references/qr-codes'
     manifest = json.loads((catalog / 'manifest.json').read_text())
     metadata = json.loads((catalog / 'gen7-form-types.json').read_text())
+    genders = json.loads((catalog / 'gen7-gender-ratios.json').read_text())
     source = metadata['source']
     if source['repository'] != 'kwsch/PKHeX' or source['commit'] != PKHEX_COMMIT or source['tableSha256'] != TABLE_HASH:
         raise GalleryBuildError('Pinned Gen VII metadata provenance changed')
+    gsource = genders['source']
+    if gsource['repository'] != 'kwsch/PKHeX' or gsource['commit'] != PKHEX_COMMIT or gsource['tableSha256'] != TABLE_HASH:
+        raise GalleryBuildError('Pinned gender-ratio provenance changed')
+    ratios, form_ratios = genders['genderRatio'], genders.get('formGenderRatio', {})
+    if set(ratios) != {str(i) for i in range(1, 808)} or any(type(v) is not int or not 0 <= v <= 255 for v in ratios.values()):
+        raise GalleryBuildError('Gender ratios must cover species 1..807 with byte values')
     names = {row['id']: row['name'] for row in json.loads((root / 'data/pokemon.json').read_text())}
     if set(names) != set(range(1, 808)):
         raise GalleryBuildError('Canonical names must cover exactly species 1..807')
@@ -80,128 +132,158 @@ def load_inputs(root: Path = ROOT) -> tuple[list[dict[str, Any]], list[str], byt
     records = []
     for dex in range(1, 808):
         for form in range(counts[str(dex)]):
-            records.append({'id': dex, 'name': names[dex], 'form_id': form,
-                'form_label': labels.get((dex, form), 'Standard' if form == 0 else f'Form {form} (experimental)'),
-                'types': types[f'{dex}:{form}'], 'categories': [],
-                'source_url': '#generation-provenance', 'source_title': 'Caterpie template / locally generated'})
+            records.append({'id': dex, 'name': names[dex], 'form_id': form, 'form_count': counts[str(dex)],
+                'form_label': labels.get((dex, form)) or (PIKACHU_CAPS[form] if dex == PIKACHU and form in PIKACHU_CAPS else 'Standard' if form == 0 else f'Form {form}'),
+                'types': types[f'{dex}:{form}'], 'gender_ratio': ratios[str(dex)],
+                'form_gender_ratio': form_ratios.get(f'{dex}:{form}', ratios[str(dex)])})
     atlas = (root / 'assets/gen7-icons.png').read_bytes()
     if not atlas.startswith(b'\x89PNG\r\n\x1a\n'):
         raise GalleryBuildError('Invalid existing sprite atlas')
     return records, source['typeValues'], raw, atlas
 
 
-def verified_png(raw: bytes, dex: int, form: int) -> bytes:
-    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=8, border=4)
-    code.add_data(raw, optimize=0)
-    code.make(fit=True)
-    buffer = BytesIO()
-    code.make_image(fill_color='black', back_color='white').save(buffer, format='PNG')
-    png = buffer.getvalue()
-    with Image.open(BytesIO(png)) as image:
-        symbols = zxingcpp.read_barcodes(image, formats=zxingcpp.BarcodeFormat.QRCode)
-    if len(symbols) != 1 or symbols[0].format != zxingcpp.BarcodeFormat.QRCode or bytes(symbols[0].bytes) != raw:
-        raise GalleryBuildError(f'PNG raw-byte verification failed for {dex}:{form}')
-    decoded = verify_ordinary_payload(bytes(symbols[0].bytes))
-    if (decoded.species_id, decoded.form, decoded.gender, decoded.shiny_flag, decoded.both_genders_flag, decoded.key_index) != (dex, form, 0, 0, 0, 3):
-        raise GalleryBuildError(f'Signed PNG identity verification failed for {dex}:{form}')
-    return png
+def load_qr_library(root: Path = ROOT) -> str:
+    data = (Path(root) / 'tools/vendor/qrcode-generator-2.0.4.js').read_bytes()
+    if hashlib.sha256(data).hexdigest() != QR_LIBRARY_HASH:
+        raise GalleryBuildError('Vendored qrcode-generator changed')
+    text = data.decode('utf-8')
+    if '</script' in text.lower():
+        raise GalleryBuildError('Vendored library cannot be inlined safely')
+    return text
 
 
-def render_generated(record: dict[str, Any], raw: bytes) -> str:
-    record = {**record, 'source_title': 'Caterpie template · generated payload SHA-256 ' + hashlib.sha256(raw).hexdigest()}
-    card = _render_card(record)
-    card = checked_replace(card, 'class="qr-card"', f'class="qr-card" id="qr-{record["id"]}-{record["form_id"]}" data-payload-sha256="{hashlib.sha256(raw).hexdigest()}"')
-    card = checked_replace(card, 'data-libraries=""', 'data-libraries="generated"')
-    card = checked_replace(card, 'data-library-labels=""', f'data-library-labels="{_escape(PROVENANCE)}"')
-    card = checked_replace(card, 'alt="Original ', 'alt="Locally generated ')
-    card = checked_replace(card, 'Source library membership', 'Generation provenance')
-    card = checked_replace(card, '<span class="source-list"></span>', f'<span class="source-list"><span class="source-chip">{_escape(PROVENANCE)}</span></span><span class="dex-form">Base species icon; not form art</span>')
-    return card
+def signed_variant(record: dict[str, Any], gender: str, shiny: bool, template: bytes) -> bytes:
+    """Sign one variant and verify it: identity, unchanged template bytes, and the scanner rule."""
+    dex, form = record['id'], record['form_id']
+    masks = registration_masks(gender, shiny, form)
+    raw = generate_ordinary_payload(dex, form=form, gender=GENDER_CODE[gender], shiny=shiny, both_genders=False,
+                                    masks=masks, template=template)
+    decoded = verify_ordinary_payload(raw)
+    source = verify_ordinary_payload(template).body
+    if (decoded.species_id, decoded.form, decoded.gender, decoded.shiny_flag, decoded.both_genders_flag, decoded.key_index) != (dex, form, GENDER_CODE[gender], int(shiny), 0, 3):
+        raise GalleryBuildError(f'Signed identity verification failed for {dex}:{form} {gender}{"s" if shiny else ""}')
+    if decoded.body[0x08:0x18] != b''.join(m.to_bytes(4, 'little') for m in masks):
+        raise GalleryBuildError(f'Registration masks not written for {dex}:{form}')
+    if decoded.body[:0x08] != source[:0x08] or decoded.body[0x18:0x28] != source[0x18:0x28] or decoded.body[0x2e:-8] != source[0x2e:-8]:
+        raise GalleryBuildError(f'Unknown template bytes changed for {dex}:{form}')
+    outcome = scanner_outcome(dex, form, decoded.gender, decoded.shiny_flag, decoded.both_genders_flag, masks,
+                              record['form_count'], record['gender_ratio'])
+    if outcome != 'accepted':
+        raise GalleryBuildError(f'Scanner rule rejects {dex}:{form} {gender}: {outcome}')
+    return raw
 
 
-def test_guide(root: Path) -> str:
-    manifest = json.loads((root / 'references/qr-codes/manifest.json').read_text())
-    def generated(dex: int, form: int, label: str) -> str:
-        target = f'qr-{dex}-{form}'
-        return f'<a href="#{target}" data-qr-target="{target}">{_escape(label)}</a>'
-    def original(dex: int, label: str) -> str:
-        row = next(r for r in manifest['records'] if r['decoded']['species']['id'] == dex and r['decoded']['formId'] == 0)
-        return f'<a href="{_escape(row["source"]["originalUrl"])}" target="_blank" rel="noopener noreferrer">{_escape(label)}</a>'
-    batch1 = [original(25, 'Original Pikachu control'), generated(25, 0, 'Generated Pikachu #025'),
-        generated(1, 0, 'Bulbasaur #001 (non-Alola)'), generated(150, 0, 'Mewtwo #150 (non-Alola)'),
-        original(181, 'Original Ampharos'), generated(181, 0, 'Generated Ampharos #181 (Ultra-added)'),
-        original(427, 'Original Buneary'), generated(427, 0, 'Generated Buneary #427 (Ultra-added)'),
-        generated(803, 0, 'Poipole #803 (Ultra-only)'), generated(807, 0, 'Zeraora #807 (Ultra-only)')]
-    batch2 = [generated(dex, form, f'{name} #{dex:03d} form {form}') for dex, name in [(19, 'Rattata'), (479, 'Rotom'), (201, 'Unown')] for form in [0, 1]]
-    return ('<section id="test-guide" class="gift-section" aria-labelledby="test-guide-heading">'
-        '<h2 id="test-guide-heading">Prioritized physical-console test guide</h2>'
-        '<p>All console acceptance is unknown. Repeat separately in stock Sun/Moon and Ultra Sun/Ultra Moon. '
-        'Record exact game, region and update version; payload SHA-256 (shown in the generated scan viewer); exact displayed species and form; '
-        'intended recognition versus Wonder QR fallback versus rejection; seen-state and points awarded. '
-        'Separate camera failures, duplicate scans and exhausted charges from application rejection. '
-        'The same pattern cannot repeat until Island Scan resets scanner memory. Do not change the system clock: it resets charges to zero. '
-        'Species 803 and 807 probe the SM title-data boundary (802), not a proven scanner threshold.</p>'
-        '<p>Scanner budget: at most 10 stored scans, one charge restored every 2 hours; stage batches of no more than 10 '
-        'and wait for sufficient charges before the next batch. Do not assume all 10 refill in 2 hours. '
-        '<a href="https://bulbapedia.bulbagarden.net/wiki/QR_Scanner" target="_blank" rel="noopener noreferrer">Scanner reference</a>.</p>'
-        '<h3>Batch 1 · 10 scans · controls, older species, Ultra boundary</h3><ol>' +
-        ''.join(f'<li>{link}</li>' for link in batch1) + '</ol>'
-        '<h3>Batch 2 · 6 scans · form comparisons</h3><ol>' + ''.join(f'<li>{link}</li>' for link in batch2) + '</ol>'
-        '<p>Original links open preserved source images; generated links open this page’s scan viewer. '
-        'The unchanged <a href="qr.html">ordinary archive (244 originals) and separate gift collection (2)</a> remain controls, not generated rewards.</p></section>')
+def blocked_reason(record: dict[str, Any]) -> str | None:
+    """Why no code can register this species/form, or None if it is scannable."""
+    gender = gender_options(record['gender_ratio'])[0]
+    masks = registration_masks(gender, False, record['form_id'])
+    outcome = scanner_outcome(record['id'], record['form_id'], GENDER_CODE[gender], 0, 0, masks,
+                              record['form_count'], record['gender_ratio'])
+    if outcome == 'accepted':
+        return None
+    if outcome == 'base-form':
+        return 'Scans as plain Pikachu'
+    return 'Blocked by the scanner'
+
+
+def form_text(label: str) -> str:
+    return label if label.startswith('Form ') else f'{label} form'
+
+
+def render_card(record: dict[str, Any], template: bytes) -> str:
+    dex, form, name, label = record['id'], record['form_id'], record['name'], record['form_label']
+    genders = card_genders(record)
+    payloads = {}
+    for gender in genders:
+        for shiny in (False, True):
+            payloads[gender + ('s' if shiny else '')] = base64.b64encode(signed_variant(record, gender, shiny, template)).decode('ascii')
+    data_qr = ''.join(f' data-qr-{key}="{value}"' for key, value in payloads.items())
+    search_terms = ' '.join((name, str(dex), f'{dex:03d}', f'#{dex:03d}', label))
+    types = record['types']
+    type_tags = ''.join(f'<span class="type-chip type-mark type-{_escape(t.lower())}" title="{_escape(t)} type" aria-hidden="true">{_escape(t)}</span>' for t in types)
+    tested = ('<span class="tested" title="Scanned successfully on a real Ultra Moon"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 11.6 2.6 8l-1.4 1.4 5 5L15 5.6l-1.4-1.4Z"/></svg>Console-tested</span>'
+              if (dex, form) in CONSOLE_TESTED else '')
+    if len(genders) == 2:
+        gender_control = ('<button class="switch gender-switch" type="button" data-on="false" aria-label="Male. Switch to female" data-card-action="gender">'
+                          '<span class="switch-track" aria-hidden="true"><span class="switch-knob">♂</span></span><span class="switch-label">Male</span></button>')
+    else:
+        symbol, css, text = {'m': ('♂', 'male', 'Male only'), 'f': ('♀', 'female', 'Female only'), 'u': ('–', 'none', 'Genderless')}[genders[0]]
+        gender_control = (f'<span class="gender-fixed" title="{text}"><span class="symbol {css}" aria-hidden="true">{symbol}</span>'
+                          f'<span class="fixed-label">{text}</span></span>')
+    shiny_control = ('<button class="switch shiny-switch" type="button" role="switch" aria-checked="false" aria-label="Shiny" data-card-action="shiny">'
+                     '<span class="switch-label">Shiny</span><span class="switch-track" aria-hidden="true"><span class="switch-knob"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0.8 9.7 6.3 15.2 8 9.7 9.7 8 15.2 6.3 9.7 0.8 8 6.3 6.3Z"/></svg></span></span></button>')
+    return (
+        f'<article class="qr-card" id="qr-{dex}-{form}" data-dex="{dex}" data-name="{_escape(name)}" data-form="{form}" '
+        f'data-form-label="{_escape(label)}" data-types="{_escape(" ".join(types))}" data-search="{_escape(search_terms)}" '
+        f'data-genders="{"".join(genders)}" data-gender="{genders[0]}" data-shiny="0"{data_qr}>'
+        f'<button class="card-open" type="button" aria-label="Open scan view for #{dex:03d} {_escape(name)}, {_escape(form_text(label))}">'
+        f'<span class="qr-frame"><img class="qr-original" alt="" draggable="false"></span>'
+        f'<span class="card-meta"><span class="identity"><span class="sprite-crop" aria-hidden="true"><img class="sprite-atlas" data-dex="{dex}" alt=""></span>'
+        f'<span class="names"><strong class="species-name">{_escape(name)}</strong>'
+        f'<span class="dex-form">National Pokédex #{dex:03d} · {_escape(form_text(label))}</span></span></span>'
+        f'<span class="type-list type-marks type-labels" aria-label="Types: {_escape(" and ".join(types))}">{type_tags}</span>{tested}</span></button>'
+        f'<div class="card-controls">{gender_control}{shiny_control}</div></article>'
+    )
+
+
+def render_blocked(record: dict[str, Any], reason: str) -> str:
+    dex, form, name, label = record['id'], record['form_id'], record['name'], record['form_label']
+    search_terms = ' '.join((name, str(dex), f'{dex:03d}', f'#{dex:03d}', label))
+    return (f'<li class="blocked-row" id="qr-{dex}-{form}" data-dex="{dex}" data-name="{_escape(name)}" data-form="{form}" '
+            f'data-types="{_escape(" ".join(record["types"]))}" data-search="{_escape(search_terms)}">'
+            f'<span class="sprite-crop" aria-hidden="true"><img class="sprite-atlas" data-dex="{dex}" alt=""></span>'
+            f'<span class="names"><strong class="species-name">{_escape(name)}</strong>'
+            f'<span class="dex-form">#{dex:03d} · {_escape(form_text(label))}</span>'
+            f'<span class="blocked-reason">{_escape(reason)}</span></span></li>')
 
 
 def compile_experimental(root: Path = ROOT) -> str:
     root = Path(root)
-    records, type_names, source, atlas = load_inputs(root)
-    cards = []
+    records, type_names, template, atlas = load_inputs(root)
+    cards, blocked = [], []
     for record in records:
-        raw = generate_ordinary_payload(record['id'], form=record['form_id'], gender=0, shiny=False, both_genders=False, template=source)
-        record['image_data'] = 'data:image/png;base64,' + base64.b64encode(verified_png(raw, record['id'], record['form_id'])).decode('ascii')
-        cards.append(render_generated(record, raw))
-    text = (root / 'tools/qr_gallery_template.html').read_text()
-    text = checked_replace(text, 'Generation VII Pokédex QR archive', 'Experimental Gen I–VII Pokédex QR codes', 2)
-    text = checked_replace(text, 'Offline source archive · 244 original codes', 'Offline experiment · 807 species · 1116 species/form rows')
-    start = '<p class="lede">'
-    old = text[text.index(start):text.index('      <div class="filters"')]
-    text = checked_replace(text, old, '<p class="lede">One locally generated ordinary key-3 Dex code per pinned Gen VII species/form row: all 807 species and 1116 rows. Not an exhaustive set of gender or shiny combinations. Every PNG is independently decoded and its signed species/form fields verified.</p>\n'
-        '<p class="compatibility"><strong>Console untested:</strong> signatures and PNG transport do not establish game acceptance. Includes cosmetic, Mega and battle-only rows; their presence is not a promise the scanner supports them. Ordinary Dex codes do not give Pokémon. All codes set shiny=False, both genders=False and fixed experimental gender=0; this is not a claim of valid species gender metadata.</p>\n')
-    text = checked_replace(text, 'Filter and sort ordinary QR archive', 'Filter and sort generated experiments')
-    text = checked_replace(text, '<label for="library-filter">Source library membership</label><select id="library-filter"><option value="">All source libraries</option><option value="sun-moon">Sun / Moon category</option><option value="ultra-sun-ultra-moon">Ultra Sun / Ultra Moon category</option></select>', '<label for="library-filter">Template family / provenance</label><select id="library-filter"><option value="generated">Locally generated ordinary key-3 Dex</option></select>')
-    text = checked_replace(text, 'Ordinary Pokédex QR archive', 'Generated ordinary Dex experiments')
-    gift_start = text.index('    <section id="promotional-gifts"')
-    gift_end = text.index('    <footer', gift_start)
-    text = checked_replace(text, text[gift_start:gift_end], test_guide(root) + '\n')
-    text = checked_replace(text, 'The ordinary scan view preserves each original PNG; gift scans use their verified presentation images. Source links and attribution stay outside the white QR panel.',
-        f'<span id="generation-provenance">{_escape(PROVENANCE)}. Source template: File:Caterpie VII QR.png, species #010 form 0, key 3. Original PNG SHA-256 <code>{TEMPLATE_IMAGE_HASH}</code>; raw payload SHA-256 <code>{TEMPLATE_PAYLOAD_HASH}</code>. The existing codec preserves all unknown template bytes; only requested identity/flags and signature change. Neutral default form 0; nonzero rows explicitly experimental. Base species icons are not form art.</span>')
-    text = checked_replace(text, 'Original image archive:', 'Source template archive (generated codes are not archive members):')
-    text = checked_replace(text, 'Original archive file:', 'Generation/template:')
-    text = checked_replace(text, '`Listed in: ${card.dataset.libraryLabels}`', '`Generation: ${card.dataset.libraryLabels}`')
-    extension = '''      function openExperimentTarget(target) {
-        const card = document.getElementById(target);
-        if (!card || !card.matches(".qr-card")) return;
-        search.value = "";
-        typeFilter.value = "";
-        libraryFilter.value = "generated";
-        applyFilters();
-        openViewer(card);
-      }
-      document.querySelectorAll("[data-qr-target]").forEach(link => {
-        link.addEventListener("click", event => {
-          event.preventDefault();
-          openExperimentTarget(link.dataset.qrTarget);
-        });
-      });
-      if (/^#qr-\\d+-\\d+$/.test(location.hash)) openExperimentTarget(location.hash.slice(1));
-'''
-    text = checked_replace(text, '      applySort();\n      applyFilters();', '      applySort();\n      applyFilters();\n' + extension)
-    replacements = {'__TYPE_STYLES__': (shared_type_styles(root), 1), '__CARD_COUNT__': (str(len(records)), 2),
+        reason = blocked_reason(record)
+        if reason:
+            blocked.append(render_blocked(record, reason))
+        else:
+            cards.append(render_card(record, template))
+    species = len({r['id'] for r in records if not blocked_reason(r)})
+    intro = (
+        f'<p class="lede">A working QR code for every Pokémon and form the Gen VII QR Scanner accepts: {species} species, {len(cards)} cards. '
+        'Flip the switches on a card for ♂ or ♀ and normal or shiny, then tap the code to show it full screen for the 3DS camera.</p>\n'
+        '      <details id="how-it-works" class="compatibility" open><summary>How these codes work</summary><ul>'
+        '<li>Scanning registers the Pokémon as <em>seen</em> in the Pokédex; it doesn’t give you the Pokémon. Each gender and shiny version registers separately, so scan each one you want.</li>'
+        '<li>The rules come from reverse-engineering the Ultra Moon v1.2 QR Scanner and running its own code. Cards marked “Console-tested” were scanned on a real Ultra Moon; Sun, Moon and Ultra Sun are untested.</li>'
+        '<li>The scanner holds 10 scans and recharges one every 2 hours, and won’t accept the same code twice until your next Island Scan.</li>'
+        '<li>Pokémon #785–807 and Pikachu’s Cap forms can’t be added with any QR code: <a href="#not-scannable">see the list at the bottom</a>.</li>'
+        '</ul></details>')
+    blocked_intro = ('<p>No QR code can register these. The scanner turns species #785–807 into a random Wonder QR Pokémon, and always resets Pikachu to its normal form. '
+                     'They aren’t in the Wonder QR table either.</p>')
+    credits = (
+        '<p>QR codes are drawn in your browser from payloads signed and verified when the page is built.</p><ul>'
+        '<li>Pages: <a href="index.html">Checklist</a> · <a href="qr.html">Original QR archive and event gifts</a> · <a href="qr-experimental.html">Generated codes</a>.</li>'
+        f'<li id="generation-provenance">Template: the official Caterpie code (File:Caterpie VII QR.png, key 3), original PNG SHA-256 <code>{TEMPLATE_IMAGE_HASH}</code>, raw payload SHA-256 <code>{TEMPLATE_PAYLOAD_HASH}</code>. Only the species, form, gender, shiny flag, registration lanes and signature change.</li>'
+        f'<li>Types, form rows and gender ratios: <a href="https://github.com/kwsch/PKHeX/tree/{PKHEX_COMMIT}" target="_blank" rel="noopener noreferrer">PKHeX</a>, pinned commit <code>{PKHEX_COMMIT}</code>, personal table SHA-256 <code>{TABLE_HASH}</code>.</li>'
+        '<li>Sprite atlas: <a href="https://github.com/PokeAPI/sprites/tree/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4" target="_blank" rel="noopener noreferrer">PokeAPI/sprites</a>, pinned commit <code>6e3e7c43e86db0e1b2277795cfee41b11e8df2a4</code>; base species icons, not form art.</li>'
+        '<li>QR drawing: <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener noreferrer">qrcode-generator</a> 2.0.4 by Kazuhiko Arase, MIT license.</li>'
+        '<li>Protocol background: <a href="https://gbatemp.net/threads/pokemon-sun-and-moon-hacking-qr-codes.448369/" target="_blank" rel="noopener noreferrer">published Gen VII QR reverse-engineering discussion</a>.</li>'
+        '</ul>')
+    replacements = {
+        '__TYPE_STYLES__': (shared_type_styles(root), 1),
+        '__EYEBROW__': (f'Generated Pokédex codes · {species} species · {len(cards)} cards', 1),
+        '__INTRO__': (intro, 1), '__CARD_COUNT__': (str(len(cards)), 2),
         '__TYPE_OPTIONS__': (''.join(f'<option value="{_escape(t)}">{_escape(t)}</option>' for t in type_names), 1),
-        '__CARDS__': ('\n'.join(cards), 1), '__ATLAS_DATA_URI__': ('data:image/png;base64,' + base64.b64encode(atlas).decode('ascii'), 1)}
+        '__CARDS__': ('\n'.join(cards), 1), '__BLOCKED_COUNT__': (str(len(blocked)), 1),
+        '__BLOCKED_INTRO__': (blocked_intro, 1), '__BLOCKED__': ('\n'.join(blocked), 1), '__CREDITS__': (credits, 1),
+        '__PROVENANCE__': (_escape(PROVENANCE), 1), '__QR_LIBRARY__': (load_qr_library(root), 1),
+        '__ATLAS_DATA_URI__': ('data:image/png;base64,' + base64.b64encode(atlas).decode('ascii'), 1)}
+    text = (root / 'tools/qr_experimental_template.html').read_text()
     for marker, (replacement, count) in replacements.items():
-        text = checked_replace(text, marker, replacement, count)
-    if re.search(r'__[A-Z][A-Z0-9_]+__', text):
-        raise GalleryBuildError('Unresolved shared-template markers')
+        if text.count(marker) != count:
+            raise GalleryBuildError(f'Template marker {marker} expected {count} times')
+        text = text.replace(marker, replacement)
+    if re.search(r'__[A-Z][A-Z0-9_]+__', text.replace(load_qr_library(root), '')):
+        raise GalleryBuildError('Unresolved template markers')
     return text
 
 
@@ -216,11 +298,11 @@ def main(argv: list[str] | None = None) -> int:
             if not args.output.exists() or args.output.read_bytes() != data:
                 print(f'Experimental QR page missing or stale: {args.output}', file=sys.stderr)
                 return 1
-            print(f'Reproducible: {args.output} ({len(data):,} bytes; 807 species; 1116 verified PNGs)')
+            print(f'Reproducible: {args.output} ({len(data):,} bytes)')
         else:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_bytes(data)
-            print(f'Built: {args.output} ({len(data):,} bytes; 807 species; 1116 verified PNGs)')
+            print(f'Built: {args.output} ({len(data):,} bytes)')
         return 0
     except (GalleryBuildError, OSError, ValueError, KeyError, TypeError) as error:
         print(f'Experimental QR build failed: {error}', file=sys.stderr)

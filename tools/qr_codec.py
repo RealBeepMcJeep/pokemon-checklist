@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import struct
 import json
 from pathlib import Path
 
@@ -181,6 +182,7 @@ def generate_ordinary_payload(
     gender: int | None = None,
     shiny: bool | None = None,
     both_genders: bool | None = None,
+    masks: tuple[int, int, int, int] | None = None,
     template: bytes | None = None,
 ) -> bytes:
     """Create locally signed ordinary Dex data; not event or injection codes."""
@@ -204,6 +206,12 @@ def generate_ordinary_payload(
         body[0x2C] = int(shiny)
     if both_genders is not None:
         body[0x2D] = int(both_genders)
+    if masks is not None:
+        # Four u32 Pokédex registration lanes: normal male/genderless, normal female,
+        # shiny male/genderless, shiny female; bit n registers form n.
+        if len(masks) != 4 or any(not 0 <= m < 1 << 32 for m in masks):
+            raise ValueError("masks must be four unsigned 32-bit values")
+        body[0x08:0x18] = struct.pack("<4I", *masks)
     signed = _sign_ordinary_body(bytes(body))
     return signed + b"\x00\x00POKE" + (3).to_bytes(4, "little") + b"\x00\x00"
 
