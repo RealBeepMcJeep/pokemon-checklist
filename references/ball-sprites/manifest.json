@@ -1,0 +1,186 @@
+{
+  "sourceRepository": "PokeAPI/sprites",
+  "sourceCommit": "6e3e7c43e86db0e1b2277795cfee41b11e8df2a4",
+  "frame": [
+    30,
+    30
+  ],
+  "balls": [
+    {
+      "index": 0,
+      "name": "Pok\u00e9 Ball",
+      "slug": "poke-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/poke-ball.png",
+      "sha256": "a4c7b9e8ff5727d10e6f679bcf16a963a95b2a36480d3bd9156d9808bdf54dff",
+      "bytes": 256
+    },
+    {
+      "index": 1,
+      "name": "Great Ball",
+      "slug": "great-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/great-ball.png",
+      "sha256": "4d0a614eebb4aef6b02a3620e4262f471b620cc8bc81cfeebeb3cbb995727ac6",
+      "bytes": 301
+    },
+    {
+      "index": 2,
+      "name": "Ultra Ball",
+      "slug": "ultra-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/ultra-ball.png",
+      "sha256": "4dbf6751968bd3b96d3036da1a55e5a764c792e780a5fa5cd2391bc155224a10",
+      "bytes": 287
+    },
+    {
+      "index": 3,
+      "name": "Master Ball",
+      "slug": "master-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/master-ball.png",
+      "sha256": "a702e5700d83d28cfbdefeb4cdb70e7ec82a4903133355b87fbac5cae4c98c9e",
+      "bytes": 298
+    },
+    {
+      "index": 4,
+      "name": "Premier Ball",
+      "slug": "premier-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/premier-ball.png",
+      "sha256": "fcb9788efab4dba53d507a0e44f75adbbca69adb5ae2ce4222abfb2277168085",
+      "bytes": 239
+    },
+    {
+      "index": 5,
+      "name": "Luxury Ball",
+      "slug": "luxury-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/luxury-ball.png",
+      "sha256": "305f15d1387fac249ba17d938dc731958ad38d932bb5ba8be1273842ade26a79",
+      "bytes": 293
+    },
+    {
+      "index": 6,
+      "name": "Heal Ball",
+      "slug": "heal-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/heal-ball.png",
+      "sha256": "01d97180475c7cb8a83b0f31f8a3facbbc89a924082beaac534bb8264d8875c4",
+      "bytes": 303
+    },
+    {
+      "index": 7,
+      "name": "Net Ball",
+      "slug": "net-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/net-ball.png",
+      "sha256": "d18b14b1b9a7b6744396f61f0d817c8ae14f250dd8c74b222624bf4ab08aab97",
+      "bytes": 301
+    },
+    {
+      "index": 8,
+      "name": "Nest Ball",
+      "slug": "nest-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/nest-ball.png",
+      "sha256": "28f5947a50b4e93c1fb1df9f320f43c7a950fd125735f6eea083d95b9f0eee75",
+      "bytes": 290
+    },
+    {
+      "index": 9,
+      "name": "Dive Ball",
+      "slug": "dive-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/dive-ball.png",
+      "sha256": "69a891bf39e631f29a9ffa96bfe280694d2a891bed3208e1c8f3776591001bc5",
+      "bytes": 289
+    },
+    {
+      "index": 10,
+      "name": "Repeat Ball",
+      "slug": "repeat-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/repeat-ball.png",
+      "sha256": "fca530eeb2036754cc2487cd0737e32be57a2ca951b267637beb87de35a4d904",
+      "bytes": 294
+    },
+    {
+      "index": 11,
+      "name": "Timer Ball",
+      "slug": "timer-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/timer-ball.png",
+      "sha256": "7b2281202147c17e6c89b7a33256b4686fa7e3e0f06002a657a1e535d45a22fa",
+      "bytes": 290
+    },
+    {
+      "index": 12,
+      "name": "Quick Ball",
+      "slug": "quick-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/quick-ball.png",
+      "sha256": "566d280cd7702ae84189e63a4d85ba7307c17cd0d75f61de5d4b90d799f5f4bc",
+      "bytes": 296
+    },
+    {
+      "index": 13,
+      "name": "Dusk Ball",
+      "slug": "dusk-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/dusk-ball.png",
+      "sha256": "5ae06ec973f78e003f323992e5f72e1686efed12abe1b936a29a46edec62a367",
+      "bytes": 302
+    },
+    {
+      "index": 14,
+      "name": "Fast Ball",
+      "slug": "fast-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/fast-ball.png",
+      "sha256": "5439c38be642f79bbaee30b0227c0a282e253e22e08c891bcbe23a3deb8c2851",
+      "bytes": 283
+    },
+    {
+      "index": 15,
+      "name": "Level Ball",
+      "slug": "level-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/level-ball.png",
+      "sha256": "07e6abe67deac6de46e1dedf67f6aaa894f98428035e421cfdf93ef4cf137e4d",
+      "bytes": 289
+    },
+    {
+      "index": 16,
+      "name": "Love Ball",
+      "slug": "love-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/love-ball.png",
+      "sha256": "977476b7d5aeef52dd304ec9d2b9f9a998611872d49066bcd644750c8e220008",
+      "bytes": 281
+    },
+    {
+      "index": 17,
+      "name": "Lure Ball",
+      "slug": "lure-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/lure-ball.png",
+      "sha256": "f9a372a03e16c327bb1e885e71638665ae4139e47f826123c6edc2b1b39ac7df",
+      "bytes": 295
+    },
+    {
+      "index": 18,
+      "name": "Heavy Ball",
+      "slug": "heavy-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/heavy-ball.png",
+      "sha256": "a4bac5f6e6088fe6db665f2456453cfc3ed4d6b8a7cb37658c547384ef83b001",
+      "bytes": 299
+    },
+    {
+      "index": 19,
+      "name": "Moon Ball",
+      "slug": "moon-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/moon-ball.png",
+      "sha256": "e09122c40555a45bbb871a8ae8833b37429a79e27b54d143b1104141028c5bf4",
+      "bytes": 297
+    },
+    {
+      "index": 20,
+      "name": "Friend Ball",
+      "slug": "friend-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/friend-ball.png",
+      "sha256": "7d03fa4e1fa53160be2a659213a49cd959a8dd8740d8caeb3f2e877258fb993e",
+      "bytes": 288
+    },
+    {
+      "index": 21,
+      "name": "Beast Ball",
+      "slug": "beast-ball",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/6e3e7c43e86db0e1b2277795cfee41b11e8df2a4/sprites/items/beast-ball.png",
+      "sha256": "1649321323a2f57225313475aafc47c77d078b297c088c516df5c3d5cba50988",
+      "bytes": 321
+    }
+  ]
+}

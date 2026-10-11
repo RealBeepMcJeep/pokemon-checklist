@@ -22,7 +22,7 @@ export function Tools() {
       }}
     >
       <div class="tools-heading">
-        <h2 id="tools-title">Tools</h2>
+        <h2 id="tools-title">Catch calculator</h2>
         <button
           type="button"
           class="action-button"
@@ -33,11 +33,11 @@ export function Tools() {
           Close tools
         </button>
       </div>
+      <CatchCalculator />
       <nav aria-label="QR tools">
         <a href="qr.html">QR archive</a>
         <a href="qr-experimental.html">Experimental QR</a>
       </nav>
-      <CatchCalculator />
     </dialog>
   );
 }

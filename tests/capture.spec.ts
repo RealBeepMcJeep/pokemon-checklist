@@ -9,30 +9,26 @@ async function open(page: Page, project: string) {
   );
   await page.locator("#tools-toggle").click();
 }
-test("calculator autocomplete is keyboard and pointer selectable without stale results", async ({
-  page,
-}, info) => {
+async function choose(page: Page, kind: "species" | "ball", name: string) {
+  await page.locator(`#catch-${kind}-name`).click();
+  await page.locator(`#catch-${kind}`).fill(name);
+  await page.getByRole("option", {name, exact:true}).click();
+}
+test("calculator autocomplete is keyboard and pointer selectable without stale results", async ({page}, info) => {
   await open(page, info.project.name);
-  await expect(page.locator("#catch-calculator")).toBeVisible();
-  const species = page.getByRole("combobox", { name: "Pokémon / form" });
-  await expect(species).toHaveValue("Pikachu");
-  await expect(page.locator("#catch-result")).toContainText("per throw");
+  await expect(page.locator("#catch-species-name")).toHaveText("Pikachu");
+  const before = await page.locator("#catch-result").textContent();
+  await page.locator("#catch-species-name").click();
+  const species = page.locator("#catch-species");
   await species.fill("not a pokemon");
-  await expect(page.locator("#catch-result")).toHaveCount(0);
-  await expect(page.locator("#catch-error")).toContainText("Select");
-  await species.fill("Rattata");
-  await species.press("ArrowDown");
-  await species.press("ArrowDown");
-  await species.press("Enter");
-  await expect(species).toHaveValue("Rattata — Alolan");
-  await species.fill("Rattata");
-  await species.press("ArrowUp");
-  await species.press("Enter");
-  await expect(species).toHaveValue("Rattata — Alolan");
-  const ball = page.getByRole("combobox", { name: "Ball" });
-  await ball.fill("Ultra");
-  await page.getByRole("option", { name: "Ultra Ball", exact: true }).click();
-  await expect(ball).toHaveValue("Ultra Ball");
+  await expect(page.locator("#catch-result")).toHaveText(before!);
+  await expect(page.locator("#catch-error")).toHaveCount(0);
+  await species.fill("Rattata"); await species.press("ArrowDown"); await species.press("ArrowDown"); await species.press("Enter");
+  await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
+  await page.locator("#catch-species-name").click(); await species.fill("Rattata"); await species.press("ArrowUp"); await species.press("Enter");
+  await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
+  await choose(page,"ball","Ultra Ball");
+  await expect(page.locator("#catch-ball-name")).toHaveText("Ultra Ball");
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×2");
 });
 test("HP and exclusive status update probability and reject fainted targets", async ({
@@ -43,12 +39,12 @@ test("HP and exclusive status update probability and reject fainted targets", as
     before = await result.textContent();
   await page.getByLabel("HP remaining (approximate %)").fill("10");
   await expect(result).not.toHaveText(before!);
-  await page.getByLabel("Asleep", { exact: true }).check();
-  await page.getByLabel("Paralyzed", { exact: true }).check();
-  await expect(page.getByLabel("Asleep", { exact: true })).not.toBeChecked();
+  await page.getByRole("button", { name: "Asleep ×2.5", exact: true }).click();
+  await page.getByRole("button", { name: "Paralyzed ×1.5", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Asleep ×2.5", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("#catch-breakdown")).toContainText("Status ×1.5");
-  await page.getByLabel("None", { exact: true }).check();
-  await expect(page.getByLabel("Paralyzed", { exact: true })).not.toBeChecked();
+  await page.getByRole("button", { name: "None ×1", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Paralyzed ×1.5", exact: true })).toHaveAttribute("aria-pressed", "false");
   await page.getByLabel("Exact HP inputs").check();
   await page.getByLabel("Current HP", { exact: true }).fill("0");
   await expect(result).toHaveCount(0);
@@ -60,19 +56,18 @@ test("conditional ball fields apply first-turn and environmental rules", async (
   page,
 }, info) => {
   await open(page, info.project.name);
-  const ball = page.getByRole("combobox", { name: "Ball" });
-  await ball.fill("Quick Ball");
+  await choose(page,"ball","Quick Ball");
   await expect(page.getByLabel("Turn number")).toHaveValue("1");
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×5");
   await page.getByLabel("Turn number").fill("2");
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×1");
-  await ball.fill("Dusk Ball");
+  await choose(page,"ball","Dusk Ball");
   await expect(page.getByLabel("Turn number")).toHaveCount(0);
-  await page.getByLabel("Inside a cave").check();
+  await page.getByRole("button",{name:"Inside a cave",exact:true}).click();
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×3");
-  await ball.fill("Love Ball");
-  await page.getByLabel("Same species as your active Pokémon").check();
-  await page.getByLabel("Opposite male / female genders").check();
+  await choose(page,"ball","Love Ball");
+  await page.getByRole("button",{name:"Same species as your active Pokémon",exact:true}).click();
+  await page.getByRole("button",{name:"Opposite male / female genders",exact:true}).click();
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×8");
 });
 test("historical critical, Roto and marked rate override expose assumptions", async ({
@@ -97,7 +92,7 @@ test("historical critical, Roto and marked rate override expose assumptions", as
   await page.locator("#mode-select").selectOption("sun");
   await page.locator("#tools-toggle").click();
   await expect(page.getByLabel("Roto Catch ×2.5")).toBeDisabled();
-  await page.getByRole("combobox", { name: "Pokémon / form" }).fill("Poipole");
+  await choose(page,"species","Poipole");
   await expect(result).toHaveCount(0);
   await expect(page.locator("#catch-error")).toContainText("unavailable");
 });
@@ -154,13 +149,12 @@ for (const width of [360, 412, 1440])
       ),
     );
     await page.locator("#tools-toggle").tap();
+    await page.locator("#catch-ball-name").tap();
     await page.getByRole("combobox", { name: "Ball" }).fill("Net");
     await page.getByRole("option", { name: "Net Ball", exact: true }).tap();
-    await page
-      .getByRole("combobox", { name: "Pokémon / form" })
-      .fill("Squirtle");
+    await choose(page,"species","Squirtle");
     await expect(page.locator("#catch-breakdown")).toContainText("Ball ×3.5");
-    await page.getByLabel("Asleep", { exact: true }).check();
+    await page.getByRole("button", { name: "Asleep ×2.5", exact: true }).click();
     await expect(page.locator("#catch-result")).toBeVisible();
     const measured = await page
       .locator("#tools-panel")
@@ -209,7 +203,7 @@ test("Master Ball reports a bypass only with legal HP", async ({
   page,
 }, info) => {
   await open(page, info.project.name);
-  await page.getByRole("combobox", { name: "Ball" }).fill("Master Ball");
+  await choose(page,"ball","Master Ball");
   await expect(page.locator("#catch-result")).toContainText("100.00%");
   await expect(page.locator("#catch-breakdown")).toContainText(
     "Master Ball bypasses",

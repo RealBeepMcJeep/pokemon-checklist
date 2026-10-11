@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import capture from "../../data/capture.json";
 import {
   BALLS,
@@ -9,115 +9,7 @@ import {
   type CaptureStats,
 } from "../capture";
 import { mode } from "../state";
-function Combobox({
-  id,
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false),
-    [active, setActive] = useState(-1);
-  const filtered = options
-    .filter((o) => o.toLocaleLowerCase().includes(value.toLocaleLowerCase()))
-    .slice(0, 60);
-  useEffect(() => {
-    if (open && active >= 0)
-      document
-        .getElementById(id + "-option-" + active)
-        ?.scrollIntoView({ block: "nearest" });
-  }, [active, open, id]);
-  const choose = (v: string) => {
-    onChange(v);
-    setOpen(false);
-    setActive(-1);
-  };
-  return (
-    <div
-      class="catch-combobox"
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-          setOpen(false);
-      }}
-    >
-      <label for={id}>{label}</label>
-      <input
-        id={id}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={open}
-        aria-controls={id + "-list"}
-        aria-activedescendant={
-          open && active >= 0 ? id + "-option-" + active : undefined
-        }
-        value={value}
-        autoComplete="off"
-        onFocus={() => setOpen(true)}
-        onInput={(e) => {
-          onChange(e.currentTarget.value);
-          setOpen(true);
-          setActive(-1);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && open) {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpen(false);
-          } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            e.preventDefault();
-            setOpen(true);
-            setActive((a) =>
-              filtered.length
-                ? a < 0
-                  ? e.key === "ArrowDown"
-                    ? 0
-                    : filtered.length - 1
-                  : (a + (e.key === "ArrowDown" ? 1 : -1) + filtered.length) %
-                    filtered.length
-                : -1,
-            );
-          } else if (e.key === "Enter" && open && active >= 0) {
-            e.preventDefault();
-            choose(filtered[active]);
-          }
-        }}
-      />
-      {open && (
-        <ul
-          id={id + "-list"}
-          role="listbox"
-          aria-label={label + " suggestions"}
-        >
-          {filtered.map((o, n) => (
-            <li
-              id={id + "-option-" + n}
-              role="option"
-              aria-selected={active === n}
-              tabIndex={-1}
-              onPointerDown={(e) => {
-                if (e.pointerType === "mouse") e.preventDefault();
-              }}
-              onClick={() => {
-                choose(o);
-                document.getElementById(id)?.focus();
-                setOpen(false);
-              }}
-            >
-              {o}
-            </li>
-          ))}
-          {!filtered.length && <li>No matching selection</li>}
-        </ul>
-      )}
-    </div>
-  );
-}
+import { CatchSelector } from "./CatchSelector";
 const context = {
   turn: 1,
   level: 10,
@@ -130,9 +22,28 @@ const context = {
   sameSpecies: false,
   oppositeGender: false,
 };
+const selectionKey = "pokemon-checklist-catch-selection-v1";
+function restoreSelection() {
+  const fallback = {species: "Pikachu", ball: "Poké Ball", notice: ""};
+  try {
+    const raw = localStorage.getItem(selectionKey);
+    if (!raw) return fallback;
+    const value = JSON.parse(raw);
+    const pokemon = capture.pokemon.find(p => p.id === value.id && p.form === value.form);
+    if (!pokemon || !BALLS.includes(value.ball)) throw new Error("invalid");
+    return {species: pokemon.name, ball: value.ball as string, notice: ""};
+  } catch { return {...fallback, notice: "Selection memory unavailable or invalid; using the default pair."}; }
+}
 export function CatchCalculator() {
-  const [species, setSpecies] = useState("Pikachu"),
-    [ball, setBall] = useState("Poké Ball");
+  const [initial] = useState(restoreSelection);
+  const [species, setSpecies] = useState(initial.species),
+    [ball, setBall] = useState(initial.ball), [notice, setNotice] = useState(initial.notice);
+  function select(nextSpecies: string, nextBall: string) {
+    setSpecies(nextSpecies); setBall(nextBall);
+    const selected = capture.pokemon.find(p => p.name === nextSpecies)!;
+    try { localStorage.setItem(selectionKey, JSON.stringify({id: selected.id, form: selected.form, ball: nextBall})); setNotice(""); }
+    catch { setNotice("This browser cannot remember selections. The calculator still works."); }
+  }
   const [status, setStatus] = useState<Status>("none"),
     [percent, setPercent] = useState(100),
     [exact, setExact] = useState(false),
@@ -173,16 +84,7 @@ export function CatchCalculator() {
       | "oppositeGender",
     label: string,
   ) => (
-    <label class="catch-check">
-      <input
-        type="checkbox"
-        checked={conditions[key]}
-        onChange={(e) =>
-          setConditions({ ...conditions, [key]: e.currentTarget.checked })
-        }
-      />
-      {label}
-    </label>
+    <button type="button" class="catch-chip" aria-pressed={conditions[key]} onClick={() => setConditions({...conditions, [key]: !conditions[key]})}>{label}</button>
   );
   const game = mode.value === "sun" || mode.value === "moon" ? "sm" : "usum";
   const pokemon = capture.pokemon.find((p) => p.name === species);
@@ -236,29 +138,13 @@ export function CatchCalculator() {
     error = (e as Error).message;
   }
   return (
-    <section id="catch-calculator" aria-labelledby="catch-title">
-      <h3 id="catch-title">Catch calculator</h3>
+    <section id="catch-calculator" aria-label="Catch calculator">
+
       <p class="muted">
         Documented Gen VII model ·{" "}
         {game === "sm" ? "Sun / Moon" : "Ultra Sun / Ultra Moon"} stock data.
-        Inputs are temporary and never change your checklist.
+        Only Pokémon and ball selections are remembered; battle inputs never change your checklist.
       </p>
-      <div class="catch-grid">
-        <Combobox
-          id="catch-species"
-          label="Pokémon / form"
-          value={species}
-          onChange={setSpecies}
-          options={capture.pokemon.map((p) => p.name)}
-        />
-        <Combobox
-          id="catch-ball"
-          label="Ball"
-          value={ball}
-          onChange={setBall}
-          options={BALLS}
-        />
-      </div>
       <div class="catch-feedback">
         {error && (
           <p id="catch-error" role="status">
@@ -266,11 +152,18 @@ export function CatchCalculator() {
           </p>
         )}
         {result && (
-          <p id="catch-result" role="status">
-            <strong>{(result.probability * 100).toFixed(2)}%</strong> per throw
+          <p id="catch-result" role="status" data-tier={result.probability >= .8 ? "high" : result.probability >= .3 ? "moderate" : "low"}>
+            <strong>{(result.probability * 100).toFixed(2)}%</strong> per throw · {result.probability >= 1 ? "Guaranteed" : result.probability >= .8 ? "High" : result.probability >= .3 ? "Moderate" : "Low"}
           </p>
         )}
       </div>
+      <div class="catch-layout"><div class="catch-selectors">
+      {notice && <p id="catch-memory-notice" role="status" class="muted">{notice}</p>}
+      <div class="catch-selectors-stack">
+        <CatchSelector kind="species" value={species} onChange={name => select(name, ball)} options={[...capture.pokemon].sort((a,b) => a.id - b.id || a.form - b.form)} />
+        <CatchSelector kind="ball" value={ball} onChange={name => select(species, name)} options={BALLS.map(name => ({name}))} />
+      </div>
+      </div><div class="catch-parameters">
       {[
         "Quick Ball",
         "Timer Ball",
@@ -432,16 +325,9 @@ export function CatchCalculator() {
               ["brn", "Burned"],
             ] as [Status, string][]
           ).map(([key, label]) => (
-            <label class="catch-check">
-              <input
-                type="checkbox"
-                checked={status === key}
-                onChange={(e) =>
-                  setStatus(e.currentTarget.checked ? key : "none")
-                }
-              />
-              {label}
-            </label>
+            <button type="button" class="catch-chip" aria-pressed={status === key} onClick={() => setStatus(status === key ? "none" : key)}>
+              {label} ×{key === "slp" || key === "frz" ? 2.5 : key === "none" ? 1 : 1.5}
+            </button>
           ))}
         </div>
       </fieldset>
@@ -499,8 +385,12 @@ export function CatchCalculator() {
           </label>
         )}
       </details>
+      </div></div>
       {result && modifiers && (
         <>
+          <div class="catch-factors" aria-label="Applied factors">
+            <span>HP {exact ? current : percent}/{exact ? max : 100}</span><span>{override ? "Override" : "Stock"} rate {modifiers.rate}</span><span>Ball ×{modifiers.bonus}</span><span>Status ×{result.statusBonus}</span><span>Roto ×{game === "usum" && roto ? 2.5 : 1}</span><span>Historical Dex ×{dexBonus(caught)}</span>
+          </div>
           <p id="catch-breakdown">
             Catch rate {modifiers.rate}
             {override ? " (OVERRIDE)" : " (stock)"} · Ball ×{modifiers.bonus} ·

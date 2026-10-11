@@ -45,6 +45,7 @@ jobs:
           tools/build_pokedex_details.py
           tools/extract_reference.py
           tools/build_icons.py
+          tools/build_ball_sprites.py
           tools/showdown_data.py
           tools/moveline.py
           tools/build_moves.py

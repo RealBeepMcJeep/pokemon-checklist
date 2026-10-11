@@ -23,6 +23,7 @@ for (const width of [360, 412])
     await open(page, info.project.name);
     const input = page.locator("#catch-species"),
       list = page.locator("#catch-species-list");
+    await page.locator("#catch-species-name").tap();
     await input.fill("a");
     const b = (await list.boundingBox())!;
     const cdp = await context.newCDPSession(page);
@@ -58,7 +59,8 @@ for (const width of [360, 412])
     await page
       .getByRole("option", { name: "Rattata — Alolan", exact: true })
       .tap();
-    await expect(input).toHaveValue("Rattata — Alolan");
+    await expect(input).toBeHidden();
+    await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
     await expect(list).toHaveCount(0);
     await context.close();
   });
@@ -185,14 +187,14 @@ for (const width of [360, 412, 1440])
     await page.setViewportSize({ width, height: width === 360 ? 740 : 900 });
     await open(page, info.project.name);
     await onscreen(page, "#catch-result");
-    await page
-      .getByRole("combobox", { name: "Ball", exact: true })
-      .fill("Quick Ball");
+    await page.locator("#catch-ball-name").click();
+    await page.locator("#catch-ball").fill("Quick Ball");
+    await page.getByRole("option",{name:"Quick Ball",exact:true}).click();
     await page.getByLabel("Turn number").fill("2");
     await onscreen(page, "#catch-result");
     await page.getByLabel("HP remaining (approximate %)").fill("30");
     await onscreen(page, "#catch-result");
-    await page.getByLabel("Asleep", { exact: true }).check();
+    await page.getByRole("button",{name:"Asleep ×2.5",exact:true}).click();
     await onscreen(page, "#catch-result");
     await page
       .getByText("Optional modifiers & hack override", { exact: true })
