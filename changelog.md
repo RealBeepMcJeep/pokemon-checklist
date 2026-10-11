@@ -2,6 +2,7 @@
 
 ## 2026-10-10
 
+- Pokédex team planning now counts only unseen entries as evolution gains; stages already marked Seen or Caught add no gain score. Other team objectives are unchanged, and fresh Seen statuses invalidate cached selections when they change.
 - Chat status operations now reject partial/unknown names with correction suggestions, support direct status queries and optional expected-old-status guards, and warn instead of writing when already set. Trades and evolutions submit both desired statuses to one ETag-guarded update and verify both afterward; mutation replies include the fresh caught total. Website and save format are unchanged.
 
 ## 2026-10-02
