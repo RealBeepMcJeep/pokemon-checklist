@@ -133,7 +133,7 @@ class TeamOptionsTests(unittest.TestCase):
                   "caught_as": ["Grubbin", "Vikavolt"],
                   "evolution_path": [
                       {"id": 736, "name": "Grubbin"},
-                      {"id": 737, "name": "Charjabug", "method": "Level 20"},
+                      {"id": 737, "name": "Charjabug", "method": "Level 20", "status": "none"},
                       {"id": 738, "name": "Vikavolt", "method": "Thunder Stone"},
                   ]}
 
@@ -163,7 +163,7 @@ class TeamOptionsTests(unittest.TestCase):
         member = {"final": "Alakazam", "endpoint_id": 65,
                   "caught_ids": [63, 65], "caught_as": ["Abra", "Alakazam"],
                   "evolution_path": [{"id": 63, "name": "Abra"},
-                                     {"id": 64, "name": "Kadabra", "method": "Level 16"},
+                                     {"id": 64, "name": "Kadabra", "method": "Level 16", "status": "none"},
                                      {"id": 65, "name": "Alakazam", "method": "friendship"}]}
         self.assertEqual(opt.evolution_opportunities(member), 0)
         self.assertFalse(opt.has_level_evolution_opportunity(member))

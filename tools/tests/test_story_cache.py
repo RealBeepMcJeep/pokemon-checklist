@@ -322,6 +322,29 @@ class StoryCacheCLITests(unittest.TestCase):
             code = ts.main()
         return code, stdout.getvalue(), stderr.getvalue()
 
+    def test_seen_to_none_refreshes_pokedex_cache_with_identical_caught_set(self):
+        self.records = {f"species:{i}": {"s": "caught"} for i in (12, 4, 7, 1, 25, 63, 92)}
+        self.records["species:5"] = {"s": "seen"}
+        cold = self.cli()
+        self.assertEqual(cold[0], 0, cold[2])
+        first = json.loads(cold[1])
+        dex = first["options"][3]
+        self.assertEqual(len(dex["members"]), 5)
+        self.assertNotIn("Charmeleon", [entry for member in dex["members"]
+                                        for entry in member["new_entries"]])
+        self.assertEqual(json.loads(self.cli()[1]), first)
+        self.assertEqual(len(self.calls), 1)
+        self.records["species:5"] = {"s": "none"}
+        refreshed = json.loads(self.cli()[1])
+        self.assertEqual(len(self.calls), 2, "seen -> none must miss with the same caught IDs")
+        self.assertEqual(refreshed["source_caught_ids"], first["source_caught_ids"])
+        self.assertEqual(refreshed["options"][3]["new_entries"], dex["new_entries"] + 1)
+        for index in (0, 1, 2, 4):
+            self.assertEqual(refreshed["options"][index], first["options"][index])
+        self.assertEqual(json.loads(self.cli()[1]), refreshed)
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual(self.read.call_count, 4)
+
     def test_real_story_cli_warm_hit_still_reads_validates_and_builds_fresh_report(self):
         cold = self.cli()
         self.assertEqual(cold[0], 0, cold[2])

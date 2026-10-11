@@ -143,7 +143,7 @@ def attach_evolution_paths(profiles: list[dict], roster: dict) -> list[dict]:
 
 
 def pure_level_plans(member: dict) -> list[dict]:
-    """Enumerate still-available, ordinary-level-only plans that add a dex entry."""
+    """Enumerate ordinary-level paths with at least one verified unseen (`none`) gain."""
     path = list(member.get("evolution_path") or ())
     if len(path) < 2:
         return []
@@ -169,7 +169,7 @@ def pure_level_plans(member: dict) -> list[dict]:
             if is_caught(target):
                 continue
             additions = [str(step["name"]) for step in path[start + 1:end + 1]
-                         if not is_caught(step)]
+                         if not is_caught(step) and step.get("status") == "none"]
             if not additions:
                 continue
             plan_path = [dict(step) for step in path[start:end + 1]]
@@ -338,7 +338,8 @@ def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> lis
     prepared = ts.PreparedStorySynergy([*pool, utility], chart)
     utility_index = len(pool)
     owned = [sum(1 << identifier for identifier in _caught_ids(p)) for p in pool]
-    opportunities = [evolution_opportunities(p) for p in pool]
+    opportunities = [(len(p.get('dex_plan', {}).get('new_entries', ()))
+                      if category == 'Pokedex' else evolution_opportunities(p)) for p in pool]
     viability = [practical_viability(p) for p in pool]
     additions = [len(p.get('dex_plan', {}).get('new_entries', ())) for p in pool]
     favorites = [bool(p.get('favorite')) for p in pool]
@@ -446,7 +447,15 @@ def build_pokedex_profiles(profiles: list[dict], roster: dict, chart: dict) -> l
     for member in profiles:
         if member.get("alolan"):
             continue
-        for plan in pure_level_plans(member):
+        # Only a full, fresh checklist snapshot establishes unseen status. Missing
+        # species records in that snapshot mean the app's default `none`; a
+        # caught-only profile or absent snapshot cannot establish that default.
+        records = roster.get("records")
+        path = [{**step, "status": (
+                    records.get(f"species:{step['id']}", {}).get("s", "none")
+                    if isinstance(records, dict) and step.get("id") is not None else None)}
+                for step in member.get("evolution_path", ())]
+        for plan in pure_level_plans({**member, "evolution_path": path}):
             target_key = _norm(plan["planned_final"])
             target = catalog.get(target_key)
             if target is None:
@@ -594,9 +603,13 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
     caught_ids = sorted(int(key.split(":", 1)[1]) for key, record in roster.get("records", {}).items()
                         if key.startswith("species:") and isinstance(record, dict)
                         and record.get("s") == "caught")
+    seen_ids = sorted(int(key.split(":", 1)[1]) for key, record in roster.get("records", {}).items()
+                      if key.startswith("species:") and isinstance(record, dict)
+                      and record.get("s") == "seen")
     return {
         "caught_records": roster["caught_count"],
         "source_caught_ids": caught_ids,
+        "source_seen_ids": seen_ids,
         "endpoints": roster["canonical_count"],
         "utility": utility["final"], "utility_dex": int(utility["endpoint_id"]),
         "options": rendered,
@@ -612,7 +625,7 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
             "OG": "synergy, new evolution entries, practical viability",
             "Non-OG": "synergy, new evolution entries, practical viability",
             "Mixed": "synergy, new evolution entries, practical viability; no required generation mix",
-            "Pokedex": "new level-only dex entries, synergy, practical viability",
+            "Pokedex": "unseen (none) level-only dex entries, synergy, practical viability",
             "Best": "practical viability, synergy; no evolution/favorite bonus",
         },
         "warnings": [
