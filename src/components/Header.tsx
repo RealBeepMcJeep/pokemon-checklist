@@ -1,3 +1,4 @@
+import { toolsOpen } from "./Tools";
 import { ASSETS, POKEMON } from "../data";
 import { DEFAULT_MODE, MODE_LABELS } from "../domain";
 import {
@@ -143,6 +144,19 @@ export function Header({ inert = false }: { inert?: boolean }) {
             >
               Reset
             </button>
+            <button
+              id="tools-toggle"
+              class="action-button"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="tools-panel"
+              aria-expanded={toolsOpen.value}
+              onClick={() => {
+                toolsOpen.value = true;
+              }}
+            >
+              Tools
+            </button>
             <SyncPanel />
           </div>
         </div>
@@ -156,7 +170,8 @@ export function Header({ inert = false }: { inert?: boolean }) {
             {caught} / {POKEMON.length} Pokémon
           </strong>
           <span id="form-progress" class="muted" hidden={!trackForms}>
-            Forms caught: {formsCaught.value} / {activeFormDefinitions.value.size}
+            Forms caught: {formsCaught.value} /{" "}
+            {activeFormDefinitions.value.size}
           </span>
         </div>
         <div

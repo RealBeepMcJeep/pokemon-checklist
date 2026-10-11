@@ -2,6 +2,8 @@
 
 ## 2026-10-10
 
+- Added a Tools dialog linking both QR pages and an offline Gen VII catch calculator with Pokémon/form and ball autocomplete, exclusive status choices, estimated or exact HP inputs, conditional ball controls, historical critical-capture inputs, optional Roto Catch, and a labeled catch-rate override. Formula and pinned stock-data assumptions are visible; checklist progress and its save format are unchanged.
+- Catch probability and Close remain visible while editing on phones and desktop; autocomplete lists support touch scrolling without accidental selection, exact HP errors identify the invalid field, and switching from percentage to exact HP preserves the estimate.
 - Pokédex team planning now counts only unseen entries as evolution gains; stages already marked Seen or Caught add no gain score. Other team objectives are unchanged, and fresh Seen statuses invalidate cached selections when they change.
 - Chat status operations now reject partial/unknown names with correction suggestions, support direct status queries and optional expected-old-status guards, and warn instead of writing when already set. Trades and evolutions submit both desired statuses to one ETag-guarded update and verify both afterward; mutation replies include the fresh caught total. Website and save format are unchanged.
 

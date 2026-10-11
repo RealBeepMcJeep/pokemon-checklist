@@ -1,4 +1,5 @@
 import { useEffect } from "preact/hooks";
+import { Tools } from "./components/Tools";
 import { Header } from "./components/Header";
 import { LocationList } from "./components/Locations";
 import { NoticeAction } from "./components/NoticeAction";
@@ -56,6 +57,7 @@ export function App() {
           drawer: a view-only tab must say so wherever the player is. */}
       <ViewOnlyBanner />
       <NoticeAction />
+      <Tools />
     </>
   );
 }

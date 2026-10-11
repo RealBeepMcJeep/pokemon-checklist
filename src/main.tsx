@@ -16,6 +16,7 @@ import {
 import "./styles/themes.css";
 import "./styles/app.css";
 import "./styles/responsive.css";
+import "./styles/tools.css";
 
 initializeState();
 watchOtherTabs();

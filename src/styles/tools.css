@@ -1,0 +1,177 @@
+#tools-panel {
+  width: min(740px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  overflow: auto;
+}
+#tools-panel::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+.tools-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 48px;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tools-heading h2 {
+  margin: 0;
+}
+#tools-panel nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0;
+}
+#tools-panel button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+.catch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+#catch-calculator label {
+  display: block;
+  margin-bottom: 6px;
+}
+#catch-calculator input:not([type="checkbox"]),
+#catch-calculator select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font: inherit;
+}
+.catch-combobox {
+  position: relative;
+  min-width: 0;
+}
+.catch-combobox ul {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 210px;
+  overflow: auto;
+  margin: 0;
+  padding: 4px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  list-style: none;
+}
+.catch-combobox li {
+  padding: 10px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.catch-combobox li:hover,
+.catch-combobox li[aria-selected="true"] {
+  background: var(--control-active);
+}
+.catch-feedback {
+  position: sticky;
+  top: 48px;
+  z-index: 2;
+  background: var(--panel);
+  padding: 6px 0;
+}
+.catch-feedback p {
+  margin: 0;
+}
+#catch-result {
+  padding: 8px 12px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+#catch-result strong {
+  font-size: 1.8rem;
+  color: var(--accent-bright);
+}
+#catch-error {
+  color: var(--seen);
+}
+#catch-calculator fieldset {
+  min-width: 0;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+#catch-calculator fieldset > button {
+  margin-top: 8px;
+}
+#catch-calculator legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+#catch-notes pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  padding: 12px;
+  background: var(--input-bg);
+}
+#catch-notes,
+.catch-advanced {
+  margin: 16px 0;
+  line-height: 1.5;
+}
+#catch-notes a {
+  overflow-wrap: anywhere;
+}
+.catch-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+#catch-calculator .catch-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+#catch-calculator input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+#catch-calculator input[type="range"] {
+  display: block;
+  accent-color: var(--accent);
+  padding: 0;
+  margin: 8px 0;
+}
+#catch-calculator .muted {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 540px) {
+  #tools-panel {
+    padding: 16px;
+  }
+  .catch-grid {
+    grid-template-columns: 1fr;
+  }
+}

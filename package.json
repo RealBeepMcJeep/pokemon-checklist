@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "validate:data": "python tools/validate_data.py",
+    "validate:data": "python tools/validate_data.py && python tools/build_capture_data.py --check",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:tools": "node --test \"tools/tests/*.test.mjs\"",

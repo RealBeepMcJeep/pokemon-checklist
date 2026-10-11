@@ -821,6 +821,12 @@ test("gives phone tap targets at least 44px without changing desktop", async ({
   expect(compact!.height).toBeGreaterThanOrEqual(44);
 
   await page.locator("tbody .guide-pokemon-link").first().click();
+  // Measure after the phone drawer's translation settles. Chromium's compositor
+  // can report 43.999996px for a 44px control during that transition.
+  await expect(page.locator("#pokedex")).toHaveCSS(
+    "transform",
+    "matrix(1, 0, 0, 1, 0, 0)",
+  );
   const star = await page.locator(".dex-row .star-button").first().boundingBox();
   const status = await page
     .locator('.dex-row [data-action="species"]')

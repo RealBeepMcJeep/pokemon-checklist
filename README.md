@@ -24,6 +24,27 @@ Opening the checklist in more than one tab keeps them in sync: a change made in 
 
 **Sign in to sync** is optional and off until you press it. Unsigned/offline mode remains fully local: it never contacts the network and the checklist still works from `file://` without a server. While signed in, a change on one device appears on the others on its own; a change made offline is sent when the connection returns; and if two devices change the same species, the one that reaches the server later wins. The first sign-in on a device adopts the progress already on that device rather than discarding it, and signing out returns that device to its own checklist without deleting anything. Each account keeps its own separate checklist, because progress belongs to a person.
 
+## Tools and catch calculator
+
+Open **Tools** in the checklist header for the QR archive, experimental QR page,
+and an offline Gen VII catch calculator. Pokémon/forms and balls have keyboard and
+touch autocomplete. Choose one major status, estimate remaining HP with the slider,
+or enter exact current/maximum HP. Conditional balls expose only their relevant
+inputs; the result updates per throw and includes a multiplier breakdown.
+
+Optional critical captures use the game's **historical registered-caught species**,
+not the checklist's current inventory count. Repeat Ball uses the same historical
+distinction. Roto Catch defaults off and is available only in Ultra modes. Calculator
+inputs are temporary and never change checklist progress.
+
+The calculator follows the published staged fixed-point Gen VII model, with pinned
+stock SM/USUM catch rates, types, speed, gender and form weights. It is not native
+bit-exact emulation or verified Prismatic/Photonic capture-engine data. Percentage HP
+is an estimate; a labeled catch-rate override supports known hack-specific values.
+The expandable notes show the formula and sources; [implementation/data provenance](plans/catch-tools.md)
+documents the limits. `python tools/build_capture_data.py --check` verifies the
+retained source hashes and generated data offline.
+
 ## QR gallery
 
 Open the separate [QR gallery](qr.html), also available at
