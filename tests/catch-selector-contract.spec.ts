@@ -1,0 +1,34 @@
+import { test, expect } from "@playwright/test";
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+
+test("catch selector replaces its selected name with an inline sprite autocomplete", async ({ page }, info) => {
+  await page.goto(info.project.name === "standalone-file" ? pathToFileURL(resolve("index.html")).href : "/");
+  await page.locator("#tools-toggle").click();
+  const name = page.locator("#catch-species-name");
+  await expect(name).toHaveText("Pikachu", { timeout: 3000 });
+  const rail = page.locator("#catch-species-rail");
+  await expect(rail.locator("button")).toHaveCount(3);
+  await expect(rail.locator("img")).toHaveCount(3);
+  await expect(page.locator("#catch-ball-rail button")).toHaveCount(3);
+  const input = page.locator("#catch-species");
+  await expect(input).toBeHidden();
+  await name.click();
+  await expect(name).toBeHidden();
+  await expect(input).toBeVisible();
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("placeholder", "Pokémon Name");
+  await input.fill("Bulbasaur");
+  const option = page.getByRole("option", { name: /Bulbasaur/ }).first();
+  await expect(option.locator("img")).toHaveCount(1);
+  await option.click();
+  await expect(input).toBeHidden();
+  await expect(name).toHaveText("Bulbasaur");
+  await expect(page.locator("#catch-result")).toContainText("per throw");
+  await name.click();
+  await input.fill("not a pokemon");
+  await input.press("Escape");
+  await expect(input).toBeHidden();
+  await expect(name).toHaveText("Bulbasaur");
+  await expect(page.locator("#tools-panel")).toBeVisible();
+});
