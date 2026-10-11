@@ -301,10 +301,16 @@ function accountRecords(snapshot) {
 export async function applyRecords(
   uid,
   records,
-  { note = "", maxRetries = MAX_APPLY_RETRIES, requestFn = request } = {},
+  { note = "", expected = null, maxRetries = MAX_APPLY_RETRIES, requestFn = request } = {},
 ) {
   validateUid(uid);
   const requested = validateRecordMap(records);
+  const checkedExpected = expected === null ? {} : validateRecordMap(expected);
+  for (const key of Object.keys(checkedExpected)) {
+    if (!(key in requested)) {
+      throw new Error(`expected status key ${key} is not part of the requested update`);
+    }
+  }
   if (!Number.isInteger(maxRetries) || maxRetries < 1) {
     throw new Error("maxRetries must be a positive integer");
   }
@@ -317,6 +323,14 @@ export async function applyRecords(
       { includeResponse: true },
     );
     const current = accountRecords(snapshot?.body);
+    for (const [key, status] of Object.entries(checkedExpected)) {
+      const actual = current[key]?.s ?? emptyValue(key);
+      if (actual !== status) {
+        throw new Error(
+          `status precondition failed for ${key}: expected ${JSON.stringify(status)}, found ${JSON.stringify(actual)}`,
+        );
+      }
+    }
     const changes = recordChanges(current, requested);
     if (!changes.length) return { ok: true, changed: false, changes: [] };
     if (!snapshot?.etag) throw new Error("Firebase account read did not return an ETag");
@@ -397,6 +411,7 @@ async function main() {
     }
     const result = await applyRecords(String(args.uid), JSON.parse(String(args.record)), {
       note: String(args.note ?? ""),
+      expected: args.expected === undefined ? null : JSON.parse(String(args.expected)),
     });
     console.log(JSON.stringify(result ?? { ok: true }));
     return;

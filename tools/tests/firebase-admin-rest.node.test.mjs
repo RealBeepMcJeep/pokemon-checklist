@@ -131,3 +131,48 @@ test("retries a full conditional PUT from a fresh account snapshot", async () =>
   assert.equal(finalAccount.log[newLogs[0]].from, "caught");
   assert.equal(finalAccount.log[newLogs[0]].to, "seen");
 });
+
+test("rejects an expected-old mismatch from the ETag snapshot without writing", async () => {
+  const calls = [];
+  const requestFn = async (path, init, options) => {
+    calls.push({ path, init, options });
+    return {
+      body: { state: { records: { "species:25": { s: "seen" } } } },
+      etag: "etag-1",
+    };
+  };
+
+  await assert.rejects(
+    applyRecords("abc:123", { "species:25": "caught" }, {
+      expected: { "species:25": "none" }, requestFn,
+    }),
+    /status precondition failed.*species:25/,
+  );
+  assert.equal(calls.filter(({ init }) => init.method === "PUT").length, 0);
+});
+
+test("rechecks the expected-old status after an ETag conflict", async () => {
+  const calls = [];
+  let reads = 0;
+  const requestFn = async (path, init, options) => {
+    calls.push({ path, init, options });
+    if (init.method === "PUT") {
+      const error = new Error("precondition failed");
+      error.status = 412;
+      throw error;
+    }
+    reads += 1;
+    return reads === 1
+      ? { body: { state: { records: { "species:25": { s: "caught" } } } }, etag: "etag-1" }
+      : { body: { state: { records: { "species:25": { s: "seen" } } } }, etag: "etag-2" };
+  };
+
+  await assert.rejects(
+    applyRecords("abc:123", { "species:25": "seen" }, {
+      expected: { "species:25": "caught" }, requestFn,
+    }),
+    /status precondition failed.*species:25/,
+  );
+  assert.equal(reads, 2);
+  assert.equal(calls.filter(({ init }) => init.method === "PUT").length, 1);
+});

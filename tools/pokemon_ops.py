@@ -9,6 +9,8 @@ atomic patch, and verifies the exact values written by reading them back.
 Examples::
 
     python tools/pokemon_ops.py --uid UID list caught
+    python tools/pokemon_ops.py --uid UID status pikachu
+    python tools/pokemon_ops.py --uid UID set-status pikachu caught --old-status seen
     python tools/pokemon_ops.py --uid UID mark pikachu caught
     python tools/pokemon_ops.py --uid UID evolve pikachu raichu
     python tools/pokemon_ops.py --uid UID favorites --exact pikachu mewtwo
@@ -19,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import difflib
 import json
 import re
 import subprocess
@@ -58,6 +61,13 @@ class AmbiguousSpeciesError(OperationError):
 
 class VerificationError(OperationError):
     """The database did not return the exact value just written."""
+
+
+class StatusPreconditionError(OperationError):
+    """The live status no longer matches a caller-supplied expectation."""
+
+
+UNSET = object()
 
 
 def normalize(value: str) -> str:
@@ -102,8 +112,22 @@ def load_species(path: Path = POKEMON_PATH) -> list[Species]:
     return sorted(result, key=lambda item: int(item["id"]))
 
 
+def suggest_species(query: str, species: Sequence[Species], *, limit: int = 3) -> list[str]:
+    """Suggest nearby canonical names without resolving or correcting the input."""
+    needle = normalize(str(query))
+    if not needle or needle.isdigit():
+        return []
+    aliases: dict[str, str] = {}
+    for item in species:
+        name = str(item["name"])
+        aliases.setdefault(normalize(name), name)
+        aliases.setdefault(normalize(str(item["slug"])), name)
+    matches = difflib.get_close_matches(needle, list(aliases), n=limit, cutoff=0.55)
+    return list(dict.fromkeys(aliases[match] for match in matches))
+
+
 def resolve_species(query: str, species: Sequence[Species]) -> Species:
-    """Resolve one name/slug/number; prefixes are accepted only when unique."""
+    """Resolve an exact normalized name/slug/number; never guess a prefix."""
     text = str(query).strip().lstrip("#").strip()
     needle = normalize(text)
     if not needle:
@@ -116,16 +140,24 @@ def resolve_species(query: str, species: Sequence[Species]) -> Species:
             item for item in species
             if normalize(str(item["name"])) == needle or normalize(str(item["slug"])) == needle
         ]
-        matches = exact or [
-            item for item in species if normalize(str(item["name"])).startswith(needle)
-        ]
+        matches = exact
 
     if len(matches) == 1:
         return dict(matches[0])
     if len(matches) > 1:
         names = ", ".join(str(item["name"]) for item in matches[:8])
         raise AmbiguousSpeciesError(f"{text!r} is ambiguous: {names}")
-    raise UnknownSpeciesError(f"could not resolve species {text!r}")
+    prefixes = [
+        item for item in species
+        if normalize(str(item["name"])).startswith(needle)
+        or normalize(str(item["slug"])).startswith(needle)
+    ]
+    if len(prefixes) > 1:
+        names = ", ".join(str(item["name"]) for item in prefixes[:8])
+        raise AmbiguousSpeciesError(f"{text!r} is not an exact species name; possible matches: {names}")
+    suggestions = suggest_species(text, species)
+    hint = f"; possible corrections: {', '.join(suggestions)}" if suggestions else ""
+    raise UnknownSpeciesError(f"could not resolve exact species name {text!r}{hint}")
 
 
 def _valid_key(key: str, species_ids: set[int]) -> str:
@@ -213,6 +245,13 @@ def record_value(records: Mapping[str, Mapping[str, Any]], key: str) -> str:
     return str(entry["s"]) if entry is not None else _empty_value(key)
 
 
+def caught_count(records: Mapping[str, Mapping[str, Any]]) -> int:
+    return sum(
+        key.startswith("species:") and entry.get("s") == "caught"
+        for key, entry in records.items()
+    )
+
+
 def minimal_patch(records: Mapping[str, Mapping[str, Any]], desired: Mapping[str, str]) -> dict[str, str]:
     """Return only changed keys, preserving the caller's deterministic order."""
     return {key: value for key, value in desired.items() if record_value(records, key) != value}
@@ -244,11 +283,20 @@ class FirebaseClient:
     def read_records(self, uid: str) -> Mapping[str, Any] | None:
         return self._run(["--read-records", "--uid", uid])
 
-    def apply_records(self, uid: str, records: Mapping[str, str], note: str = "") -> Any:
-        return self._run([
+    def apply_records(
+        self,
+        uid: str,
+        records: Mapping[str, str],
+        note: str = "",
+        expected: Mapping[str, str] | None = None,
+    ) -> Any:
+        args = [
             "--apply", "--uid", uid, "--record", json.dumps(records, sort_keys=True),
             "--note", note,
-        ])
+        ]
+        if expected is not None:
+            args.extend(["--expected", json.dumps(expected, sort_keys=True)])
+        return self._run(args)
 
 
 def _read_checked(client: Any, uid: str, species: Sequence[Species]) -> RecordMap:
@@ -265,9 +313,16 @@ def _apply_verified(
     *,
     dry_run: bool = False,
     note: str = "",
+    expected: Mapping[str, str] | None = None,
+    return_readback: bool = False,
 ) -> dict[str, Any]:
     ids = {int(item["id"]) for item in species}
     checked_desired = validate_requested_patch(desired, ids)
+    checked_expected = None
+    if expected is not None:
+        checked_expected = validate_requested_patch(expected, ids)
+        if not set(checked_expected).issubset(checked_desired):
+            raise SchemaError("expected statuses must refer to requested record keys")
     changes = minimal_patch(current, checked_desired)
     result: dict[str, Any] = {
         "changed": bool(changes),
@@ -275,32 +330,72 @@ def _apply_verified(
         "dry_run": bool(dry_run),
     }
     if not changes or dry_run:
+        result["caught_count"] = caught_count(current)
+        result["current_statuses"] = {key: record_value(current, key) for key in checked_desired}
+        if return_readback:
+            result["_readback_records"] = copy.deepcopy(dict(current))
         return result
 
-    # Exactly one transport call is made for a multi-key workflow. The wrapper
-    # turns it into one Firebase PATCH, not one request per record.
-    applied = client.apply_records(uid, changes, note=note)
+    # The transport computes the minimal diff at its ETag snapshot. Submit ALL
+    # desired keys so a race cannot drop an initially unchanged side of a trade.
+    if checked_expected is None:
+        applied = client.apply_records(uid, checked_desired, note=note)
+    else:
+        applied = client.apply_records(uid, checked_desired, note=note, expected=checked_expected)
     after = _read_checked(client, uid, species)
-    for key, expected in changes.items():
-        if key not in after or after[key].get("s") != expected:
+    for key, expected_status in checked_desired.items():
+        if key not in after or after[key].get("s") != expected_status:
             actual = after.get(key, {}).get("s", "<missing>")
             raise VerificationError(
-                f"readback mismatch for {key}: expected {expected!r}, got {actual!r}"
+                f"readback mismatch for {key}: expected {expected_status!r}, got {actual!r}"
             )
     if isinstance(applied, Mapping) and applied.get("changed") is False:
         # The transport did its own fresh read-then-diff and found the desired
         # value already there (a concurrent writer landed between our read and
         # its write): the readback matches, but this call created no log/*
         # audit entry, so it must not be reported the same as a real write.
+        result["changed"] = False
+        result["changes"] = {}
         result["verified"] = False
         result["verified_no_write"] = True
+        result["warning"] = {
+            "code": "already_at_status",
+            "message": "The requested statuses were already set at the transaction boundary; no write was made.",
+        }
     else:
         result["verified"] = True
+    result["caught_count"] = caught_count(after)
+    result["verified_statuses"] = {key: record_value(after, key) for key in checked_desired}
+    if isinstance(applied, Mapping) and applied.get("changed") is True:
+        actual_changes = applied.get("changes")
+        if isinstance(actual_changes, list):
+            result["changes"] = {change["key"]: change["to"] for change in actual_changes}
+    if return_readback:
+        result["_readback_records"] = after
     return result
 
 
 def _with_operation(result: dict[str, Any], operation: str, **extra: Any) -> dict[str, Any]:
     return {"operation": operation, **extra, **result}
+
+
+def run_status(
+    client: Any,
+    uid: str,
+    name: str,
+    species: Sequence[Species] | None = None,
+) -> dict[str, Any]:
+    catalogue = list(species) if species is not None else load_species()
+    target = resolve_species(name, catalogue)
+    current = _read_checked(client, uid, catalogue)
+    key = f"species:{int(target['id'])}"
+    return {
+        "operation": "status",
+        "species": target,
+        "status": record_value(current, key),
+        "caught_count": caught_count(current),
+        "changed": False,
+    }
 
 
 def run_mark(
@@ -335,6 +430,7 @@ def run_pair(
     *,
     dry_run: bool = False,
     note: str = "",
+    return_readback: bool = False,
 ) -> dict[str, Any]:
     if operation not in {"evolve", "trade"}:
         raise OperationError("pair operation must be evolve or trade")
@@ -351,6 +447,7 @@ def run_pair(
     result = _apply_verified(
         client, uid, current, desired, catalogue, dry_run=dry_run,
         note=note or f"chat {operation} {source['name']} to {target['name']}",
+        return_readback=return_readback,
     )
     return _with_operation(result, operation, from_species=source, to_species=target)
 
@@ -411,6 +508,137 @@ def run_list(
     return {"operation": "list", "category": category, "items": items}
 
 
+class PokemonStatusTool:
+    """UID-scoped status operations with an injectable account transport."""
+
+    def __init__(
+        self,
+        uid: str,
+        client: Any | None = None,
+        species: Sequence[Species] | None = None,
+    ) -> None:
+        self.uid = uid
+        self.client = client if client is not None else FirebaseClient()
+        self.species = list(load_species() if species is None else species)
+
+    @staticmethod
+    def _validate_status(status: Any) -> None:
+        if not isinstance(status, str) or status not in STATUS_VALUES:
+            raise OperationError(f"invalid status {status!r}; expected caught, seen, or none")
+
+    def check_pokemon_status(self, name: str) -> str:
+        return run_status(self.client, self.uid, name, self.species)["status"]
+
+    def _write_status(
+        self,
+        target: Species,
+        status: str,
+        current: RecordMap,
+        *,
+        expected: Mapping[str, str] | None = None,
+        dry_run: bool = False,
+        note: str = "",
+    ) -> dict[str, Any]:
+        key = f"species:{int(target['id'])}"
+        result = _apply_verified(
+            self.client,
+            self.uid,
+            current,
+            {key: status},
+            self.species,
+            dry_run=dry_run,
+            note=note or f"chat set status {target['name']} to {status}",
+            expected=expected,
+            return_readback=True,
+        )
+        final = result.pop("_readback_records")
+        output = _with_operation(result, "set_status", species=target)
+        output["status"] = record_value(final, key)
+        output["caught_count"] = caught_count(final)
+        return output
+
+    def _set_pokemon_status(self, name: str, status: str) -> dict[str, Any]:
+        self._validate_status(status)
+        target = resolve_species(name, self.species)
+        current = _read_checked(self.client, self.uid, self.species)
+        return self._write_status(target, status, current)
+
+    def set_pokemon_status(
+        self,
+        name: str,
+        status: str,
+        old_status: str | object = UNSET,
+        *,
+        dry_run: bool = False,
+        note: str = "",
+    ) -> dict[str, Any]:
+        self._validate_status(status)
+        if old_status is not UNSET:
+            self._validate_status(old_status)
+        target = resolve_species(name, self.species)
+        current = _read_checked(self.client, self.uid, self.species)
+        key = f"species:{int(target['id'])}"
+        actual = record_value(current, key)
+        expected = None
+        if old_status is not UNSET:
+            if actual != old_status:
+                raise StatusPreconditionError(
+                    f"status precondition failed for {target['name']}: "
+                    f"expected {old_status!r}, found {actual!r}"
+                )
+            expected = {key: old_status}
+        if actual == status:
+            return {
+                "operation": "set_status",
+                "species": target,
+                "status": status,
+                "caught_count": caught_count(current),
+                "changed": False,
+                "changes": {},
+                "dry_run": bool(dry_run),
+                "warning": {
+                    "code": "already_at_status",
+                    "message": f"{target['name']} is already {status}; no write was made.",
+                },
+            }
+        return self._write_status(
+            target,
+            status,
+            current,
+            expected=expected,
+            dry_run=dry_run,
+            note=note,
+        )
+
+    def trade_pokemon_status(
+        self,
+        name1: str,
+        name2: str,
+        *,
+        dry_run: bool = False,
+        note: str = "",
+    ) -> dict[str, Any]:
+        result = run_pair(
+            self.client,
+            self.uid,
+            "trade",
+            name1,
+            name2,
+            self.species,
+            dry_run=dry_run,
+            note=note,
+            return_readback=True,
+        )
+        final = result.pop("_readback_records")
+        source, target = result["from_species"], result["to_species"]
+        result["statuses"] = {
+            source["name"]: record_value(final, f"species:{int(source['id'])}"),
+            target["name"]: record_value(final, f"species:{int(target['id'])}"),
+        }
+        result["caught_count"] = caught_count(final)
+        return result
+
+
 def _add_common_flags(parser: argparse.ArgumentParser, *, suppress_defaults: bool = False) -> None:
     # --uid is never argparse-`required` here: a subparsers action (nargs=PARSER)
     # swallows every token after the subcommand into the SUBPARSER, so a top-level
@@ -434,6 +662,19 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_flags(list_parser, suppress_defaults=True)
     list_parser.add_argument("category", choices=("caught", "seen-only", "favorites"))
 
+    status_parser = commands.add_parser("status", help="read one current species status")
+    _add_common_flags(status_parser, suppress_defaults=True)
+    status_parser.add_argument("name")
+
+    set_status_parser = commands.add_parser("set-status", help="set one status with optional old-status guard")
+    _add_common_flags(set_status_parser, suppress_defaults=True)
+    set_status_parser.add_argument("name")
+    set_status_parser.add_argument("status", choices=tuple(sorted(STATUS_VALUES)))
+    set_status_parser.add_argument(
+        "--old-status", choices=tuple(sorted(STATUS_VALUES)), default=argparse.SUPPRESS,
+        help="require this status at the Firebase conditional-write boundary",
+    )
+
     mark_parser = commands.add_parser("mark", help="mark one species")
     _add_common_flags(mark_parser, suppress_defaults=True)
     mark_parser.add_argument("name")
@@ -455,11 +696,17 @@ def _print_result(result: Mapping[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return
+    if result.get("operation") == "status":
+        print(f"{result['species']['name']}: {result['status']} · {result['caught_count']} caught")
+        return
     if result.get("operation") == "list":
         for item in result["items"]:
             suffix = " [favorite]" if item.get("favorite") else ""
             print(f"#{int(item['id']):03d} {item['name']} ({item['status']}){suffix}")
         print(f"{len(result['items'])} species")
+        return
+    if result.get("warning"):
+        print("WARN: " + result["warning"]["message"])
         return
     changes = result.get("changes", {})
     if not changes:
@@ -480,10 +727,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "list":
             result = run_list(client, args.uid, args.category, species)
+        elif args.command == "status":
+            result = run_status(client, args.uid, args.name, species)
+        elif args.command == "set-status":
+            tool = PokemonStatusTool(args.uid, client=client, species=species)
+            result = tool.set_pokemon_status(
+                args.name,
+                args.status,
+                old_status=getattr(args, "old_status", UNSET),
+                dry_run=args.dry_run,
+                note=args.note or "",
+            )
         elif args.command == "mark":
             result = run_mark(client, args.uid, args.name, args.status, species, dry_run=args.dry_run, note=args.note or "")
-        elif args.command in {"evolve", "trade"}:
-            result = run_pair(client, args.uid, args.command, args.from_name, args.to_name, species, dry_run=args.dry_run, note=args.note or "")
+        elif args.command == "evolve":
+            result = run_pair(client, args.uid, "evolve", args.from_name, args.to_name, species, dry_run=args.dry_run, note=args.note or "")
+        elif args.command == "trade":
+            tool = PokemonStatusTool(args.uid, client=client, species=species)
+            result = tool.trade_pokemon_status(
+                args.from_name, args.to_name, dry_run=args.dry_run, note=args.note or ""
+            )
         elif args.command == "favorites":
             result = run_favorites_exact(client, args.uid, args.exact, species, dry_run=args.dry_run, note=args.note or "")
         else:  # argparse makes this unreachable, but keeps the dispatch total.

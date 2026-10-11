@@ -1,8 +1,12 @@
 import copy
+import io
+import json
 import subprocess
 import sys
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
@@ -31,6 +35,7 @@ class FakeClient:
     def __init__(self, records=None):
         self.records = copy.deepcopy(records or {})
         self.applied = []
+        self.expected = []
         self.reads = 0
         self.mismatch = False
 
@@ -42,8 +47,9 @@ class FakeClient:
                 result[key] = entry("seen")
         return result
 
-    def apply_records(self, uid, records, note=""):
+    def apply_records(self, uid, records, note="", expected=None):
         self.applied.append(copy.deepcopy(records))
+        self.expected.append(copy.deepcopy(expected))
         for key, value in records.items():
             self.records[key] = entry(value)
 
@@ -144,7 +150,8 @@ class PokemonOpsTests(unittest.TestCase):
                 return {"ok": True, "changed": False, "changes": []}
 
         result = ops.run_mark(RaceClient(), "uid", "pikachu", "seen", SPECIES)
-        self.assertTrue(result["changed"])
+        # Report the transport outcome, not the superseded initial plan.
+        self.assertFalse(result["changed"])
         self.assertFalse(result.get("verified"))
         self.assertTrue(result.get("verified_no_write"))
 
@@ -154,6 +161,181 @@ class PokemonOpsTests(unittest.TestCase):
             ops.run_mark(client, "uid", "char", "seen", SPECIES)
         self.assertEqual(client.reads, 0)
         self.assertEqual(client.applied, [])
+
+    def test_unique_prefix_is_rejected_with_suggestion_without_a_write(self):
+        client = FakeClient()
+        with self.assertRaises(ops.UnknownSpeciesError) as caught:
+            ops.run_mark(client, "uid", "pika", "caught", SPECIES)
+        self.assertIn("Pikachu", str(caught.exception))
+        self.assertEqual(client.reads, 0)
+        self.assertEqual(client.applied, [])
+
+    def test_status_query_returns_current_or_none_without_writing(self):
+        client = FakeClient({"species:25": entry("seen")})
+        result = ops.run_status(client, "uid", "pikachu", SPECIES)
+        self.assertEqual(result["status"], "seen")
+        self.assertFalse(result["changed"])
+        self.assertEqual(client.reads, 1)
+        self.assertEqual(client.applied, [])
+
+        missing = ops.run_status(FakeClient(), "uid", "raichu", SPECIES)
+        self.assertEqual(missing["status"], "none")
+
+    def test_status_set_warns_and_skips_write_when_already_at_target(self):
+        client = FakeClient({"species:25": entry("caught")})
+        tool = ops.PokemonStatusTool("uid", client=client, species=SPECIES)
+        result = tool.set_pokemon_status("Pikachu", "caught")
+        self.assertEqual(result["warning"]["code"], "already_at_status")
+        self.assertFalse(result["changed"])
+        self.assertEqual(result["status"], "caught")
+        self.assertEqual(result["caught_count"], 1)
+        self.assertEqual(client.reads, 1)
+        self.assertEqual(client.applied, [])
+
+    def test_status_set_rejects_stale_old_status_before_write(self):
+        client = FakeClient({"species:25": entry("seen")})
+        tool = ops.PokemonStatusTool("uid", client=client, species=SPECIES)
+        with self.assertRaises(ops.StatusPreconditionError):
+            tool.set_pokemon_status("Pikachu", "caught", old_status="caught")
+        self.assertEqual(client.reads, 1)
+        self.assertEqual(client.applied, [])
+
+    def test_status_set_passes_expected_old_to_the_atomic_writer(self):
+        client = FakeClient({"species:25": entry("seen"), "species:1": entry("caught")})
+        tool = ops.PokemonStatusTool("uid", client=client, species=SPECIES)
+        result = tool.set_pokemon_status("pikachu", "caught", old_status="seen")
+        self.assertEqual(client.expected, [{"species:25": "seen"}])
+        self.assertEqual(result["status"], "caught")
+        self.assertEqual(result["caught_count"], 2)
+        self.assertTrue(result["verified"])
+
+    def test_trade_status_returns_both_verified_statuses_and_caught_total(self):
+        client = FakeClient({"species:1": entry("caught"), "species:25": entry("seen")})
+        tool = ops.PokemonStatusTool("uid", client=client, species=SPECIES)
+        result = tool.trade_pokemon_status("bulbasaur", "pikachu")
+        self.assertEqual(client.applied, [{"species:1": "seen", "species:25": "caught"}])
+        self.assertEqual(result["statuses"], {"Bulbasaur": "seen", "Pikachu": "caught"})
+        self.assertEqual(result["caught_count"], 1)
+        self.assertTrue(result["verified"])
+
+    def test_status_check_method_returns_only_the_status(self):
+        tool = ops.PokemonStatusTool(
+            "uid", client=FakeClient({"species:25": entry("seen")}), species=SPECIES
+        )
+        self.assertEqual(tool.check_pokemon_status("Pikachu"), "seen")
+
+    def test_firebase_client_forwards_expected_old_status_to_wrapper(self):
+        calls = []
+
+        def runner(argv, **kwargs):
+            calls.append(argv)
+            return subprocess.CompletedProcess(argv, 0, '{"ok":true}', "")
+
+        client = ops.FirebaseClient(tool=Path("firebase-admin-rest.mjs"), runner=runner)
+        client.apply_records(
+            "uid", {"species:25": "caught"}, note="guarded set",
+            expected={"species:25": "seen"},
+        )
+        self.assertIn("--expected", calls[0])
+        index = calls[0].index("--expected")
+        self.assertEqual(calls[0][index + 1], '{"species:25": "seen"}')
+
+    def test_status_cli_returns_status_and_caught_total(self):
+        client = FakeClient({"species:25": entry("seen"), "species:1": entry("caught")})
+        output = io.StringIO()
+        with patch.object(ops, "FirebaseClient", return_value=client):
+            with redirect_stdout(output):
+                code = ops.main(["--uid", "uid", "--json", "status", "pikachu"])
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["status"], "seen")
+        self.assertEqual(result["caught_count"], 1)
+
+    def test_set_status_cli_accepts_expected_old_status(self):
+        client = FakeClient({"species:25": entry("seen"), "species:1": entry("caught")})
+        output = io.StringIO()
+        with patch.object(ops, "FirebaseClient", return_value=client):
+            with redirect_stdout(output):
+                code = ops.main([
+                    "--uid", "uid", "--json", "set-status", "pikachu", "caught",
+                    "--old-status", "seen",
+                ])
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["status"], "caught")
+        self.assertEqual(result["caught_count"], 2)
+        self.assertEqual(client.expected, [{"species:25": "seen"}])
+
+    def test_trade_cli_returns_both_statuses_and_caught_total(self):
+        client = FakeClient({"species:1": entry("caught"), "species:25": entry("seen")})
+        output = io.StringIO()
+        with patch.object(ops, "FirebaseClient", return_value=client):
+            with redirect_stdout(output):
+                code = ops.main(["--uid", "uid", "--json", "trade", "bulbasaur", "pikachu"])
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["statuses"], {"Bulbasaur": "seen", "Pikachu": "caught"})
+        self.assertEqual(result["caught_count"], 1)
+
+    def test_trade_keeps_initially_unchanged_target_in_atomic_request(self):
+        class RaceClient(FakeClient):
+            def apply_records(self, uid, records, note="", expected=None):
+                self.records["species:25"] = entry("seen")
+                super().apply_records(uid, records, note, expected)
+
+        client = RaceClient({"species:1": entry("caught"), "species:25": entry("caught")})
+        result = ops.PokemonStatusTool("uid", client, SPECIES).trade_pokemon_status("bulbasaur", "pikachu")
+        self.assertEqual(client.applied, [{"species:1": "seen", "species:25": "caught"}])
+        self.assertEqual(result["statuses"], {"Bulbasaur": "seen", "Pikachu": "caught"})
+        self.assertTrue(result["verified"])
+
+    def test_trade_verifies_initially_unchanged_side_after_write(self):
+        class RaceClient(FakeClient):
+            def read_records(self, uid):
+                result = super().read_records(uid)
+                if self.applied:
+                    result["species:25"] = entry("seen")
+                return result
+
+        client = RaceClient({"species:1": entry("caught"), "species:25": entry("caught")})
+        with self.assertRaises(ops.VerificationError):
+            ops.PokemonStatusTool("uid", client, SPECIES).trade_pokemon_status("bulbasaur", "pikachu")
+
+    def test_concurrent_no_write_returns_warning_and_never_prints_changed(self):
+        class RaceClient(FakeClient):
+            def apply_records(self, uid, records, note="", expected=None):
+                self.records["species:25"] = entry("caught")
+                return {"ok": True, "changed": False, "changes": []}
+
+        client = RaceClient({"species:25": entry("seen")})
+        result = ops.PokemonStatusTool("uid", client, SPECIES).set_pokemon_status("pikachu", "caught")
+        self.assertFalse(result["changed"])
+        self.assertEqual(result["changes"], {})
+        self.assertEqual(result["warning"]["code"], "already_at_status")
+        self.assertEqual(result["status"], "caught")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            ops._print_result(result, False)
+        self.assertIn("WARN", output.getvalue())
+        self.assertNotIn("Changed:", output.getvalue())
+
+    def test_plain_status_cli_shows_species_status_and_count(self):
+        output = io.StringIO()
+        client = FakeClient({"species:25": entry("seen")})
+        with patch.object(ops, "FirebaseClient", return_value=client), redirect_stdout(output):
+            self.assertEqual(ops.main(["--uid", "uid", "status", "pikachu"]), 0)
+        self.assertIn("Pikachu", output.getvalue())
+        self.assertIn("seen", output.getvalue())
+        self.assertIn("0 caught", output.getvalue())
+
+    def test_mark_and_evolution_return_fresh_caught_total_and_final_statuses(self):
+        client = FakeClient({"species:25": entry("seen")})
+        marked = ops.run_mark(client, "uid", "pikachu", "caught", SPECIES)
+        self.assertEqual(marked["caught_count"], 1)
+        self.assertEqual(marked["verified_statuses"], {"species:25": "caught"})
+        evolved = ops.run_pair(client, "uid", "evolve", "pikachu", "raichu", SPECIES)
+        self.assertEqual(evolved["caught_count"], 1)
+        self.assertEqual(evolved["verified_statuses"], {"species:25": "seen", "species:26": "caught"})
 
     def test_readback_mismatch_fails(self):
         client = FakeClient()

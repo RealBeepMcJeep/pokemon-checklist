@@ -152,6 +152,18 @@ python tools/build_vanilla_encounters.py --check
 
 Vite builds to temporary `dist/index.html`; `tools/publish.mjs` verifies it is the only output, rejects external scripts, stylesheets, iframe/object/embed/media/track resources, CSS `url(...)` and `@import` references, source maps, and unresolved build tokens, and copies it to the tracked root `index.html`. Data URLs and fragment-only references remain valid embedded resources. `npm run build:check` rebuilds without changing the root file and fails when that committed artifact is stale. The no-network guarantee is behavioural and enforced by a browser test rather than by that check: while signed out the artifact may not so much as *attempt* a request to anything other than `data:`, `file:` or localhost, on a desktop or a mobile user agent. CSS, JavaScript, JSON, the icon atlas, and every location image are inlined for direct `file://` use.
 
+### Local chat status operations
+
+`tools/pokemon_ops.py` is the local status authority (requires an externally stored Firebase service account):
+
+```sh
+python tools/pokemon_ops.py --uid <account> --json status pikachu
+python tools/pokemon_ops.py --uid <account> --json set-status pikachu caught --old-status seen
+python tools/pokemon_ops.py --uid <account> --json trade pikachu raichu
+```
+
+The injectable `PokemonStatusTool` API exposes `check_pokemon_status`, private `_set_pokemon_status`, public `set_pokemon_status` with optional `old_status`, and `trade_pokemon_status`. Exact normalized names/slugs or National Dex IDs are required; correction suggestions never auto-select a species. Already-set requests warn without writes. Expected-old guards are enforced against the Firebase ETag snapshot and rechecked after conflicts. Both trade statuses and audit entries share one conditional account update, followed by exact readback and a caught total from that same snapshot. `--dry-run` previews changes; its status/count fields describe current state, not a completed mutation. Existing `mark`, `evolve`, favorites and list commands remain available. No reset command is exposed.
+
 `npm run check` runs strict TypeScript checking, Vitest, the production build/freshness audit, the full Python tool suite plus chat self-test, and deterministic Node tool tests. Playwright runs the same UI parity checks against both the Vite server and the generated standalone file, with network access blocked for the latter. GitHub Actions runs `npm run check`, `npm run test:e2e`, `python tools/extract_reference.py --validate`, and a syntax-only `py_compile` pass over the generator scripts for pull requests and `main`. `build_icons.py --check` and `build_vanilla_encounters.py --check` are not part of that CI job: both need a locally bootstrapped, hash-verified source cache (see below) that CI does not fetch, so they stay a local pre-push check.
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`. `python tools/build_moves.py` regenerates `data/moves.json` (Popular moves) offline from the same pinned Showdown cache plus hash-pinned Smogon moveset files; see `docs/showdown-data.md`. `python tools/build_pokedex_details.py` regenerates the type, evolution, inherited-grade, form, and usage snapshot from checksum-pinned Pokémon Showdown sources; it requires network access, while normal builds remain offline.

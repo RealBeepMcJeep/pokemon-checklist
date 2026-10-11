@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-10
+
+- Chat status operations now reject partial/unknown names with correction suggestions, support direct status queries and optional expected-old-status guards, and warn instead of writing when already set. Trades and evolutions submit both desired statuses to one ETag-guarded update and verify both afterward; mutation replies include the fresh caught total. Website and save format are unchanged.
+
 ## 2026-10-02
 
 - Team cards now support acquisition-checked move targets for Chandelure, Walrein and Typhlosion, preserving pre-evolution learning and later TM gates. Move targets do not require breeding or hidden abilities; team scores and website files are unchanged.
