@@ -27,15 +27,24 @@ Opening the checklist in more than one tab keeps them in sync: a change made in 
 ## Tools and catch calculator
 
 Open **Tools** in the checklist header for the QR archive, experimental QR page,
-and an offline Gen VII catch calculator. Pokémon/forms and balls have keyboard and
-touch autocomplete. Choose one major status, estimate remaining HP with the slider,
+and an offline Gen VII catch calculator. Desktop shows Pokémon/ball selectors beside
+a parameter column; phones use one compact stack. Click neighboring sprites or swipe
+to step through the wrapping selectors, and click a selected name to search with
+sprite-bearing keyboard/touch autocomplete. All species/forms follow National Dex
+and form order; form rows label reused base artwork honestly. Catch chance is
+prominent and color-coded, with a numeric percentage and text tier. Choose one major
+status chip, estimate remaining HP with the slider,
 or enter exact current/maximum HP. Conditional balls expose only their relevant
 inputs; the result updates per throw and includes a multiplier breakdown.
 
 Optional critical captures use the game's **historical registered-caught species**,
 not the checklist's current inventory count. Repeat Ball uses the same historical
 distinction. Roto Catch defaults off and is available only in Ultra modes. Calculator
-inputs are temporary and never change checklist progress.
+battle inputs are temporary and never change checklist progress. Only the selected
+Pokémon ID/form and ball are remembered on this device under the isolated
+`pokemon-checklist-catch-selection-v1` key; they are not part of checklist backups or
+account sync. Defaults are Pikachu and Poké Ball; unavailable storage produces a
+notice without breaking the calculator.
 
 The calculator follows the published staged fixed-point Gen VII model, with pinned
 stock SM/USUM catch rates, types, speed, gender and form weights. It is not native
@@ -168,6 +177,7 @@ npx playwright install chromium
 npm run test:e2e
 python tools/extract_reference.py --validate
 python tools/build_icons.py --check
+python tools/build_ball_sprites.py --check
 python tools/build_vanilla_encounters.py --check
 ```
 
@@ -189,7 +199,7 @@ The injectable `PokemonStatusTool` API exposes `check_pokemon_status`, private `
 
 `data/encounters.json` and the four `data/encounters-{game}.json` files are the canonical mode datasets. To re-extract the PDF images, use `python tools/extract_reference.py --extract-assets`. To refresh the pinned Pokémon name snapshot, use `--refresh-pokemon`. `python tools/build_moves.py` regenerates `data/moves.json` (Popular moves) offline from the same pinned Showdown cache plus hash-pinned Smogon moveset files; see `docs/showdown-data.md`. `python tools/build_pokedex_details.py` regenerates the type, evolution, inherited-grade, form, and usage snapshot from checksum-pinned Pokémon Showdown sources; it requires network access, while normal builds remain offline.
 
-The source regenerators are offline by default, with one exception: `build_pokedex_details.py` downloads its separate, hash-pinned Smogon usage snapshot on every run, including `--check`, because that snapshot is not part of the bootstrapped cache contract below — it has no offline-only code path. Every other regenerator's verified raw inputs live outside the repository in the platform cache directory (`%LOCALAPPDATA%/pokemon-checklist/` on Windows, `$XDG_CACHE_HOME/pokemon-checklist/` or `~/.cache/pokemon-checklist/` elsewhere); use `--cache-dir` to override it. Normal generation and `--check` only read that cache and fail clearly when it is missing or corrupt. The explicit refresh commands are networked and should be run only when inputs need bootstrapping or updating:
+The source regenerators are offline by default, with one exception: `build_pokedex_details.py` downloads its separate, hash-pinned Smogon usage snapshot on every run, including `--check`, because that snapshot is not part of the bootstrapped cache contract below — it has no offline-only code path. The 22 ball sprites are a small committed hash-verified input cache under `references/ball-sprites/`, pinned to the same PokéAPI commit as the Pokémon atlas; `build_ball_sprites.py --check` runs offline in ordinary builds and CI, and `--refresh` explicitly refetches those exact sources. Every other regenerator's verified raw inputs live outside the repository in the platform cache directory (`%LOCALAPPDATA%/pokemon-checklist/` on Windows, `$XDG_CACHE_HOME/pokemon-checklist/` or `~/.cache/pokemon-checklist/` elsewhere); use `--cache-dir` to override it. Normal generation and `--check` only read that cache and fail clearly when it is missing or corrupt. The explicit refresh commands are networked and should be run only when inputs need bootstrapping or updating:
 
 ```text
 python tools/build_icons.py --refresh

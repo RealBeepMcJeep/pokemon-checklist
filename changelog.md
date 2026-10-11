@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-11
+
+- Redesigned the catch calculator with a compact phone stack and a desktop parameter column, prominent color-coded catch chance, single-status multiplier chips and conditional factor chips. Pokémon/form and ball selectors show neighboring sprites, wrap around, support swiping and edit names in-place with sprite autocomplete.
+- The calculator remembers only the selected Pokémon/form and ball on each device; battle settings reset on reload, and checklist progress, backups, sync and capture mathematics are unchanged. Added a pinned, hash-verified offline ball-spritesheet build and CI freshness check.
+
 ## 2026-10-10
 
 - Added a Tools dialog linking both QR pages and an offline Gen VII catch calculator with Pokémon/form and ball autocomplete, exclusive status choices, estimated or exact HP inputs, conditional ball controls, historical critical-capture inputs, optional Roto Catch, and a labeled catch-rate override. Formula and pinned stock-data assumptions are visible; checklist progress and its save format are unchanged.

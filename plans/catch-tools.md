@@ -2,17 +2,19 @@
 
 Approved scope: subordinate header Tools dialog, relative QR archive / experimental links,
 inline offline capture calculator. English only, existing Preact/theme controls, no dependencies,
-no new save keys or schema changes. All calculator inputs are component-local and ephemeral.
+no checklist save/schema changes. Battle inputs are component-local and ephemeral; the
+approved sprite-selector upgrade separately remembers only selected Pokémon/form and ball.
 Stable review handles: `#tools-toggle`, `#tools-panel`, `#catch-calculator`.
 
 ## Decisions and accuracy boundary
 
 - Native dialog provides modal focus containment, Escape and return focus; the calculator is
   outside the sticky header and scrolls inside a viewport-contained dialog.
-- Shared keyboard / pointer combobox filters local names and ball labels. Editing to an invalid
-  value removes the result immediately. Default Pikachu / Poké Ball is explicit.
+- Selected names become inline keyboard/pointer autocomplete with sprites. Draft queries do
+  not change the selected identity, odds or persistence; selection commits, and Escape/blur
+  reverts the label. Default Pikachu / Poké Ball is explicit.
 - Approximate percent HP uses H=percent, M=100; exact mode accepts positive integer HP;
-  Set 1 HP switches to exact mode. Major status checkboxes are mutually exclusive.
+  Set 1 HP switches to exact mode. Major status chips are mutually exclusive.
 - Conditional ball controls appear only when relevant. Turn 1 has zero elapsed turns.
   Repeated registrations and critical history are not inferred from currently-owned checklist
   records. Roto defaults off and is unavailable in SM. Game variant follows app game mode;
@@ -28,6 +30,28 @@ Stable review handles: `#tools-toggle`, `#tools-panel`, `#catch-calculator`.
 - Lure is fishing only, ×5 in Gen VII; Dive accepts surfing or fishing. Heavy adjusts rate before
   ball multiplier, with SM zero-rate bug vs USUM minimum 1. Ordinary balls penalized against UBs;
   Master bypasses only legal catchable inputs. Nest uses (41−level)/10 below 30 and staged rounding.
+
+## Approved sprite-selector upgrade
+
+- Desktop B2: stacked Pokémon and ball rows beside the battle-parameter column. Phones use
+  the approved shared compact vertical layout. Catch chance stays prominent near the top,
+  with numeric, text-tier and color feedback; compact chip borders keep 44px hit areas.
+- Each selector draws previous/current/next icons through cropped atlas `<img>` elements.
+  Neighbor clicks, keyboard left/right and mobile horizontal swipes wrap both ends. All 975
+  species/form entries are sorted by numeric ID then form; forms follow their species and
+  label base-art reuse. Search options are bounded, not a 975-row DOM.
+- Only `{id, form, ball}` is persisted under `pokemon-checklist-catch-selection-v1`. This
+  per-device key is separate from progress/backups/sync and does not remember battle values.
+  Invalid or blocked storage falls back with a notice; choosing unavailable stock SM forms
+  still reports the game-availability error rather than silently substituting another record.
+- Ball art: 22 30×30 frames, eight columns, committed `assets/catch-balls.png`; raw cache and
+  source hashes in `references/ball-sprites/`, PokéAPI/sprites commit
+  `6e3e7c43e86db0e1b2277795cfee41b11e8df2a4` (same pin as Pokémon icons).
+  `python tools/build_ball_sprites.py --check` checks hashes, dimensions and rendered
+  freshness offline; `--refresh` explicitly downloads the pinned inputs. License attribution
+  stays in `references/PokeAPI-sprites-LICENCE.txt`.
+- Capture engine/data remain byte-identical. Exact/estimated HP, Set 1 HP, every conditional
+  ball, historical critical history, Roto, override and detailed assumptions remain available.
 
 ## Reproducible data provenance
 
