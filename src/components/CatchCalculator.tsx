@@ -84,7 +84,7 @@ export function CatchCalculator() {
       | "oppositeGender",
     label: string,
   ) => (
-    <button type="button" class="catch-chip" aria-pressed={conditions[key]} onClick={() => setConditions({...conditions, [key]: !conditions[key]})}>{label}</button>
+    <button type="button" class="catch-chip" aria-pressed={conditions[key]} onClick={() => setConditions({...conditions, [key]: !conditions[key]})}><span>{label}</span></button>
   );
   const game = mode.value === "sun" || mode.value === "moon" ? "sm" : "usum";
   const pokemon = capture.pokemon.find((p) => p.name === species);
@@ -141,9 +141,8 @@ export function CatchCalculator() {
     <section id="catch-calculator" aria-label="Catch calculator">
 
       <p class="muted">
-        Documented Gen VII model ·{" "}
-        {game === "sm" ? "Sun / Moon" : "Ultra Sun / Ultra Moon"} stock data.
-        Only Pokémon and ball selections are remembered; battle inputs never change your checklist.
+        Documented Gen VII ·{" "}
+        {game === "sm" ? "Sun / Moon" : "Ultra Sun / Ultra Moon"} stock model.
       </p>
       <div class="catch-feedback">
         {error && (
@@ -161,7 +160,7 @@ export function CatchCalculator() {
       {notice && <p id="catch-memory-notice" role="status" class="muted">{notice}</p>}
       <div class="catch-selectors-stack">
         <CatchSelector kind="species" value={species} onChange={name => select(name, ball)} options={[...capture.pokemon].sort((a,b) => a.id - b.id || a.form - b.form)} />
-        <CatchSelector kind="ball" value={ball} onChange={name => select(species, name)} options={BALLS.map(name => ({name}))} />
+        <CatchSelector kind="ball" value={ball} onChange={name => select(species, name)} options={BALLS.map(name => ({name}))} detail={modifiers ? modifiers.master ? "Guaranteed catch" : "×" + modifiers.bonus.toFixed(2) + " ball effect" : "Check inputs"} />
       </div>
       </div><div class="catch-parameters">
       {[
@@ -233,7 +232,7 @@ export function CatchCalculator() {
           )}
         </fieldset>
       )}
-      <fieldset>
+      <fieldset class="catch-health">
         <legend>Health</legend>
         <label class="catch-check">
           <input
@@ -282,7 +281,7 @@ export function CatchCalculator() {
             </label>
           </div>
         ) : (
-          <label>
+          <label title="Percent mode estimates HP using a 100-HP target; rounding can differ from your actual HP.">
             HP remaining (approximate %)
             <input
               type="range"
@@ -326,11 +325,14 @@ export function CatchCalculator() {
             ] as [Status, string][]
           ).map(([key, label]) => (
             <button type="button" class="catch-chip" aria-pressed={status === key} onClick={() => setStatus(status === key ? "none" : key)}>
-              {label} ×{key === "slp" || key === "frz" ? 2.5 : key === "none" ? 1 : 1.5}
+              <span>{label} ×{key === "slp" || key === "frz" ? 2.5 : key === "none" ? 1 : 1.5}</span>
             </button>
           ))}
         </div>
       </fieldset>
+      {result && modifiers && (          <div class="catch-factors" aria-label="Applied factors">
+            <span>HP {exact ? current : percent}/{exact ? max : 100}</span><span>{override ? "Override" : "Stock"} rate {modifiers.rate}</span><span>Ball ×{modifiers.bonus}</span><span>Status ×{result.statusBonus}</span><span>Roto ×{game === "usum" && roto ? 2.5 : 1}</span><span>Historical Dex ×{dexBonus(caught)}</span>
+          </div>)}
       <details class="catch-advanced">
         <summary>Optional modifiers &amp; hack override</summary>
         <label>
@@ -388,9 +390,7 @@ export function CatchCalculator() {
       </div></div>
       {result && modifiers && (
         <>
-          <div class="catch-factors" aria-label="Applied factors">
-            <span>HP {exact ? current : percent}/{exact ? max : 100}</span><span>{override ? "Override" : "Stock"} rate {modifiers.rate}</span><span>Ball ×{modifiers.bonus}</span><span>Status ×{result.statusBonus}</span><span>Roto ×{game === "usum" && roto ? 2.5 : 1}</span><span>Historical Dex ×{dexBonus(caught)}</span>
-          </div>
+
           <p id="catch-breakdown">
             Catch rate {modifiers.rate}
             {override ? " (OVERRIDE)" : " (stock)"} · Ball ×{modifiers.bonus} ·
@@ -414,6 +414,8 @@ export function CatchCalculator() {
       )}
       <details id="catch-notes">
         <summary>Equation, data &amp; assumptions</summary>
+        <p>Only Pokémon/form and ball selections are remembered on this device. Battle inputs are temporary and never change your checklist.</p>
+        {!exact && <p>Percent mode estimates HP using a 100-HP target; rounding can differ from actual HP, and a fainted target cannot be caught.</p>}
         <p>
           This is the documented Gen VII calculator model, not bit-exact engine
           emulation. Exact HP means exact inputs, not verified executable
