@@ -5,7 +5,7 @@ import { ENCOUNTERS_BY_MODE, POKEMON, byDex, detailsByDex, formDetails } from ".
 import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
-  caughtCount,
+  speciesCounts,
   drawerOpen,
   formDefinitions,
   formsTracked,
@@ -13,7 +13,6 @@ import {
   mode,
   readOnly,
   searchTerm,
-  seenCount,
   selectedDex,
   sidebarHidden,
   starred,
@@ -27,6 +26,7 @@ import {
   openPokemon,
 } from "../ui";
 import { CatchNext } from "./CatchNext";
+import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
@@ -63,8 +63,8 @@ function selectedFlag(id: number): ReadonlySignal<boolean> {
 function DexCount({ filtered }: { filtered: number }) {
   return (
     <div class="dex-count" id="dex-count">
-      {filtered} of {POKEMON.length} Pokémon · {caughtCount.value} caught ·{" "}
-      {seenCount.value} seen
+      <div>{filtered} of {POKEMON.length} Pokémon</div>
+      <StatusCounts counts={speciesCounts.value} label="Pokédex collection" />
     </div>
   );
 }

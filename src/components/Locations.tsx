@@ -16,6 +16,7 @@ import type {
   Location as LocationData,
 } from "../types";
 import { consumeRowFocusIntent, openPokemon } from "../ui";
+import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts } from "./PokemonFacts";
 import {
   AllyForms,
@@ -197,9 +198,9 @@ function LocationProgress({ location }: { location: LocationData }) {
       class={`location-progress ${complete ? "complete" : ""}`}
       data-location-progress={location.id}
     >
-      {progress.total
-        ? `${complete ? "Complete · " : ""}${progress.caught} / ${progress.total} caught here`
-        : "No Pokémon to catch now"}
+      {progress.total ? (
+        <>{complete && <span>Complete · </span>}<StatusCounts counts={progress} label={`${location.name} catch now`} /></>
+      ) : "No Pokémon to catch now"}
     </span>
   );
 }

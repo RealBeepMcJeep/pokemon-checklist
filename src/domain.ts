@@ -166,14 +166,13 @@ export function catchNowRows(location: Location): EncounterRow[] {
 export function locationProgress(
   location: Location,
   statusOf: (id: number) => Status,
-): { caught: number; total: number } {
-  const rows = catchNowRows(location);
-  return {
-    caught: rows.filter(
-      (row) => row.speciesId && statusOf(row.speciesId) === "caught",
-    ).length,
-    total: rows.length,
-  };
+): { none: number; seen: number; caught: number; total: number } {
+  const counts = { none: 0, seen: 0, caught: 0, total: 0 };
+  for (const row of catchNowRows(location)) {
+    counts[statusOf(row.speciesId!)]++;
+    counts.total++;
+  }
+  return counts;
 }
 
 export function firstIncompleteLocation(

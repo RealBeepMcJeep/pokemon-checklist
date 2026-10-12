@@ -2,10 +2,10 @@ import { toolsOpen } from "./Tools";
 import { ASSETS, POKEMON } from "../data";
 import { DEFAULT_MODE, MODE_LABELS } from "../domain";
 import {
-  activeFormDefinitions,
+  speciesCounts,
   caughtCount,
   drawerOpen,
-  formsCaught,
+  formCounts,
   formsTracked,
   mode,
   notice,
@@ -26,8 +26,26 @@ import {
   toggleSidebar,
 } from "../ui";
 
+import { StatusCounts } from "./StatusCounts";
+
+// Keep collection subscriptions out of the action/header tree.
+function CollectionProgress() {
+  const counts = speciesCounts.value;
+  return (
+    <div class="progress-row">
+      <label for="overall-progress">Overall caught</label>
+      <progress id="overall-progress" max={POKEMON.length} value={caughtCount.value} />
+      <span id="overall-text">
+        <span class="collection-label">Pokémon</span> <StatusCounts counts={counts} label="Overall Pokémon" />
+      </span>
+      {formsTracked.value && <span id="form-progress">
+        <span class="collection-label">Forms</span> <StatusCounts counts={formCounts.value} label="Active mode forms" />
+      </span>}
+    </div>
+  );
+}
+
 export function Header({ inert = false }: { inert?: boolean }) {
-  const caught = caughtCount.value;
   const trackForms = formsTracked.value;
   const currentMode = mode.value;
   const currentNotice = notice.value;
@@ -161,19 +179,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
           </div>
         </div>
         <HeldClears />
-        <div class="progress-row">
-          <label for="overall-progress">Overall caught</label>
-          <progress id="overall-progress" max={POKEMON.length} value={caught}>
-            {caught} / {POKEMON.length}
-          </progress>
-          <strong id="overall-text">
-            {caught} / {POKEMON.length} Pokémon
-          </strong>
-          <span id="form-progress" class="muted" hidden={!trackForms}>
-            Forms caught: {formsCaught.value} /{" "}
-            {activeFormDefinitions.value.size}
-          </span>
-        </div>
+        <CollectionProgress />
         <div
           id="notice"
           class={currentNotice.kind}
