@@ -9,7 +9,10 @@ test("catch selector replaces its selected name with an inline sprite autocomple
   await expect(name).toHaveText("Pikachu", { timeout: 3000 });
   const rail = page.locator("#catch-species-rail");
   await expect(rail.locator("button")).toHaveCount(3);
-  await expect(rail.locator("img")).toHaveCount(3);
+  await expect(rail.locator("button img")).toHaveCount(3);
+  await expect(rail.locator(".catch-artwork")).toHaveAttribute("aria-hidden", "true");
+  await expect(rail.locator(".catch-artwork img")).toHaveCount(5);
+  await expect(rail.locator(".catch-artwork button,.catch-artwork [tabindex]")).toHaveCount(0);
   await expect(page.locator("#catch-ball-rail button")).toHaveCount(3);
   const input = page.locator("#catch-species");
   await expect(input).toBeHidden();

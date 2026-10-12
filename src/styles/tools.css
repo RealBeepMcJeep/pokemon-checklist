@@ -28,6 +28,14 @@
 .catch-rail .neighbor:hover,.catch-rail .neighbor:focus-visible{opacity:1;background:var(--control-hover)}
 .catch-rail .selected{min-width:80px;width:80px;min-height:76px;border:1px solid var(--accent);background:var(--control-active)}
 .catch-rail small{font-size:9px;line-height:1.1;margin-top:2px}
+.catch-rail{position:relative;overflow:hidden;isolation:isolate}
+.catch-rail button>.catch-sprite{visibility:hidden}
+.catch-artwork{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.catch-visual{position:absolute;top:5px;left:50%;width:80px;height:60px;margin-left:-40px;display:flex;align-items:center;justify-content:center;transition:transform 280ms cubic-bezier(.2,.9,.25,1.15);will-change:transform}
+.catch-visual>span{transform-origin:center;transition:transform 280ms ease}
+.catch-rail[data-dragging=true] .catch-visual>span{transition:none}
+@media(prefers-reduced-motion:reduce){.catch-visual,.catch-visual>span{transition:none}}
+.catch-rate{display:inline-block;white-space:nowrap;color:var(--ink);font-weight:650;border-radius:4px;background:var(--control-active);padding:1px 4px}
 .catch-combobox{grid-column:2;grid-row:1;position:relative;min-width:0}
 .catch-combobox::before{display:block;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 .catch-selector[data-kind=species] .catch-combobox::before{content:'Pokémon'}
@@ -50,7 +58,13 @@
 #catch-calculator fieldset>label:not(.catch-check)>input:not([type=range]){width:76px;flex:0 0 auto}
 #catch-calculator .catch-check{display:flex;align-items:center;gap:8px;margin:0;min-height:44px}
 #catch-calculator input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)}
-#catch-calculator input[type=range]{display:block;accent-color:var(--accent);padding:0;margin:0;border:0;background:transparent}
+#catch-calculator input[type=range]{display:block;appearance:none;accent-color:var(--hp-color);padding:0;margin:0;border:0;background:linear-gradient(to right,var(--hp-color) 0 var(--hp-fill),var(--line) var(--hp-fill) 100%) center / 100% 8px no-repeat;cursor:pointer}
+#catch-calculator input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:8px;background:transparent}
+#catch-calculator input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;margin-top:-7px;border:2px solid var(--ink);border-radius:50%;background:var(--hp-color);box-shadow:0 1px 4px #0006;transition:background-color 180ms ease}
+#catch-calculator input[type=range]::-moz-range-track{height:8px;border-radius:8px;background:var(--line)}
+#catch-calculator input[type=range]::-moz-range-progress{height:8px;border-radius:8px;background:var(--hp-color)}
+#catch-calculator input[type=range]::-moz-range-thumb{width:18px;height:18px;border:2px solid var(--ink);border-radius:50%;background:var(--hp-color);transition:background-color 180ms ease}
+@media(prefers-reduced-motion:reduce){#catch-calculator input[type=range]::-webkit-slider-thumb,#catch-calculator input[type=range]::-moz-range-thumb{transition:none}}
 .catch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
 #catch-calculator .catch-health{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;margin:0 0 8px}
 .catch-health>legend{display:none}

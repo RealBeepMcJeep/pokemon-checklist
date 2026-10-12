@@ -24,9 +24,9 @@ test("calculator autocomplete is keyboard and pointer selectable without stale r
   await expect(page.locator("#catch-result")).toHaveText(before!);
   await expect(page.locator("#catch-error")).toHaveCount(0);
   await species.fill("Rattata"); await species.press("ArrowDown"); await species.press("ArrowDown"); await species.press("Enter");
-  await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
+  await expect(page.locator("#catch-species-name")).toHaveText("Rattata");
   await page.locator("#catch-species-name").click(); await species.fill("Rattata"); await species.press("ArrowUp"); await species.press("Enter");
-  await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
+  await expect(page.locator("#catch-species-name")).toHaveText("Rattata");
   await choose(page,"ball","Ultra Ball");
   await expect(page.locator("#catch-ball-name")).toHaveText("Ultra Ball");
   await expect(page.locator("#catch-breakdown")).toContainText("Ball ×2");

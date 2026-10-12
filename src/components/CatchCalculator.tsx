@@ -22,8 +22,13 @@ const context = {
   sameSpecies: false,
   oppositeGender: false,
 };
+const speciesOptions = (game: "sm" | "usum") => capture.pokemon.filter(p => {
+  if (p.form === 0) return true;
+  const base = capture.pokemon.find(b => b.id === p.id && b.form === 0);
+  return p[game] != null && base?.[game] != null && p[game].catchRate !== base[game].catchRate;
+}).sort((a, b) => a.id - b.id || a.form - b.form);
 const selectionKey = "pokemon-checklist-catch-selection-v1";
-function restoreSelection() {
+function restoreSelection(game: "sm" | "usum") {
   const fallback = {species: "Pikachu", ball: "Poké Ball", notice: ""};
   try {
     const raw = localStorage.getItem(selectionKey);
@@ -31,11 +36,20 @@ function restoreSelection() {
     const value = JSON.parse(raw);
     const pokemon = capture.pokemon.find(p => p.id === value.id && p.form === value.form);
     if (!pokemon || !BALLS.includes(value.ball)) throw new Error("invalid");
+    if (!speciesOptions(game).some(p => p.name === pokemon.name)) {
+      const base = capture.pokemon.find(p => p.id === pokemon.id && p.form === 0)!;
+      let notice = `Remembered form ${pokemon.name} has the same stock catch rate; using its base ${base.name}.`;
+      try { localStorage.setItem(selectionKey, JSON.stringify({id: base.id, form: 0, ball: value.ball})); }
+      catch { notice += " This browser cannot remember the migrated selection."; }
+      return {species: base.name, ball: value.ball as string, notice};
+    }
     return {species: pokemon.name, ball: value.ball as string, notice: ""};
   } catch { return {...fallback, notice: "Selection memory unavailable or invalid; using the default pair."}; }
 }
 export function CatchCalculator() {
-  const [initial] = useState(restoreSelection);
+  const game = mode.value === "sun" || mode.value === "moon" ? "sm" : "usum";
+  const options = speciesOptions(game);
+  const [initial] = useState(() => restoreSelection(game));
   const [species, setSpecies] = useState(initial.species),
     [ball, setBall] = useState(initial.ball), [notice, setNotice] = useState(initial.notice);
   function select(nextSpecies: string, nextBall: string) {
@@ -49,6 +63,7 @@ export function CatchCalculator() {
     [exact, setExact] = useState(false),
     [current, setCurrent] = useState(100),
     [max, setMax] = useState(100);
+  const [lastMax, setLastMax] = useState<number | null>(null);
   const [caught, setCaught] = useState(0),
     [roto, setRoto] = useState(false),
     [override, setOverride] = useState(false),
@@ -86,9 +101,14 @@ export function CatchCalculator() {
   ) => (
     <button type="button" class="catch-chip" aria-pressed={conditions[key]} onClick={() => setConditions({...conditions, [key]: !conditions[key]})}><span>{label}</span></button>
   );
-  const game = mode.value === "sun" || mode.value === "moon" ? "sm" : "usum";
   const pokemon = capture.pokemon.find((p) => p.name === species);
   const stats = pokemon?.[game] as CaptureStats | undefined | null;
+  const hpCurrent = exact ? current : percent;
+  const validMax = Number.isInteger(max) && max >= 1 && max <= 65535;
+  const hpMax = exact ? max : percent === 1 ? lastMax ?? 100 : 100;
+  const hpExplanation = percent === 1
+    ? `1 HP assumed for False Swipe / Hold Back; ${!validMax ? "invalid maximum; using last valid" : lastMax === null ? "estimated maximum" : "entered maximum"} ${hpMax}${lastMax === null ? " (estimated)" : ""}. Maximum HP is not inferred from species or level.`
+    : "Percent mode estimates HP using a 100-HP target; rounding can differ from your actual HP.";
   const maxInvalid =
     exact && (!Number.isInteger(max) || max < 1 || max > 65535);
   const currentInvalid =
@@ -127,8 +147,8 @@ export function CatchCalculator() {
     result = probability({
       catchRate: modifiers.rate,
       ballBonus: modifiers.bonus,
-      currentHP: exact ? current : percent,
-      maxHP: exact ? max : 100,
+      currentHP: hpCurrent,
+      maxHP: hpMax,
       status,
       roto: roto && game === "usum",
       caught,
@@ -159,7 +179,7 @@ export function CatchCalculator() {
       <div class="catch-layout"><div class="catch-selectors">
       {notice && <p id="catch-memory-notice" role="status" class="muted">{notice}</p>}
       <div class="catch-selectors-stack">
-        <CatchSelector kind="species" value={species} onChange={name => select(name, ball)} options={[...capture.pokemon].sort((a,b) => a.id - b.id || a.form - b.form)} />
+        <CatchSelector kind="species" value={species} onChange={name => select(name, ball)} options={options} rateBadge={{label: modifiers ? `Catch ${modifiers.rate}` : "Catch —", explanation: modifiers ? `Stock catch rate ${stats!.catchRate}${override ? `; override ${rate}` : ""}${ball === "Heavy Ball" ? `; Heavy Ball adjusted effective rate ${modifiers.rate}` : `; effective rate ${modifiers.rate}`}` : error || "Check inputs"}} />
         <CatchSelector kind="ball" value={ball} onChange={name => select(species, name)} options={BALLS.map(name => ({name}))} detail={modifiers ? modifiers.master ? "Guaranteed catch" : "×" + modifiers.bonus.toFixed(2) + " ball effect" : "Check inputs"} />
       </div>
       </div><div class="catch-parameters">
@@ -245,7 +265,7 @@ export function CatchCalculator() {
                 max >= 1 &&
                 max <= 65535
               )
-                setCurrent(Math.max(1, Math.round((percent * max) / 100)));
+                setCurrent(percent === 1 ? 1 : Math.max(1, Math.round((percent * max) / 100)));
               setExact(e.currentTarget.checked);
             }}
           />{" "}
@@ -276,12 +296,16 @@ export function CatchCalculator() {
                 aria-invalid={maxInvalid}
                 aria-describedby={maxInvalid ? "catch-error" : undefined}
                 value={max}
-                onInput={(e) => setMax(e.currentTarget.valueAsNumber)}
+                onInput={(e) => {
+                  const value = e.currentTarget.valueAsNumber;
+                  setMax(value);
+                  if (Number.isInteger(value) && value >= 1 && value <= 65535) setLastMax(value);
+                }}
               />
             </label>
           </div>
         ) : (
-          <label title="Percent mode estimates HP using a 100-HP target; rounding can differ from your actual HP.">
+          <label title={hpExplanation}>
             HP remaining (approximate %)
             <input
               type="range"
@@ -289,17 +313,19 @@ export function CatchCalculator() {
               max="100"
               step="1"
               value={percent}
+              style={{"--hp-color": percent <= 20 ? "#ff6069" : percent <= 50 ? "#ffd35a" : "#31d888", "--hp-fill": `${(percent - 1) / 99 * 100}%`}}
+              aria-valuetext={percent === 1 ? hpExplanation : percent + "% remaining (approximate)"}
               onInput={(e) => setPercent(e.currentTarget.valueAsNumber)}
             />
-            <output>{percent}%</output>
+            <output title={hpExplanation}>{percent === 1 ? "1 HP" : percent + "%"}</output>
           </label>
         )}
         <button
           type="button"
           class="action-button"
           onClick={() => {
-            setExact(true);
-            setCurrent(1);
+            if (exact) setCurrent(1);
+            else setPercent(1);
           }}
         >
           Set 1 HP
@@ -331,7 +357,7 @@ export function CatchCalculator() {
         </div>
       </fieldset>
       {result && modifiers && (          <div class="catch-factors" aria-label="Applied factors">
-            <span>HP {exact ? current : percent}/{exact ? max : 100}</span><span>{override ? "Override" : "Stock"} rate {modifiers.rate}</span><span>Ball ×{modifiers.bonus}</span><span>Status ×{result.statusBonus}</span><span>Roto ×{game === "usum" && roto ? 2.5 : 1}</span><span>Historical Dex ×{dexBonus(caught)}</span>
+            <span>HP {hpCurrent}/{hpMax}</span><span>{override ? "Override" : "Stock"} rate {modifiers.rate}</span><span>Ball ×{modifiers.bonus}</span><span>Status ×{result.statusBonus}</span><span>Roto ×{game === "usum" && roto ? 2.5 : 1}</span><span>Historical Dex ×{dexBonus(caught)}</span>
           </div>)}
       <details class="catch-advanced">
         <summary>Optional modifiers &amp; hack override</summary>
@@ -397,7 +423,7 @@ export function CatchCalculator() {
             Status ×{result.statusBonus} · Roto ×
             {game === "usum" && roto ? 2.5 : 1} · Dex ×{dexBonus(caught)}
             <br />
-            HP {exact ? current : percent}/{exact ? max : 100}
+            HP {hpCurrent}/{hpMax}
             {modifiers.master ? (
               " · Master Ball bypasses shake / critical checks for a legal capturable wild encounter."
             ) : (

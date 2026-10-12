@@ -57,10 +57,10 @@ for (const width of [360, 412])
     );
     await input.fill("Rattata");
     await page
-      .getByRole("option", { name: "Rattata — Alolan", exact: true })
+      .getByRole("option", { name: "Rattata", exact: true })
       .tap();
     await expect(input).toBeHidden();
-    await expect(page.locator("#catch-species-name")).toHaveText("Rattata — Alolan");
+    await expect(page.locator("#catch-species-name")).toHaveText("Rattata");
     await expect(list).toHaveCount(0);
     await context.close();
   });

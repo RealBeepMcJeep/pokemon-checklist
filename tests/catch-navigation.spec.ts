@@ -5,8 +5,8 @@ test("neighbors wrap, forms follow species and rail keyboard works",async({page}
  await open(page,info.project.name);await page.locator("#catch-species-name").click();await page.locator("#catch-species").fill("Bulbasaur");await page.getByRole("option",{name:"Bulbasaur",exact:true}).click();
  await page.locator("#catch-species-rail button").first().click();await expect(page.locator("#catch-species-name")).toHaveText("Zeraora");
  await page.locator("#catch-species-rail button").last().click();await expect(page.locator("#catch-species-name")).toHaveText("Bulbasaur");
- await page.locator("#catch-species-name").click();await page.locator("#catch-species").fill("Venusaur");await page.getByRole("option",{name:"Venusaur",exact:true}).click();
- await page.locator("#catch-species-rail .selected").focus();await page.keyboard.press("ArrowRight");await expect(page.locator("#catch-species-name")).toHaveText("Venusaur — Form 1");await expect(page.locator(".catch-form-note")).toContainText("base-species icon");
+ await page.locator("#catch-species-name").click();await page.locator("#catch-species").fill("Minior");await page.getByRole("option",{name:"Minior",exact:true}).click();
+ await page.locator("#catch-species-rail .selected").focus();await page.keyboard.press("ArrowRight");await expect(page.locator("#catch-species-name")).toHaveText("Minior — Form 7");await expect(page.locator(".catch-form-note")).toContainText("base-species icon");
  await page.locator("#catch-ball-rail button").first().click();await expect(page.locator("#catch-ball-name")).toHaveText("Beast Ball");await page.locator("#catch-ball-rail .selected").press("ArrowRight");await expect(page.locator("#catch-ball-name")).toHaveText("Poké Ball");
 });
 test("real horizontal touch swipes advance both bounded rails",async({browser},info)=>{

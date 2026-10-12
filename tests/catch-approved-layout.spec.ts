@@ -23,5 +23,6 @@ for (const width of [360, 412, 1440]) {
     const parameters = (await page.locator('.catch-parameters').boundingBox())!;
     if (width > 680) expect(parameters.x).toBeGreaterThan(selectors.x+selectors.width-1);
     else expect(parameters.y).toBeGreaterThanOrEqual(selectors.y+selectors.height-1);
+    await page.screenshot({path: info.outputPath(`child-${info.project.name}-${width}.png`)});
   });
 }
