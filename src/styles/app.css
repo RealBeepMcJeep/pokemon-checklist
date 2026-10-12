@@ -352,6 +352,19 @@ details.location > summary::marker {
 .location-title {
   font-weight: 750;
 }
+.status-counts {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.status-counts [data-status="none"] { color: #ff9a9a; }
+.status-counts [data-status="seen"] { color: var(--seen); }
+.status-counts [data-status="caught"] { color: var(--caught); }
+.status-count-separator { color: var(--muted); font-weight: 400; }
 .location-progress {
   color: var(--muted);
   font-size: 0.84rem;

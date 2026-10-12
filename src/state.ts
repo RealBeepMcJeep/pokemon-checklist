@@ -59,23 +59,21 @@ export const activeEncounters = computed(() => ENCOUNTERS_BY_MODE[mode.value]);
 export const activeFormDefinitions = computed(() =>
   formsForMode(activeEncounters.value),
 );
-export const caughtCount = computed(
-  () =>
-    [...speciesSignals.values()].filter((status) => status.value === "caught")
-      .length,
-);
-export const seenCount = computed(
-  () =>
-    [...speciesSignals.values()].filter((status) => status.value === "seen")
-      .length,
-);
-export const formsCaught = computed(() => {
-  let count = 0;
-  for (const key of activeFormDefinitions.value.keys()) {
-    if (formSignals.get(key)?.value === "caught") count++;
-  }
-  return count;
+export const speciesCounts = computed(() => {
+  const counts = { none: 0, seen: 0, caught: 0 };
+  for (const status of speciesSignals.values()) counts[status.value]++;
+  return counts;
 });
+export const caughtCount = computed(() => speciesCounts.value.caught);
+export const seenCount = computed(() => speciesCounts.value.seen);
+export const formCounts = computed(() => {
+  const counts = { none: 0, seen: 0, caught: 0 };
+  for (const key of activeFormDefinitions.value.keys()) {
+    counts[formSignals.get(key)!.value]++;
+  }
+  return counts;
+});
+export const formsCaught = computed(() => formCounts.value.caught);
 
 // --- accounts ---------------------------------------------------------------
 //

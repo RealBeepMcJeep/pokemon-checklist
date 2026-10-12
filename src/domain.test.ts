@@ -173,6 +173,8 @@ describe("checklist domain", () => {
 
     let caught = false;
     expect(locationProgress(location, () => (caught ? "caught" : "none"))).toEqual({
+      none: catchNowRows(location).length,
+      seen: 0,
       caught: 0,
       total: catchNowRows(location).length,
     });

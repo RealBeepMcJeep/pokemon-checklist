@@ -18,7 +18,7 @@ async function openApp(page: Page, project: string): Promise<string[]> {
   } else {
     await page.goto("/");
   }
-  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
   return errors;
 }
 
@@ -75,7 +75,7 @@ test("updates matching controls and preserves progress across modes", async ({
   await expect(pikipek.first().locator(".status-symbol")).toHaveText("✅");
   await expect(
     page.locator("details.location .location-progress").first(),
-  ).toContainText("1 / 23");
+  ).toContainText("Not caught 22 / Seen 0 / Caught 1");
 
   const expected = {
     sun: 57,
@@ -273,7 +273,7 @@ test("tracks forms and validates restore, migration, and reset", async ({
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#reset-button").click();
-  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
   await expect(page.locator("#mode-select")).toHaveValue("photonic-prismatic");
   expect(errors).toEqual([]);
 });
@@ -317,16 +317,16 @@ test("mirrors progress between two tabs of the same site", async ({
   // Act in the first tab; the second (view-only: one tab edits) must follow
   // without any user action.
   await page.locator(pikipek).first().click();
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
-  await expect(other.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   await expect(other.locator(pikipek).first()).toContainText("Caught");
 
   // Take editing to the second tab; the first must follow in the other direction.
   // Cycling continues Caught → Seen, so Caught stops counting toward progress.
   await other.locator("#use-this-tab").click();
   await other.locator(pikipek).first().click();
-  await expect(other.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
-  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 1 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 1 / Caught 0");
   await expect(page.locator(pikipek).first()).toContainText("Seen");
 
   // Stars travel between tabs the same way statuses do.
@@ -439,7 +439,7 @@ test("attempts no network requests while signed out", async ({
     await mobilePage.route(/^https?:\/\//, (route) => route.abort("blockedbyclient"));
   }
   await mobilePage.goto(standalone ? standaloneUrl : "/");
-  await expect(mobilePage.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(mobilePage.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
   await mobilePage.waitForTimeout(2500);
   expect(external(mobileAttempts)).toEqual([]);
   await mobile.close();
@@ -805,9 +805,9 @@ test("counts forms caught against the active mode's own obtainable forms", async
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#forms-toggle").click();
   await page.locator("#mode-select").selectOption("sun");
-  await expect(page.locator("#form-progress")).toHaveText("Forms caught: 0 / 14");
+  await expect(page.locator("#form-progress")).toHaveText("Forms Not caught 14 / Seen 0 / Caught 0");
   await page.locator("#mode-select").selectOption("photonic-prismatic");
-  await expect(page.locator("#form-progress")).toHaveText("Forms caught: 0 / 48");
+  await expect(page.locator("#form-progress")).toHaveText("Forms Not caught 48 / Seen 0 / Caught 0");
   expect(errors).toEqual([]);
 });
 
@@ -1041,14 +1041,14 @@ test("undoes a status change, a star, and a Reset in one tap", async ({
   await pikipek.click();
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#reset-button").click();
-  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
   await expect(undo).toHaveText("Undo");
   await undo.click();
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
 
   // The undo was saved like any other change.
   await page.reload();
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   expect(errors).toEqual([]);
 });
 
@@ -1057,14 +1057,14 @@ test("shows the last good copy when the save cannot be read", async ({
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
   await page.locator('[data-action="species"][data-species="731"]').first().click();
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   await page.evaluate(() =>
     localStorage.setItem("pokemon-checklist-state-v3", "{half a save"),
   );
 
   await page.reload();
 
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   await expect(page.locator("#notice")).toContainText("could not be read");
   await expect(page.locator("#notice-action")).toHaveText("Download unreadable copy");
   expect(
@@ -1128,8 +1128,8 @@ test("lets one tab edit, shows the other view-only, and hands editing over", asy
   await expect(other.locator("#reset-button")).toBeDisabled();
   await expect(other.locator('[data-action="star"][data-species="25"]')).toBeDisabled();
   await other.locator(pikipek).first().click({ force: true });
-  await expect(other.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
-  await expect(page.locator("#overall-text")).toHaveText("0 / 807 Pokémon");
+  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
 
   // "Use this tab" moves editing: the first tab turns view-only at once.
   await other.locator("#use-this-tab").click();
@@ -1137,7 +1137,7 @@ test("lets one tab edit, shows the other view-only, and hands editing over", asy
   await expect(page.locator("#view-only")).toBeVisible();
   await expect(page.locator(pikipek).first()).toBeDisabled();
   await other.locator(pikipek).first().click();
-  await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
 
   // Closing the editing tab lets the other one edit again.
   await other.close();
