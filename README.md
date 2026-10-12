@@ -16,7 +16,7 @@ On a phone, **Add to Home Screen** installs the checklist as a full-screen app w
 
 Each Pokédex entry also has a collapsed **Popular moves** panel: the moves competitive players ran most for that Pokémon, or for each final evolution it grows into, with how the game teaches each one (level, Move Reminder, TM and where, tutor and its BP cost, egg move, or not obtainable in Gen 7). Usage is Smogon's November 2019 Gen 7 data from each Pokémon's own tier; learnsets are standard Gen 7, and in the Photonic Sun / Prismatic Moon mode egg moves are described as learned by level-up, as that hack does.
 
-Status buttons cycle **None → Caught → Seen → None**. Only Caught counts toward location and overall progress. The browser saves species statuses, tracked forms, starred Pokémon, and the selected mode in versioned local storage (`pokemon-checklist-state-v3`). Existing v1 and v2 browser saves and backup files migrate without changing progress, and an upgraded save is rewritten under the current key while the older key is left untouched. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
+Status buttons cycle **None → Caught → Seen → None**. Collection summaries show **Not caught / Seen / Caught**, with mutually exclusive buckets: Not caught means neither seen nor caught, and Seen means seen-only. Location headers count each regular catch-now species once; return-later encounters do not block completion. Overall and Pokédex status totals cover all 807 species; the optional form summary covers forms in the active game mode. Filtered search totals remain separate. Only Caught fills the progress bar or completes a location. The browser saves species statuses, tracked forms, starred Pokémon, and the selected mode in versioned local storage (`pokemon-checklist-state-v3`). Existing v1 and v2 browser saves and backup files migrate without changing progress, and an upgraded save is rewritten under the current key while the older key is left untouched. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
 
 Star any Pokédex row to pin that Pokémon above the rest of the list; click the star again to release it. Starred entries stay in National Dex order among themselves, still float to the top inside search results, are kept in backups, and are cleared by Reset along with progress.
 
@@ -29,13 +29,21 @@ Opening the checklist in more than one tab keeps them in sync: a change made in 
 Open **Tools** in the checklist header for the QR archive, experimental QR page,
 and an offline Gen VII catch calculator. Desktop shows Pokémon/ball selectors beside
 a parameter column; phones use one compact stack. Click neighboring sprites or swipe
-to step through the wrapping selectors, and click a selected name to search with
-sprite-bearing keyboard/touch autocomplete. All species/forms follow National Dex
-and form order; form rows label reused base artwork honestly. Catch chance is
+or drag to step through the animated wrapping selectors, and click a selected name
+to search with sprite-bearing keyboard/touch autocomplete. Reduced-motion settings
+are respected. Selectors follow National Dex order and include alternate forms only
+when their stock catch rate differs from their own base form in the selected game;
+retained forms label reused base artwork honestly. A compact Pokémon catch-rate badge
+shows the effective rate, with stock/override/Heavy Ball details in its accessible label. Catch chance is
 prominent and color-coded, with a numeric percentage and text tier. Choose one major
 status chip, estimate remaining HP with the slider,
 or enter exact current/maximum HP. Conditional balls expose only their relevant
-inputs; the result updates per throw and includes a multiplier breakdown.
+inputs; the result updates per throw and includes a multiplier breakdown. The HP
+slider is vivid green at full health, yellow at half, and red when low. **Set 1 HP**
+keeps the current input mode. By owner convention, the slider's 1% endpoint means
+**1 HP assumed** for False Swipe/Hold Back, using the last entered valid maximum or
+a labeled 100-HP estimate; other percentages retain the ordinary percentage estimate.
+Actual maximum HP is not inferred from species or level.
 
 Optional critical captures use the game's **historical registered-caught species**,
 not the checklist's current inventory count. Repeat Ball uses the same historical

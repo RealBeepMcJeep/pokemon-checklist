@@ -140,7 +140,7 @@ for (const width of [360, 412, 1440])
       ),
     );
     await page.reload();
-    await expect(page.locator("#overall-text")).toHaveText("1 / 807 Pokémon");
+    await expect(page.locator("#overall-text [data-status]")).toHaveText(["Not caught 806", "Seen 0", "Caught 1"]);
     const before = await page.evaluate(() =>
       Object.fromEntries(
         Object.entries(localStorage).filter(([k]) =>

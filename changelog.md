@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Added labeled Not caught / Seen / Caught counters to location headers, overall species, active-game forms and Pokédex summaries, without double-counting seen entries or changing completion rules.
+- Catch selectors now hide same-rate forms, animate real dragging/swiping and click/keyboard navigation, and show a compact effective catch-rate badge. The vivid HP slider has a mode-preserving one-HP shortcut; its 1% endpoint is the explicitly labeled False Swipe/Hold Back one-HP assumption, not a claim that 1% mathematically equals one HP.
 - Redesigned the catch calculator with a compact phone stack and a desktop parameter column, prominent color-coded catch chance, single-status multiplier chips and conditional factor chips. Pokémon/form and ball selectors show neighboring sprites, wrap around, support swiping and edit names in-place with sprite autocomplete.
 - The calculator remembers only the selected Pokémon/form and ball on each device; battle settings reset on reload, and checklist progress, backups, sync and capture mathematics are unchanged. Added a pinned, hash-verified offline ball-spritesheet build and CI freshness check.
 

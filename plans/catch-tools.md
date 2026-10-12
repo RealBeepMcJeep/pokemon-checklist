@@ -13,8 +13,10 @@ Stable review handles: `#tools-toggle`, `#tools-panel`, `#catch-calculator`.
 - Selected names become inline keyboard/pointer autocomplete with sprites. Draft queries do
   not change the selected identity, odds or persistence; selection commits, and Escape/blur
   reverts the label. Default Pikachu / Poké Ball is explicit.
-- Approximate percent HP uses H=percent, M=100; exact mode accepts positive integer HP;
-  Set 1 HP switches to exact mode. Major status chips are mutually exclusive.
+- Approximate percent HP above 1 uses H=percent, M=100. At the owner-approved 1%
+  convenience endpoint, H=1 and M is the last entered valid maximum or an explicitly
+  labeled 100-HP estimate. Exact mode accepts positive integer HP. Set 1 HP preserves
+  the input mode; no species/level inference of maximum HP. Major status chips are exclusive.
 - Conditional ball controls appear only when relevant. Turn 1 has zero elapsed turns.
   Repeated registrations and critical history are not inferred from currently-owned checklist
   records. Roto defaults off and is unavailable in SM. Game variant follows app game mode;
@@ -37,9 +39,12 @@ Stable review handles: `#tools-toggle`, `#tools-panel`, `#catch-calculator`.
   the approved shared compact vertical layout. Catch chance stays prominent near the top,
   with numeric, text-tier and color feedback; compact chip borders keep 44px hit areas.
 - Each selector draws previous/current/next icons through cropped atlas `<img>` elements.
-  Neighbor clicks, keyboard left/right and mobile horizontal swipes wrap both ends. All 975
-  species/form entries are sorted by numeric ID then form; forms follow their species and
-  label base-art reuse. Search options are bounded, not a 975-row DOM.
+  Neighbor clicks, keyboard left/right and real touch/mouse drags animate and wrap both ends,
+  while native vertical scroll and reduced motion remain supported. The underlying 975-entry
+  dataset stays intact; selectors show base species plus only forms whose selected-game stock
+  catchRate differs from their base. Search and rail share that same numeric ID/form order.
+  Remembered excluded forms visibly migrate to their own base. Retained forms label base-art
+  reuse; a compact effective-rate badge occupies the existing caption. Search stays bounded.
 - Only `{id, form, ball}` is persisted under `pokemon-checklist-catch-selection-v1`. This
   per-device key is separate from progress/backups/sync and does not remember battle values.
   Invalid or blocked storage falls back with a notice; choosing unavailable stock SM forms

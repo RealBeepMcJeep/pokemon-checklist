@@ -24,9 +24,11 @@ Completed items move to `changelog.md`.
 
 - [ ] Restore keyboard focus to the selected-name button after committing a suggestion (Opus static finding; selection itself works).
 - [ ] Round the displayed Ball factor chip consistently with the selector's ×2.50 label; retain the exact fixed-point value in calculations (browser-confirmed cosmetic issue).
-- [ ] Bound post-swipe click suppression on hybrid touch/mouse devices (Opus static finding; phone swipes pass browser tests).
 - [ ] Stabilize the phone dialog's vertical position when invalid HP replaces the result (browser-confirmed cosmetic jump; header remains visible).
 - [ ] Tie the combobox's `aria-expanded` to editing state and give the no-results row an appropriate accessible role (Opus static finding).
+- [ ] Align expanded percentage-mode notes with the one-HP endpoint's last-valid/estimated maximum; show the assumption clearly for touch users, and call the never-entered fallback estimated rather than last-entered (combined Opus review, non-blocking).
+- [ ] Split range-thumb reduced-motion rules by browser pseudo-element so cross-engine selector rejection cannot discard them (Opus static finding; carousel reduced motion passes).
+- [ ] Move Dex captions with artwork during carousel drags; fixed captions can briefly sit under the neighboring sprite (cosmetic, browser-confirmed).
 
 ### Mobile performance
 
