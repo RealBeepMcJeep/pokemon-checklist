@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-const root = "/opt/data/cache/scratch/status-counts-production";
 test("overall summaries preserve global counts and active-mode forms", async ({ page }, info) => {
   await page.goto(info.project.name === "standalone-file" ? pathToFileURL(resolve("index.html")).href : "/");
   const overall = page.locator("#overall-text [data-status]");
@@ -34,7 +33,7 @@ for (const width of [360,412,1440]) {
     await page.evaluate(()=>scrollTo(0,0));
     // Let the sticky header's composited position settle after startup focus scrolling.
     await page.waitForTimeout(200);
-    await page.screenshot({path:`${root}/child-${info.project.name}-${width}-header.png`});
+    await page.screenshot({path:info.outputPath(`status-${width}-header.png`)});
     const geometry = await page.evaluate(() => {
       const triples = [...document.querySelectorAll<HTMLElement>(".status-counts")].filter(el=>el.getBoundingClientRect().width && !el.closest('[aria-hidden="true"]'));
       return {overflow:document.documentElement.scrollWidth>innerWidth, clipped:triples.filter(el=>el.scrollWidth>el.clientWidth || el.getBoundingClientRect().right>innerWidth).length};
@@ -44,7 +43,7 @@ for (const width of [360,412,1440]) {
     const longest = await page.locator("details.location:has(.status-counts) .location-title").evaluateAll(els=>els.map(el=>el.textContent!).sort((a,b)=>b.length-a.length)[0]);
     const area = page.locator("details.location").filter({has:page.locator(".location-title",{hasText:longest})}).first();
     await area.scrollIntoViewIfNeeded();
-    await area.locator("summary").screenshot({path:`${root}/child-${info.project.name}-${width}-long-area.png`});
+    await area.locator("summary").screenshot({path:info.outputPath(`status-${width}-long-area.png`)});
     if (width<1000) await page.locator("#sidebar-toggle").click();
     await expect(page.locator(".dex-row")).toHaveCount(807);
     await page.locator("#dex-search").fill("731");
