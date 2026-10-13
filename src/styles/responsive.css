@@ -241,6 +241,7 @@
   .app-header.mobile-header { position: fixed; inset: 0 0 auto; }
   .mobile-header .header-inner { padding: 5px 10px; }
   .mobile-header #notice:empty { display: none; }
+  .mobile-alerts { display: flow-root; overflow-wrap: anywhere; }
   .mobile-sync-healthy { position: absolute; top: 10px; left: 46px; width: 6px; height: 6px; border-radius: 50%; background: var(--caught); }
   .mobile-header:not(.is-scrolled) .mobile-sync-healthy { top: 34px; }
   .mobile-sync-warning { display: block; padding: 5px 0; color: var(--accent-bright); font-size: 13px; overflow-wrap: anywhere; }

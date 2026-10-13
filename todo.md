@@ -20,6 +20,12 @@ Completed items move to `changelog.md`.
 
 ## Outstanding work
 
+### Compact mobile header polish (non-blocking)
+
+- [ ] Explore larger compact count/mode labels without losing the approved single-row fit and44px targets.
+- [ ] Consider a numeric collection summary inside Settings alongside the caught-only bar; global counts remain on the pinned main row.
+- [ ] Restore focus to the game shortcut when it opened Settings, rather than always to More.
+
 ### Catch calculator polish (2026-10-11, non-blocking audit follow-ups)
 
 - [ ] Restore keyboard focus to the selected-name button after committing a suggestion (Opus static finding; selection itself works).

@@ -71,6 +71,24 @@ export function Header({ inert = false }: { inert?: boolean }) {
   const [scrolled, setScrolled] = useState(window.scrollY > 90);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDialogElement>(null);
+  const alertsRef = useRef<HTMLDivElement>(null);
+  const [alertsHeight, setAlertsHeight] = useState(0);
+  // Reserve only extra alert space, never the shrinking identity row: this avoids
+  // scroll/height feedback while keeping notices from covering the first section.
+  useEffect(() => {
+    const alerts = alertsRef.current;
+    if (!mobile || !alerts) return;
+    const measure = () => setAlertsHeight(Math.ceil(alerts.getBoundingClientRect().height));
+    const observer = new ResizeObserver(measure);
+    observer.observe(alerts);
+    measure();
+    return () => observer.disconnect();
+  }, [mobile]);
+  // Undo expires after eight seconds. A new action/error must not be left behind
+  // a modal backdrop; opening Settings with an older notice does not close it.
+  useEffect(() => {
+    if (currentNotice.action || currentNotice.kind === "error") setSettingsOpen(false);
+  }, [currentNotice]);
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 90);
     window.addEventListener("scroll", update, { passive: true });
@@ -164,7 +182,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
   const dex = <button class="action-button" id="sidebar-toggle" type="button" aria-label="Pokédex" aria-controls="pokedex" aria-expanded={!sidebarHidden.value && (!mobile || drawerOpen.value)} onClick={() => { setSettingsOpen(false); toggleSidebar(); }}>{mobile ? <HeaderIcon name="dex" /> : "Pokédex"}</button>;
   const tools = <button id="tools-toggle" class="action-button" type="button" aria-label="Tools" aria-haspopup="dialog" aria-controls="tools-panel" aria-expanded={toolsOpen.value} onClick={() => { setSettingsOpen(false); toolsOpen.value = true; }}>{mobile ? <HeaderIcon name="tools" /> : "Tools"}</button>;
   return <>
-    {mobile && <div class="mobile-header-space" aria-hidden="true" />}
+    {mobile && <div class="mobile-header-space" style={{ height: `${112 + alertsHeight}px` }} aria-hidden="true" />}
     <header class={`app-header${mobile ? " mobile-header" : ""}${scrolled ? " is-scrolled" : ""}`} inert={inert}>
       <div class="header-inner">
         {mobile ? <>
@@ -205,11 +223,13 @@ export function Header({ inert = false }: { inert?: boolean }) {
           </div>
             <div class="actions" aria-label="Checklist actions">{dex}{controls}{tools}<SyncPanel /></div>
           </div>
-          <CollectionProgress />
         </>}
-        {mobile && <MobileSyncStatus />}
-        <HeldClears />
-        <div id="notice" class={currentNotice.kind} role="status" aria-live="polite">{currentNotice.message}</div>
+        <div class={mobile ? "mobile-alerts" : undefined} ref={alertsRef}>
+          {mobile && <MobileSyncStatus />}
+          <HeldClears />
+          {!mobile && <CollectionProgress />}
+          <div id="notice" class={currentNotice.kind} role="status" aria-live="polite">{currentNotice.message}</div>
+        </div>
       </div>
     </header>
     {mobile && <dialog ref={settingsRef} id="header-settings-panel" aria-labelledby="header-settings-title" onCancel={() => setSettingsOpen(false)}>
