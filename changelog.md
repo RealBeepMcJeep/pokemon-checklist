@@ -2,6 +2,8 @@
 
 ## 2026-10-12
 
+- Added a read-only current-horizon catcher comparison with verified Prismatic Standard move gates, one major-status contribution, ordinary level-evolution plans and donor-backed Smeargle setup. Phone cards show score arithmetic beside battle tiers/stats; individual ability and retained-move assumptions stay explicit.
+
 - Chat evolution commands now accept just the current Pokémon, infer its immediate next stage from local data, and apply the same verified atomic Seen/Caught update. Branches ask for a target, final stages refuse, and already-completed pairs are explicitly verified without writing; explicit targets and trades retain their behavior.
 
 - Mobile now keeps a compact icon-and-count header pinned while scrolling, expanding its identity at the top. Settings retains mode/forms/progress, Backup/Restore/Reset, account controls and the actual version/build hash in its footer. Important sync and view-only/held-clear safeguards stay visible; desktop and saved progress are unchanged.

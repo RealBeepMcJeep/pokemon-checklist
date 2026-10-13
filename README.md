@@ -125,6 +125,20 @@ Live pages:
 - Original QR archive: <https://realbeepmcjeep.github.io/pokemon-checklist/qr.html>
 - Experimental QR codes: <https://realbeepmcjeep.github.io/pokemon-checklist/qr-experimental.html>
 
+## Current-horizon catcher comparison
+
+`python tools/catcher_now.py --uid <uid> --level 30 --output-dir <private-directory>`
+produces a read-only JSON report and phone-readable `catchers.png`. It uses the verified
+Prismatic Standard level table, treats TM54 as confirmed owned for this workflow, and
+excludes unconfirmed TMs/tutors, breeding and late reminder gates. Only one mutually
+exclusive major status scores. Ordinary reachable level evolutions are labeled as plans,
+not owned final stages; Smeargle is a conditional, donor-backed Sketch setup with a 0.80
+setup-effort factor and a level-dependent copy budget. Scores are utility heuristics, not
+capture percentages; tier/stats appear beside them without adding points. Actual individual
+ability/move retention still needs checking. Reports and personal snapshots belong outside git.
+The older prospective `catcher_score.py` remains a vanilla-timing family analysis, but now
+also prevents adding mutually exclusive major-status benefits.
+
 ## Local five-team search
 
 The read-only story tools select OG, Non-OG, Mixed, ordinary-level Pokédex and

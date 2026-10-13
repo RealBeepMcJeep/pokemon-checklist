@@ -7,8 +7,8 @@ discounted by what it costs to obtain and how long you must wait.
 
 MODEL
   A move belongs to exactly one BENEFIT category, and only the best contribution per category
-  counts. Running two sleep moves is pointless, so two sleep moves must not both score; the
-  same applies to two paralysis moves or a freeze chance plus a freeze move.
+  counts. Sleep, paralysis and freeze are mutually exclusive: only the strongest major-status
+  contribution scores, even when different status moves belong to different categories.
 
   category        base  what it is
   sleep             60  the status the whole plan rests on (Yawn counts half: it is 100%
@@ -35,7 +35,7 @@ MODEL
                 and event 0.2 (both essentially endgame)
     speed       1 / (1 + max(0, level - 10) / 40): full marks at level 10, decaying after
 
-  Score = sleep + False Swipe + the other categories, the extras dampened by rank (60%, then
+  Score = strongest major status + False Swipe + utility, the extras dampened by rank (60%, then
   36%, ...) so a long list of marginal tools cannot outrank one dependable sleeper.
 
 Usage: python3 tools/catcher_score.py --uid <uid> [--exclude caterpie,butterfree] [--top 15]
@@ -349,10 +349,11 @@ def branch_constraints(path: list[str], dex: dict[str, str]) -> list[str]:
 
 
 def total_from_parts(parts: list[dict]) -> float:
-    sleep = next((part["value"] for part in parts if part["category"] == "sleep"), 0.0)
-    swipe = next((part["value"] for part in parts if part["category"] == "falseswipe"), 0.0)
-    extras = sorted((part["value"] for part in parts if part["category"] not in {"sleep", "falseswipe"}), reverse=True)
-    return sleep + swipe + sum(value * 0.6 ** (rank + 1) for rank, value in enumerate(extras))
+    statuses = {"sleep", "paralysis", "freeze"}
+    status = max((part["value"] for part in parts if part["category"] in statuses), default=0.0)
+    swipe = max((part["value"] for part in parts if part["category"] == "falseswipe"), default=0.0)
+    extras = sorted((part["value"] for part in parts if part["category"] not in statuses | {"falseswipe"}), reverse=True)
+    return status + swipe + sum(value * 0.6 ** (rank + 1) for rank, value in enumerate(extras))
 
 
 def _ability_variants(path: list[str], dex: dict[str, str]) -> list[tuple[str | None, bool]]:
@@ -421,7 +422,11 @@ def _score_branch(
                 trace.append(item)
                 if value > best.get(category, {"value": 0})["value"]:
                     best[category] = item
-        parts = sorted(best.values(), key=lambda part: -part["value"])
+        major = [part for part in best.values() if part["category"] in {"sleep", "paralysis", "freeze"}]
+        chosen_status = max(major, key=lambda part: part["value"], default=None)
+        parts = sorted((part for part in best.values()
+                        if part["category"] not in {"sleep", "paralysis", "freeze"}
+                        or part is chosen_status), key=lambda part: -part["value"])
         if fleeing and "trapping" not in best:
             for index, part in enumerate(parts):
                 if part["category"] == "falseswipe":
