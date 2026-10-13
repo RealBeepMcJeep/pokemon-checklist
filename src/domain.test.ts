@@ -41,11 +41,11 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { 25: "seen" },
       forms: {},
       starred: [],
-      settings: { forms: true, mode: DEFAULT_MODE },
+      settings: { forms: true, mode: DEFAULT_MODE, unlocks: [] },
     });
   });
 
@@ -67,18 +67,18 @@ describe("checklist domain", () => {
   it("exports statuses deterministically", () => {
     expect(
       canonicalState({
-        schemaVersion: 3,
+        schemaVersion: 4,
         species: { 807: "seen", 1: "caught", 25: "none" },
         forms: { "20:alolan": "seen", "19:alolan": "caught" },
         starred: [731, 25, 731],
-        settings: { forms: false, mode: "ultra-moon" },
+        settings: { forms: false, mode: "ultra-moon", unlocks: [] },
       }),
     ).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { 1: "caught", 807: "seen" },
       forms: { "19:alolan": "caught", "20:alolan": "seen" },
       starred: [25, 731],
-      settings: { forms: false, mode: "ultra-moon" },
+      settings: { forms: false, mode: "ultra-moon", unlocks: [] },
     });
   });
 
@@ -95,11 +95,11 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { 25: "seen", 731: "caught" },
       forms: { "19:alolan": "caught" },
       starred: [],
-      settings: { forms: true, mode: "ultra-sun" },
+      settings: { forms: true, mode: "ultra-sun", unlocks: [] },
     });
   });
 

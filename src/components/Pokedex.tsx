@@ -5,6 +5,7 @@ import { ENCOUNTERS_BY_MODE, POKEMON, byDex, detailsByDex, formDetails } from ".
 import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
+  activeUnlocks,
   speciesCounts,
   drawerOpen,
   formDefinitions,
@@ -96,7 +97,7 @@ function Selection() {
   }
   const pokemon = byDex.get(selected);
   if (!pokemon) return null;
-  const occurrences = getOccurrences(activeEncounters.value, selected);
+  const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined);
   const otherModeOccurrences = crossModeOccurrences(
     ENCOUNTERS_BY_MODE,
     mode.value,
@@ -179,7 +180,7 @@ function Selection() {
                   >
                     {item.island.name} › {item.location.name} ›{" "}
                     {item.group.name} ·{" "}
-                    {item.group.category === "return-later"
+                    {(item.eligible === undefined ? item.group.category === "return-later" : !item.eligible)
                       ? "return later"
                       : "catch now"}{" "}
                     · {item.ally ? "SOS ally" : "wild encounter"}

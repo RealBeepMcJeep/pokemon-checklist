@@ -48,11 +48,11 @@ function device(name: string): Device {
     name,
     uid: `uid-${name}`,
     save: {
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: {},
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "moon" },
+      settings: { forms: false, mode: "moon", unlocks: [] },
     },
     base: emptyDocument(),
   };

@@ -9,17 +9,19 @@ import type {
   Status,
   StatusMap,
 } from "./types";
-import { GAME_MODES } from "./types";
+import { GAME_MODES, UNLOCKS } from "./types";
+import { eligibleRows, occurrenceEligible } from "./unlocks";
 
 export const DEFAULT_MODE: GameMode = "photonic-prismatic";
-export const STATE_VERSION = 3;
-export const STORAGE_KEY = "pokemon-checklist-state-v3";
+export const STATE_VERSION = 4;
+export const STORAGE_KEY = "pokemon-checklist-state-v4";
 /**
  * Checked in order when the current key holds nothing. Each is migrated on read
  * and rewritten under `STORAGE_KEY`, so an older save upgrades itself and an
  * older build of the app still finds its own key untouched.
  */
 export const LEGACY_STORAGE_KEYS = [
+  "pokemon-checklist-state-v3",
   "pokemon-checklist-state-v2",
   "pokemon-checklist-state-v1",
 ] as const;
@@ -147,28 +149,22 @@ export function cycleStatus(status: Status): Status {
 
 const catchNowRowsCache = new WeakMap<Location, EncounterRow[]>();
 
-export function catchNowRows(location: Location): EncounterRow[] {
-  const cached = catchNowRowsCache.get(location);
+export function catchNowRows(location: Location, unlocks: readonly string[] = []): EncounterRow[] {
+  const cached = unlocks.length === 0 ? catchNowRowsCache.get(location) : undefined;
   if (cached) return cached;
 
-  const unique = new Map<number, EncounterRow>();
-  for (const group of location.groups) {
-    if (group.category !== "regular") continue;
-    for (const row of group.encounters) {
-      if (row.speciesId) unique.set(row.speciesId, row);
-    }
-  }
-  const rows = [...unique.values()];
-  catchNowRowsCache.set(location, rows);
+  const rows = eligibleRows(location, unlocks);
+  if (unlocks.length === 0) catchNowRowsCache.set(location, rows);
   return rows;
 }
 
 export function locationProgress(
   location: Location,
   statusOf: (id: number) => Status,
+  unlocks: readonly string[] = [],
 ): { none: number; seen: number; caught: number; total: number } {
   const counts = { none: 0, seen: 0, caught: 0, total: 0 };
-  for (const row of catchNowRows(location)) {
+  for (const row of catchNowRows(location, unlocks)) {
     counts[statusOf(row.speciesId!)]++;
     counts.total++;
   }
@@ -178,10 +174,11 @@ export function locationProgress(
 export function firstIncompleteLocation(
   encounters: EncounterData,
   statusOf: (id: number) => Status,
+  unlocks: readonly string[] = [],
 ): Location | null {
   for (const island of encounters.islands) {
     for (const location of island.locations) {
-      const progress = locationProgress(location, statusOf);
+      const progress = locationProgress(location, statusOf, unlocks);
       if (progress.caught !== progress.total) return location;
     }
   }
@@ -191,6 +188,7 @@ export function firstIncompleteLocation(
 export function getOccurrences(
   encounters: EncounterData,
   speciesId: number,
+  unlocks?: readonly string[],
 ): Occurrence[] {
   const found: Occurrence[] = [];
   forEachEncounter(encounters, (row, group, location, island) => {
@@ -209,6 +207,7 @@ export function getOccurrences(
       }
     }
   });
+  if (unlocks) for (const item of found) item.eligible = occurrenceEligible(item.location,item.group,item.row,item.ally,unlocks);
   return found;
 }
 
@@ -308,7 +307,7 @@ export function validateState(
   }
   if (!isRecord(value.settings))
     throw new Error("This backup has invalid settings");
-  const expectedSettings = schemaVersion === 1 ? "forms" : "forms,mode";
+  const expectedSettings = schemaVersion === 1 ? "forms" : schemaVersion === 4 ? "forms,mode,unlocks" : "forms,mode";
   if (
     typeof value.settings.forms !== "boolean" ||
     Object.keys(value.settings)
@@ -322,6 +321,9 @@ export function validateState(
   if (!GAME_MODES.includes(rawMode as GameMode)) {
     throw new Error("This backup has an unknown game mode");
   }
+  const unlocks = schemaVersion === 4 ? value.settings.unlocks : [];
+  if (!Array.isArray(unlocks) || unlocks.some(flag => !UNLOCKS.includes(flag)) || new Set(unlocks).size !== unlocks.length)
+    throw new Error("This backup has invalid encounter unlocks");
   return {
     schemaVersion: STATE_VERSION,
     species: validateStatusMap(
@@ -339,7 +341,7 @@ export function validateState(
     ),
     starred:
       schemaVersion >= 3 ? validateStarred(value.starred, validPokemon) : [],
-    settings: { forms: value.settings.forms, mode: rawMode as GameMode },
+    settings: { forms: value.settings.forms, mode: rawMode as GameMode, unlocks: [...unlocks] },
   };
 }
 
@@ -361,7 +363,7 @@ export function canonicalState(state: SavedState): SavedState {
     species,
     forms,
     starred: [...new Set(state.starred)].sort((a, b) => a - b),
-    settings: { forms: state.settings.forms, mode: state.settings.mode },
+    settings: { forms: state.settings.forms, mode: state.settings.mode, unlocks: UNLOCKS.filter(flag => state.settings.unlocks.includes(flag)) },
   };
 }
 
@@ -369,8 +371,9 @@ export function canonicalState(state: SavedState): SavedState {
 export function uncaughtCatchNowRows(
   location: Location,
   statusOf: (id: number) => Status,
+  unlocks: readonly string[] = [],
 ): EncounterRow[] {
-  return catchNowRows(location)
+  return catchNowRows(location, unlocks)
     .filter((row) => row.speciesId && statusOf(row.speciesId) !== "caught")
     .sort((a, b) =>
       Number(statusOf(a.speciesId!) === "seen") -

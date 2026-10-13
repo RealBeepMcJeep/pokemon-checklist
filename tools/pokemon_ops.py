@@ -185,6 +185,8 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
         return kind
     if key.startswith("form:") and len(key) > len("form:") and "/" not in key:
         return "form"
+    if key in {"setting:unlock:" + flag for flag in ("tauros", "surfing", "fishing", "sos", "weather-sos")}:
+        return "setting:unlock"
     if key == "setting:mode":
         return "setting:mode"
     if key == "setting:forms":
@@ -195,7 +197,7 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
 def _allowed_value(kind: str) -> frozenset[str]:
     if kind in {"species", "form"}:
         return STATUS_VALUES
-    if kind == "star" or kind == "setting:forms":
+    if kind in {"star", "setting:forms", "setting:unlock"}:
         return STAR_VALUES
     if kind == "setting:mode":
         return MODE_VALUES

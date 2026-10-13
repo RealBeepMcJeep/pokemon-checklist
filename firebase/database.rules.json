@@ -7,7 +7,12 @@
         ".read": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
         "state": {
           ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && (auth.token.email === 'realbeepmcjeep@gmail.com')",
-          ".validate": "newData.hasChildren(['schema', 'records', 'updatedAt'])"
+          ".validate": "newData.hasChildren(['schema', 'records', 'updatedAt'])",
+          "records": {
+            "$key": {
+              ".validate": "!$key.matches(/^setting:unlock:/) || ($key.matches(/^setting:unlock:(tauros|surfing|fishing|sos|weather-sos)$/) && (newData.child('s').val() === 'on' || newData.child('s').val() === 'off'))"
+            }
+          }
         },
         "log": {
           "$eventId": {

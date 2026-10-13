@@ -1059,7 +1059,7 @@ test("shows the last good copy when the save cannot be read", async ({
   await page.locator('[data-action="species"][data-species="731"]').first().click();
   await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   await page.evaluate(() =>
-    localStorage.setItem("pokemon-checklist-state-v3", "{half a save"),
+    localStorage.setItem("pokemon-checklist-state-v4", "{half a save"),
   );
 
   await page.reload();
@@ -1069,7 +1069,7 @@ test("shows the last good copy when the save cannot be read", async ({
   await expect(page.locator("#notice-action")).toHaveText("Download unreadable copy");
   expect(
     await page.evaluate(() =>
-      localStorage.getItem("pokemon-checklist-state-v3:unreadable"),
+      localStorage.getItem("pokemon-checklist-state-v4:unreadable"),
     ),
   ).toBe("{half a save");
   expect(errors).toEqual([]);

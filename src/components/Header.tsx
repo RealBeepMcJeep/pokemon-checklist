@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+import { UnlockSettings } from "./UnlockSettings";
 import { toolsOpen } from "./Tools";
 import { ASSETS, POKEMON } from "../data";
 import { DEFAULT_MODE, MODE_LABELS } from "../domain";
@@ -71,6 +72,13 @@ export function Header({ inert = false }: { inert?: boolean }) {
   const [scrolled, setScrolled] = useState(window.scrollY > 90);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDialogElement>(null);
+  const previousMobile = useRef(mobile);
+  useEffect(() => {
+    if (previousMobile.current !== mobile) {
+      previousMobile.current = mobile;
+      setSettingsOpen(false);
+    }
+  }, [mobile]);
   const alertsRef = useRef<HTMLDivElement>(null);
   const [alertsHeight, setAlertsHeight] = useState(0);
   // Reserve only extra alert space, never the shrinking identity row: this avoids
@@ -95,18 +103,18 @@ export function Header({ inert = false }: { inert?: boolean }) {
     return () => window.removeEventListener("scroll", update);
   }, []);
   useEffect(() => {
-    if (!mobile || drawerOpen.value || toolsOpen.value) setSettingsOpen(false);
+    if (drawerOpen.value || toolsOpen.value) setSettingsOpen(false);
   }, [mobile, drawerOpen.value, toolsOpen.value]);
   useEffect(() => {
     const dialog = settingsRef.current;
-    if (!settingsOpen || !mobile || !dialog) return;
+    if (!settingsOpen || !dialog) return;
     const previous = document.body.style.overflow;
     dialog.showModal();
     document.body.style.overflow = "hidden";
     return () => {
       dialog.close();
       document.body.style.overflow = previous;
-      if (isMobile.value && !drawerOpen.value && !toolsOpen.value)
+      if (!drawerOpen.value && !toolsOpen.value)
         document.getElementById("header-settings-toggle")?.focus({ preventScroll: true });
     };
   }, [settingsOpen, mobile]);
@@ -221,7 +229,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
               </span>
             </div>
           </div>
-            <div class="actions" aria-label="Checklist actions">{dex}{controls}{tools}<SyncPanel /></div>
+            <div class="actions" aria-label="Checklist actions">{dex}{controls}{tools}{currentMode === DEFAULT_MODE && <button class="action-button" id="header-settings-toggle" type="button" aria-haspopup="dialog" aria-controls="header-settings-panel" onClick={() => setSettingsOpen(true)}>Settings</button>}<SyncPanel /></div>
           </div>
         </>}
         <div class={mobile ? "mobile-alerts" : undefined} ref={alertsRef}>
@@ -232,12 +240,12 @@ export function Header({ inert = false }: { inert?: boolean }) {
         </div>
       </div>
     </header>
-    {mobile && <dialog ref={settingsRef} id="header-settings-panel" aria-labelledby="header-settings-title" onCancel={() => setSettingsOpen(false)}>
+    {<dialog ref={settingsRef} id="header-settings-panel" aria-labelledby="header-settings-title" onCancel={() => setSettingsOpen(false)}>
       <div class="header-settings-heading"><h2 id="header-settings-title">Settings</h2><button class="action-button" type="button" onClick={() => setSettingsOpen(false)}>Close settings</button></div>
-      <div class="header-settings-controls actions" aria-label="Checklist actions">{controls}</div>
-      <CollectionProgress details />
-      <SyncPanel />
-      <footer><strong>Wild Pokémon Checklist</strong><p>{MODE_LABELS[currentMode]} · Alola locations in story order · National Pokédex 001–807</p><span class="build-stamp" id="build-version" title="Release version and commit this build came from">{BUILD_LABEL}</span></footer>
+      {mobile && <div class="header-settings-controls actions" aria-label="Checklist actions">{controls}</div>}
+      <UnlockSettings />
+      {mobile && <><CollectionProgress details /><SyncPanel /></>}
+      {mobile && <footer><strong>Wild Pokémon Checklist</strong><p>{MODE_LABELS[currentMode]} · Alola locations in story order · National Pokédex 001–807</p><span class="build-stamp" id="build-version" title="Release version and commit this build came from">{BUILD_LABEL}</span></footer>}
     </dialog>}
   </>;
 }

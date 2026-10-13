@@ -1,6 +1,7 @@
 import { signal } from "@preact/signals";
 import {
   activeEncounters,
+  activeUnlocks,
   changeNotice,
   cycleSpecies,
   drawerOpen,
@@ -62,7 +63,7 @@ export function currentOpenLocations(): string[] {
 }
 
 export function firstIncomplete(): Location | null {
-  return firstIncompleteLocation(activeEncounters.value, speciesStatus);
+  return firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value);
 }
 
 export function changeMode(nextMode: GameMode): void {
@@ -183,7 +184,7 @@ export function exportJSON(): void {
   });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "pokemon-checklist-state-v3.json";
+  link.download = "pokemon-checklist-state-v4.json";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -214,7 +215,7 @@ export async function importFile(event: Event): Promise<void> {
 export async function reset(): Promise<void> {
   if (
     !confirm(
-      "Clear all caught and seen statuses, tracked forms, starred Pokémon, and settings?",
+      "Clear all caught and seen statuses, tracked forms, starred Pokémon, encounter unlocks, and settings?",
     )
   )
     return;

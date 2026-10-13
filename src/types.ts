@@ -149,13 +149,18 @@ export interface FormDefinition {
   kind: string;
 }
 
+export const UNLOCKS = ["tauros", "surfing", "fishing", "sos", "weather-sos"] as const;
+export type Unlock = (typeof UNLOCKS)[number];
+
 export interface Settings {
   forms: boolean;
   mode: GameMode;
+  /** Prismatic Moon capabilities; ignored in unsupported modes. */
+  unlocks: Unlock[];
 }
 
 export interface SavedState {
-  schemaVersion: 3;
+  schemaVersion: 4;
   species: StatusMap;
   forms: StatusMap;
   /** Dex numbers pinned to the top of the Pokédex list, ascending and unique. */
@@ -164,6 +169,7 @@ export interface SavedState {
 }
 
 export interface Occurrence {
+  eligible?: boolean;
   row: EncounterRow;
   group: EncounterGroup;
   location: Location;

@@ -248,8 +248,13 @@ export function pendingEntries(
   save: SavedState,
   at: number,
   by: string,
+  legacyUnlocks = false,
 ): Record<RecordKey, RecordEntry> {
-  return diffEntries(base.records, entriesFromState(save, at, by), at, by);
+  const pending = diffEntries(base.records, entriesFromState(save, at, by), at, by);
+  if (legacyUnlocks) for (const key of Object.keys(pending)) {
+    if (key.startsWith("setting:unlock:") && isClearing(pending[key].s)) delete pending[key];
+  }
+  return pending;
 }
 
 /** The local transition that must survive a server echo arriving mid-edit. */

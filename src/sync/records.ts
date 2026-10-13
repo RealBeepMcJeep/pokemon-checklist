@@ -1,11 +1,11 @@
-import { GAME_MODES, type GameMode, type SavedState, type Status } from "../types";
-import { DEFAULT_MODE, STATUS_ORDER } from "../domain";
+import { GAME_MODES, UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } from "../types";
+import { DEFAULT_MODE, STATUS_ORDER, STATE_VERSION } from "../domain";
 
 /**
  * Sync payload shapes and the pure logic that merges them.
  *
  * The player's save (`SavedState`) is deliberately untouched by sync: it stays a
- * clean, exportable v3 document. What lives here is replica bookkeeping — which
+ * clean, exportable versioned document. What lives here is replica bookkeeping — which
  * record changed when, and by whom — which is rebuildable by construction and
  * therefore does not belong in a backup or a schema bump.
  *
@@ -56,7 +56,7 @@ export const isClearing = (value: string): boolean =>
  * both are treated as absent when a document is turned back into a save.
  */
 export function clearedValue(key: RecordKey): string {
-  return key.startsWith("star:") || key === SETTING_FORMS ? STAR_OFF : TOMBSTONE;
+  return key.startsWith("star:") || key === SETTING_FORMS || key.startsWith("setting:unlock:") ? STAR_OFF : TOMBSTONE;
 }
 
 /**
@@ -116,6 +116,7 @@ export function entriesFromState(
     if (status !== "none") stamp(formKey(key), status);
   }
   for (const id of state.starred) stamp(starKey(id), STAR_ON);
+  for (const flag of state.settings.unlocks ?? []) stamp(`setting:unlock:${flag}`, STAR_ON);
   stamp(SETTING_MODE, state.settings.mode);
   stamp(SETTING_FORMS, state.settings.forms ? STAR_ON : STAR_OFF);
   return records;
@@ -210,6 +211,7 @@ export function stateFromDocument(
   const starred: number[] = [];
   let mode: GameMode = DEFAULT_MODE;
   let formsTracked = false;
+  const unlocks: Unlock[] = [];
 
   for (const [key, entry] of Object.entries(document.records)) {
     if (entry.s === TOMBSTONE) continue;
@@ -226,6 +228,9 @@ export function stateFromDocument(
       if (entry.s === STAR_ON && Number.isInteger(id) && validPokemon.has(id)) {
         starred.push(id);
       }
+    } else if (key.startsWith("setting:unlock:") && entry.s === STAR_ON) {
+      const flag = key.slice("setting:unlock:".length) as Unlock;
+      if (UNLOCKS.includes(flag)) unlocks.push(flag);
     } else if (key === SETTING_MODE && isMode(entry.s)) {
       mode = entry.s;
     } else if (key === SETTING_FORMS) {
@@ -234,11 +239,11 @@ export function stateFromDocument(
   }
 
   return {
-    schemaVersion: 3,
+    schemaVersion: STATE_VERSION,
     species,
     forms,
     starred: [...new Set(starred)].sort((a, b) => a - b),
-    settings: { forms: formsTracked, mode },
+    settings: { forms: formsTracked, mode, unlocks: UNLOCKS.filter(flag => unlocks.includes(flag)) },
   };
 }
 

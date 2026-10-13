@@ -11,6 +11,7 @@ import {
 } from "firebase/database";
 import {
   activeSaveKey,
+  unlocksFromLegacy,
   applyState,
   downloadText,
   exportState,
@@ -763,7 +764,10 @@ function recoveredEdits(
     }
     return edits;
   }
-  const edits = pendingEntries(confirmed, save, now, uid);
+  const edits = pendingEntries(confirmed, save, now, uid, unlocksFromLegacy.value && !pendingReset);
+  for (const [key, intent] of Object.entries(localIntents)) {
+    if (key.startsWith("setting:unlock:") && intent.s === "off" && !shown[key]) edits[key] = intent;
+  }
   for (const [key, edit] of Object.entries(edits)) {
     const known = localIntents[key];
     if (known?.s === edit.s) edits[key] = known;

@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {pathToFileURL} from 'node:url';import {resolve} from 'node:path';
-async function open(page:Page,p:string){await page.goto(p==='standalone-file'?pathToFileURL(resolve('index.html')).href:'/');await page.locator('#tools-toggle').click();}
+async function open(page:Page,p:string){await page.goto(p==='standalone-file'?pathToFileURL(resolve('index.html')).href:'/');await page.locator('#tools-toggle').click();await expect(page.locator('#catch-species-rail')).toBeVisible();}
 const xOf=(page:Page,kind:string)=>page.locator(`#catch-${kind}-rail`).evaluate(el=>(el.querySelector('.catch-visual[data-slot="0"]') ?? el.querySelector('.selected .catch-sprite'))!.getBoundingClientRect().x);
 test('mouse drag displaces artwork before release, settles once, cancels short drag and keeps later click',async({page},info)=>{
  await open(page,info.project.name);

@@ -129,7 +129,7 @@ for (const width of [360, 412, 1440])
     );
     await page.evaluate(() =>
       localStorage.setItem(
-        "pokemon-checklist-state-v3",
+        "pokemon-checklist-state-v4",
         JSON.stringify({
           schemaVersion: 3,
           species: { "1": "caught" },

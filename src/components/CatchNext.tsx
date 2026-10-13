@@ -1,6 +1,7 @@
 import { byDex } from "../data";
 import { firstIncompleteLocation, uncaughtCatchNowRows } from "../domain";
-import { activeEncounters, focusedLocation, speciesStatus } from "../state";
+import { activeEncounters,
+ activeUnlocks, focusedLocation, speciesStatus } from "../state";
 import { closeDrawer, isMobile } from "../ui";
 import { PokemonIcon, StatusButton } from "./StatusControls";
 
@@ -13,7 +14,7 @@ import { PokemonIcon, StatusButton } from "./StatusControls";
  * location list already shows this same location open, just scrolled past.
  */
 export function CatchNext() {
-  const location = firstIncompleteLocation(activeEncounters.value, speciesStatus);
+  const location = firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value);
   if (!location) {
     return (
       <p class="catch-next-done">
@@ -21,7 +22,7 @@ export function CatchNext() {
       </p>
     );
   }
-  const rows = uncaughtCatchNowRows(location, speciesStatus);
+  const rows = uncaughtCatchNowRows(location, speciesStatus, activeUnlocks.value);
   return (
     <details class="catch-next" open={!isMobile.value}>
       <summary><strong>Catch next in {location.name}</strong></summary>

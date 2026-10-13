@@ -145,6 +145,7 @@ export function keyKind(key) {
     return match[1];
   }
   if (/^form:[^/]+$/.test(key)) return "form";
+  if (/^setting:unlock:(tauros|surfing|fishing|sos|weather-sos)$/.test(key)) return "setting:unlock";
   if (key === "setting:mode") return "setting:mode";
   if (key === "setting:forms") return "setting:forms";
   throw new Error(`invalid record key: ${key}`);
@@ -152,7 +153,7 @@ export function keyKind(key) {
 
 function allowedValues(kind) {
   if (kind === "species" || kind === "form") return STATUS_VALUES;
-  if (kind === "star" || kind === "setting:forms") return STAR_VALUES;
+  if (kind === "star" || kind === "setting:forms" || kind === "setting:unlock") return STAR_VALUES;
   if (kind === "setting:mode") return MODE_VALUES;
   throw new Error(`invalid record kind: ${kind}`);
 }
@@ -197,7 +198,7 @@ export function validateRecordMap(records, { entries = false } = {}) {
 }
 
 function emptyValue(key) {
-  return key.startsWith("star:") || key === "setting:forms" ? "off" : "none";
+  return key.startsWith("star:") || key === "setting:forms" || key.startsWith("setting:unlock:") ? "off" : "none";
 }
 
 export function validateUid(uid) {

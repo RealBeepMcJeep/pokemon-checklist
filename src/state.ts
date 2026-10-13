@@ -10,7 +10,7 @@ import {
   formsForMode,
   validateState,
 } from "./domain";
-import type { GameMode, SavedState, Status } from "./types";
+import { UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } from "./types";
 import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
 import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
 import { BUILD_LABEL } from "./version";
@@ -38,6 +38,15 @@ const formSignals = new Map(
 
 export const mode = signal<GameMode>(DEFAULT_MODE);
 export const formsTracked = signal(false);
+export const unlocks = signal<Unlock[]>([]);
+/** Replica migration hint, never exported as player progress. */
+export const unlocksFromLegacy = signal(false);
+export const activeUnlocks = computed(() => mode.value === DEFAULT_MODE ? unlocks.value : []);
+export function setUnlock(flag: Unlock, enabled: boolean): void {
+  if (readOnly.value || !UNLOCKS.includes(flag)) return;
+  unlocks.value = UNLOCKS.filter(item => item === flag ? enabled : unlocks.value.includes(item));
+  persist();
+}
 export const selectedDex = signal<number | null>(null);
 export const searchTerm = signal("");
 export const focusedLocation = signal<string | null>(null);
@@ -233,7 +242,7 @@ export function defaultState(): SavedState {
     species: {},
     forms: {},
     starred: [],
-    settings: { forms: false, mode: DEFAULT_MODE },
+    settings: { forms: false, mode: DEFAULT_MODE, unlocks: [] },
   };
 }
 
@@ -251,7 +260,7 @@ export function exportState(): SavedState {
     species,
     forms,
     starred: [...starred.value],
-    settings: { forms: formsTracked.value, mode: mode.value },
+    settings: { forms: formsTracked.value, mode: mode.value, unlocks: [...unlocks.value] },
   });
 }
 
@@ -265,6 +274,7 @@ export function applyState(state: SavedState): void {
     }
     formsTracked.value = state.settings.forms;
     mode.value = state.settings.mode;
+    unlocks.value = [...(state.settings.unlocks ?? [])];
     starred.value = [...state.starred];
   });
   // Anything that changes a record an Undo would put back ends that Undo.
@@ -295,7 +305,7 @@ let heldKey: string | null = null;
 let seen: { key: string; raw: string | null; state: SavedState } | null = null;
 
 interface StoredSave {
-  found: { key: string; state: SavedState } | null;
+  found: { key: string; state: SavedState; legacyUnlocks?: boolean } | null;
   /** The save key's own text, when it holds something that cannot be read. */
   unreadable: string | null;
   raw: string | null;
@@ -308,18 +318,22 @@ function readSave(): StoredSave {
   // is migrated on read, but only when there is no current save at all: an older
   // save never replaces a current one that merely could not be read.
   const candidates =
-    activeUid || raw !== null
+    raw !== null
       ? [key, lastGoodKey(key)]
-      : [key, lastGoodKey(key), ...LEGACY_STORAGE_KEYS];
+      : [key, lastGoodKey(key), ...LEGACY_STORAGE_KEYS.flatMap(legacy => {
+          const namespaced = activeUid ? `${legacy}:${activeUid}` : legacy;
+          return [namespaced, lastGoodKey(namespaced)];
+        })];
   let unreadable: string | null = null;
   for (const candidate of candidates) {
     const text = candidate === key ? raw : localStorage.getItem(candidate);
     if (text === null) continue;
     try {
-      const state = validateState(JSON.parse(text), validPokemon, validForms);
-      return { found: { key: candidate, state }, unreadable, raw };
+      const parsed = JSON.parse(text);
+      const state = validateState(parsed, validPokemon, validForms);
+      return { found: { key: candidate, state, legacyUnlocks: parsed.schemaVersion < 4 }, unreadable, raw };
     } catch {
-      if (candidate === key) unreadable = text;
+      if (candidate === key || candidate === (activeUid ? `${LEGACY_STORAGE_KEYS[0]}:${activeUid}` : LEGACY_STORAGE_KEYS[0])) unreadable = text;
     }
   }
   return { found: null, unreadable, raw };
@@ -356,6 +370,7 @@ function useSave({ found, unreadable, raw }: StoredSave): boolean {
   // With no readable copy of it at all, nothing is saved over the unreadable save.
   if (unreadable !== null && !found) heldKey = key;
   if (found) {
+    unlocksFromLegacy.value = !!found.legacyUnlocks;
     applyState(found.state);
     // An older (or last good) copy rewrites itself under the current key. A legacy
     // entry is deliberately left behind so an older build still finds its own data.

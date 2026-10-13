@@ -6,6 +6,7 @@ import { availableStorage, syncSessionExpected } from "./sync/outbox";
 import { firstIncompleteLocation } from "./domain";
 import {
   activeEncounters,
+  activeUnlocks,
   announceBuild,
   focusedLocation,
   initializeState,
@@ -17,6 +18,7 @@ import "./styles/themes.css";
 import "./styles/app.css";
 import "./styles/responsive.css";
 import "./styles/tools.css";
+import "./styles/unlocks.css";
 
 initializeState();
 watchOtherTabs();
@@ -33,6 +35,6 @@ if (syncSessionExpected(availableStorage())) watchSyncAccount();
 followSignInFromOtherTabs();
 document.documentElement.dataset.mode = mode.value;
 focusedLocation.value =
-  firstIncompleteLocation(activeEncounters.value, speciesStatus)?.id || null;
+  firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value)?.id || null;
 
 render(<App />, document.getElementById("app")!);

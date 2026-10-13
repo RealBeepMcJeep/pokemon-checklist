@@ -25,11 +25,11 @@ for (const width of [360,412,1440]) {
     const url = info.project.name === "standalone-file" ? pathToFileURL(resolve("index.html")).href : "/";
     if (info.project.name === "standalone-file") await page.route(/^https?:\/\//,route=>route.abort());
     await page.goto(url);
-    await page.evaluate(() => localStorage.setItem("pokemon-checklist-state-v3", JSON.stringify({schemaVersion:3,species:{10:"seen",731:"caught"},forms:{"19:alolan":"seen","37:alolan":"caught"},starred:[],settings:{forms:true,mode:"photonic-prismatic"}})));
+    await page.evaluate(() => localStorage.setItem("pokemon-checklist-state-v4", JSON.stringify({schemaVersion:3,species:{10:"seen",731:"caught"},forms:{"19:alolan":"seen","37:alolan":"caught"},starred:[],settings:{forms:true,mode:"photonic-prismatic"}})));
     await page.reload();
     await expect(page.locator("#overall-text [data-status]")).toHaveText(["Not caught 805","Seen 1","Caught 1"]);
     await expect(page.locator("#form-progress [data-status]")).toHaveText(["Not caught 46","Seen 1","Caught 1"]);
-    const saved = await page.evaluate(()=>localStorage.getItem("pokemon-checklist-state-v3"));
+    const saved = await page.evaluate(()=>localStorage.getItem("pokemon-checklist-state-v4"));
     await page.evaluate(()=>scrollTo(0,0));
     // Let the sticky header's composited position settle after startup focus scrolling.
     await page.waitForTimeout(200);
@@ -49,7 +49,7 @@ for (const width of [360,412,1440]) {
     await page.locator("#dex-search").fill("731");
     await expect(page.locator("#dex-count")).toContainText("1 of 807 Pokémon");
     await expect(page.locator("#dex-count [data-status]")).toHaveText(["Not caught 805","Seen 1","Caught 1"]);
-    expect(await page.evaluate(()=>localStorage.getItem("pokemon-checklist-state-v3"))).toBe(saved);
+    expect(await page.evaluate(()=>localStorage.getItem("pokemon-checklist-state-v4"))).toBe(saved);
     const bystander = page.locator('#dex-list [data-action="select"][data-species="500"]');
     const renders = await bystander.getAttribute("data-renders");
     await page.locator('#dex-list [data-action="species"][data-species="731"]').click();

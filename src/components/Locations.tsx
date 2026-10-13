@@ -1,10 +1,12 @@
+import { occurrenceEligible } from "../unlocks";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ASSETS, detailsByDex, formDetails } from "../data";
-import { formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
+import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
+  activeUnlocks,
   focusedLocation,
   mode,
   speciesStatus,
@@ -142,7 +144,11 @@ function EncounterRow({
   );
 }
 
-function EncounterGroup({ group }: { group: EncounterGroupData }) {
+function EncounterGroup({ group, location }: { group: EncounterGroupData; location: LocationData }) {
+  const enabled = mode.value === "photonic-prismatic";
+  const access = enabled ? group.encounters.map(row => occurrenceEligible(location,group,row,false,activeUnlocks.value)) : [];
+  const available = access.some(Boolean);
+  const partial = available && !access.every(Boolean);
   const levels = group.levels
     ? ` · Lv. ${group.levels.min}–${group.levels.max}`
     : "";
@@ -158,7 +164,7 @@ function EncounterGroup({ group }: { group: EncounterGroupData }) {
           {levels}
         </strong>
         <span class="group-tag">
-          {group.category === "return-later" ? "Return later" : "Catch now"}
+          {enabled ? (available ? (partial ? "Some available" : "Catch now") : "Return later") : (group.category === "return-later" ? "Return later" : "Catch now")}
         </span>
       </div>
       {notes.length > 0 && (
@@ -191,7 +197,12 @@ function EncounterGroup({ group }: { group: EncounterGroupData }) {
 }
 
 function LocationProgress({ location }: { location: LocationData }) {
-  const progress = locationProgress(location, speciesStatus);
+  const flags = activeUnlocks.value;
+  const progress = locationProgress(location, speciesStatus, flags);
+  const base = catchNowRows(location);
+  const all = new Set(location.groups.flatMap(g => g.encounters.flatMap(r => [r.speciesId,...r.allies.map(a=>a.speciesId)])).filter((id): id is number => !!id));
+  const locked = all.size - progress.total;
+  const backtrack = flags.length > 0 && base.length > 0 && base.every(r=>speciesStatus(r.speciesId!) === "caught") && progress.caught < progress.total;
   const complete = progress.total > 0 && progress.caught === progress.total;
   return (
     <span
@@ -201,6 +212,7 @@ function LocationProgress({ location }: { location: LocationData }) {
       {progress.total ? (
         <>{complete && <span>Complete · </span>}<StatusCounts counts={progress} label={`${location.name} catch now`} /></>
       ) : "No Pokémon to catch now"}
+      {mode.value === "photonic-prismatic" && <span class="location-extras">{locked > 0 && <span class="locked-count">Locked {locked}</span>}{backtrack && <strong data-backtrack="true">↩ Backtrack</strong>}</span>}
     </span>
   );
 }
@@ -293,7 +305,7 @@ const Location = memo(function Location({
             </div>
           )}
           {location.groups.map((group) => (
-            <EncounterGroup key={group.id} group={group} />
+            <EncounterGroup key={group.id} group={group} location={location} />
           ))}
         </div>
       )}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-13
+
+- Added saved Prismatic Moon encounter unlocks in Settings, eligible/locked counts and backtrack markers, with caller-aware SOS/weather dependencies and v4 save/backup/account migration. Vanilla controls remain hidden until caller mapping is verified; no collection statuses change when toggling.
+
 ## 2026-10-12
 
 - Added a read-only current-horizon catcher comparison with verified Prismatic Standard move gates, one major-status contribution, ordinary level-evolution plans and donor-backed Smeargle setup. Phone cards show score arithmetic beside battle tiers/stats; individual ability and retained-move assumptions stay explicit.

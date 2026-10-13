@@ -41,11 +41,11 @@ const document = (records: Record<string, RecordEntry>): SyncDocument => ({
   updatedAt: 0,
 });
 const save = (overrides: Partial<SavedState> = {}): SavedState => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   species: {},
   forms: {},
   starred: [],
-  settings: { forms: false, mode: "moon" },
+  settings: { forms: false, mode: "moon", unlocks: [] },
   ...overrides,
 });
 
@@ -275,11 +275,11 @@ describe("what the device shows", () => {
     });
     const view = viewWithPending(base, {});
     expect(saveFromView(view, POKEMON, FORMS)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { "25": "caught" },
       forms: {},
       starred: [150],
-      settings: { forms: false, mode: "ultra-moon" },
+      settings: { forms: false, mode: "ultra-moon", unlocks: [] },
     });
   });
 });

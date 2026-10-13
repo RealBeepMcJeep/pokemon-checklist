@@ -36,7 +36,7 @@ for (const width of [360,412]) {
   await page.keyboard.press("Escape");
   await page.locator("#header-settings-toggle").click();
   await page.setViewportSize({width:1440,height:900});
-  await expect(page.locator("#header-settings-panel")).toHaveCount(0);
+  await expect(page.locator("#header-settings-panel")).not.toBeVisible();
   await expect(page.locator("body")).not.toHaveCSS("overflow","hidden");
   await expect(page.locator("#mode-select")).toBeVisible();
   await expect(page.locator(".brand #build-version")).toBeVisible();

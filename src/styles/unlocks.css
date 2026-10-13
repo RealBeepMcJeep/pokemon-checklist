@@ -1,0 +1,10 @@
+#header-settings-panel {color:#f6f5ee;background:#172238;border:1px solid #35445a;border-radius:16px;max-width:720px;width:calc(100% - 32px);max-height:calc(100dvh - 32px);overflow:auto;padding:20px;}
+#header-settings-panel::backdrop {background:#0009;}
+.unlock-settings {border:1px solid #35445a;border-radius:12px;margin:16px 0;padding:14px;}
+.unlock-settings legend {font-weight:700;}
+.unlock-settings label {display:flex;gap:12px;align-items:center;min-height:44px;padding:6px;cursor:pointer;}
+.unlock-settings input {width:20px;height:20px;accent-color:#80d398;flex:0 0 auto;}
+.unlock-settings p,.unlock-settings small {color:#aebbd0;line-height:1.5;}
+.location-extras {display:inline-flex;gap:12px;flex-wrap:wrap;font-size:.8rem;margin-left:10px;}
+.locked-count {color:#aebbd0;}
+.location-extras strong {color:#f2cf69;}

@@ -120,11 +120,11 @@ describe("account saves", () => {
     // A state that arrived from elsewhere is not a local change, so publishing
     // must not be triggered by applying it.
     applyState({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { "150": "caught" },
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "moon" },
+      settings: { forms: false, mode: "moon", unlocks: [] },
     });
     expect(calls).toBe(1);
 
@@ -192,7 +192,7 @@ describe("cross-tab state", () => {
     expect(synced.kind).toBe("apply");
     if (synced.kind !== "apply") return;
     expect(synced.state.species).toEqual({ "25": "seen", "731": "caught" });
-    expect(synced.state.settings).toEqual({ forms: true, mode: "ultra-sun" });
+    expect(synced.state.settings).toEqual({ forms: true, mode: "ultra-sun", unlocks: [] });
     expect(synced.state.starred).toEqual([]);
   });
 });
@@ -230,7 +230,7 @@ describe("starred species", () => {
   it("writes stars to the current storage key so they survive a reload", () => {
     const store = installStorage();
     toggleStar(25);
-    const raw = store.get("pokemon-checklist-state-v3");
+    const raw = store.get("pokemon-checklist-state-v4");
     expect(raw).toBeTruthy();
     expect(JSON.parse(raw!).starred).toEqual([25]);
   });
@@ -304,9 +304,9 @@ describe("storage migration", () => {
     expect(exportState().settings.mode).toBe("sun");
     expect(exportState().starred).toEqual([]);
 
-    const upgraded = store.get("pokemon-checklist-state-v3");
+    const upgraded = store.get("pokemon-checklist-state-v4");
     expect(upgraded).toBeTruthy();
-    expect(JSON.parse(upgraded!).schemaVersion).toBe(3);
+    expect(JSON.parse(upgraded!).schemaVersion).toBe(4);
     // The legacy entry stays put so an older build still finds its own data.
     expect(store.get("pokemon-checklist-state-v2")).toBeTruthy();
   });

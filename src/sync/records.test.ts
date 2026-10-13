@@ -35,11 +35,11 @@ const document = (
 ): SyncDocument => ({ schema: 1, records, updatedAt });
 
 const save = (overrides: Partial<SavedState> = {}): SavedState => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   species: {},
   forms: {},
   starred: [],
-  settings: { forms: false, mode: "moon" },
+  settings: { forms: false, mode: "moon", unlocks: [] },
   ...overrides,
 });
 
@@ -113,7 +113,7 @@ describe("entriesFromState", () => {
         species: { "25": "caught", "150": "seen" },
         forms: { "25:alola": "caught" },
         starred: [25],
-        settings: { forms: true, mode: "ultra-moon" },
+        settings: { forms: true, mode: "ultra-moon", unlocks: [] },
       }),
       1_000,
       "uid-a",
@@ -130,7 +130,7 @@ describe("entriesFromState", () => {
 
 describe("beforeImage", () => {
   it("captures only records that Reset changes, with their old values", () => {
-    const blank = save({ settings: { forms: false, mode: "photonic-prismatic" } });
+    const blank = save({ settings: { forms: false, mode: "photonic-prismatic", unlocks: [] } });
     expect(beforeImage(blank, blank)).toEqual([]);
 
     const image = beforeImage(
@@ -138,7 +138,7 @@ describe("beforeImage", () => {
         species: { "1": "seen", "25": "caught" },
         forms: { "25:alola": "caught" },
         starred: [25],
-        settings: { forms: true, mode: "moon" },
+        settings: { forms: true, mode: "moon", unlocks: [] },
       }),
       blank,
     );
@@ -168,13 +168,13 @@ describe("rebaseState", () => {
     // Since the change, #150 arrived from elsewhere and the mode was switched.
     const onto = save({
       species: { "25": "caught", "150": "caught" },
-      settings: { forms: false, mode: "sun" },
+      settings: { forms: false, mode: "sun", unlocks: [] },
     });
     expect(rebaseState(onto, from, to, POKEMON, FORMS)).toEqual(
       save({
         species: { "25": "seen", "150": "caught" },
         starred: [25],
-        settings: { forms: false, mode: "sun" },
+        settings: { forms: false, mode: "sun", unlocks: [] },
       }),
     );
     // Undoing is the same call the other way round.
@@ -222,11 +222,11 @@ describe("stateFromDocument", () => {
       [SETTING_FORMS]: entry(STAR_ON, 10),
     });
     expect(stateFromDocument(doc, POKEMON, FORMS)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { "25": "caught", "150": "seen" },
       forms: { "25:alola": "caught" },
       starred: [2, 150],
-      settings: { forms: true, mode: "ultra-sun" },
+      settings: { forms: true, mode: "ultra-sun", unlocks: [] },
     });
   });
 
@@ -240,11 +240,11 @@ describe("stateFromDocument", () => {
       [SETTING_MODE]: entry("pokemon-go", 10),
     });
     expect(stateFromDocument(doc, POKEMON, FORMS)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: {},
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "photonic-prismatic" },
+      settings: { forms: false, mode: "photonic-prismatic", unlocks: [] }
     });
   });
 

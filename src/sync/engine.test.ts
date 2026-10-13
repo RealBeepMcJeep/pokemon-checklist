@@ -282,7 +282,7 @@ describe("sync startup lifecycle", () => {
 });
 
 describe("first sign-in never loses a checklist", () => {
-  const DEVICE_SAVE = "pokemon-checklist-state-v3";
+  const DEVICE_SAVE = "pokemon-checklist-state-v4";
   const settings = {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
@@ -336,13 +336,13 @@ describe("first sign-in never loses a checklist", () => {
 });
 
 describe("an old copy on this device never overrides the account", () => {
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
   const blankSave = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     species: {},
     forms: {},
     starred: [],
-    settings: { forms: false, mode: "photonic-prismatic" },
+    settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
   };
   const serverRecords = {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
@@ -677,11 +677,11 @@ describe("the edit made last wins", () => {
   it("publishes a confirmed restore instead of refusing it as a wipe", async () => {
     await signedIn(five);
     restoreState({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { "7": "caught" },
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "photonic-prismatic" },
+      settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
     });
 
     await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
@@ -730,18 +730,18 @@ describe("the edit made last wins", () => {
 });
 
 describe("sign-in keeps the checklist on screen honest", () => {
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
   const settings = {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
   };
   const accountSave = (species: Record<string, string>) =>
     JSON.stringify({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species,
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "photonic-prismatic" },
+      settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
     });
 
   it("shows the account's own save while connecting, and sends what is tapped there", async () => {
@@ -845,7 +845,7 @@ describe("adversarial review", () => {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
   };
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
   const sentRecords = () =>
     mocks.update.mock.calls.map((call) =>
       Object.fromEntries(
@@ -960,11 +960,11 @@ describe("adversarial review", () => {
     cycleSpecies(25); // caught, offline, unsent
     // Tab B, which knows nothing of that edit, writes its view of the account save.
     const theirs = JSON.stringify({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: {},
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "photonic-prismatic" },
+      settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
     });
     storage.set(ACCOUNT_SAVE, theirs);
     syncFromStorage({ key: ACCOUNT_SAVE, newValue: theirs } as StorageEvent);
@@ -1071,7 +1071,7 @@ describe("held clears, recovery and replacements", () => {
     [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
     [speciesKey(4)]: { s: "caught", at: 100, by: "uid-a" },
   };
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v3:uid-a";
+  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
   const sentRecords = () =>
     Object.assign(
       {},
@@ -1149,11 +1149,11 @@ describe("held clears, recovery and replacements", () => {
       () => new Promise<void>((_resolve, reject) => (fail = reject)),
     );
     restoreState({
-      schemaVersion: 3,
+      schemaVersion: 4,
       species: { "7": "caught" },
       forms: {},
       starred: [],
-      settings: { forms: false, mode: "photonic-prismatic" },
+      settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
     });
     await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
 
@@ -1188,11 +1188,11 @@ describe("held clears, recovery and replacements", () => {
     localStorage.setItem(
       ACCOUNT_SAVE,
       JSON.stringify({
-        schemaVersion: 3,
+        schemaVersion: 4,
         species: { "6": "caught" },
         forms: {},
         starred: [],
-        settings: { forms: false, mode: "photonic-prismatic" },
+        settings: { forms: false, mode: "photonic-prismatic", unlocks: [] },
       }),
     );
     mocks.get.mockResolvedValue(snapshot(two));
