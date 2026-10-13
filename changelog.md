@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-12
+
+- Mobile now keeps a compact icon-and-count header pinned while scrolling, expanding its identity at the top. Settings retains mode/forms/progress, Backup/Restore/Reset, account controls and the actual version/build hash in its footer. Important sync and view-only/held-clear safeguards stay visible; desktop and saved progress are unchanged.
+
 ## 2026-10-11
 
 - Added labeled Not caught / Seen / Caught counters to location headers, overall species, active-game forms and Pokédex summaries, without double-counting seen entries or changing completion rules.
