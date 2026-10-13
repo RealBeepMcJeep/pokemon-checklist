@@ -446,10 +446,10 @@ test("attempts no network requests while signed out", async ({
 });
 
 test("gives sign-in a whole row on a small phone", async ({ page }, testInfo) => {
-  // The phone header is a three-column button grid; sign-in once got one cell of it and
-  // spilled out of its own frame at 320px.
+  // Relocated account controls retain a whole row in mobile Settings.
   await page.setViewportSize({ width: 320, height: 700 });
   const errors = await openApp(page, testInfo.project.name);
+  await page.locator("#header-settings-toggle").click();
   const actions = await page.locator(".actions").boundingBox();
   const panel = await page.locator("#sync-panel").boundingBox();
   const button = await page.locator("#sync-signin").boundingBox();

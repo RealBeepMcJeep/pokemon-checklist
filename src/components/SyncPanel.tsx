@@ -51,6 +51,14 @@ function statusText(): string {
   }
 }
 
+/** Presentation only: reuse the full status policy, never suppress a warning. */
+export function MobileSyncStatus() {
+  if (!syncAccount.value && syncPhase.value !== "connecting") return null;
+  const healthy = syncPhase.value === "ready" && syncOnline.value;
+  const status = statusText();
+  return <span class={healthy ? "mobile-sync-healthy" : "mobile-sync-warning"} aria-label={healthy ? status : undefined} role="status" aria-live="polite" data-phase={syncPhase.value}>{healthy ? "" : status}</span>;
+}
+
 function errorCode(error: unknown): string {
   return typeof error === "object" && error !== null && "code" in error
     ? String((error as { code: unknown }).code)
