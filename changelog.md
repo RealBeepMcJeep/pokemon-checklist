@@ -2,6 +2,8 @@
 
 ## 2026-10-12
 
+- Chat evolution commands now accept just the current Pokémon, infer its immediate next stage from local data, and apply the same verified atomic Seen/Caught update. Branches ask for a target, final stages refuse, and already-completed pairs are explicitly verified without writing; explicit targets and trades retain their behavior.
+
 - Mobile now keeps a compact icon-and-count header pinned while scrolling, expanding its identity at the top. Settings retains mode/forms/progress, Backup/Restore/Reset, account controls and the actual version/build hash in its footer. Important sync and view-only/held-clear safeguards stay visible; desktop and saved progress are unchanged.
 
 ## 2026-10-11

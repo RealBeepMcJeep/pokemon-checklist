@@ -12,10 +12,13 @@ Examples::
     python tools/pokemon_ops.py --uid UID status pikachu
     python tools/pokemon_ops.py --uid UID set-status pikachu caught --old-status seen
     python tools/pokemon_ops.py --uid UID mark pikachu caught
+    python tools/pokemon_ops.py --uid UID evolve totodile
     python tools/pokemon_ops.py --uid UID evolve pikachu raichu
     python tools/pokemon_ops.py --uid UID favorites --exact pikachu mewtwo
 
-No reset or delete operation is intentionally exposed here.
+Omit TO for a unique next evolution from local Gen VII data. Branches require a
+choice; terminal or unresolved paths make no account changes. Explicit FROM TO
+remains available. No reset or delete operation is intentionally exposed here.
 """
 from __future__ import annotations
 
@@ -45,6 +48,16 @@ _KEY_RE = re.compile(r"^(species|star):([1-9][0-9]*)$")
 
 class OperationError(Exception):
     """A requested operation cannot be performed safely."""
+
+
+class EvolutionChoiceRequired(OperationError):
+    """Several species can be next; caller must choose before account I/O."""
+
+    def __init__(self, source: Species, candidates: Sequence[Species]) -> None:
+        self.source = dict(source)
+        self.candidates = [dict(item) for item in candidates]
+        names = ", ".join(item["name"] for item in self.candidates)
+        super().__init__(f"{source['name']} has multiple next evolutions: {names}; specify TO")
 
 
 class SchemaError(OperationError):
@@ -420,12 +433,68 @@ def run_mark(
     return _with_operation(result, "mark", species=target, status=status)
 
 
+def infer_next_evolution(source: Species, species: Sequence[Species]) -> Species:
+    """Derive the immediate species from local Gen VII paths, without account I/O."""
+    try:
+        moves = json.loads((ROOT / "data" / "moves.json").read_text(encoding="utf-8"))
+        details = json.loads((ROOT / "data" / "pokedex-details.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SchemaError("Local evolution data could not be read; specify TO explicitly") from exc
+    lines = moves.get("lines") if isinstance(moves, dict) else None
+    rows = details.get("species") if isinstance(details, dict) else None
+    if not isinstance(lines, dict) or not isinstance(rows, list):
+        raise SchemaError("Local evolution data has an invalid shape; specify TO explicitly")
+    source_id = int(source["id"])
+    finals = lines.get(str(source_id))
+    if finals is None and isinstance(moves.get("finals"), dict) and str(source_id) in moves["finals"]:
+        raise OperationError(f"{source['name']} has no next Generation VII evolution; nothing changed")
+    if not isinstance(finals, list) or not finals:
+        raise SchemaError(f"Evolution data for {source['name']} is unavailable; specify TO explicitly")
+    by_id = {}
+    for row in rows:
+        if not isinstance(row, dict) or type(row.get("id")) is not int or row["id"] in by_id:
+            raise SchemaError("Local evolution species index is malformed; specify TO explicitly")
+        by_id[row["id"]] = row
+    aliases = {normalize(str(source["name"])), normalize(str(source["slug"]))}
+    targets: dict[int, Species] = {}
+    for final_id in finals:
+        if type(final_id) is not int or final_id not in by_id:
+            raise SchemaError("Local evolution endpoints are malformed; specify TO explicitly")
+        if final_id == source_id:
+            continue
+        path = by_id[final_id].get("evolution")
+        if not isinstance(path, list) or len(path) < 2 or any(
+            not isinstance(step, dict) or not isinstance(step.get("name"), str) or not step["name"]
+            for step in path
+        ):
+            raise SchemaError(f"Evolution path for {source['name']} is unavailable; specify TO explicitly")
+        try:
+            if int(resolve_species(path[-1]["name"], species)["id"]) != final_id:
+                raise SchemaError("Evolution endpoint does not match its species record")
+            positions = [i for i, step in enumerate(path) if normalize(step["name"]) in aliases
+                         and int(resolve_species(step["name"], species)["id"]) == source_id]
+            if len(positions) != 1 or positions[0] >= len(path) - 1:
+                raise SchemaError("Source is missing or repeated in its evolution path")
+            target = resolve_species(path[positions[0] + 1]["name"], species)
+        except OperationError as exc:
+            raise SchemaError(f"Evolution path for {source['name']} cannot be resolved safely; specify TO explicitly") from exc
+        target_id = int(target["id"])
+        if target_id == source_id:
+            raise SchemaError("Evolution path loops back to its source")
+        targets[target_id] = target
+    if not targets:
+        raise OperationError(f"{source['name']} has no next Generation VII evolution; nothing changed")
+    if len(targets) > 1:
+        raise EvolutionChoiceRequired(source, [targets[key] for key in sorted(targets)])
+    return next(iter(targets.values()))
+
+
 def run_pair(
     client: Any,
     uid: str,
     operation: str,
     from_name: str,
-    to_name: str,
+    to_name: str | None = None,
     species: Sequence[Species] | None = None,
     *,
     dry_run: bool = False,
@@ -436,7 +505,9 @@ def run_pair(
         raise OperationError("pair operation must be evolve or trade")
     catalogue = list(species) if species is not None else load_species()
     source = resolve_species(from_name, catalogue)
-    target = resolve_species(to_name, catalogue)
+    if to_name is None and operation != "evolve":
+        raise OperationError("Trade requires both FROM and TO")
+    target = infer_next_evolution(source, catalogue) if to_name is None else resolve_species(to_name, catalogue)
     if int(source["id"]) == int(target["id"]):
         raise OperationError("FROM and TO must resolve to different species")
     current = _read_checked(client, uid, catalogue)
@@ -449,6 +520,11 @@ def run_pair(
         note=note or f"chat {operation} {source['name']} to {target['name']}",
         return_readback=return_readback,
     )
+    if not result["changed"] and not dry_run:
+        observed = result.get("verified_statuses", result.get("current_statuses"))
+        if observed != desired:
+            raise VerificationError("Unchanged pair did not match its requested statuses")
+        result.update(verified_no_write=True, verified_statuses=dict(observed))
     return _with_operation(result, operation, from_species=source, to_species=target)
 
 
@@ -610,6 +686,20 @@ class PokemonStatusTool:
             note=note,
         )
 
+    def evolve_pokemon_status(
+        self,
+        name: str,
+        to_name: str | None = None,
+        *,
+        dry_run: bool = False,
+        note: str = "",
+    ) -> dict[str, Any]:
+        """Evolve one stage automatically, or preserve an explicit target."""
+        return run_pair(
+            self.client, self.uid, "evolve", name, to_name, self.species,
+            dry_run=dry_run, note=note,
+        )
+
     def trade_pokemon_status(
         self,
         name1: str,
@@ -681,10 +771,11 @@ def build_parser() -> argparse.ArgumentParser:
     mark_parser.add_argument("status", choices=tuple(sorted(STATUS_VALUES)))
 
     for operation in ("evolve", "trade"):
-        pair_parser = commands.add_parser(operation, help=f"mark FROM seen and TO caught atomically")
+        pair_parser = commands.add_parser(operation, help=("infer one next evolution, or specify TO; atomic Seen/Caught update" if operation == "evolve" else "mark FROM seen and TO caught atomically"))
         _add_common_flags(pair_parser, suppress_defaults=True)
         pair_parser.add_argument("from_name", metavar="FROM")
-        pair_parser.add_argument("to_name", metavar="TO")
+        pair_parser.add_argument("to_name", metavar="TO", nargs="?" if operation == "evolve" else None,
+                                 help="omit for a unique next evolution" if operation == "evolve" else "received species")
 
     favorites_parser = commands.add_parser("favorites", help="reconcile favorites")
     _add_common_flags(favorites_parser, suppress_defaults=True)
@@ -753,7 +844,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise OperationError(f"unknown command {args.command}")
     except OperationError as exc:
         if args.json:
-            print(json.dumps({"error": str(exc)}, ensure_ascii=False))
+            error: dict[str, Any] = {"error": str(exc)}
+            if isinstance(exc, EvolutionChoiceRequired):
+                error.update(code="evolution_choice_required", source=exc.source, candidates=exc.candidates)
+            print(json.dumps(error, ensure_ascii=False))
         else:
             print(f"error: {exc}", file=sys.stderr)
         return 1
