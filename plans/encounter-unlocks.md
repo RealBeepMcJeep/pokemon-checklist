@@ -41,6 +41,25 @@ all unrelated live permissions. Exact guard/full-overlay readback and unauthenti
 401 read/write checks were verified. Reconciling the older rule layout is separate work;
 do not replace it blindly with the repository file during this release.
 
+## Standalone persistence test initialization
+The first release's CI retried one standalone reload case. Early instrumentation
+found file-origin storage missing before app initialization, including an unrelated
+sentinel. With early init-script access, a large blank HTML control reproduced
+(5/100 reloads), as did the pre-unlock release (2/70) and current release (1/70).
+Merely changing to a normal profile did not eliminate failures in repeated UI tests.
+
+Removing early file-storage access isolated the trigger: private-context large blank
+HTML and current app controls each retained their saves for 100 reloads. Normal-profile
+controls also passed 100 reloads each plus browser/profile restart. Live HTTPS with
+the original early hook passed 40 reloads. The observed failure is browser/test
+initialization interaction, not evidence of a new unlock-code regression.
+
+The test now seeds legacy v3 once after initial page/origin load, then reloads to
+exercise migration. No init hook accesses or re-seeds storage on later reloads. Both
+projects retain their original browser contexts and all original progress/eligibility
+assertions; three consecutive reloads check saved flags, species and the real checkbox.
+No production-code workaround or app-artifact rebuild is needed.
+
 ## Publication
 Run the full Node-22/Python/browser gates; disclose failed/retried runs. Deploy/read back
 the narrow security-rule guard before the app; push primary Gitea only, verify exact
