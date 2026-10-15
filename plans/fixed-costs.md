@@ -1,7 +1,7 @@
 # Fixed-cost five-team pipeline — milestone #11
 
-Status: re-profiled accepted db7e097; pure-name memo and shared chaos RETAINED onbranch.
-NOT shipped; shared MoveSources retained after real14; scoped font reuse under test.
+Status: all4 candidates RETAINED/measured onfcf5dfb; combined14/full315/browser214 PASS.
+NOT yet shipped: exact publication/installed-wrapper/current-main delivery/issue closeout pending.
 Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/config changes.
 
 ## Scope and stage gates
@@ -102,10 +102,16 @@ Separate observed5-card real font-load witness1084→65; UNINSTRUMENTED3fresh-pr
 samples/side with alternating order: median wall3.164→2.719s (14.0%less), CPU3.139→2.718s
 (13.4%less). These are component figures, NOT full-pipeline savings. Same actual enriched
 report/atlas/Pillow/optimize=True/fixedstamp; no compression change. Peak renderer RSS39,520–39,556KiB before vs40,532–40,600KiB after: modest resource-retention tradeoff, NOT a memory improvement claim.
-Full project/actual14 incremental before2123→font whole-workflow timing still pending. Reference
-worktree advanced clean to2123e74 with identical lockfile/deps. No source/docs edits or competing
-heavy work during timing. Final combined db7e097→all-retained comparison and publication gates
-still required; measure, do not add stage percentages.
+Font incremental14 actual workflows passed with exact full reports/inputs and source1 onboth/
+real1084→65fontloads: cold36.930→37.164s (+0.6%wall/+0.5%CPU, retained43.01s sample, NOT gain),
+warm8.797→8.418s (4.3%lesswall/3.6%lessCPU). Retain for clear render/warm savings, no native/cold
+gain claim. Final combined14 accepteddb7→fcf5 default1 workflows:39.716→36.061s cold
+(9.2%lesswall/9.0%lessCPU),11.489→8.583warm (25.3%lesswall/26.7%lessCPU); every raw/enriched/
+prepared/options/live-source set equal, nativeB50 unchanged. Final committed203Vitest/315Python
+ZEROskip/13Node/214browser noflake PASS. These are direct combined results, not summed stage
+percentages. See docs/fixed-costs.md. Reference2123 clean/deps unchanged. Parent solo scope/
+security/pixel review PASS(not independent); exactmain release+CI/Pages/live, installed private
+wrapper wiring/actual execution, five-media/ZIP/fresh fullreadback/delivery and closure pending.
 
 ## Correctness boundaries
 

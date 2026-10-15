@@ -223,7 +223,7 @@ Compatible Mixed and Non-OG objectives now share one native enumeration while re
 separate winners and unchanged report counters. A three-trial complete-workflow comparison
 measured cold medians 42.15→35.11 seconds; warm reuse still skips native work but not fresh
 account reads. See [shared-enumeration evidence](docs/fused-enumeration.md) for the exact
-compatibility gates, fallback, ranges and limits. Parallelism is a separate pending milestone.
+compatibility gates, fallback, ranges and limits. Parallelism is a separate explicit opt-in below.
 
 Story-team tooling now offers bounded **opt-in** native parallelism: set
 `STORY_NATIVE_THREADS=2` or `STORY_NATIVE_THREADS=4` for that process. The default remains
@@ -232,6 +232,14 @@ complete-gallery comparison measured 40.89→21.40 seconds cold with explicit fo
 at 16.1% more total CPU—not a default speedup or an energy-efficiency claim. Scores, ties,
 ownership, cache results and fresh reads are unchanged. See
 [parallel-search tradeoffs and proof](docs/parallel-search.md).
+
+Fixed preparation/enrichment/rendering now reuses pure name folds, one tier-local chaos parse,
+an explicitly shared preflight move-source object, and fonts scoped to each freshly rendered
+card. A combined three-trial-per-mode complete-gallery comparison against the preceding serial
+release measured **39.72→36.06 seconds cold** and **11.49→8.58 seconds warm** with the SAME
+native binary/default one lane, exact reports and fresh account reads. No old stamped PNGs or
+weakened source checks. See [fixed-cost evidence and integration](docs/fixed-costs.md) for
+ranges, CPU/resource tradeoffs, the mixed incremental cold-font result and source-reuse API.
 
 ## Develop
 
