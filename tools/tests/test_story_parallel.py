@@ -114,5 +114,27 @@ class ParallelSearchTests(unittest.TestCase):
                 self.assertEqual(json.loads(run.stderr)['prefix_tasks'], 0)
 
 
+    def test_validated_cached_options_reuse_across_thread_settings(self):
+        import tempfile
+        import test_story_native as fixtures
+        import story_cache
+        import story_native
+        import team_options as opt
+        from unittest.mock import patch
+        fixture = fixtures.StoryNativeTests()
+        fixture.native()
+        pool = [fixture.member(i) for i in range(8)]
+        utility = fixture.member(18, 'Bug')
+        with tempfile.TemporaryDirectory() as directory:
+            args = dict(pokedex_profiles=[], selector=opt.choose_options, cache_dir=directory)
+            with patch.dict(os.environ, {'STORY_NATIVE_THREADS': '1'}):
+                first = story_cache.choose_cached(pool, utility, {}, **args)
+            with patch.dict(os.environ, {'STORY_NATIVE_THREADS': '4'}):
+                with patch.object(story_native.subprocess, 'run', side_effect=AssertionError('warm native execution')) as calls:
+                    reused = story_cache.choose_cached(pool, utility, {}, **args)
+            calls.assert_not_called()
+            self.assertEqual(first, reused)
+
+
 if __name__ == '__main__':
     unittest.main()

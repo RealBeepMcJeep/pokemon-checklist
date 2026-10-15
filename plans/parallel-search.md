@@ -1,6 +1,13 @@
 # Deterministic bounded parallel fused search — milestone #10
 
-Status: worker witness RED→GREEN; std-only prefix workers/ordered reduction implemented locally;400 repeat schedules across1/2/3/4/8 plus default/legacy/no-task/invalid-setting/fallback tests pass; full opt-in story-focused suite passes. Frozen/predecessor bytes and measured opt-in/default cost remain pending; no release/speed claim. Based on accepted952cfc2.
+Status: worker witness RED→GREEN;400 repeated schedules and68 opt-in focused tests pass;
+6 parallel-specific tests now also prove cross-thread cached-option reuse. Retained oracle
+passed3000 protocol1 byte cases and complete frozen pair/reports under1/2/3/4/8. Native A/B
+(3 fresh processes/config, alternating) measured old28.50s vsnew1=28.78s,new2=15.68s,new4=9.03s;
+new1+1.0%wall/+1.1%CPU with overlapping ranges (not a meaningful regression demonstrated),
+new2=1.82xwall/+9.7%CPU, new4=3.15xwall/+24%CPU. Three shared-host samples, no guarantees;
+RSS is reported child-process high-water including spawn transients, not summed worker RSS.
+Default stays1, opt-in explicit; full real workflow and release gates remain pending.
 Mode: owner-authorized personal solo/direct; no agents/PRs/app/player-state/host changes.
 
 ## Scope and controls
