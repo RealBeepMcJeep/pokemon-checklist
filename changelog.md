@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-15
+- Five-team refreshes reuse fixed preparation, preflight sources and per-card fonts, reducing measured cold/warm workflow time without changing teams, source checks, fresh timestamps or image compression.
 - Added explicit opt-in bounded parallel story-team search; default stays serial and all selected teams/scores remain unchanged.
 - Compatible Mixed and Non-OG team options now share one exact native search, avoiding duplicate scoring while preserving both results and fallback behavior.
 - Team ranking now builds sorted name tie-break keys only for viable numeric contenders, reducing measured refresh cost while preserving all teams, scores, ties and counters.

@@ -14,8 +14,13 @@ import json
 import subprocess
 import sys
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from story_moves import MoveSources
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -104,8 +109,14 @@ def blurb(option: dict) -> str:
             f"{option.get('level_evolving', 0)}/5 by level")
 
 
-def add_move_targets(report: dict, cache: Path | None) -> dict:
-    """Enrich a read-only snapshot once; later offline renders reuse the frozen gates."""
+def add_move_targets(report: dict, cache: Path | None, *,
+                     move_sources: MoveSources | None = None) -> dict:
+    """Enrich a snapshot, optionally using this run's preflight-checked sources.
+
+    A shared instance must belong to the requested cache. It is never installed
+    globally; targets (including run-local GOALS) are resolved again. Existing
+    enriched snapshots still support explicitly offline redraw without admission.
+    """
     enriched = copy.deepcopy(report)
     if (len(enriched.get("utility_moves", [])) == 4 and
             all(len(m.get("moves", [])) == 4 for o in enriched["options"]
@@ -113,8 +124,12 @@ def add_move_targets(report: dict, cache: Path | None) -> dict:
         return enriched
     if cache is None:
         raise ValueError("an unenriched report needs --cache for verified move sources")
-    import story_moves
-    source = story_moves.MoveSources(cache)
+    if move_sources is None:
+        import story_moves
+        move_sources = story_moves.MoveSources(cache)
+    elif move_sources.cache_dir != Path(cache).resolve():
+        raise ValueError("preflight MoveSources does not match --cache")
+    source = move_sources
     enriched["utility_moves"] = source.targets(enriched["utility"], enriched["utility"])
     for option in enriched["options"]:
         for member in option.get("members", []):
@@ -138,18 +153,20 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
             *sorted(members, key=lambda m: (m["final"] != option["anchor"], m["final"]))]
     canvas = Image.new("RGB", SIZE, BG)
     d = ImageDraw.Draw(canvas)
+    # Resource reuse ends with THIS card: no global/path cache or old stamped PNG.
+    face = lru_cache(maxsize=32)(font)
     accent = {"OG": "#d6b969", "Non-OG": "#7dcbd5", "Mixed": "#c19ce8",
               "Pokedex": "#80d398", "Best": "#f18759"}.get(option["category"], "#c19ce8")
     d.rounded_rectangle((26, 25, 1234, 2108), radius=34, fill=PANEL, outline=LINE, width=2)
     d.rounded_rectangle((48, 44, 346, 82), radius=18, fill=accent)
-    d.text((65, 49), f"{option['category'].upper()}  /  {number:02d} OF 05", fill=BG, font=font(20, True))
-    d.text((52, 103), fit(d, card_title(option), font(45, True), 1135, strict=True),
-           fill=WHITE, font=font(45, True))
-    d.text((54, 170), fit(d, blurb(option), font(22), 1140, strict=True), fill=DIM, font=font(22))
+    d.text((65, 49), f"{option['category'].upper()}  /  {number:02d} OF 05", fill=BG, font=face(20, True))
+    d.text((52, 103), fit(d, card_title(option), face(45, True), 1135, strict=True),
+           fill=WHITE, font=face(45, True))
+    d.text((54, 170), fit(d, blurb(option), face(22), 1140, strict=True), fill=DIM, font=face(22))
     d.line((50, 215, 1210, 215), fill=LINE, width=2)
-    d.text((58, 233), "OWNED → ENDGAME  /  FOUR MOVE TARGETS + HOW TO GET THEM", font=font(18, True), fill=DIM)
-    d.text((917, 233), "TYPE", font=font(18, True), fill=DIM)
-    d.text((1128, 233), "DEX", font=font(18, True), fill=DIM)
+    d.text((58, 233), "OWNED → ENDGAME  /  FOUR MOVE TARGETS + HOW TO GET THEM", font=face(18, True), fill=DIM)
+    d.text((917, 233), "TYPE", font=face(18, True), fill=DIM)
+    d.text((1128, 233), "DEX", font=face(18, True), fill=DIM)
     for idx, m in enumerate(rows):
         y = ROW_TOP + idx * ROW_STEP
         catcher = idx == 0
@@ -160,7 +177,7 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
                             fill="#213452" if anchor else "#1b2a43", outline=color if anchor else LINE,
                             width=2 if anchor else 1)
         d.rounded_rectangle((64, y + 9, 177, y + 34), radius=10, fill=color)
-        d.text((74, y + 9), role, font=font(14, True), fill=BG)
+        d.text((74, y + 9), role, font=face(14, True), fill=BG)
         owned_icon = sprite(atlas, int(m["owned_dex"]), 3)
         canvas.paste(owned_icon, (65, y + 39), owned_icon)
         if m["owned_dex"] != m["dex"]:
@@ -168,50 +185,50 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
             canvas.paste(final_icon, (190, y + 39), final_icon)
         x = 326
         label = m["owned"] if m["owned"] == m["final"] else f"{m['owned']} → {m['final']}"
-        d.text((x, y + 18), fit(d, label, font(29, True), 570, strict=True),
-               font=font(29, True), fill=WHITE)
+        d.text((x, y + 18), fit(d, label, face(29, True), 570, strict=True),
+               font=face(29, True), fill=WHITE)
         evolution = m["evolution"] if not catcher else "Sleep utility · cannot use False Swipe"
-        for line_index, line in enumerate(wrapped_lines(d, evolution, font(19), 570)):
-            d.text((x, y + 57 + line_index * 22), line, font=font(19), fill=DIM)
+        for line_index, line in enumerate(wrapped_lines(d, evolution, face(19), 570)):
+            d.text((x, y + 57 + line_index * 22), line, font=face(19), fill=DIM)
         badges = m.get("tier", "")
         if m.get("favorite") and not catcher:
             badges += "  ·  FAVORITE"
         if m.get("hidden_ability_caveat") and not catcher:
             share = m.get("hidden_ability_usage_share")
             badges += (f"  ·  H USAGE {share:.0%}" if share is not None else "  ·  H NOT ASSUMED")
-        d.text((x, y + 105), fit(d, badges, font(18, True), 570, strict=True),
-               font=font(18, True), fill=color)
+        d.text((x, y + 105), fit(d, badges, face(18, True), 570, strict=True),
+               font=face(18, True), fill=color)
         for t_index, typ in enumerate(m["types"]):
             ty = y + 28 + t_index * 47
             shade = PALETTE.get(typ, DIM)
             d.rounded_rectangle((912, ty, 1103, ty + 35), radius=10, fill=shade)
-            d.text((927, ty + 3), typ.upper(), fill=BG, font=font(18, True))
-        d.text((1126, y + 47), f"#{int(m['dex']):03d}", font=font(21, True), fill=WHITE)
+            d.text((927, ty + 3), typ.upper(), fill=BG, font=face(18, True))
+        d.text((1126, y + 47), f"#{int(m['dex']):03d}", font=face(21, True), fill=WHITE)
         d.line((76, y + 137, 1185, y + 137), fill=LINE, width=1)
         for move_index, move in enumerate(m["moves"]):
             col, subrow = move_index % 2, move_index // 2
             mx, my = 76 + 573 * col, y + 148 + 52 * subrow
             typ = str(move["type"])
-            d.text((mx, my), fit(d, str(move["name"]), font(24, True), 345, strict=True),
-                   fill=WHITE, font=font(24, True))
+            d.text((mx, my), fit(d, str(move["name"]), face(24, True), 345, strict=True),
+                   fill=WHITE, font=face(24, True))
             d.rounded_rectangle((mx + 381, my - 2, mx + 511, my + 30), radius=8,
                                 fill=PALETTE.get(typ, DIM))
-            d.text((mx + 389, my + 2), fit(d, typ.upper(), font(16, True), 114, strict=True),
-                   font=font(16, True), fill=BG)
-            d.text((mx, my + 31), fit(d, str(move["gate"]), font(18), 515, strict=True),
-                   font=font(18), fill=DIM)
+            d.text((mx + 389, my + 2), fit(d, typ.upper(), face(16, True), 114, strict=True),
+                   font=face(16, True), fill=BG)
+            d.text((mx, my + 31), fit(d, str(move["gate"]), face(18), 515, strict=True),
+                   font=face(18), fill=DIM)
     y = 1934
     d.line((54, y, 1206, y), fill=LINE, width=2)
-    d.text((56, y + 12), f"ANCHOR  {option['anchor'].upper()}     •     {option['evolving']}/5 CAN ADD ENTRIES     •     {option['level_evolving']}/5 BY LEVEL", font=font(20, True), fill=accent)
-    d.text((56, y + 51), f"TYPE SYNERGY {option['core_synergy']:.2f} / WITH BUTTERFREE {option['six_synergy']:.2f}     ·     {report['caught_records']} CAUGHT", font=font(19, True), fill=WHITE)
-    d.text((56, y + 86), "MOVES: Prismatic Standard + Gen VII · LATER / ENDGAME = progression gate.", font=font(18), fill=DIM)
-    d.text((56, y + 111), "Scores use type potential, not these moves. Items and abilities unrecorded.", font=font(18), fill=DIM)
-    d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=font(17), fill=DIM)
+    d.text((56, y + 12), f"ANCHOR  {option['anchor'].upper()}     •     {option['evolving']}/5 CAN ADD ENTRIES     •     {option['level_evolving']}/5 BY LEVEL", font=face(20, True), fill=accent)
+    d.text((56, y + 51), f"TYPE SYNERGY {option['core_synergy']:.2f} / WITH BUTTERFREE {option['six_synergy']:.2f}     ·     {report['caught_records']} CAUGHT", font=face(19, True), fill=WHITE)
+    d.text((56, y + 86), "MOVES: Prismatic Standard + Gen VII · LATER / ENDGAME = progression gate.", font=face(18), fill=DIM)
+    d.text((56, y + 111), "Scores use type potential, not these moves. Items and abilities unrecorded.", font=face(18), fill=DIM)
+    d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=face(17), fill=DIM)
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output, optimize=True)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, move_sources: MoveSources | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uid", help="Firebase account UID (read-only live roster)")
     parser.add_argument("--cache", help="verified Gen VII Showdown cache")
@@ -233,7 +250,10 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads(result.stdout)
     if len(report.get("options", [])) != 5:
         raise ValueError("the selector did not return five options")
-    report = add_move_targets(report, Path(args.cache) if args.cache else None)
+    cache = Path(args.cache) if args.cache else None
+    # Preserve the standalone call shape for existing callers/hand-rolled fakes.
+    report = (add_move_targets(report, cache) if move_sources is None else
+              add_move_targets(report, cache, move_sources=move_sources))
     atlas = Image.open(ATLAS).convert("RGBA")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(ZoneInfo("America/Phoenix")).strftime("%b %-d, %Y · %-I:%M %p")

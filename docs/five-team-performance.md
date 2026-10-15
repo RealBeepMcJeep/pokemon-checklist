@@ -1,5 +1,13 @@
 # Five-team parser/index performance — milestone #6
 
+
+Current pipeline note: this document records the **source-index milestone#6**, not the final
+sum of all optimization work. Subsequent accepted milestones preserve its outputs. The current
+fixed-cost/combined serial comparison against precedingdb7e097 is39.72→36.06s cold and
+11.49→8.58s warm, with exact full reports and fresh reads; see [milestone#11](fixed-costs.md).
+[Parallel workers](parallel-search.md) are separately opt-in, not the default. Do not add
+percentages across batches/commits to infer an overall speedup.
+
 ## Scope and invariants
 
 This milestone indexes immutable Showdown source text once per content value, retaining at most eight source indexes per process. It preserves the old first normalized-key match, duplicate/punctuation behavior, empty/missing/malformed results and content-change invalidation. It does not cache paths or integrity verdicts: existing manifest/file verification, live account reads, selection-cache identity and failure behavior remain in place.

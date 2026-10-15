@@ -1,6 +1,6 @@
 # Five-team pipeline performance — issue #4
 
-Status: bounded source index implemented and full local gates passed; milestone #6 repeated measurements, corpus/random parity and full local gates passed; publication/current-main verification completed at 25ec081 with exact CI/Pages/live and five-card/ZIP delivery; #6 closed with acceptance comment 21434. Milestone #7 is now active in plans/primary-subtree-bounds.md. See docs/five-team-performance.md for repeated medians/ranges and CPU/RSS. Parent #4 remains open for #6–#11.
+Status: #6–#10 verified shipped/closed at25ec081/c2c3779/9bcc2ad/952cfc2/db7e097. #11 implemented/measured onfcf5dfb with full local gates and exact prepared/raw/enriched/source/pixel parity; release/install/delivery acceptance remains. Combined #11 default-serial workflow39.72→36.06s cold/11.49→8.58s warm, NOT summed stage percentages. See docs/fixed-costs.md for current measurements and all limitations. Parent#4 stays open until#11 and combined acceptance, then#5/#1.
 
 ## Approved contract
 
@@ -40,12 +40,37 @@ it is this gallery's hot path. Existing Rust execution is baseline functionality
 
 ## Milestone #8 — retained lazy names
 
-The existing Rust kernel now avoids sorted-name construction for numeric losers, not any scoring. Enum and permitted masks were tested and rejected for sub-noise/negative CPU benefit; a 257-pool mask initialization panic was reproduced before any main integration and removed with that experiment. Retained source is byte-identical to the verified e143196 lazy checkpoint. 3,000 ordinary-output cases and full frozen options match; 14 real complete workflow trials match raw/enriched/source sets. Observed cold median44.45→41.97s (5.6% wall,5.5% CPU); ranges do not overlap in this three-trial shared-host batch, not a guarantee. One final account-token readback failure was retained/excluded and its entire cold trial rerun successfully; warm variation is not credited. Full203 Vitest/283 Python/13 Node/214 browser pass. See [the complete experiment report](../docs/native-fast-path.md) for methodology, rejected trials, CPU/RSS/identity and the remaining exact-publication acceptance. #9 fused enumeration and #10 parallelism have not started.
+The existing Rust kernel now avoids sorted-name construction for numeric losers, not any scoring. Enum and permitted masks were tested and rejected for sub-noise/negative CPU benefit; a 257-pool mask initialization panic was reproduced before any main integration and removed with that experiment. Retained source is byte-identical to the verified e143196 lazy checkpoint. 3,000 ordinary-output cases and full frozen options match; 14 real complete workflow trials match raw/enriched/source sets. Observed cold median44.45→41.97s (5.6% wall,5.5% CPU); ranges do not overlap in this three-trial shared-host batch, not a guarantee. One final account-token readback failure was retained/excluded and its entire cold trial rerun successfully; warm variation is not credited. Full203 Vitest/283 Python/13 Node/214 browser pass. See [the complete experiment report](../docs/native-fast-path.md) for methodology, rejected trials, CPU/RSS/identity and its publication acceptance. #8 was verified released on9bcc2ad/closed; #9/#10 subsequently shipped as recorded below.
 
 ## Milestone #9 — conditional shared enumeration
 
-Mixed and Non-OG now share one traversal only under exact flag/feature/subset compatibility, with separate incumbents/counters and original-path fallbacks. Protocol1 stays byte-identical; protocol2 is additive. Frozen3000 ordinary-byte cases and complete prepared reports match; actual native calls5→4 and54,639,948 Non-OG leaves reuse scores. Fourteen successful real workflow trials measured cold medians42.15→35.11s (16.7% wall); warm variation not credited. Native pair CPU32.03→25.17s (21.4%); do not add this to end-to-end savings. A subsequent unsupported-shape guard was observed RED→GREEN before release; final gates/current-main verification still required. See [the complete report](../docs/fused-enumeration.md). Parallelism#10 has not started.
+Mixed and Non-OG now share one traversal only under exact flag/feature/subset compatibility, with separate incumbents/counters and original-path fallbacks. Protocol1 stays byte-identical; protocol2 is additive. Frozen3000 ordinary-byte cases and complete prepared reports match; actual native calls5→4 and54,639,948 Non-OG leaves reuse scores. Fourteen successful real workflow trials measured cold medians42.15→35.11s (16.7% wall); warm variation not credited. Native pair CPU32.03→25.17s (21.4%); do not add this to end-to-end savings. A subsequent unsupported-shape guard was observed RED→GREEN before release; hardened release952cfc2 passed exact final gates/current-main/CI/Pages/live/media/readback and#9 closed. See [the complete report](../docs/fused-enumeration.md). Parallelism#10 subsequently shipped below.
 
 ## Milestone #10 — optional deterministic workers
 
-Only fused protocol2 may opt into bounded standard-library workers. Default1 spawns0 workers; strict lexicographic prefix-result reduction preserves first-encountered ties/counters. Retained3000-byte/frozen checks across1/2/3/4/8 plus400 repeated schedules and cross-thread cache reuse pass. Native4-thread opt-in measured3.15x elapsed reduction at24%more CPU; whole actual14-run comparison40.89→21.40s (47.6% less wall,16.1% MORE total CPU), not a default change. Warm variation not credited. Report default1+1% median with overlapping ranges and explicit shared-host limits; no zero-cost guarantee. See [detailed evidence](../docs/parallel-search.md). Full project/browser and exact release/default+opt-in committed-media acceptance remain required. #11 fixed-cost work is next, not yet started.
+Only fused protocol2 may opt into bounded standard-library workers. Default1 spawns0 workers; strict lexicographic prefix-result reduction preserves first-encountered ties/counters. Retained3000-byte/frozen checks across1/2/3/4/8 plus400 repeated schedules and cross-thread cache reuse pass. Native4-thread opt-in measured3.15x elapsed reduction at24%more CPU; whole actual14-run comparison40.89→21.40s (47.6% less wall,16.1% MORE total CPU), not a default change. Warm variation not credited. Report default1+1% median with overlapping ranges and explicit shared-host limits; no zero-cost guarantee. See [detailed evidence](../docs/parallel-search.md). Full project/browser and exactdb7e097 release/default0worker+opt-in4worker media/CI/Pages/live/readback acceptance passed; #10 closed. #11 fixed costs implemented/measured below, release acceptance still pending.
+
+## Milestone #11 — fixed preparation/enrichment/rendering
+
+Pure name content memo is bounded by4096entries/256chars and converts str(value) every use.
+Share one invocation-local tier JSON between Moves/Abilities, preserve legacy None-tier union/
+fallback rules; inject a matching-cache preflight MoveSources into enrichment; re-resolve GOALS,
+preserve default loader per-use integrity and next-constructor rejection. Font reuse is bounded
+inside EACH card, not a global factory or old stamped PNG. No new source snapshot subsystem,
+native/runtime language rewrite, changed compression or app/save/ownership changes.
+
+Each candidate has its own predecessor comparison. Final combined14 actual default1/unset
+workflows compare accepteddb7e097 withfcf5dfb:39.72→36.06s cold (9.2%wall/9.0%CPU),
+11.49→8.58s warm (25.3%wall/26.7%CPU), all prepared/options/raw/enriched/full live inputs
+identical, cold4native invocations vswarm0/freshread1. SameB50 executable, no default parallelism
+credited. Font incremental cold median worsened0.6%wall/0.5%CPU with a retained43.01s outlier;
+warm improved4.3%wall/3.6%CPU and isolated renderer14.0%wall/13.4%CPU, so do NOT claim a font
+cold gain. Whole child gain is measured, not compounded. Three samples/shared host, no guarantee.
+
+Actual constructors2→1 and font loads1084→65 witnessed in every combined run. Structural RED/
+GREEN,10815 normalizer and1215 chaos cases, source/GOALS/error/alias/cache tests, all5 fixedstamp
+RGB pixel comparisons pass; real cards retain fresh stamps. Full committed203Vitest/315Python
+ZERO skips/13Node/214browser noflake pass. Parent solo/security review is NOT independent.
+See [full mechanism/methodology/ranges/tradeoffs](../docs/fixed-costs.md). Final exact release,
+installed private-wrapper integration/execution, full source readback/media delivery and#11/#4
+issue closure remain required; a feature branch is NOT installed behavior.

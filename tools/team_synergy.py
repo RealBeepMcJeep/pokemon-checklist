@@ -14,6 +14,7 @@ import json
 import math
 import re
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -111,11 +112,12 @@ def load_movesets(cache: Path, tier: str | None = None) -> dict[str, dict[str, f
     else:
         path, _ = _chaos_path(cache, tier)
         paths = [path] if path else []
+    return _moves_from_blobs(json.loads(path.read_text()) for path in paths if path is not None)
+
+
+def _moves_from_blobs(blobs: Iterable[dict]) -> dict[str, dict[str, float]]:
     out: dict[str, dict[str, float]] = {}
-    for path in paths:
-        if path is None:
-            continue
-        blob = json.loads(path.read_text())
+    for blob in blobs:
         for name, entry in (blob.get("data") or {}).items():
             key = tb.normalize(name)
             moves = out.setdefault(key, {})
@@ -131,7 +133,10 @@ def load_ability_usage(cache: Path, tier: str | None = None) -> dict[str, dict[s
     path, _ = _chaos_path(cache, tier)
     if path is None:
         return {}
-    blob = json.loads(path.read_text())
+    return _abilities_from_blob(json.loads(path.read_text()))
+
+
+def _abilities_from_blob(blob: dict) -> dict[str, dict[str, float]]:
     return {
         tb.normalize(name): {
             tb.normalize(ability): float(weight)
@@ -140,6 +145,29 @@ def load_ability_usage(cache: Path, tier: str | None = None) -> dict[str, dict[s
         for name, entry in (blob.get("data") or {}).items()
         if entry.get("Abilities")
     }
+
+
+def load_competitive_usage(cache: Path, tier: str | None = None) -> tuple[dict, dict]:
+    """One invocation-local admission for Moves/Abilities; no file-validity cache.
+
+    Retain the standalone None-tier contract: merge Moves from all snapshots,
+    but take Abilities only from the selected OU/fallback file. Stream blobs so
+    even that legacy union does not retain every tier's large JSON object.
+    """
+    selected, _ = _chaos_path(cache, tier)
+    paths = sorted(cache.glob("chaos-*.json")) if tier is None else ([selected] if selected else [])
+    abilities = {}
+
+    def blobs():
+        nonlocal abilities
+        for path in paths:
+            blob = json.loads(path.read_text())
+            if path == selected:
+                abilities = _abilities_from_blob(blob)
+            yield blob
+
+    moves = _moves_from_blobs(blobs())
+    return moves, abilities
 
 
 def move_info(cache: Path) -> dict:
@@ -419,13 +447,14 @@ def main() -> int:
         provenance = moveset_provenance(Path(args.cache), line.get("tier"))
         cache_key = provenance.get("path", "")
         if cache_key not in moveset_cache:
-            moveset_cache[cache_key] = load_movesets(Path(args.cache), line.get("tier")) if cache_key else {}
+            if args.story_options and cache_key:
+                moveset_cache[cache_key], ability_cache[cache_key] = load_competitive_usage(
+                    Path(args.cache), line.get("tier"))
+            else:
+                moveset_cache[cache_key] = load_movesets(Path(args.cache), line.get("tier")) if cache_key else {}
         member = profile(line, chart, moveset_cache[cache_key], mtype, provenance)
         if args.story_options:
-            if cache_key not in ability_cache:
-                ability_cache[cache_key] = (load_ability_usage(Path(args.cache), line.get("tier"))
-                                            if cache_key else {})
-            member["competitive_ability_usage"] = ability_cache[cache_key].get(
+            member["competitive_ability_usage"] = ability_cache.get(cache_key, {}).get(
                 tb.normalize(line["final"]), {})
         profiles.append(member)
     if args.story_options:

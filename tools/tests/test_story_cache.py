@@ -322,6 +322,50 @@ class StoryCacheCLITests(unittest.TestCase):
             code = ts.main()
         return code, stdout.getvalue(), stderr.getvalue()
 
+    def test_story_preparation_parses_each_shared_moves_abilities_blob_once(self):
+        path = self.directory / "chaos-gen7ou-1695.json"
+        path.write_text(json.dumps({"data": {"Butterfree": {
+            "Moves": {"Air Slash": 75}, "Abilities": {"Overgrow": 50}}}}))
+        original = Path.read_text
+        reads = []
+        def observed_read(filename, *args, **kwargs):
+            if filename == path:
+                reads.append(filename)
+            return original(filename, *args, **kwargs)
+        with mock.patch.object(Path, "read_text", new=observed_read):
+            code, stdout, stderr = self.cli()
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(len(json.loads(stdout)["options"]), 5)
+        self.assertEqual(self.read.call_count, 1)
+        self.assertEqual(len(reads), 1, "Moves and Abilities must consume the SAME admitted JSON blob")
+
+    def test_shared_chaos_warm_read_and_changed_source_invalidation_are_not_skipped(self):
+        path = self.directory / "chaos-gen7ou-1695.json"
+        payload = {"data": {"Butterfree": {"Abilities": {"Overgrow": 50}}}}
+        path.write_text(json.dumps(payload))
+        original = Path.read_text
+        reads = []
+        def observed_read(filename, *args, **kwargs):
+            if filename == path:
+                reads.append(filename)
+            return original(filename, *args, **kwargs)
+        with mock.patch.object(Path, "read_text", new=observed_read):
+            for _ in range(2):
+                code, stdout, stderr = self.cli()
+                self.assertEqual(code, 0, stderr)
+                self.assertEqual(len(json.loads(stdout)["options"]), 5)
+            self.assertEqual(len(self.calls), 1, "same valid fresh inputs must reuse selection")
+            self.assertEqual(len(reads), 2, "warm must admit the JSON again, not reuse a global path cache")
+            payload["data"]["Butterfree"]["Abilities"]["Overgrow"] = 51
+            path.write_text(json.dumps(payload))
+            self.assertEqual(self.cli()[0], 0)
+            self.assertEqual(len(self.calls), 2, "changed usage source must invalidate selection")
+            path.write_text("{broken")
+            with self.assertRaises(json.JSONDecodeError):
+                self.cli()
+        self.assertEqual(self.read.call_count, 4)
+        self.assertEqual(len(self.calls), 2, "corruption must not reach cached selection")
+
     def test_seen_to_none_refreshes_pokedex_cache_with_identical_caught_set(self):
         self.records = {f"species:{i}": {"s": "caught"} for i in (12, 4, 7, 1, 25, 63, 92)}
         self.records["species:5"] = {"s": "seen"}
