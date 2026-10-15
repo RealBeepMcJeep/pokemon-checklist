@@ -196,6 +196,13 @@ is not zero. Growth still depends on each eligible pool's `C(n, 5)` search space
 Newly selected endpoints without curated acquisition-checked move targets
 intentionally stop card generation rather than inventing a move set.
 
+Source-block lookup now uses a bounded, content-keyed parse index while preserving
+integrity validation and fresh reads. A three-trial complete-workflow comparison
+measured cold medians of 108.95→71.69 seconds and warm medians of 56.09→15.37
+seconds on one shared host; ranges, CPU/RSS, source identities and limitations
+are in [the performance report](docs/five-team-performance.md). This is parsing
+acceleration, not a new Rust port or changed team-selection objective.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

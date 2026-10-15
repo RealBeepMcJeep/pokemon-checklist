@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-14
+- Five-team generation reuses a bounded index of unchanged source blocks, reducing repeated parsing while preserving complete teams, scores, source verification and fresh roster reads.
 - Added a read-only catcher comparison companion showing False Swipe setup actions, ordinary ability/stat scenarios and optional Parasect evolution separately from utility scores and capture odds.
 
 ## 2026-10-13
