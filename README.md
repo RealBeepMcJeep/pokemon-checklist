@@ -225,6 +225,14 @@ measured cold medians 42.15→35.11 seconds; warm reuse still skips native work 
 account reads. See [shared-enumeration evidence](docs/fused-enumeration.md) for the exact
 compatibility gates, fallback, ranges and limits. Parallelism is a separate pending milestone.
 
+Story-team tooling now offers bounded **opt-in** native parallelism: set
+`STORY_NATIVE_THREADS=2` or `STORY_NATIVE_THREADS=4` for that process. The default remains
+one serial lane; standalone/Best/Pokédex searches remain sequential. A shared-host three-trial
+complete-gallery comparison measured 40.89→21.40 seconds cold with explicit four-thread opt-in,
+at 16.1% more total CPU—not a default speedup or an energy-efficiency claim. Scores, ties,
+ownership, cache results and fresh reads are unchanged. See
+[parallel-search tradeoffs and proof](docs/parallel-search.md).
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

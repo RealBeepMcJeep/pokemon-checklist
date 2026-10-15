@@ -7,7 +7,10 @@ passed3000 protocol1 byte cases and complete frozen pair/reports under1/2/3/4/8.
 new1+1.0%wall/+1.1%CPU with overlapping ranges (not a meaningful regression demonstrated),
 new2=1.82xwall/+9.7%CPU, new4=3.15xwall/+24%CPU. Three shared-host samples, no guarantees;
 RSS is reported child-process high-water including spawn transients, not summed worker RSS.
-Default stays1, opt-in explicit; full real workflow and release gates remain pending.
+Default stays1, opt-in explicit.14 full real workflows passed with exact raw/enriched/full-source equality:
+40.89→21.40s cold (47.6% elapsed reduction,16.1% MORE CPU), warm variation not credited.
+Full203Vitest/298Python zero skips/13Node/214browser PASS; parent solo review PASS, not independent.
+Exact publication/default+opt-in current-main media/fresh readback acceptance remains required.
 Mode: owner-authorized personal solo/direct; no agents/PRs/app/player-state/host changes.
 
 ## Scope and controls
