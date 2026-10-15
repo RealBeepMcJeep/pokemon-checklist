@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-15
+- Compatible Mixed and Non-OG team options now share one exact native search, avoiding duplicate scoring while preserving both results and fallback behavior.
 - Team ranking now builds sorted name tie-break keys only for viable numeric contenders, reducing measured refresh cost while preserving all teams, scores, ties and counters.
 
 ## 2026-10-14

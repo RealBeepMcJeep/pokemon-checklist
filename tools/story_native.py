@@ -39,8 +39,8 @@ def binary_path() -> Path | None:
 
 
 def _request(prepared, *, owned, opportunities, viability, additions, favorites,
-           names, category) -> dict | None:
-    """Return exact original candidate indices, or None to invoke the reference.
+             names, category) -> tuple[Path, list[str]] | None:
+    """Build a supported standalone request, or return None for the reference.
 
     The wire uses precomputed features and integer name ranks, not species data.
     Ownership is represented by pair-conflict bitsets of arbitrary word count.
@@ -141,6 +141,9 @@ def search_pair(prepared, subset_prepared, *, subset, owned, opportunities, viab
     if os.environ.get('STORY_NATIVE_FUSION_DISABLE') == '1':
         return None
     n = len(names)
+    if (len(prepared.weak) != n + 1
+            or len(subset_prepared.weak) != len(subset) + 1):
+        return None
     if (len(subset) < 5 or any(type(i) is not int or i < 0 or i >= n for i in subset)
             or subset != sorted(set(subset))):
         return None

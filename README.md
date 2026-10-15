@@ -219,6 +219,12 @@ counters and fresh-read/cache behavior are unchanged. See
 [the retained/rejected experiment report](docs/native-fast-path.md) for ranges,
 CPU/RSS and the disclosed failed account-readback attempt.
 
+Compatible Mixed and Non-OG objectives now share one native enumeration while retaining
+separate winners and unchanged report counters. A three-trial complete-workflow comparison
+measured cold medians 42.15→35.11 seconds; warm reuse still skips native work but not fresh
+account reads. See [shared-enumeration evidence](docs/fused-enumeration.md) for the exact
+compatibility gates, fallback, ranges and limits. Parallelism is a separate pending milestone.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

@@ -252,5 +252,29 @@ class FusedTraversalTests(unittest.TestCase):
                                  answer['nonog']['scored_combinations'])
 
 
+    def test_unsupported_mixed_feature_shape_misses_before_projection(self):
+        import test_story_native as fixtures
+        import story_native
+        import team_synergy as ts
+        fixture = fixtures.StoryNativeTests()
+        fixture.native()
+        pool = [fixture.member(i) for i in range(6)]
+        utility = fixture.member(18, 'Bug')
+        prepared = ts.PreparedStorySynergy([*pool, utility], {})
+        subprepared = ts.PreparedStorySynergy([*pool, utility], {})
+        prepared.weak.pop()  # The original standalone adapter rejects this shape.
+        args = dict(owned=[1 << i for i in range(6)], opportunities=[0] * 6,
+                    viability=[1.0] * 6, additions=[0] * 6, favorites=[False] * 6,
+                    names=[p['final'] for p in pool])
+        self.assertIsNone(story_native.search(prepared, category='Mixed', **args))
+        error = result = None
+        try:
+            result = story_native.search_pair(prepared, subprepared, subset=list(range(6)), **args)
+        except Exception as exc:
+            error = type(exc).__name__
+        self.assertIsNone(error, 'unsupported feature shape must miss before subset projection')
+        self.assertIsNone(result)
+
+
 if __name__ == '__main__':
     unittest.main()
