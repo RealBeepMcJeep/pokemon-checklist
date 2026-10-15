@@ -151,7 +151,7 @@ struct Search {
     members: Vec<Member>, n: usize, category: String, compensated: bool,
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
-    pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64,
+    pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64, name_sorts: u64,
 }
 impl Search {
     fn score(&self, state: State, indices: &[usize]) -> f64 {
@@ -183,7 +183,7 @@ impl Search {
         round4(4.0 * coverage + 2.5 * defence - 1.5 * state.overlap as f64 / size
                - 1.5 * (worst - 2).max(0) as f64 / size)
     }
-    fn better(&self, a: &Winner, b: &Winner) -> bool {
+    fn numeric_better(&self, a: &Winner, b: &Winner) -> Option<bool> {
         let af = match self.category.as_str() {
             "Best" => [a.quality, a.synergy, a.favorites as f64, 0.0],
             "Pokedex" => [a.additions as f64, a.synergy, a.quality, a.favorites as f64],
@@ -195,9 +195,12 @@ impl Search {
             _ => [b.synergy, b.evolution as f64, b.quality, b.favorites as f64],
         };
         for (x, y) in af.into_iter().zip(bf) {
-            if x != y { return x > y; }
+            if x != y { return Some(x > y); }
         }
-        a.names < b.names
+        None
+    }
+    fn better(&self, a: &Winner, b: &Winner) -> bool {
+        self.numeric_better(a, b).unwrap_or_else(|| a.names < b.names)
     }
     fn visit(&mut self, start: usize, depth: usize, chosen: &mut [usize; 6], state: State) {
         if depth == 5 {
@@ -216,11 +219,14 @@ impl Search {
             chosen[5] = self.n;
             let full = self.score(full_state, chosen);
             let synergy = round4(0.65 * core + 0.35 * full);
-            let mut names = [0; 5];
-            for i in 0..5 { names[i] = self.members[chosen[i]].name; }
-            names.sort_unstable();
-            let candidate = Winner { indices: chosen[..5].try_into().unwrap(), synergy, core, full,
-                quality, evolution: state.evolution, additions: state.additions, favorites: state.favorites, names };
+            let mut candidate = Winner { indices: chosen[..5].try_into().unwrap(), synergy, core, full,
+                quality, evolution: state.evolution, additions: state.additions, favorites: state.favorites, names: [0; 5] };
+            if self.best.as_ref().is_some_and(|best| self.numeric_better(&candidate, best) == Some(false)) {
+                return; // Detailed scores/counters are retained; a numeric loser cannot win a name tie.
+            }
+            for i in 0..5 { candidate.names[i] = self.members[chosen[i]].name; }
+            candidate.names.sort_unstable();
+            self.name_sorts += 1;
             if self.best.as_ref().is_none_or(|best| self.better(&candidate, best)) { self.best = Some(candidate); }
             return;
         }
@@ -278,7 +284,7 @@ fn main() {
     let pruning = Pruning::new(&members, n, &category);
     let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
         independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
-        pruned_subtrees: 0, subtree_completions: 0 };
+        pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0 };
     search.visit(0, 0, &mut [0; 6], State::default());
     let winner = match search.best {
         Some(w) => format!("\"indices\":{:?},\"synergy\":{},\"core\":{},\"full\":{},\"quality\":{}",
@@ -288,7 +294,7 @@ fn main() {
     println!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
              winner, search.independent, search.scored, search.primary_skips);
     if std::env::args().any(|arg| arg == "--pruning-stats") {
-        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{}}}",
-                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions);
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{}}}",
+                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts);
     }
 }

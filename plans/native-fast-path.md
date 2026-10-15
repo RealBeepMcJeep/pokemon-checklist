@@ -1,6 +1,6 @@
 # Actual native fast-path optimization — milestone #8
 
-Status: prerequisites #6/#7 closed; baseline is accepted main c2c3779. No production kernel changes yet.
+Status: #6/#7 closed; baseline accepted main c2c3779. Private sampled profiling of actual uniform/disjoint Non-OG/Mixed passed byte fidelity and identified name materialization as a candidate (clock/layout overhead limits attribution). Lazy-name witness observed RED 792 vs 1 sort, then GREEN; all 53 focused story/native/cache/card tests pass. Candidate performance/oracle assessment is pending; nothing from #8 is delivered on main yet.
 
 ## Contract
 
