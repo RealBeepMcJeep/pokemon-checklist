@@ -155,5 +155,19 @@ class PrimarySubtreeTests(unittest.TestCase):
             self.assertEqual(actual['independent_combinations'], 322)
 
 
+    def test_large_infeasible_pool_does_not_index_fixed_size_masks(self):
+        n = 257
+        # A complete directed conflict graph is infeasible at depth two, keeping
+        # this supported large-pool regression fast without enumerating C(n,5).
+        text = wire([1.0] * n, 'Mixed', conflicts=[set(range(n)) for _ in range(n)])
+        run = subprocess.run([str(self.kernel())], input=text, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, 'large pools must use the original traversal: ' + run.stderr)
+        answer = json.loads(run.stdout)
+        self.assertIsNone(answer['indices'])
+        self.assertEqual(answer['independent_combinations'], 0)
+        self.assertEqual(answer['scored_combinations'], 0)
+        self.assertEqual(answer['primary_skips'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()
