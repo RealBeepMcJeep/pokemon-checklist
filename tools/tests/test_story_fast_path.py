@@ -41,5 +41,20 @@ class NativeFastPathTests(unittest.TestCase):
         self.assertEqual(normal.stderr, '')
 
 
+    def test_runtime_category_kind_matches_the_resolved_numeric_priority(self):
+        for label, kind in [('OG', 'Synergy'), ('Non-OG', 'Synergy'), ('Mixed', 'Synergy'),
+                            ('Pokedex', 'Pokedex'), ('Best', 'Best'), ('Future', 'Synergy')]:
+            with self.subTest(label=label):
+                text = wire([float(i) for i in range(6)], label)
+                run = subprocess.run([str(self.kernel()), '--pruning-stats'], input=text,
+                                     capture_output=True, text=True, check=True)
+                self.assertEqual(json.loads(run.stderr).get('category_kind'), kind,
+                                 'diagnostic must expose the actual resolved dispatch category')
+                normal = subprocess.run([str(self.kernel())], input=text, capture_output=True,
+                                        text=True, check=True)
+                self.assertEqual(normal.stdout, run.stdout)
+                self.assertEqual(normal.stderr, '')
+
+
 if __name__ == '__main__':
     unittest.main()

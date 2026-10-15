@@ -32,6 +32,14 @@ impl Sum {
     fn value(self) -> f64 { self.hi + self.lo }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Category { Best, Pokedex, Synergy }
+impl Category {
+    fn from_label(label: &str) -> Self {
+        match label { "Best" => Self::Best, "Pokedex" => Self::Pokedex, _ => Self::Synergy }
+    }
+}
+
 struct Member {
     weak: u64, resist: u64, hit: u64, coverage: [f64; 18], overlap: Vec<u32>,
     quality: f64, evolution: i64, additions: i64, favorite: i64, name: usize,
@@ -67,10 +75,10 @@ struct Pruning {
     quality: Vec<[f64; 2]>, absmax: Vec<f64>, additions: Vec<[i64; 2]>, incoming: Vec<Vec<u64>>,
 }
 impl Pruning {
-    fn new(members: &[Member], n: usize, category: &str) -> Option<Self> {
+    fn new(members: &[Member], n: usize, category: Category) -> Option<Self> {
         match category {
-            "Best" if members[..n].iter().all(|m| m.quality.is_finite() && m.quality.abs() <= 1e8) => (),
-            "Pokedex" if members[..n].iter().all(|m| (0..=((1_i64 << 53) - 1) / 5).contains(&m.additions)) => (),
+            Category::Best if members[..n].iter().all(|m| m.quality.is_finite() && m.quality.abs() <= 1e8) => (),
+            Category::Pokedex if members[..n].iter().all(|m| (0..=((1_i64 << 53) - 1) / 5).contains(&m.additions)) => (),
             _ => return None,
         }
         let mut quality = vec![[f64::NEG_INFINITY; 2]; n + 1];
@@ -80,7 +88,7 @@ impl Pruning {
             quality[i] = if v >= a { [v, a] } else { [a, b.max(v)] };
             absmax[i] = absmax[i + 1].max(v.abs());
         }
-        let mut additions = if category == "Pokedex" { vec![[0_i64; 2]; n + 1] } else { vec![] };
+        let mut additions = if category == Category::Pokedex { vec![[0_i64; 2]; n + 1] } else { vec![] };
         if !additions.is_empty() {
             for i in (0..n).rev() {
                 let [a, b] = additions[i + 1]; let v = members[i].additions;
@@ -148,7 +156,7 @@ impl Pruning {
 }
 
 struct Search {
-    members: Vec<Member>, n: usize, category: String, compensated: bool,
+    members: Vec<Member>, n: usize, category: Category, compensated: bool,
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
     pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64, name_sorts: u64,
@@ -184,14 +192,14 @@ impl Search {
                - 1.5 * (worst - 2).max(0) as f64 / size)
     }
     fn numeric_better(&self, a: &Winner, b: &Winner) -> Option<bool> {
-        let af = match self.category.as_str() {
-            "Best" => [a.quality, a.synergy, a.favorites as f64, 0.0],
-            "Pokedex" => [a.additions as f64, a.synergy, a.quality, a.favorites as f64],
+        let af = match self.category {
+            Category::Best => [a.quality, a.synergy, a.favorites as f64, 0.0],
+            Category::Pokedex => [a.additions as f64, a.synergy, a.quality, a.favorites as f64],
             _ => [a.synergy, a.evolution as f64, a.quality, a.favorites as f64],
         };
-        let bf = match self.category.as_str() {
-            "Best" => [b.quality, b.synergy, b.favorites as f64, 0.0],
-            "Pokedex" => [b.additions as f64, b.synergy, b.quality, b.favorites as f64],
+        let bf = match self.category {
+            Category::Best => [b.quality, b.synergy, b.favorites as f64, 0.0],
+            Category::Pokedex => [b.additions as f64, b.synergy, b.quality, b.favorites as f64],
             _ => [b.synergy, b.evolution as f64, b.quality, b.favorites as f64],
         };
         for (x, y) in af.into_iter().zip(bf) {
@@ -207,8 +215,8 @@ impl Search {
             self.independent += 1;
             let quality = round4(state.quality.value() / 5.0);
             if let Some(best) = &self.best {
-                if (self.category == "Best" && quality < best.quality)
-                    || (self.category == "Pokedex" && state.additions < best.additions) {
+                if (self.category == Category::Best && quality < best.quality)
+                    || (self.category == Category::Pokedex && state.additions < best.additions) {
                     self.primary_skips += 1;
                     return;
                 }
@@ -261,7 +269,7 @@ fn main() {
     let mut it = input.split_whitespace();
     assert_eq!(take::<u32>(&mut it), 1);
     let n = take(&mut it);
-    let category = take::<String>(&mut it);
+    let category = Category::from_label(&take::<String>(&mut it));
     let compensated = take::<u32>(&mut it) != 0;
     let uniform = take::<u32>(&mut it) != 0;
     let strength = take(&mut it);
@@ -281,7 +289,7 @@ fn main() {
         m.conflicts = (0..n.div_ceil(64)).map(|_| take(&mut it)).collect();
     }
     assert!(it.next().is_none(), "extra protocol fields");
-    let pruning = Pruning::new(&members, n, &category);
+    let pruning = Pruning::new(&members, n, category);
     let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
         independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
         pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0 };
@@ -294,7 +302,7 @@ fn main() {
     println!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
              winner, search.independent, search.scored, search.primary_skips);
     if std::env::args().any(|arg| arg == "--pruning-stats") {
-        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{}}}",
-                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts);
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"category_kind\":\"{:?}\"}}",
+                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts, search.category);
     }
 }
