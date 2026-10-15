@@ -1,6 +1,6 @@
 # Five-team pipeline performance — issue #4
 
-Status: #6–#10 verified shipped/closed at25ec081/c2c3779/9bcc2ad/952cfc2/db7e097. #11 implemented/measured onfcf5dfb with full local gates and exact prepared/raw/enriched/source/pixel parity; release/install/delivery acceptance remains. Combined #11 default-serial workflow39.72→36.06s cold/11.49→8.58s warm, NOT summed stage percentages. See docs/fixed-costs.md for current measurements and all limitations. Parent#4 stays open until#11 and combined acceptance, then#5/#1.
+Status: #6–#11 and parent#4 verified shipped/CLOSED at25ec081/c2c3779/9bcc2ad/952cfc2/db7e097/2f72723. Exact CI/Pages/live, installed cold+warm, full source readback and actual five-card/ZIP delivery accepted (comments21734/21737). Combined #11 default-serial workflow39.72→36.06s cold/11.49→8.58s warm, NOT summed stage percentages. See docs/fixed-costs.md for measurements and limitations. Remaining owner goal: #5 held-item report/cards, then #1 audit.
 
 ## Approved contract
 
@@ -48,7 +48,7 @@ Mixed and Non-OG now share one traversal only under exact flag/feature/subset co
 
 ## Milestone #10 — optional deterministic workers
 
-Only fused protocol2 may opt into bounded standard-library workers. Default1 spawns0 workers; strict lexicographic prefix-result reduction preserves first-encountered ties/counters. Retained3000-byte/frozen checks across1/2/3/4/8 plus400 repeated schedules and cross-thread cache reuse pass. Native4-thread opt-in measured3.15x elapsed reduction at24%more CPU; whole actual14-run comparison40.89→21.40s (47.6% less wall,16.1% MORE total CPU), not a default change. Warm variation not credited. Report default1+1% median with overlapping ranges and explicit shared-host limits; no zero-cost guarantee. See [detailed evidence](../docs/parallel-search.md). Full project/browser and exactdb7e097 release/default0worker+opt-in4worker media/CI/Pages/live/readback acceptance passed; #10 closed. #11 fixed costs implemented/measured below, release acceptance still pending.
+Only fused protocol2 may opt into bounded standard-library workers. Default1 spawns0 workers; strict lexicographic prefix-result reduction preserves first-encountered ties/counters. Retained3000-byte/frozen checks across1/2/3/4/8 plus400 repeated schedules and cross-thread cache reuse pass. Native4-thread opt-in measured3.15x elapsed reduction at24%more CPU; whole actual14-run comparison40.89→21.40s (47.6% less wall,16.1% MORE total CPU), not a default change. Warm variation not credited. Report default1+1% median with overlapping ranges and explicit shared-host limits; no zero-cost guarantee. See [detailed evidence](../docs/parallel-search.md). Full project/browser and exactdb7e097 release/default0worker+opt-in4worker media/CI/Pages/live/readback acceptance passed; #10 closed. #11 fixed costs shipped/closed as recorded in the current status and below.
 
 ## Milestone #11 — fixed preparation/enrichment/rendering
 
@@ -71,6 +71,7 @@ Actual constructors2→1 and font loads1084→65 witnessed in every combined run
 GREEN,10815 normalizer and1215 chaos cases, source/GOALS/error/alias/cache tests, all5 fixedstamp
 RGB pixel comparisons pass; real cards retain fresh stamps. Full committed203Vitest/315Python
 ZERO skips/13Node/214browser noflake pass. Parent solo/security review is NOT independent.
-See [full mechanism/methodology/ranges/tradeoffs](../docs/fixed-costs.md). Final exact release,
-installed private-wrapper integration/execution, full source readback/media delivery and#11/#4
-issue closure remain required; a feature branch is NOT installed behavior.
+See [full mechanism/methodology/ranges/tradeoffs](../docs/fixed-costs.md). Final exact2f72723 release,
+installed private-wrapper integration/execution (cold+warm), full source readback and actual media
+delivery were verified before #11/#4 closure; acceptance comments21734/21737. Local315/0skip
+and CI303/15skip were reconciled by test identity;214browser noflake. No remaining performance task.

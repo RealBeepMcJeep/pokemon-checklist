@@ -1,0 +1,39 @@
+# Held-item reports and cards (#5)
+
+## Settled contract
+
+Owner-approved SOLO/direct integration; no agents or PRs. Gen VII / Prismatic Moon **Standard**. Produce a role-aware overview and five six-member item cards (fixed Butterfree included), structured JSON, cited Markdown and ZIP. No app/UI/state/sync/capture-calculator changes. Keep personal snapshots/images outside git. Use fresh full Caught/Seen/favorites and the latest valid five-team snapshot; never infer individual abilities, held-item ownership or move readiness.
+
+Last confirmed horizon: first island complete, around L30, Tauros and TM54. This is a labeled last-confirmed horizon, not proof of subsequent progress. A reachable location is not an owned item; a gift/sidequest may still need completing.
+
+## Evidence decisions before ranking
+
+1. Validate all 12 retained hack documents against their manifest. Vendor Changes overrides vanilla shops: Battle Royal Dome (Akala) offers many useful items for BP; the document says prices are lower but **does not provide numeric prices**. Report BP / exact hack price undocumented, never copy vanilla 48 BP. Thick Club / Light Ball are Mt. Hokulani specialist items (later Ula'ula); Light Ball is Pikachu-only, not Raichu.
+2. Exact Showdown revision `e7aee8d9ccc983c59c5608929773249adca16b8f` is not uniformly Gen VII: root items includes Gen VIII Heavy-Duty Boots. Filter generation AND merge `data/mods/gen7/items.js`; retain hashes of both. Apply equivalent ability overrides. The pinned Mago Berry prose conflicts with its callback; expose that conflict and use the verified Gen VII callback/threshold instead of blindly quoting prose. No native-engine/hack-engine bit-exact claim.
+3. Use six separate November-2019 chaos snapshots: OU 1695; UU/RU/NU/PU/Ubers 1630. The four retained snapshots were independently re-downloaded and byte-identical. New PU/Ubers files live in an isolated item-source cache, not the selector cache, so adding sources does not change existing ability weights or parties. Map BL to the nearest legal higher tier with a visible explanation; `(PU)` uses PU. No silent cross-format fallback. Missing species/data remains missing.
+4. Normalize each species' Items weights by that block's own sum. Preserve full denominator, raw species count and total format battles separately; weighted shares are not raw set counts, correlated sets, confidence intervals, damage, effectiveness or win rates. Join every item ID; generation-incompatible or unknown IDs fail closed. Distinguish No held item, held items, berries, Mega Stones and Z-Crystals.
+5. Acquisition evidence: retained creator vendor document first; stock USUM fallback only when not overridden, labeled explicitly. Route 2 berry pile offers Oran randomly and Sitrus as the first berry of a large pile, daily and possibly guarded. Wise Glasses is the Trainers' School night-mysteries reward after Hala / Big Wave Beach rumor. These are collection/sidequest opportunities, not inventory claims. Wide Lens' Route 1 gift is SM-only, not USUM; do not recommend fetching that nonexistent early gift. Its hack-specific wild held rates/access are unverified.
+
+## Transparent editorial tiers
+
+These are **story-role heuristics**, not global tournament tiers or measured outcomes. Availability is a separate axis.
+
+- A / default **within a matching role**: reusable sustain (Leftovers; Black Sludge for Poison only), accuracy support for utility when obtainable, Thick Club for Cubone/Marowak only. Low kit restrictions, clear role payoff. Not an instruction to equip all teams identically or farm an inaccessible item.
+- B / flexible or replenishable: Muscle Band / Wise Glasses for matching attack category, Expert Belt for super-effective coverage, Rocky Helmet for contact-punishing battle roles (never catching), Sitrus/Oran/Lum for appropriate one-use sustain/status protection. Repeat farming/activation costs visible.
+- C / specialize first: Choice items, Life Orb, Assault Vest, Focus Sash, status orbs, weather rocks/seeds. Explain move locking, recoil, status-move incompatibility, full-HP/one-use conditions, ordinary ability and move dependence. A popular competitive item can still be C for flexible story play.
+- Separate / not generic battle ranks: Eviolite only while the current species can evolve; Light Ball only Pikachu; training/economy items, bag-use stones/capsules, Mega Stones and Z-Crystals. Never infer a held battle bonus from a bag-use or evolution role. Report unknown mechanic/access evidence instead of inventing it.
+
+For each member derive planned physical/special/status roles from verified move metadata; preserve owned→planned stage and evolution gate. Recommend a currently reachable, explicitly conditional option and a creator-sourced later option. Use ordinary ability slots only as possibilities. Highlight Compound Eyes / Wide Lens, Unburden activation, Life Orb exceptions and hidden-ability dependence without claiming the owned individual has them. Reject Black Sludge on non-Poison types, Light Ball on Raichu, Thick Club on unrelated species, Eviolite on fully evolved species, and Assault Vest as a compatible recommendation for a status-containing planned set.
+
+## Implementation and verification sequence
+
+1. Source research and unchanged baseline `npm ci` + `npm run check` before production edits.
+2. Reuse `ShowdownDataStore` with a separate `held-items-gen7` subdirectory and custom pinned DatasetSpec mapping; do not alter the core five-source contract. Keep usage in the same separate add-on directory with exact URLs/hashes/format checks. Bootstrap only explicitly; normal reads reverify.
+3. Vertical RED→GREEN: item ID/generation/Gen7 overrides, per-species share normalization/absences/format checks, role/access restrictions and representative conditional recommendations, renderer/long labels/whole-five output, fresh input mismatch/error retention.
+4. Reuse `story_team_cards` sprite/font/palette/wrapping utilities. Cards and Markdown come from the same item report, not hand-retyped lineups. Source citations and a concise limitations/access legend accompany the pictures; no personal data in public fixtures.
+5. Fresh read-only selection workflow with existing wrapper/validated targets; retain source full-set evidence. Compare parties and scores to the prior snapshot, not only team names. Final full Caught/Seen/favorites readback before attaching six pictures (overview + five teams), report and ZIP.
+6. Complete local Python/app/browser gates, solo scope/security review (not independent), direct main integration, Gitea raw/ref/author and GitHub mirror checks, exact CI/Pages/live unchanged app verification, real committed-main execution, actual delivery, then acceptance/readback/close and owned cleanup. #1 public-material audit follows. Do not mark #5 complete merely because research or a branch is pushed.
+
+## Evidence and current status
+
+Unchanged baseline passed: 203 Vitest, 315 Python (zero skips), 13 Node; log `held-items-baseline-check.log` retained privately. Research bytes and citation ledger remain private until reduced to reusable provenance. Item parsing, role/format/access guards, a 24-item overview and the full six-image/report/ZIP CLI are now implemented on the feature branch; 15 focused methods pass with the real cache, including all 30 rows and renderer-failure diagnostics. The real CLI produced six images with two fresh full Caught/Seen/favorites reads. One free Wise Glasses copy per party is allocated by highest planned base Sp. Atk / stable source-order tie, not invented inventory. Unprofitable/unknown acquisition is explicit. Publication and final delivery remain pending; no app, save or selector changes. A transient bootstrap DNS failure was visible; the already downloaded real bytes were admitted offline through the unchanged hash/manifest checks. Core cache bytes remained unchanged.

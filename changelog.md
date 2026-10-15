@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-15
+- Added read-only held-item overview and five-team cards with Gen VII effects, separate historical usage, conditional current/later access, single-free-copy allocation and fresh source-set checks; checklist UI and saved progress stay unchanged.
 - Five-team refreshes reuse fixed preparation, preflight sources and per-card fonts, reducing measured cold/warm workflow time without changing teams, source checks, fresh timestamps or image compression.
 - Added explicit opt-in bounded parallel story-team search; default stays serial and all selected teams/scores remain unchanged.
 - Compatible Mixed and Non-OG team options now share one exact native search, avoiding duplicate scoring while preserving both results and fallback behavior.

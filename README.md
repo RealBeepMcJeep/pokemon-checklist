@@ -43,6 +43,10 @@ remain available after upgrade. Older signed-in builds may need a reload after f
 
 `python tools/catcher_efficiency.py --uid <uid> --level 30 --output-dir <private-dir>` creates a fresh read-only utility card plus a separate False Swipe setup-efficiency companion, structured reports and ZIP. Ability/stat/target scenarios are explicit; damage throughput never becomes utility points or capture probability. See [model, assumptions and independent reference](docs/catcher-efficiency.md). No checklist UI/save changes are involved.
 
+## Local held-item report/cards
+
+`python tools/held_item_cards.py generate --team-report <private-gallery>/story-options.json --source-observations <private-gallery>/selector-observations.json --uid <uid> --cache <verified-cache> --output-dir <new-private-dir>` creates an overview and item cards for all five teams, JSON, a cited report and ZIP. Story-role heuristics, reachable collection/quest opportunities and November-2019 competitive shares stay separate. Item ownership and individual kits remain unknown; no app UI/save changes are involved. See [source admission, access limits and commands](docs/held-items.md).
+
 ## Tools and catch calculator
 
 Open **Tools** in the checklist header for the QR archive, experimental QR page,

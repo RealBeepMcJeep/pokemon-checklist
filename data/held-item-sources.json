@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/items.js",
+    "title": "Pinned Gen VII items"
+  },
+  {
+    "id": 2,
+    "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/abilities.js",
+    "title": "Pinned Gen VII abilities"
+  },
+  {
+    "id": 3,
+    "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/mods/gen7/items.js",
+    "title": "Generation 7 items overrides"
+  },
+  {
+    "id": 4,
+    "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/mods/gen7/abilities.js",
+    "title": "Generation 7 abilities overrides"
+  },
+  {
+    "id": 5,
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Trainers%27_School_%28Alola%29",
+    "title": ""
+  },
+  {
+    "id": 6,
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Alola_Route_2",
+    "title": ""
+  },
+  {
+    "id": 7,
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Wide_Lens",
+    "title": ""
+  },
+  {
+    "id": 8,
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Battle_Royal_Dome",
+    "title": ""
+  },
+  {
+    "id": 9,
+    "url": "https://drive.google.com/file/d/12YsIQwV_nTphy4-2k7VhuThEeD8qwrOo/view",
+    "title": ""
+  },
+  {
+    "id": 10,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7ou-1695.json",
+    "title": ""
+  },
+  {
+    "id": 11,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7uu-1630.json",
+    "title": ""
+  },
+  {
+    "id": 12,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7ru-1630.json",
+    "title": ""
+  },
+  {
+    "id": 13,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7nu-1630.json",
+    "title": ""
+  },
+  {
+    "id": 14,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7pu-1630.json",
+    "title": ""
+  },
+  {
+    "id": 15,
+    "url": "https://www.smogon.com/stats/2019-11/chaos/gen7ubers-1630.json",
+    "title": ""
+  }
+]

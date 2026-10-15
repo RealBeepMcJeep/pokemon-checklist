@@ -1,7 +1,7 @@
 # Fixed-cost five-team pipeline — milestone #11
 
-Status: all4 candidates RETAINED/measured onfcf5dfb; combined14/full315/browser214 PASS.
-NOT yet shipped: exact publication/installed-wrapper/current-main delivery/issue closeout pending.
+Status: SHIPPED at2f72723, #11 and parent#4 CLOSED after exact CI/Pages/live, installed cold+warm, full source readback and actual five-card/ZIP delivery. Combined14/full315/browser214 PASS.
+The candidate-stage paragraphs below preserve chronological experiment history, not current pending work. Final acceptance comments21734/21737 supersede their branch-only/pending wording.
 Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/config changes.
 
 ## Scope and stage gates
