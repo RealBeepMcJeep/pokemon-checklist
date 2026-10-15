@@ -1,6 +1,7 @@
 //! Dependency-free exact five-slot search. Input features are prepared in Python.
 use std::io::{self, Read};
 use std::str::FromStr;
+use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
 
 fn take<T: FromStr>(it: &mut std::str::SplitWhitespace<'_>) -> T {
     it.next().expect("missing protocol field").parse().ok().expect("invalid protocol field")
@@ -149,14 +150,89 @@ impl Pruning {
 }
 
 struct Search {
-    members: Vec<Member>, n: usize, category: String, compensated: bool,
+    members: Arc<Vec<Member>>, n: usize, category: String, compensated: bool,
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
     pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64, name_sorts: u64,
-    subset_flags: Vec<bool>, subset_indices: Vec<usize>, subset_best: Option<Winner>,
+    subset_flags: Arc<Vec<bool>>, subset_indices: Vec<usize>, subset_best: Option<Winner>,
     subset_independent: u64,
 }
+struct PrefixTask { chosen: [usize; 6], state: State, in_subset: bool }
+struct PrefixResult {
+    index: usize, best: Option<Winner>, subset_best: Option<Winner>,
+    independent: u64, scored: u64, subset_independent: u64, name_sorts: u64,
+}
 impl Search {
+    fn worker(&self) -> Self {
+        assert!(self.pruning.is_none() && self.category == "Mixed");
+        Self { members: Arc::clone(&self.members), n: self.n, category: self.category.clone(),
+            compensated: self.compensated, uniform: self.uniform, strength: self.strength,
+            disjoint: self.disjoint, independent: 0, scored: 0, primary_skips: 0, best: None,
+            pruning: None, pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0,
+            subset_flags: Arc::clone(&self.subset_flags), subset_indices: vec![],
+            subset_best: None, subset_independent: 0 }
+    }
+    fn visit_parallel(&mut self, requested: usize) -> (usize, usize) {
+        assert!(self.pruning.is_none() && self.category == "Mixed");
+        if self.n < 5 { return (0, 0); }
+        let mut tasks = Vec::new();
+        for i in 0..=self.n - 5 {
+            let first = State::default().add(&self.members[i], &[], self.compensated);
+            for j in i + 1..=self.n - 4 {
+                if self.members[j].conflicts[i / 64] & (1 << (i % 64)) != 0 { continue; }
+                let mut chosen = [0; 6]; chosen[0] = i; chosen[1] = j;
+                tasks.push(PrefixTask { chosen,
+                    state: first.add(&self.members[j], &[i], self.compensated),
+                    in_subset: self.subset_flags[i] && self.subset_flags[j] });
+            }
+        }
+        if tasks.is_empty() { return (0, 0); }
+        let workers = requested.min(tasks.len());
+        let next = AtomicUsize::new(0);
+        let mut results = std::thread::scope(|scope| {
+            let mut handles = Vec::new();
+            for _ in 0..workers {
+                let mut worker = self.worker();
+                let tasks = &tasks; let next = &next;
+                handles.push(scope.spawn(move || {
+                    let mut output = Vec::new();
+                    loop {
+                        let index = next.fetch_add(1, Ordering::Relaxed);
+                        if index >= tasks.len() { break; }
+                        let task = &tasks[index]; let mut chosen = task.chosen;
+                        worker.independent = 0; worker.scored = 0; worker.name_sorts = 0;
+                        worker.subset_independent = 0;
+                        // take() below leaves both incumbents empty before the next task.
+                        worker.visit(chosen[1] + 1, 2, &mut chosen, task.state, task.in_subset);
+                        output.push(PrefixResult { index, best: worker.best.take(),
+                            subset_best: worker.subset_best.take(), independent: worker.independent,
+                            scored: worker.scored, subset_independent: worker.subset_independent,
+                            name_sorts: worker.name_sorts });
+                    }
+                    output
+                }));
+            }
+            handles.into_iter().flat_map(|h| h.join().expect("parallel search worker failed"))
+                .collect::<Vec<_>>()
+        });
+        // Scheduling/completion order never decides first-encountered identity ties.
+        results.sort_unstable_by_key(|r| r.index);
+        for result in results {
+            self.independent += result.independent; self.scored += result.scored;
+            self.subset_independent += result.subset_independent; self.name_sorts += result.name_sorts;
+            if let Some(candidate) = result.best {
+                if self.best.as_ref().is_none_or(|best| self.better(&candidate, best)) {
+                    self.best = Some(candidate);
+                }
+            }
+            if let Some(candidate) = result.subset_best {
+                if self.subset_best.as_ref().is_none_or(|best| self.better(&candidate, best)) {
+                    self.subset_best = Some(candidate);
+                }
+            }
+        }
+        (workers, tasks.len())
+    }
     fn score(&self, state: State, indices: &[usize]) -> f64 {
         let coverage = if self.uniform {
             state.hit.count_ones() as f64 * self.strength / 18.0
@@ -307,11 +383,16 @@ fn main() {
     }
     assert!(it.next().is_none(), "extra protocol fields");
     let pruning = Pruning::new(&members, n, &category);
-    let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
+    let mut search = Search { members: Arc::new(members), n, category, compensated, uniform, strength, disjoint,
         independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
         pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0,
-        subset_flags, subset_indices, subset_best: None, subset_independent: 0 };
-    search.visit(0, 0, &mut [0; 6], State::default(), protocol == 2);
+        subset_flags: Arc::new(subset_flags), subset_indices, subset_best: None, subset_independent: 0 };
+    // Only the fused no-skip pass opts in; legacy requests never read this setting.
+    let threads = if protocol == 2 { requested_threads() } else { 1 };
+    let (worker_threads, prefix_tasks) = if threads > 1 { search.visit_parallel(threads) } else {
+        search.visit(0, 0, &mut [0; 6], State::default(), protocol == 2);
+        (0, 0)
+    };
     let mixed = answer(search.best, search.independent, search.scored, search.primary_skips);
     if protocol == 1 { println!("{mixed}"); } else {
         let subset_best = search.subset_best.map(|mut w| {
@@ -322,10 +403,21 @@ fn main() {
         println!("{{\"protocol\":2,\"mixed\":{mixed},\"nonog\":{nonog}}}");
     }
     if std::env::args().any(|arg| arg == "--pruning-stats") {
-        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"fused_reused_scores\":{}}}",
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"fused_reused_scores\":{},\"worker_threads\":{},\"prefix_tasks\":{}}}",
                   search.pruned_subtrees, search.independent - search.subtree_completions,
-                  search.subtree_completions, search.name_sorts, search.subset_independent);
+                  search.subtree_completions, search.name_sorts, search.subset_independent,
+                  worker_threads, prefix_tasks);
     }
+}
+fn requested_threads() -> usize {
+    let raw = match std::env::var("STORY_NATIVE_THREADS") {
+        Ok(v) => v,
+        Err(std::env::VarError::NotPresent) => return 1,
+        Err(_) => panic!("STORY_NATIVE_THREADS must be valid text"),
+    };
+    let threads: usize = raw.parse().expect("STORY_NATIVE_THREADS must be 1, 2, 3, 4 or 8");
+    assert!([1, 2, 3, 4, 8].contains(&threads), "STORY_NATIVE_THREADS must be 1, 2, 3, 4 or 8");
+    threads
 }
 fn answer(best: Option<Winner>, independent: u64, scored: u64, primary_skips: u64) -> String {
     let winner = match best {

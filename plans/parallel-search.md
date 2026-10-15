@@ -1,6 +1,6 @@
 # Deterministic bounded parallel fused search — milestone #10
 
-Status: contract only, based on accepted main952cfc2. No implementation or speed claim yet.
+Status: worker witness RED→GREEN; std-only prefix workers/ordered reduction implemented locally;400 repeat schedules across1/2/3/4/8 plus default/legacy/no-task/invalid-setting/fallback tests pass; full opt-in story-focused suite passes. Frozen/predecessor bytes and measured opt-in/default cost remain pending; no release/speed claim. Based on accepted952cfc2.
 Mode: owner-authorized personal solo/direct; no agents/PRs/app/player-state/host changes.
 
 ## Scope and controls
