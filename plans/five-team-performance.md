@@ -1,6 +1,6 @@
 # Five-team pipeline performance — issue #4
 
-Status: bounded source index implemented and full local gates passed; milestone #6 repeated measurements, corpus/random parity and full local gates passed; publication/current-main verification remains in progress. See docs/five-team-performance.md for repeated medians/ranges and CPU/RSS. Parent #4 remains open for #6–#11.
+Status: bounded source index implemented and full local gates passed; milestone #6 repeated measurements, corpus/random parity and full local gates passed; publication/current-main verification completed at 25ec081 with exact CI/Pages/live and five-card/ZIP delivery; #6 closed with acceptance comment 21434. Milestone #7 is now active in plans/primary-subtree-bounds.md. See docs/five-team-performance.md for repeated medians/ranges and CPU/RSS. Parent #4 remains open for #6–#11.
 
 ## Approved contract
 
