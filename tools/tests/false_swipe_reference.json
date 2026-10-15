@@ -1,0 +1,2018 @@
+{
+  "reference": {
+    "package": "@smogon/calc",
+    "version": "0.10.0",
+    "gitHead": "3c539689dd2185696f7c95ba6e26407b2e4889c4",
+    "integrity": "sha512-VmtTDVjF4z1Yzx1QN7NbsEcRLBAZGv/NVlb1ZK1//uppNmIg3Iqp7hDERGSM0FlmdogPEqw7iqY/3RuMSYPkmw==",
+    "url": "https://github.com/smogon/damage-calc/tree/3c539689dd2185696f7c95ba6e26407b2e4889c4",
+    "license": "MIT",
+    "generation": 7,
+    "scope": "Noncritical False Swipe; no items/boosts/field; defender ability disabled. Artificial ability overrides test arithmetic, NOT obtainable owned builds."
+  },
+  "vectors": [
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Own Tempo",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        18
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Own Tempo",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        6
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Own Tempo",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Own Tempo",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        5,
+        5,
+        5,
+        5,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Technician",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        22,
+        22,
+        22,
+        22,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        25,
+        25,
+        27
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Technician",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Technician",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Technician",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Paras",
+      "defender": "Pikachu",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 56,
+      "defense": 27,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        21,
+        21,
+        21,
+        22,
+        22,
+        22,
+        22,
+        23,
+        23,
+        23,
+        23,
+        24,
+        24,
+        24,
+        24,
+        25
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Paras",
+      "defender": "Roggenrola",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 56,
+      "defense": 45,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Paras",
+      "defender": "Gastly",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 56,
+      "defense": 23,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Paras",
+      "defender": "Magnemite",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 56,
+      "defense": 39,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Parasect",
+      "defender": "Pikachu",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 71,
+      "defense": 27,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        26,
+        26,
+        26,
+        27,
+        27,
+        27,
+        28,
+        28,
+        28,
+        29,
+        29,
+        29,
+        30,
+        30,
+        30,
+        31
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Parasect",
+      "defender": "Roggenrola",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 71,
+      "defense": 45,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Parasect",
+      "defender": "Gastly",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 71,
+      "defense": 23,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Parasect",
+      "defender": "Magnemite",
+      "ability": "Dry Skin",
+      "status": "",
+      "level": 30,
+      "attack": 71,
+      "defense": 39,
+      "attacker_types": [
+        "Bug",
+        "Grass"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        11
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Kricketune",
+      "defender": "Pikachu",
+      "ability": "Swarm",
+      "status": "",
+      "level": 30,
+      "attack": 65,
+      "defense": 27,
+      "attacker_types": [
+        "Bug"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        23,
+        24,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        26,
+        26,
+        26,
+        26,
+        27,
+        27,
+        27,
+        28
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Kricketune",
+      "defender": "Roggenrola",
+      "ability": "Swarm",
+      "status": "",
+      "level": 30,
+      "attack": 65,
+      "defense": 45,
+      "attacker_types": [
+        "Bug"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Kricketune",
+      "defender": "Gastly",
+      "ability": "Swarm",
+      "status": "",
+      "level": 30,
+      "attack": 65,
+      "defense": 23,
+      "attacker_types": [
+        "Bug"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Kricketune",
+      "defender": "Magnemite",
+      "ability": "Swarm",
+      "status": "",
+      "level": 30,
+      "attack": 65,
+      "defense": 39,
+      "attacker_types": [
+        "Bug"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Hawlucha",
+      "defender": "Pikachu",
+      "ability": "Limber",
+      "status": "",
+      "level": 30,
+      "attack": 69,
+      "defense": 27,
+      "attacker_types": [
+        "Fighting",
+        "Flying"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        25,
+        25,
+        26,
+        26,
+        26,
+        27,
+        27,
+        27,
+        27,
+        28,
+        28,
+        28,
+        29,
+        29,
+        29,
+        30
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Hawlucha",
+      "defender": "Roggenrola",
+      "ability": "Limber",
+      "status": "",
+      "level": 30,
+      "attack": 69,
+      "defense": 45,
+      "attacker_types": [
+        "Fighting",
+        "Flying"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Hawlucha",
+      "defender": "Gastly",
+      "ability": "Limber",
+      "status": "",
+      "level": 30,
+      "attack": 69,
+      "defense": 23,
+      "attacker_types": [
+        "Fighting",
+        "Flying"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Hawlucha",
+      "defender": "Magnemite",
+      "ability": "Limber",
+      "status": "",
+      "level": 30,
+      "attack": 69,
+      "defense": 39,
+      "attacker_types": [
+        "Fighting",
+        "Flying"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Decidueye",
+      "defender": "Pikachu",
+      "ability": "Overgrow",
+      "status": "",
+      "level": 30,
+      "attack": 78,
+      "defense": 27,
+      "attacker_types": [
+        "Grass",
+        "Ghost"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        28,
+        29,
+        29,
+        29,
+        30,
+        30,
+        30,
+        31,
+        31,
+        31,
+        32,
+        32,
+        32,
+        33,
+        33,
+        34
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Decidueye",
+      "defender": "Roggenrola",
+      "ability": "Overgrow",
+      "status": "",
+      "level": 30,
+      "attack": 78,
+      "defense": 45,
+      "attacker_types": [
+        "Grass",
+        "Ghost"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Decidueye",
+      "defender": "Gastly",
+      "ability": "Overgrow",
+      "status": "",
+      "level": 30,
+      "attack": 78,
+      "defense": 23,
+      "attacker_types": [
+        "Grass",
+        "Ghost"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Decidueye",
+      "defender": "Magnemite",
+      "ability": "Overgrow",
+      "status": "",
+      "level": 30,
+      "attack": 78,
+      "defense": 39,
+      "attacker_types": [
+        "Grass",
+        "Ghost"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        12
+      ],
+      "ability_override_is_arithmetic_test_only": false
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Huge Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        28,
+        28,
+        30,
+        30,
+        30,
+        30,
+        30,
+        31,
+        31,
+        31,
+        31,
+        33,
+        33,
+        33,
+        33,
+        34
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Huge Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Huge Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Huge Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        9,
+        9,
+        9,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        12
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Pure Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        28,
+        28,
+        30,
+        30,
+        30,
+        30,
+        30,
+        31,
+        31,
+        31,
+        31,
+        33,
+        33,
+        33,
+        33,
+        34
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Pure Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        10
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Pure Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Pure Power",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        9,
+        9,
+        9,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        12
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Hustle",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        22,
+        22,
+        22,
+        22,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        25,
+        25,
+        27
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Hustle",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Hustle",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Hustle",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Tough Claws",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        19,
+        19,
+        19,
+        21,
+        21,
+        21,
+        21,
+        21,
+        21,
+        22,
+        22,
+        22,
+        22,
+        22,
+        22,
+        24
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Tough Claws",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Tough Claws",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Tough Claws",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Adaptability",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        22,
+        22,
+        22,
+        22,
+        22,
+        22,
+        22,
+        22,
+        24
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Adaptability",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Adaptability",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Adaptability",
+      "status": "",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Guts",
+      "status": "brn",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        22,
+        22,
+        22,
+        22,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        25,
+        25,
+        27
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Guts",
+      "status": "brn",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Guts",
+      "status": "brn",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Guts",
+      "status": "brn",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Pikachu",
+      "ability": "Toxic Boost",
+      "status": "psn",
+      "level": 30,
+      "attack": 26,
+      "defense": 27,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric"
+      ],
+      "target_hp": 50,
+      "damage": [
+        22,
+        22,
+        22,
+        22,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        25,
+        25,
+        27
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Roggenrola",
+      "ability": "Toxic Boost",
+      "status": "psn",
+      "level": 30,
+      "attack": 26,
+      "defense": 45,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Rock"
+      ],
+      "target_hp": 58,
+      "damage": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Gastly",
+      "ability": "Toxic Boost",
+      "status": "psn",
+      "level": 30,
+      "attack": 26,
+      "defense": 23,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Ghost",
+        "Poison"
+      ],
+      "target_hp": 48,
+      "damage": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    },
+    {
+      "name": "Smeargle",
+      "defender": "Magnemite",
+      "ability": "Toxic Boost",
+      "status": "psn",
+      "level": 30,
+      "attack": 26,
+      "defense": 39,
+      "attacker_types": [
+        "Normal"
+      ],
+      "defender_types": [
+        "Electric",
+        "Steel"
+      ],
+      "target_hp": 46,
+      "damage": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "ability_override_is_arithmetic_test_only": true
+    }
+  ]
+}

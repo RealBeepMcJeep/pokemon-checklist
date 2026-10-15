@@ -39,6 +39,10 @@ restrictions remain unchanged. Unsupported vanilla-mode controls are hidden beca
 SOS datasets do not identify callers. Reset clears unlocks; older keys/last-good copies
 remain available after upgrade. Older signed-in builds may need a reload after flags are set.
 
+## Local catcher comparison
+
+`python tools/catcher_efficiency.py --uid <uid> --level 30 --output-dir <private-dir>` creates a fresh read-only utility card plus a separate False Swipe setup-efficiency companion, structured reports and ZIP. Ability/stat/target scenarios are explicit; damage throughput never becomes utility points or capture probability. See [model, assumptions and independent reference](docs/catcher-efficiency.md). No checklist UI/save changes are involved.
+
 ## Tools and catch calculator
 
 Open **Tools** in the checklist header for the QR archive, experimental QR page,

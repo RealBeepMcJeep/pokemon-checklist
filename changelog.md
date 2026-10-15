@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-14
+- Added a read-only catcher comparison companion showing False Swipe setup actions, ordinary ability/stat scenarios and optional Parasect evolution separately from utility scores and capture odds.
+
 ## 2026-10-13
 
 - Added saved Prismatic Moon encounter unlocks in Settings, eligible/locked counts and backtrack markers, with caller-aware SOS/weather dependencies and v4 save/backup/account migration. Vanilla controls remain hidden until caller mapping is verified; no collection statuses change when toggling.
