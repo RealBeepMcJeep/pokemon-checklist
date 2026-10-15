@@ -123,7 +123,11 @@ Linux RSS is per supervisor/largest child maximum, not a summed process-tree pea
   reports/images and detailed measurements remain private, never public fixtures.
 - Retained predecessor native SHA-256: `797ccde7c70484dca905947e17bdec1d471b1889b983dadb345e72c441b3cb7a`.
 - Candidate native SHA-256: `2ad014ffddea8d29a3daf1ef288c549fbbf5c400c62abb795ef43cfde802d920`.
-- Parent solo review only (no extra agent/PR). Full project/browser summaries and exact
-  remote/CI/Pages/live/default-native paired smoke/fresh-source/media verification must be read
-  and recorded before issue #9 closure. See its final acceptance comment, not intermediate
-  feature commits, for release status.
+- Hardened source 6f92cf9 passed the repeated 3,000-case/complete-frozen-options oracle,
+  63 focused tests and full **203 Vitest / 292 Python (zero skips) / 13 Node / 214 browser**
+  gates. Both pre-hardening and hardened complete browser runs passed; the shape regression's
+  RED is intentional test-first evidence, not a swallowed full-gate failure.
+- Parent solo scope/security review passed (not independent; no extra agent/PR). App HTML
+  remains byte-identical to predecessor. Exact remote/CI/Pages/live/default-native paired
+  smoke/fresh-source/media verification still must pass before issue #9 closes. See its final
+  acceptance comment, not intermediate feature commits, for release status.

@@ -1,8 +1,11 @@
 # Fused Mixed + Non-OG enumeration — milestone #9 (stage contract)
 
-Status: kernel + real adapter + choose_options RED/GREEN; 62 focused tests pass, including 48 full Python/exhaustive randomized pools, 192 asymmetric subset/sum-mode cases, malformed/old-binary fallback and 257-pool boundaries. Frozen oracle and release measurement remain pending. Local and release
-acceptance evidence will be appended to `docs/fused-enumeration.md` and issue #9. A feature
-push is not delivery.
+Status: kernel/adapter/choose_options/metadata+shape admission RED→GREEN;63 focused tests.
+Both initial and hardened-source 3000-byte/full-frozen-option oracles passed.14 complete real
+cold/warm workflows matched:42.15→35.11s cold (16.7%); warm variation not credited. Hardened
+6f92cf9 full203 Vitest/292 Python zero skips/13 Node/214 browser PASS, parent solo review
+PASS (not independent). Current-main exact publication/default-paired media acceptance remains
+required before #9 closure. See docs/fused-enumeration.md for all scope/provenance details.
 
 ## Scope
 
