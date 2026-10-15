@@ -1,6 +1,7 @@
 # Fixed-cost five-team pipeline — milestone #11
 
-Status: picked up from accepted main db7e097; re-profile BEFORE production changes.
+Status: re-profiled accepted db7e097; first measured candidate is bounded PURE name memoization.
+Current branch only, NOT shipped; shared chaos/MoveSources/font candidates still pending.
 Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/config changes.
 
 ## Scope and stage gates
@@ -22,6 +23,33 @@ Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/c
    profile demonstrates a worthwhile further gain; consume exactly the immutable bytes hashed,
    make its scope explicit and bounded, retain default per-use validation, and test current-run
    consistency + next-run corruption/change rejection. Never add a global already-verified flag.
+
+## Actual fresh-read warm diagnostic and first candidate
+
+Real freshread1/warmrank0/native0, actual five-card/enriched/ZIP/readback workflow completed.
+Instrumented wall19.63s, selector11.40s: 680,934 normalize_name calls/6.91s cumulative,
+canonicalize_roster7.04s (overlapping inclusive times, do NOT add); four Moves parses2.03s,
+four Abilities parses0.73s. Orchestrator: two MoveSources1.56s, 1,084 fonts0.159s;
+PNG encoding2.33s unchanged. These are cProfile DIAGNOSTICS, not claimed unprofiled savings.
+Default loader verify_cache14 total calls across two processes/0.290s cumulative; a new
+source snapshot is NOT justified by this profile, so retain per-use verification unchanged.
+
+Additional in-scope preparation candidate: share pure literal normalization (max4096 keys,
+max256 characters each), convert arbitrary input objects to str on EVERY call before lookup.
+No file/path/provenance/object cache, exact existing NFD/combining/lower/ASCII algorithm,
+oversized keys use old fold without retention. Witness RED100 Unicode folds vs required1 →
+GREEN; individual-size RED1 vs required2 folds for repeated257-char keys → GREEN. Four tests
+cover mechanisms/256 boundary/entry eviction/unhashable+mutable display objects. Retained
+original normalizer differential includes all project species plus10,000 random Unicode
+strings and scalar/container/long cases. Complete Python302/0skip passes. First broad run
+missed node_modules (two renderer failures), npm ci installed pinned lock unchanged; first
+post-install full rerun exceeded180s and was NOT accepted; complete600s rerun passed. Audit
+reports8 high-severity advisories on unchanged dependencies for later#1 review, not auto-fixed.
+
+First candidate needs repeated UNPROFILED default1 before/after complete cold/warm runs and
+exact prepared/raw/enriched/full-source parity before retention. Do not change another
+candidate while those timings run. Font/chaos/MoveSources choices follow immediate-predecessor
+stage evidence; no compression changes and no default parallelism credited here.
 
 ## Correctness boundaries
 

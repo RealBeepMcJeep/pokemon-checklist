@@ -63,7 +63,20 @@ def normalize_name(value: object) -> str:
     them to their base letter, silently losing the only accented Latin-letter
     species in the dex.
     """
-    decomposed = unicodedata.normalize("NFD", str(value))
+    # Convert on EVERY use: arbitrary/unhashable objects and mutable __str__
+    # implementations keep their existing behavior. Only pure string content is cached.
+    literal = str(value)
+    # Bound individual retained payloads as well as the number of names. This
+    # changes work/retention only; oversized inputs still use the exact old fold.
+    if len(literal) > 256:
+        return _normalize_name_text.__wrapped__(literal)
+    return _normalize_name_text(literal)
+
+
+@lru_cache(maxsize=4096)
+def _normalize_name_text(value: str) -> str:
+    """Bounded pure-name work; never a file/path/provenance validation cache."""
+    decomposed = unicodedata.normalize("NFD", value)
     stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     return re.sub(r"[^a-z0-9]", "", stripped.lower())
 
