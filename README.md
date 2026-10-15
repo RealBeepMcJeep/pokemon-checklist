@@ -211,6 +211,14 @@ warm runs made zero searches. [Proof, full parity, CPU/RSS and timing ranges](do
 document the numerical guard and shared-host limitations. Scoring, objectives and
 complete report/counter semantics remain unchanged.
 
+The ranking fast path also avoids sorting names for candidates already worse on
+numeric priorities. Separate enum/mask experiments were evaluated and rejected;
+only the measured lazy-name change is retained. A three-trial complete-workflow
+comparison measured cold medians 44.45→41.97 seconds; scores, ties,
+counters and fresh-read/cache behavior are unchanged. See
+[the retained/rejected experiment report](docs/native-fast-path.md) for ranges,
+CPU/RSS and the disclosed failed account-readback attempt.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:

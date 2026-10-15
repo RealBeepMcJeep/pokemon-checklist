@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-15
+- Team ranking now builds sorted name tie-break keys only for viable numeric contenders, reducing measured refresh cost while preserving all teams, scores, ties and counters.
+
 ## 2026-10-14
 - Best/Pokédex team searches skip strictly inferior unfinished branches with conservative bounds and exact ownership counts, reducing measured refresh time without changing teams, scores, ties or diagnostic totals.
 - Five-team generation reuses a bounded index of unchanged source blocks, reducing repeated parsing while preserving complete teams, scores, source verification and fresh roster reads.
