@@ -1,6 +1,6 @@
 # Fused Mixed + Non-OG enumeration — milestone #9 (stage contract)
 
-Status: implementation contract on `hermes-agent/9-fused-enumeration`. Local and release
+Status: kernel + real adapter + choose_options RED/GREEN; 62 focused tests pass, including 48 full Python/exhaustive randomized pools, 192 asymmetric subset/sum-mode cases, malformed/old-binary fallback and 257-pool boundaries. Frozen oracle and release measurement remain pending. Local and release
 acceptance evidence will be appended to `docs/fused-enumeration.md` and issue #9. A feature
 push is not delivery.
 
@@ -58,7 +58,7 @@ push is not delivery.
   updates using the already-computed candidate values and the identical `_`-branch comparator.
 - No extra per-combo scoring: `quality`, `evolution`, `additions`, `favorites`, `core`,
   `full` and `synergy` are computed once per scored combination and reused for both incumbents.
-- Names materialize only when an actual numeric tie needs name resolution (against either
+- Names materialize only for an incumbent update or numeric tie (against either
   incumbent); structural diagnostics such as `name_sorts` are informational, not a parity
   surface.
 - Split counters: Mixed counters stay today's values; Non-OG counters increment on
@@ -69,7 +69,7 @@ push is not delivery.
 - Compatibility gate before dispatch: both pools have ≥5 members, the binary is present, the
   `uniform` flags are equal, strengths are equal when uniform, and `disjoint` flags are equal.
   Rationale: scoring switches must be interchangeable for the shared per-combo computation;
-  anything else uses the original separate paths.
+  anything else uses the original separate paths. Exact projection of weak/resist/hit/coverage/overlap (including utility) must also match: pool-specific custom type universes can shift encoded mask positions despite equal global flags.
 - Construct both prepared objects (needed for validation and fallback); attempt the fused
   call; validate response shape/protocol, indices (sorted, unique, in range, independent),
   per-block counter invariants (Non-OG independent ≤ `comb(|subset|, 5)`; scored+skips = the

@@ -332,7 +332,8 @@ def _objective_key(category: str, synergy: float, evolution: int,
     return (-synergy, -evolution, -viability, -favorites, names)
 
 
-def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> list[dict]:
+def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str,
+          _native_result: dict | None = None) -> list[dict]:
     """Full-pool exact search: prepare once, retain one winner, expand its details."""
     searched = math.comb(len(pool), 5) if len(pool) >= 5 else 0
     prepared = ts.PreparedStorySynergy([*pool, utility], chart)
@@ -345,9 +346,9 @@ def _rank(pool: list[dict], utility: dict, chart: dict, *, category: str) -> lis
     favorites = [bool(p.get('favorite')) for p in pool]
     names = [str(p['final']) for p in pool]
     import story_native
-    native = story_native.search(
+    native = (_native_result if _native_result is not None else story_native.search(
         prepared, owned=owned, opportunities=opportunities, viability=viability,
-        additions=additions, favorites=favorites, names=names, category=category)
+        additions=additions, favorites=favorites, names=names, category=category))
     best_key = best_indices = None
     independent = 0
     if native is not None:
@@ -490,9 +491,25 @@ def choose_options(profiles: list[dict], utility: dict, chart: dict,
          max(0, len(usable) - len({tuple(sorted(_caught_ids(p))) for p in pokedex_profiles or []}))),
         ("Best", usable, 0),
     ]
+    import story_native
+    fused = {}
+    subset = [i for i, member in enumerate(usable) if no_og_ready(member)]
+    if len(subset) >= 5 and story_native.binary_path() is not None:
+        prepared = ts.PreparedStorySynergy([*usable, utility], chart)
+        subprepared = ts.PreparedStorySynergy([*(usable[i] for i in subset), utility], chart)
+        fused = story_native.search_pair(
+            prepared, subprepared, subset=subset,
+            owned=[sum(1 << identifier for identifier in _caught_ids(p)) for p in usable],
+            opportunities=[evolution_opportunities(p) for p in usable],
+            viability=[practical_viability(p) for p in usable],
+            additions=[len(p.get('dex_plan', {}).get('new_entries', ())) for p in usable],
+            favorites=[bool(p.get('favorite')) for p in usable],
+            names=[str(p['final']) for p in usable]) or {}
     results = []
     for category, candidates, excluded in pools:
-        ranked = _rank(candidates, utility, chart, category=category) if len(candidates) >= 5 else []
+        ranked = (_rank(candidates, utility, chart, category=category,
+                        **({'_native_result': fused[category]} if category in fused else {}))
+                  if len(candidates) >= 5 else [])
         if not ranked:
             eligible = len(candidates)
             warning = (f"only {eligible} eligible owned candidates; fewer than five independent lineages"

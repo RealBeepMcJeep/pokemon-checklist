@@ -60,6 +60,7 @@ impl State {
         self
     }
 }
+#[derive(Clone, Copy)]
 struct Winner { indices: [usize; 5], synergy: f64, core: f64, full: f64, quality: f64,
                 evolution: i64, additions: i64, favorites: i64, names: [usize; 5] }
 // Only immutable suffix features and ownership masks; candidate visit order is unchanged.
@@ -152,6 +153,8 @@ struct Search {
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
     pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64, name_sorts: u64,
+    subset_flags: Vec<bool>, subset_indices: Vec<usize>, subset_best: Option<Winner>,
+    subset_independent: u64,
 }
 impl Search {
     fn score(&self, state: State, indices: &[usize]) -> f64 {
@@ -202,9 +205,10 @@ impl Search {
     fn better(&self, a: &Winner, b: &Winner) -> bool {
         self.numeric_better(a, b).unwrap_or_else(|| a.names < b.names)
     }
-    fn visit(&mut self, start: usize, depth: usize, chosen: &mut [usize; 6], state: State) {
+    fn visit(&mut self, start: usize, depth: usize, chosen: &mut [usize; 6], state: State, in_subset: bool) {
         if depth == 5 {
             self.independent += 1;
+            if in_subset { self.subset_independent += 1; }
             let quality = round4(state.quality.value() / 5.0);
             if let Some(best) = &self.best {
                 if (self.category == "Best" && quality < best.quality)
@@ -221,13 +225,20 @@ impl Search {
             let synergy = round4(0.65 * core + 0.35 * full);
             let mut candidate = Winner { indices: chosen[..5].try_into().unwrap(), synergy, core, full,
                 quality, evolution: state.evolution, additions: state.additions, favorites: state.favorites, names: [0; 5] };
-            if self.best.as_ref().is_some_and(|best| self.numeric_better(&candidate, best) == Some(false)) {
-                return; // Detailed scores/counters are retained; a numeric loser cannot win a name tie.
-            }
+            let mixed_viable = self.best.as_ref().is_none_or(|best|
+                self.numeric_better(&candidate, best) != Some(false));
+            let subset_viable = in_subset && self.subset_best.as_ref().is_none_or(|best|
+                self.numeric_better(&candidate, best) != Some(false));
+            if !mixed_viable && !subset_viable { return; }
             for i in 0..5 { candidate.names[i] = self.members[chosen[i]].name; }
             candidate.names.sort_unstable();
             self.name_sorts += 1;
-            if self.best.as_ref().is_none_or(|best| self.better(&candidate, best)) { self.best = Some(candidate); }
+            if mixed_viable && self.best.as_ref().is_none_or(|best| self.better(&candidate, best)) {
+                self.best = Some(candidate);
+            }
+            if subset_viable && self.subset_best.as_ref().is_none_or(|best| self.better(&candidate, best)) {
+                self.subset_best = Some(candidate);
+            }
             return;
         }
         if self.n < 5 - depth || start > self.n - (5 - depth) { return; }
@@ -245,7 +256,7 @@ impl Search {
             if chosen[..depth].iter().any(|&j| self.members[i].conflicts[j / 64] & (1 << (j % 64)) != 0) { continue; }
             let next = state.add(&self.members[i], &chosen[..depth], self.compensated);
             chosen[depth] = i;
-            self.visit(i + 1, depth + 1, chosen, next);
+            self.visit(i + 1, depth + 1, chosen, next, in_subset && self.subset_flags[i]);
         }
     }
 }
@@ -259,7 +270,8 @@ fn main() {
         return;
     }
     let mut it = input.split_whitespace();
-    assert_eq!(take::<u32>(&mut it), 1);
+    let protocol = take::<u32>(&mut it);
+    assert!(protocol == 1 || protocol == 2, "unsupported protocol");
     let n = take(&mut it);
     let category = take::<String>(&mut it);
     let compensated = take::<u32>(&mut it) != 0;
@@ -280,21 +292,47 @@ fn main() {
         m.favorite = take(&mut it); m.name = take(&mut it);
         m.conflicts = (0..n.div_ceil(64)).map(|_| take(&mut it)).collect();
     }
+    let mut subset_flags = Vec::new();
+    let mut subset_indices = Vec::new();
+    if protocol == 2 {
+        assert_eq!(category, "Mixed", "fusion only supports the no-skip Mixed objective");
+        let mut ordinal = 0;
+        for _ in 0..n {
+            let flag = take::<u32>(&mut it);
+            assert!(flag <= 1, "invalid subset flag");
+            subset_flags.push(flag == 1);
+            subset_indices.push(ordinal);
+            if flag == 1 { ordinal += 1; }
+        }
+    }
     assert!(it.next().is_none(), "extra protocol fields");
     let pruning = Pruning::new(&members, n, &category);
     let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
         independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
-        pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0 };
-    search.visit(0, 0, &mut [0; 6], State::default());
-    let winner = match search.best {
+        pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0,
+        subset_flags, subset_indices, subset_best: None, subset_independent: 0 };
+    search.visit(0, 0, &mut [0; 6], State::default(), protocol == 2);
+    let mixed = answer(search.best, search.independent, search.scored, search.primary_skips);
+    if protocol == 1 { println!("{mixed}"); } else {
+        let subset_best = search.subset_best.map(|mut w| {
+            for i in &mut w.indices { *i = search.subset_indices[*i]; }
+            w
+        });
+        let nonog = answer(subset_best, search.subset_independent, search.subset_independent, 0);
+        println!("{{\"protocol\":2,\"mixed\":{mixed},\"nonog\":{nonog}}}");
+    }
+    if std::env::args().any(|arg| arg == "--pruning-stats") {
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"fused_reused_scores\":{}}}",
+                  search.pruned_subtrees, search.independent - search.subtree_completions,
+                  search.subtree_completions, search.name_sorts, search.subset_independent);
+    }
+}
+fn answer(best: Option<Winner>, independent: u64, scored: u64, primary_skips: u64) -> String {
+    let winner = match best {
         Some(w) => format!("\"indices\":{:?},\"synergy\":{},\"core\":{},\"full\":{},\"quality\":{}",
                            w.indices, w.synergy, w.core, w.full, w.quality),
         None => "\"indices\":null".to_string(),
     };
-    println!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
-             winner, search.independent, search.scored, search.primary_skips);
-    if std::env::args().any(|arg| arg == "--pruning-stats") {
-        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{}}}",
-                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts);
-    }
+    format!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
+             winner, independent, scored, primary_skips)
 }
