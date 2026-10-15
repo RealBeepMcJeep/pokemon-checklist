@@ -1,7 +1,7 @@
 # Fixed-cost five-team pipeline — milestone #11
 
 Status: re-profiled accepted db7e097; pure-name memo and shared chaos RETAINED onbranch.
-NOT shipped; explicit shared MoveSources under test, fonts still pending.
+NOT shipped; shared MoveSources retained after real14; scoped font reuse under test.
 Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/config changes.
 
 ## Scope and stage gates
@@ -86,10 +86,26 @@ main supports the new API. Do NOT update the installed wrapper while main lacks 
 branch measurement uses a deliberate private after-wrapper with explicit reuse and a real
 constructor-count observer (before2/after1), not a fallback or invented diagnostic. Public
 standalone CLI already constructs once, so do not claim its constructor count decreased.
-Measure vs immediate predecessor87f3aaa in the detached read-only reference worktree; no stale
-b72/db7 baseline. This reference is a concrete reason for a second owned worktree. Font choices
-follow predecessor evidence. No source edits/competing heavy work during timings, no compression
-changes and no default parallelism credited here.
+Shared MoveSources2123e74 RETAINED onbranch: real14 workflows against87f3aaa, actual attempted/
+successful construction2before→1after in EVERY run, exact prepared/options/raw/enriched/full
+live-source sets. Cold37.362→36.863s (1.3%lesswall/2.0%lessCPU), warm9.477→8.739s
+(7.8%lesswall/7.6%lessCPU);3samples/sharedhost, sameB50/default1, no additive/guarantee/native
+search-speed claim (unchanged native timings vary). Full203/313Python0skip/13Node/214browser
+no flaky summary passes. Installed private wrapper STILL unchanged pending acceptedmain API.
+
+Fourth candidate: bounded32-entry local font factory per render_card; public font() still
+returns fresh objects. Do NOT share mutable FreeType objects globally or cache old stamped
+images. Structural RED212 loads vs13unique within synthetic card→GREEN13, same fresh13 on
+NEXT card, new stamp actually changes pixels; missing font on next render still fails visibly.
+Two tests pass; complete real frozen report +5fixedstamp decodedRGB images equal2123 predecessor.
+Separate observed5-card real font-load witness1084→65; UNINSTRUMENTED3fresh-process renderer-only
+samples/side with alternating order: median wall3.164→2.719s (14.0%less), CPU3.139→2.718s
+(13.4%less). These are component figures, NOT full-pipeline savings. Same actual enriched
+report/atlas/Pillow/optimize=True/fixedstamp; no compression change. Peak renderer RSS39,520–39,556KiB before vs40,532–40,600KiB after: modest resource-retention tradeoff, NOT a memory improvement claim.
+Full project/actual14 incremental before2123→font whole-workflow timing still pending. Reference
+worktree advanced clean to2123e74 with identical lockfile/deps. No source/docs edits or competing
+heavy work during timing. Final combined db7e097→all-retained comparison and publication gates
+still required; measure, do not add stage percentages.
 
 ## Correctness boundaries
 
