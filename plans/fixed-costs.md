@@ -1,7 +1,7 @@
 # Fixed-cost five-team pipeline — milestone #11
 
-Status: re-profiled accepted db7e097; first measured candidate is bounded PURE name memoization.
-Current branch only, NOT shipped; shared chaos/MoveSources/font candidates still pending.
+Status: re-profiled accepted db7e097; pure-name memo and shared chaos RETAINED onbranch.
+NOT shipped; explicit shared MoveSources under test, fonts still pending.
 Owner-authorized personal solo/direct, no agents/PRs; no app/player-state/host/config changes.
 
 ## Scope and stage gates
@@ -64,10 +64,32 @@ outputs equal for1215 actual/all-tier/None +80random missing-source/collision/we
 An initial fixture incorrectly expected unknown tier Untiered accepted; fixed test to require
 same rejection in ALL3 APIs, no production tier policy changed.
 
-Measure this candidate against immediate predecessor b72a7c4 in a DETACHED read-only reference
-worktree (concrete reason for a second owned worktree), not olddb7e097. Shared chaos/MoveSources/
-font choices each follow predecessor evidence. No production edits/competing heavy work during
-timings; no compression changes and no default parallelism credited here.
+Shared chaos87f3aaa RETAINED onbranch: all14 actual predecessor-vs-candidate default1/unset
+workflows exact prepared/options/raw/enriched/full source sets equal. Three samples per cold/
+warm side,2excludedprimes: cold38.120→37.435s (1.8%less wall/2.0%less CPU), warm9.996→8.999s
+(10.0%less wall/8.3%less CPU). Same native binary B50, shared-host observations not guarantees;
+not additive to earlier percentages. All203Vitest/307Python0skip/13Node/214browser noflake pass.
+
+Third candidate: explicit keyword-only `move_sources=` injection in add_move_targets/main,
+using the SAME preflight-checked source instance; without it standalone/CLI behavior and old
+fake call shapes remain. Match the requested canonical cache directory BEFORE using targets;
+freeze/call the resolved directory before admission so an alias retarget cannot misbind source
+metadata. Constructor/mismatched-directory/alias RED→GREEN; existing in-memory acquisition
+facts remain consistent, default store get_text and next MoveSources constructor still reject
+post-admission corruption. No already-verified flag or new verified-byte snapshot. Re-resolve
+GOALS each use, propagate target errors without partial PNGs or silent reconstruction.
+Six focused tests; full frozen acquisition-aware report and fixed-stamp5decoded RGB pixels
+match retained87f3aaa. Actual workflow/CPU gains not yet measured; full gates pending.
+
+Production private refresh wrapper must be wired to pass its preflight `source` AFTER accepted
+main supports the new API. Do NOT update the installed wrapper while main lacks the keyword;
+branch measurement uses a deliberate private after-wrapper with explicit reuse and a real
+constructor-count observer (before2/after1), not a fallback or invented diagnostic. Public
+standalone CLI already constructs once, so do not claim its constructor count decreased.
+Measure vs immediate predecessor87f3aaa in the detached read-only reference worktree; no stale
+b72/db7 baseline. This reference is a concrete reason for a second owned worktree. Font choices
+follow predecessor evidence. No source edits/competing heavy work during timings, no compression
+changes and no default parallelism credited here.
 
 ## Correctness boundaries
 

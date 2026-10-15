@@ -16,6 +16,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from story_moves import MoveSources
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -104,8 +108,14 @@ def blurb(option: dict) -> str:
             f"{option.get('level_evolving', 0)}/5 by level")
 
 
-def add_move_targets(report: dict, cache: Path | None) -> dict:
-    """Enrich a read-only snapshot once; later offline renders reuse the frozen gates."""
+def add_move_targets(report: dict, cache: Path | None, *,
+                     move_sources: MoveSources | None = None) -> dict:
+    """Enrich a snapshot, optionally using this run's preflight-checked sources.
+
+    A shared instance must belong to the requested cache. It is never installed
+    globally; targets (including run-local GOALS) are resolved again. Existing
+    enriched snapshots still support explicitly offline redraw without admission.
+    """
     enriched = copy.deepcopy(report)
     if (len(enriched.get("utility_moves", [])) == 4 and
             all(len(m.get("moves", [])) == 4 for o in enriched["options"]
@@ -113,8 +123,12 @@ def add_move_targets(report: dict, cache: Path | None) -> dict:
         return enriched
     if cache is None:
         raise ValueError("an unenriched report needs --cache for verified move sources")
-    import story_moves
-    source = story_moves.MoveSources(cache)
+    if move_sources is None:
+        import story_moves
+        move_sources = story_moves.MoveSources(cache)
+    elif move_sources.cache_dir != Path(cache).resolve():
+        raise ValueError("preflight MoveSources does not match --cache")
+    source = move_sources
     enriched["utility_moves"] = source.targets(enriched["utility"], enriched["utility"])
     for option in enriched["options"]:
         for member in option.get("members", []):
@@ -211,7 +225,7 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
     canvas.save(output, optimize=True)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, move_sources: MoveSources | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uid", help="Firebase account UID (read-only live roster)")
     parser.add_argument("--cache", help="verified Gen VII Showdown cache")
@@ -233,7 +247,10 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads(result.stdout)
     if len(report.get("options", [])) != 5:
         raise ValueError("the selector did not return five options")
-    report = add_move_targets(report, Path(args.cache) if args.cache else None)
+    cache = Path(args.cache) if args.cache else None
+    # Preserve the standalone call shape for existing callers/hand-rolled fakes.
+    report = (add_move_targets(report, cache) if move_sources is None else
+              add_move_targets(report, cache, move_sources=move_sources))
     atlas = Image.open(ATLAS).convert("RGBA")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(ZoneInfo("America/Phoenix")).strftime("%b %-d, %Y · %-I:%M %p")

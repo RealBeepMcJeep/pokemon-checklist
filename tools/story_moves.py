@@ -95,7 +95,11 @@ def standard_levels() -> dict[int, dict[str, list[int]]]:
 
 class MoveSources:
     def __init__(self, cache: Path):
-        self.data = ml.load_move_data(cache)
+        # Freeze directory identity BEFORE admission, and consume that directory
+        # even if a caller's symlink alias is retargeted while data is loading.
+        # This is identity metadata, NOT a path-based data/validation cache.
+        self.cache_dir = Path(cache).resolve()
+        self.data = ml.load_move_data(self.cache_dir)
         self.levels = standard_levels()
 
     def level_threshold(self, stage: str) -> int:
