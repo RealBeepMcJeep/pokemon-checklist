@@ -1,6 +1,6 @@
 # Exact primary-subtree bounds — milestone #7
 
-Status: approved scope, test-first implementation starting from #6 release `25ec081`.
+Status: implementation, 52 focused tests, 1200 retained-oracle cases plus 1205 byte-level normal-wire comparisons and 14 complete refresh comparisons passed. Repeated cold median 93.51→60.72 s; full-check initial tab timeouts and rerun/release evidence are documented in docs/primary-subtree-bounds.md and #7. No main-publication/closure claim until final gates pass.
 
 ## Contract
 

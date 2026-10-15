@@ -203,6 +203,14 @@ seconds on one shared host; ranges, CPU/RSS, source identities and limitations
 are in [the performance report](docs/five-team-performance.md). This is parsing
 acceleration, not a new Rust port or changed team-selection objective.
 
+Best/Pokédex search also uses strict, conservative unfinished-branch bounds with
+exact ownership-completion counts; equal-primary ties still receive secondary
+comparison. A repeated complete-workflow comparison against the parser-index
+release measured cold medians of 93.51→60.72 seconds;
+warm runs made zero searches. [Proof, full parity, CPU/RSS and timing ranges](docs/primary-subtree-bounds.md)
+document the numerical guard and shared-host limitations. Scoring, objectives and
+complete report/counter semantics remain unchanged.
+
 ## Develop
 
 Install Node 22 and the locked dependencies, then start Vite:
