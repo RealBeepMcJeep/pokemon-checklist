@@ -1,6 +1,6 @@
 # Five-team pipeline performance — issue #4
 
-Status: baseline measured; optimization not yet implemented.
+Status: bounded source index implemented and full local gates passed; milestone #6 repeated measurements and publication are in progress. Parent #4 remains open for #6–#11.
 
 ## Approved contract
 
@@ -13,6 +13,21 @@ Actual all-five wrapper, 131-caught read-only live snapshot, Linux x86-64, 8 log
 Unprofiled complete cold run: 92.928 seconds; warm run: 38.891 seconds. Both actual galleries succeeded, fresh Caught/Seen readbacks matched, and all five parties/scores matched the prior gallery. Profiled cold: 98.249 seconds; warm: 53.790 seconds. Do not compute improvement from profiled vs unprofiled halves.
 
 The profiled selector called block() 1,556 times, repeatedly advancing top_blocks() 729,516 times and spending 30.812 cumulative seconds scanning. Native full-pool search remains substantial (117-candidate Mixed/Best, 94 Non-OG, 76 Pokédex, 15 OG); no search rewrite is proposed for this slice.
+
+## Approved milestone sequence
+
+The owner approved retaining #4 as the umbrella and recording original proposals,
+Opus 5.5 High read-only review and evidence-checked reconciliation separately.
+Execute #6 (source index/baseline), #7 (exact Best/Pokédex bounds), #8 (actual
+Rust fast path), #9 (compatible Mixed/Non-OG fusion), #10 (bounded deterministic
+parallelism), then #11 (fixed preparation/enrichment/render costs). Preserve
+complete diagnostic counters as well as winners/ties; do not silently call an
+unprofitable, deferred or blocked experiment delivered. Scope reduction needs
+an explicit owner disposition. No additional agents or PR workflow are authorized.
+
+Actual frozen story profiles have uniform coverage and disjoint weakness/resist
+flags for all five objectives; do not optimize the generic vector path assuming
+it is this gallery's hot path. Existing Rust execution is baseline functionality.
 
 ## Minimal change and acceptance
 

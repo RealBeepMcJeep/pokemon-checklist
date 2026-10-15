@@ -4,6 +4,7 @@ import json
 import re
 import unicodedata
 from collections.abc import Callable, Iterator
+from functools import lru_cache
 
 
 def _key(value: object) -> str:
@@ -28,10 +29,22 @@ def top_blocks(text: str) -> Iterator[tuple[str, str]]:
                     break
 
 
+@lru_cache(maxsize=8)
+def _block_index(text: str) -> dict[str, str]:
+    """Index immutable source content, not a path or a verification result.
+
+    Bound retained sources; content changes miss. Preserve the old iterator's
+    FIRST normalized-key match, including duplicate/punctuation collisions.
+    """
+    result: dict[str, str] = {}
+    for key, body in top_blocks(text):
+        result.setdefault(_key(key), body)
+    return result
+
+
 def block(text: str, name: str) -> str:
-    """Return one top-level block, matching the existing punctuation normalization."""
-    wanted = _key(name)
-    return next((body for key, body in top_blocks(text) if _key(key) == wanted), "")
+    """Return one block without rescanning unchanged, already-read source text."""
+    return _block_index(text).get(_key(name), "")
 
 
 def field(body: str, name: str) -> str | None:
