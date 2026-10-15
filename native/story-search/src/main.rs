@@ -62,10 +62,96 @@ impl State {
 }
 struct Winner { indices: [usize; 5], synergy: f64, core: f64, full: f64, quality: f64,
                 evolution: i64, additions: i64, favorites: i64, names: [usize; 5] }
+// Only immutable suffix features and ownership masks; candidate visit order is unchanged.
+struct Pruning {
+    quality: Vec<[f64; 2]>, absmax: Vec<f64>, additions: Vec<[i64; 2]>, incoming: Vec<Vec<u64>>,
+}
+impl Pruning {
+    fn new(members: &[Member], n: usize, category: &str) -> Option<Self> {
+        match category {
+            "Best" if members[..n].iter().all(|m| m.quality.is_finite() && m.quality.abs() <= 1e8) => (),
+            "Pokedex" if members[..n].iter().all(|m| (0..=((1_i64 << 53) - 1) / 5).contains(&m.additions)) => (),
+            _ => return None,
+        }
+        let mut quality = vec![[f64::NEG_INFINITY; 2]; n + 1];
+        let mut absmax = vec![0.0_f64; n + 1];
+        for i in (0..n).rev() {
+            let [a, b] = quality[i + 1]; let v = members[i].quality;
+            quality[i] = if v >= a { [v, a] } else { [a, b.max(v)] };
+            absmax[i] = absmax[i + 1].max(v.abs());
+        }
+        let mut additions = if category == "Pokedex" { vec![[0_i64; 2]; n + 1] } else { vec![] };
+        if !additions.is_empty() {
+            for i in (0..n).rev() {
+                let [a, b] = additions[i + 1]; let v = members[i].additions;
+                additions[i] = if v >= a { [v, a] } else { [a, b.max(v)] };
+            }
+        }
+        // Incoming[i] lists candidates j whose own row conflicts with earlier i.
+        // This also preserves the old traversal on non-symmetric wire matrices.
+        let mut incoming = vec![vec![0_u64; n.div_ceil(64)]; n];
+        for (j, member) in members[..n].iter().enumerate() {
+            for (i, row) in incoming.iter_mut().enumerate() {
+                if member.conflicts[i / 64] & (1 << (i % 64)) != 0 { row[j / 64] |= 1 << (j % 64); }
+            }
+        }
+        Some(Self { quality, absmax, additions, incoming })
+    }
+    fn strictly_below(&self, members: &[Member], start: usize, chosen: &[usize], state: State, best: &Winner) -> bool {
+        let remaining = 5 - chosen.len();
+        if !self.additions.is_empty() {
+            let upper = state.additions + self.additions[start][..remaining].iter().sum::<i64>();
+            return upper < best.additions;
+        }
+        let mut upper = 0.0_f64; let mut magnitude = 0.0_f64;
+        for &i in chosen {
+            upper = (upper + members[i].quality).next_up();
+            magnitude = (magnitude + members[i].quality.abs()).next_up();
+        }
+        for k in 0..remaining {
+            upper = (upper + self.quality[start][k]).next_up();
+            magnitude = (magnitude + self.absmax[start]).next_up();
+        }
+        // For five terms, |hi|,|t|<2S, |d|<5S, |e|<7S, |lo|<36S.
+        // Neumaier's t error cancels in hi'+lo'; the remaining errors plus
+        // final value() are <=303*u*S+16*eta <256*EPSILON*S, S>=1.
+        // See the numerical proof in docs/primary-subtree-bounds.md.
+        let error = (256.0 * f64::EPSILON * magnitude.max(1.0)).next_up();
+        let mean = ((upper + error).next_up() / 5.0).next_up();
+        mean.is_finite() && round4(mean) < best.quality
+    }
+    fn completions(&self, start: usize, chosen: &[usize], n: usize) -> u64 {
+        let words = n.div_ceil(64);
+        let mut allowed = vec![0_u64; words];
+        for (w, mask) in allowed.iter_mut().enumerate() {
+            if w < start / 64 { continue; }
+            *mask = if w == start / 64 { u64::MAX << (start % 64) } else { u64::MAX };
+            if w == words - 1 && n % 64 != 0 { *mask &= (1 << (n % 64)) - 1; }
+            for &i in chosen { *mask &= !self.incoming[i][w]; }
+        }
+        if chosen.len() == 4 { return allowed.iter().map(|v| v.count_ones() as u64).sum(); }
+        let mut count = 0;
+        for (w, &mask) in allowed.iter().enumerate() {
+            let mut bits = mask;
+            while bits != 0 {
+                let bit = bits.trailing_zeros(); let i = w * 64 + bit as usize;
+                bits &= bits - 1;
+                for (later_word, &later) in allowed.iter().enumerate().skip(w) {
+                    let mut compatible = later & !self.incoming[i][later_word];
+                    if later_word == w { compatible &= u64::MAX.checked_shl(bit + 1).unwrap_or(0); }
+                    count += compatible.count_ones() as u64;
+                }
+            }
+        }
+        count
+    }
+}
+
 struct Search {
     members: Vec<Member>, n: usize, category: String, compensated: bool,
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
+    pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64,
 }
 impl Search {
     fn score(&self, state: State, indices: &[usize]) -> f64 {
@@ -139,6 +225,16 @@ impl Search {
             return;
         }
         if self.n < 5 - depth || start > self.n - (5 - depth) { return; }
+        if depth >= 3 {
+            if let (Some(pruning), Some(best)) = (&self.pruning, &self.best) {
+                if pruning.strictly_below(&self.members, start, &chosen[..depth], state, best) {
+                    let count = pruning.completions(start, &chosen[..depth], self.n);
+                    self.independent += count; self.primary_skips += count;
+                    self.pruned_subtrees += 1; self.subtree_completions += count;
+                    return;
+                }
+            }
+        }
         for i in start..=self.n - (5 - depth) {
             if chosen[..depth].iter().any(|&j| self.members[i].conflicts[j / 64] & (1 << (j % 64)) != 0) { continue; }
             let next = state.add(&self.members[i], &chosen[..depth], self.compensated);
@@ -179,8 +275,10 @@ fn main() {
         m.conflicts = (0..n.div_ceil(64)).map(|_| take(&mut it)).collect();
     }
     assert!(it.next().is_none(), "extra protocol fields");
+    let pruning = Pruning::new(&members, n, &category);
     let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
-        independent: 0, scored: 0, primary_skips: 0, best: None };
+        independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
+        pruned_subtrees: 0, subtree_completions: 0 };
     search.visit(0, 0, &mut [0; 6], State::default());
     let winner = match search.best {
         Some(w) => format!("\"indices\":{:?},\"synergy\":{},\"core\":{},\"full\":{},\"quality\":{}",
@@ -189,4 +287,8 @@ fn main() {
     };
     println!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
              winner, search.independent, search.scored, search.primary_skips);
+    if std::env::args().any(|arg| arg == "--pruning-stats") {
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{}}}",
+                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions);
+    }
 }
