@@ -160,6 +160,8 @@ struct Search {
     uniform: bool, strength: f64, disjoint: bool,
     independent: u64, scored: u64, primary_skips: u64, best: Option<Winner>,
     pruning: Option<Pruning>, pruned_subtrees: u64, subtree_completions: u64, name_sorts: u64,
+    incoming: Vec<Vec<u64>>, masks: [[u64; 4]; 6], mask_mode: bool,
+    candidates_tested: u64, mask_rejected: u64,
 }
 impl Search {
     fn score(&self, state: State, indices: &[usize]) -> f64 {
@@ -249,10 +251,26 @@ impl Search {
                 }
             }
         }
-        for i in start..=self.n - (5 - depth) {
-            if chosen[..depth].iter().any(|&j| self.members[i].conflicts[j / 64] & (1 << (j % 64)) != 0) { continue; }
+        let limit = self.n - (5 - depth);
+        for i in start..=limit {
+            self.candidates_tested += 1;
+            let word = i / 64;
+            let bit = i % 64;
+            let blocked = if self.mask_mode {
+                self.masks[depth][word] & (1 << bit) == 0
+            } else {
+                chosen[..depth].iter().any(|&j| self.members[i].conflicts[j / 64] & (1 << (j % 64)) != 0)
+            };
+            if blocked { self.mask_rejected += 1; continue; }
             let next = state.add(&self.members[i], &chosen[..depth], self.compensated);
             chosen[depth] = i;
+            if self.mask_mode {
+                let mut child = self.masks[depth];
+                for value in child[..word].iter_mut() { *value = 0; }
+                child[word] &= if bit == 63 { 0 } else { u64::MAX << (bit + 1) };
+                for (w, inc) in self.incoming[i].iter().enumerate() { child[w] &= !inc; }
+                self.masks[depth + 1] = child;
+            }
             self.visit(i + 1, depth + 1, chosen, next);
         }
     }
@@ -290,9 +308,20 @@ fn main() {
     }
     assert!(it.next().is_none(), "extra protocol fields");
     let pruning = Pruning::new(&members, n, category);
+    // incoming[k] holds exactly the candidates that chosen member k's own conflict
+    // row rejects, so masks reproduce the original per-candidate test.
+    let mut incoming = vec![vec![0_u64; n.div_ceil(64)]; n];
+    for (j, member) in members[..n].iter().enumerate() {
+        for (k, row) in incoming.iter_mut().enumerate() {
+            if member.conflicts[k / 64] & (1 << (k % 64)) != 0 { row[j / 64] |= 1 << (j % 64); }
+        }
+    }
+    let mask_mode = n <= 256; // fixed four-word masks; larger pools keep the original test.
     let mut search = Search { members, n, category, compensated, uniform, strength, disjoint,
         independent: 0, scored: 0, primary_skips: 0, best: None, pruning,
-        pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0 };
+        pruned_subtrees: 0, subtree_completions: 0, name_sorts: 0,
+        incoming, masks: [[0; 4]; 6], mask_mode, candidates_tested: 0, mask_rejected: 0 };
+    for j in 0..n { search.masks[0][j / 64] |= 1 << (j % 64); }
     search.visit(0, 0, &mut [0; 6], State::default());
     let winner = match search.best {
         Some(w) => format!("\"indices\":{:?},\"synergy\":{},\"core\":{},\"full\":{},\"quality\":{}",
@@ -302,7 +331,7 @@ fn main() {
     println!("{{\"protocol\":1,{},\"independent_combinations\":{},\"scored_combinations\":{},\"primary_skips\":{}}}",
              winner, search.independent, search.scored, search.primary_skips);
     if std::env::args().any(|arg| arg == "--pruning-stats") {
-        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"category_kind\":\"{:?}\"}}",
-                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts, search.category);
+        eprintln!("{{\"pruned_subtrees\":{},\"leaf_visits\":{},\"subtree_completions\":{},\"name_sorts\":{},\"category_kind\":\"{:?}\",\"mask_mode\":{},\"candidates_tested\":{},\"mask_rejected\":{}}}",
+                  search.pruned_subtrees, search.independent - search.subtree_completions, search.subtree_completions, search.name_sorts, search.category, search.mask_mode, search.candidates_tested, search.mask_rejected);
     }
 }

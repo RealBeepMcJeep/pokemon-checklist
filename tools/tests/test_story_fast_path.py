@@ -56,5 +56,37 @@ class NativeFastPathTests(unittest.TestCase):
                 self.assertEqual(normal.stderr, '')
 
 
+    def test_conflict_masks_filter_candidates_with_exact_counts(self):
+        n = 12
+        values = [float(i) for i in range(n)]
+        conflicts = [{i} for i in range(n)]
+        conflicts[3].add(0)
+        conflicts[7].add(2)
+        text = wire(values, 'Mixed', conflicts=conflicts)
+        run = subprocess.run([str(self.kernel()), '--pruning-stats'], input=text,
+                             capture_output=True, text=True, check=True)
+        stats = json.loads(run.stderr)
+        tested = rejected = 0
+        def walk(start, depth, prefix):
+            nonlocal tested, rejected
+            if depth == 5 or start > n - (5 - depth):
+                return
+            for i in range(start, n - (5 - depth) + 1):
+                tested += 1
+                if any(j in conflicts[i] for j in prefix):
+                    rejected += 1
+                    continue
+                walk(i + 1, depth + 1, prefix + [i])
+        walk(0, 0, [])
+        self.assertIs(stats.get('mask_mode'), True,
+                      'RED: absent pre-mask diagnostic; GREEN: mask path engaged')
+        self.assertEqual(stats.get('candidates_tested'), tested,
+                         'every original candidate test must still happen, rejected by mask')
+        self.assertEqual(stats.get('mask_rejected'), rejected)
+        normal = subprocess.run([str(self.kernel())], input=text, capture_output=True,
+                                text=True, check=True)
+        self.assertEqual(normal.stdout, run.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()
