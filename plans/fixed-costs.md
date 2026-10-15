@@ -46,10 +46,28 @@ missed node_modules (two renderer failures), npm ci installed pinned lock unchan
 post-install full rerun exceeded180s and was NOT accepted; complete600s rerun passed. Audit
 reports8 high-severity advisories on unchanged dependencies for later#1 review, not auto-fixed.
 
-First candidate needs repeated UNPROFILED default1 before/after complete cold/warm runs and
-exact prepared/raw/enriched/full-source parity before retention. Do not change another
-candidate while those timings run. Font/chaos/MoveSources choices follow immediate-predecessor
-stage evidence; no compression changes and no default parallelism credited here.
+First candidate b72a7c4 RETAINED on the task branch, not shipped: all14 real default1/unset
+workflows (3 cold +3 warm per side,2 excluded primes), exact prepared inputs/options/raw/enriched
+reports and full live input sets equal. Median cold40.106→38.077s (5.1%less wall/4.9%less CPU),
+warm12.224→9.848s (19.4%less wall/17.7%less CPU). Shared-host observations, not guarantees; SAME
+native B50 executable/no overrides on both sides. Full203 Vitest/302 Python0skip/13 Node/
+214 browser pass, no flaky summary. Public main stilldb7e097; timings are NOT additive to
+prior milestones or evidence of a new native/default-thread speedup.
+
+Second candidate: invocation-local combined Moves/Abilities load, no global parsed/path cache.
+CLI structural RED2reads→GREEN1 of the SAME JSON content; preserve public standalone APIs,
+tier fallback, normalized collisions/max-weight rules, and legacy tier=None Moves union vs
+OU/fallback Abilities. Stream the union instead of retaining every large raw tier blob. Tests
+cover mid-read replacement consistency/next-call corruption rejection and changed valid source,
+real CLI warm re-admission/fresh read/selection-cache invalidation. Retained b72a7c4 vs new loader
+outputs equal for1215 actual/all-tier/None +80random missing-source/collision/weight layouts.
+An initial fixture incorrectly expected unknown tier Untiered accepted; fixed test to require
+same rejection in ALL3 APIs, no production tier policy changed.
+
+Measure this candidate against immediate predecessor b72a7c4 in a DETACHED read-only reference
+worktree (concrete reason for a second owned worktree), not olddb7e097. Shared chaos/MoveSources/
+font choices each follow predecessor evidence. No production edits/competing heavy work during
+timings; no compression changes and no default parallelism credited here.
 
 ## Correctness boundaries
 
