@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-17
+- Routine five-team cards now include paired current/later held-item strips with full Gen VII effects and acquisition locations, complete initial/final source-set validation, lossless preservation of original card content, and hash-bound offline redraw.
 - The checklist remembers the last-opened area per game mode and local account namespace, reopening and scrolling to it after reload. Explicit route links remain authoritative; invalid preferences fall back safely, without changing collection saves, backups or sync.
 
 ## 2026-10-15

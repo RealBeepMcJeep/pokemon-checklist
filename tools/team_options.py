@@ -627,6 +627,7 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
         "caught_records": roster["caught_count"],
         "source_caught_ids": caught_ids,
         "source_seen_ids": seen_ids,
+        "source_starred_ids": sorted(stars),
         "endpoints": roster["canonical_count"],
         "utility": utility["final"], "utility_dex": int(utility["endpoint_id"]),
         "options": rendered,

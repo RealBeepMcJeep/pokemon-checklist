@@ -225,6 +225,10 @@ def render_card(report: dict, option: dict, number: int, atlas: Image.Image, out
     d.text((56, y + 111), "Scores use type potential, not these moves. Items and abilities unrecorded.", font=face(18), fill=DIM)
     d.text((56, y + 140), f"{generated} Phoenix · local, read-only roster report · Butterfree cannot False Swipe", font=face(17), fill=DIM)
     output.parent.mkdir(parents=True, exist_ok=True)
+    if option.get("equipment") is not None:
+        import team_equipment
+        canvas, layout = team_equipment.compose(canvas, rows, option["equipment"])
+        output.with_suffix(".layout.json").write_text(json.dumps(layout, indent=2) + "\n")
     canvas.save(output, optimize=True)
 
 
@@ -235,10 +239,21 @@ def main(argv: list[str] | None = None, *, move_sources: MoveSources | None = No
     parser.add_argument("--no-result-cache", action="store_true",
                         help="bypass live story selection cache")
     parser.add_argument("--report-json", type=Path, help="render an existing --story-options --json snapshot")
+    parser.add_argument("--held-items-json", type=Path, help="verified matching saved item report; offline combined layout A redraw")
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    equipment_report = None
+    if args.held_items_json and not args.report_json:
+        parser.error("--held-items-json requires --report-json; generate matching advice after selection")
     if args.report_json:
         report = json.loads(args.report_json.read_text(encoding="utf-8"))
+        if args.held_items_json:
+            import hashlib
+            equipment_report = json.loads(args.held_items_json.read_text())
+            if equipment_report.get("source_team_sha256") != hashlib.sha256(args.report_json.read_bytes()).hexdigest():
+                raise ValueError("held-item report does not match the exact saved team report")
+            if len(equipment_report.get("teams", [])) != 5 or {team["category"] for team in equipment_report["teams"]} != {option["category"] for option in report["options"]}:
+                raise ValueError("held-item report must contain exactly the same five categories")
     else:
         if not args.uid or not args.cache:
             parser.error("live render requires --uid and --cache")
@@ -259,7 +274,13 @@ def main(argv: list[str] | None = None, *, move_sources: MoveSources | None = No
     stamp = datetime.now(ZoneInfo("America/Phoenix")).strftime("%b %-d, %Y · %-I:%M %p")
     for number, option in enumerate(report["options"], 1):
         output = args.output_dir / f"team-{number:02d}.png"
-        render_card(report, option, number, atlas, output, generated=stamp)
+        rendered_option = option
+        if equipment_report is not None:
+            matches = [team for team in equipment_report["teams"] if team["category"] == option["category"]]
+            if len(matches) != 1:
+                raise ValueError("duplicate or missing equipment category")
+            rendered_option = {**option, "equipment": {**matches[0], "horizon": equipment_report.get("horizon", "Report horizon not recorded")}}
+        render_card(report, rendered_option, number, atlas, output, generated=stamp)
         print(f"{number}: {output} ({output.stat().st_size} bytes)")
     snapshot = args.output_dir / "story-options.json"
     snapshot.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

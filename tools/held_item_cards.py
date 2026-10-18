@@ -57,7 +57,8 @@ def validate_sources(team, expected, records):
         'seen': sorted(int(k.split(':')[1]) for k,v in records.items() if k.startswith('species:') and v.get('s') == 'seen'),
         'starred': sorted(int(k.split(':')[1]) for k,v in records.items() if k.startswith('star:') and v.get('s') == 'on'),
     }
-    if team['source_caught_ids'] != expected['caught'] or team['source_seen_ids'] != expected['seen']:
+    if (team['source_caught_ids'] != expected['caught'] or team['source_seen_ids'] != expected['seen']
+            or ('source_starred_ids' in team and team['source_starred_ids'] != expected['starred'])):
         raise ValueError('team report and selection snapshot disagree')
     if found != expected:
         raise ValueError('live source sets changed; regenerate the upstream selection')
