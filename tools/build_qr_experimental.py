@@ -151,6 +151,37 @@ def test_guide(root: Path) -> str:
         'The unchanged <a href="qr.html">ordinary archive (244 originals) and separate gift collection (2)</a> remain controls, not generated rewards.</p></section>')
 
 
+def add_random_sort(text: str) -> str:
+    """Experimental-only controls; keep the original archive template unchanged."""
+    text = checked_replace(text, '<select id="sort-order">', '<div class="sort-actions"><select id="sort-order">')
+    text = checked_replace(text, '<option value="name-desc">Name: Z–A</option></select>',
+        '<option value="name-desc">Name: Z–A</option><option value="random">Random</option></select>'
+        '<button id="shuffle-again" type="button" hidden>Shuffle again</button></div>')
+    text = checked_replace(text, '  </style>', '''    .sort-actions { display: flex; gap: 8px; min-width: 0; }
+    .sort-actions select { flex: 1 1 0; min-width: 0; }
+    #shuffle-again { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #3d4a5d; border-radius: 10px; background: #171e2a; color: #f6f7fb; cursor: pointer; }
+  </style>''')
+    text = checked_replace(text, '      const sortOrder = document.getElementById("sort-order");',
+        '      const sortOrder = document.getElementById("sort-order");\n'
+        '      const shuffleAgain = document.getElementById("shuffle-again");')
+    text = checked_replace(text, '        const order = sortOrder.value;', '''        const order = sortOrder.value;
+        shuffleAgain.hidden = order !== "random";
+        if (order === "random") {
+          // Fisher–Yates over ALL records, including those hidden by filters.
+          for (let i = cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [cards[i], cards[j]] = [cards[j], cards[i]];
+          }
+          // The same array drives filtered viewer Next/Previous navigation.
+          cardGrid.append(...cards);
+          return;
+        }''')
+    text = checked_replace(text, '      sortOrder.addEventListener("change", applySort);',
+        '      sortOrder.addEventListener("change", applySort);\n'
+        '      shuffleAgain.addEventListener("click", applySort);')
+    return text
+
+
 def compile_experimental(root: Path = ROOT) -> str:
     root = Path(root)
     records, type_names, source, atlas = load_inputs(root)
@@ -202,7 +233,7 @@ def compile_experimental(root: Path = ROOT) -> str:
         text = checked_replace(text, marker, replacement, count)
     if re.search(r'__[A-Z][A-Z0-9_]+__', text):
         raise GalleryBuildError('Unresolved shared-template markers')
-    return text
+    return add_random_sort(text)
 
 
 def main(argv: list[str] | None = None) -> int:

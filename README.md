@@ -93,6 +93,10 @@ The expandable notes show the formula and sources; [implementation/data provenan
 documents the limits. `python tools/build_capture_data.py --check` verifies the
 retained source hashes and generated data offline.
 
+## Experimental QR random order
+
+On [Experimental QR](qr-experimental.html), select **Random** in **Sort by** to shuffle the entire generated catalogue, including species/form rows currently hidden by search or type filters. Each selection of Random makes a new shuffle. **Shuffle again** is visible while Random is selected so you can reshuffle without switching sort modes. Filtering preserves that order, and the scan viewer's Next/Previous follows the visible portion of the shuffled list. Nothing is saved or changed in your checklist, and QR payloads are unchanged. The original archive retains its existing sorting options.
+
 ## QR gallery
 
 Open the separate [QR gallery](qr.html), also available at

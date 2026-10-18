@@ -151,3 +151,104 @@ test('true touch-mobile deep link and representative form/boundary QR screenshot
   expect(logs).toEqual({ network: [], errors: [] });
   await context.close();
 });
+
+test('Random shuffles the full catalogue before filtering and each explicit reshuffle', async ({ page }, info) => {
+  await page.addInitScript(() => {
+    let seed = 0x12345678;
+    Math.random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  });
+  const logs = await open(page, info.project.name);
+  await expect(page.locator('#sort-order option[value="random"]')).toHaveCount(1);
+  const ids = () => page.locator('.qr-card').evaluateAll(cards => cards.map(card => card.id));
+  const original = await ids();
+  let seed = 0x12345678;
+  const shuffled = (input: string[]) => {
+    const output = [...input];
+    for (let i = output.length - 1; i > 0; i--) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      const j = Math.floor((seed / 4294967296) * (i + 1));
+      [output[i], output[j]] = [output[j], output[i]];
+    }
+    return output;
+  };
+  // Hide almost everything first: Random must shuffle hidden records too.
+  await page.locator('#search').fill('Rattata Alola');
+  await page.locator('#type-filter').selectOption('Dark');
+  await page.locator('#sort-order').selectOption('random');
+  const first = await ids();
+  expect(first).toEqual(shuffled(original));
+  expect(first).not.toEqual(original);
+  expect([...first].sort()).toEqual([...original].sort());
+  await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(1);
+  await expect(page.locator('#shuffle-again')).toBeVisible();
+  await page.locator('#sort-order').selectOption('random');
+  const selectedAgain = await ids();
+  expect(selectedAgain).toEqual(shuffled(first));
+  await page.locator('#shuffle-again').click();
+  const second = await ids();
+  expect(second).toEqual(shuffled(selectedAgain));
+  expect(second).not.toEqual(selectedAgain);
+  await page.locator('#search').fill('');
+  await page.locator('#type-filter').selectOption('');
+  expect(await ids()).toEqual(second); // Filtering must not reshuffle implicitly.
+  await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(original.length);
+  const next = page.locator('.qr-card').nth(1);
+  const expectedImage = await next.locator('.qr-original').getAttribute('src');
+  const dex = Number(await next.getAttribute('data-dex'));
+  const form = Number(await next.getAttribute('data-form'));
+  await page.locator('.qr-card').first().locator('.card-open').click();
+  await page.locator('#scan-next').click();
+  await expect(page.locator('#scan-image')).toHaveAttribute('src', expectedImage!);
+  await verifyScreenshot(page, info.outputPath('random-next-qr.png'), dex, form);
+  await page.locator('#scan-prev').click();
+  await expect(page.locator('#scan-image')).toHaveAttribute('src', (await page.locator('.qr-card').first().locator('.qr-original').getAttribute('src'))!);
+  await page.locator('#scan-close').click();
+  await page.locator('#sort-order').selectOption('dex-asc');
+  expect(await ids()).toEqual(original);
+  await expect(page.locator('#shuffle-again')).toBeHidden();
+  await page.locator('#sort-order').selectOption('random');
+  expect(await ids()).toEqual(shuffled(original));
+  expect(logs).toEqual({ network: [], errors: [] });
+});
+
+test('Random controls fit real touch phones and reshuffle even when no QR matches', async ({ browser }, info) => {
+  const context = await browser.newContext({ viewport: { width: 360, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  const logs = await open(page, info.project.name);
+  expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
+  await page.locator('#sort-order').selectOption('random');
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const select = await page.locator('#sort-order').boundingBox();
+    const button = await page.locator('#shuffle-again').boundingBox();
+    expect(select!.x).toBeGreaterThanOrEqual(0);
+    expect(select!.x + select!.width).toBeLessThanOrEqual(button!.x);
+    expect(button!.x + button!.width).toBeLessThanOrEqual(width);
+    expect(button!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const labelFits = await page.locator('#sort-order').evaluate((node: HTMLSelectElement) => {
+      const style = getComputedStyle(node);
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      ctx.font = style.font;
+      return ctx.measureText(node.selectedOptions[0].text).width + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 24 <= node.clientWidth;
+    });
+    expect(labelFits).toBe(true);
+  }
+  await page.locator('#search').fill('no matching species anywhere');
+  await expect(page.locator('#empty-state')).toBeVisible();
+  const before = await page.locator('.qr-card').evaluateAll(cards => cards.map(card => card.id));
+  await page.locator('#shuffle-again').tap();
+  const after = await page.locator('.qr-card').evaluateAll(cards => cards.map(card => card.id));
+  expect(after).not.toEqual(before);
+  expect([...after].sort()).toEqual([...before].sort());
+  await expect(page.locator('#empty-state')).toBeVisible();
+  await page.locator('#search').fill('');
+  await expect(page.locator('.qr-card:not([hidden])')).toHaveCount(before.length);
+  expect(await page.locator('.qr-card').evaluateAll(cards => cards.map(card => card.id))).toEqual(after);
+  await page.screenshot({ path: info.outputPath('random-touch-controls.png') });
+  expect(logs).toEqual({ network: [], errors: [] });
+  await context.close();
+});

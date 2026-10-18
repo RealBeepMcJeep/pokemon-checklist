@@ -180,6 +180,9 @@
       .source-chip { font-size: .56rem; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+    .sort-actions { display: flex; gap: 8px; min-width: 0; }
+    .sort-actions select { flex: 1 1 0; min-width: 0; }
+    #shuffle-again { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #3d4a5d; border-radius: 10px; background: #171e2a; color: #f6f7fb; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -191,7 +194,7 @@
 <p class="compatibility"><strong>Console untested:</strong> signatures and PNG transport do not establish game acceptance. Includes cosmetic, Mega and battle-only rows; their presence is not a promise the scanner supports them. Ordinary Dex codes do not give Pokémon. All codes set shiny=False, both genders=False and fixed experimental gender=0; this is not a claim of valid species gender metadata.</p>
       <div class="filters" aria-label="Filter and sort generated experiments">
         <div class="control"><label for="search">Search name, Pokédex number, or form</label><input id="search" type="search" autocomplete="off" placeholder="e.g. Rowlet, 722, Alola"></div>
-        <div class="control"><label for="sort-order">Sort by</label><select id="sort-order"><option value="dex-asc" selected>Pokédex number: low to high</option><option value="dex-desc">Pokédex number: high to low</option><option value="name-asc">Name: A–Z</option><option value="name-desc">Name: Z–A</option></select></div>
+        <div class="control"><label for="sort-order">Sort by</label><div class="sort-actions"><select id="sort-order"><option value="dex-asc" selected>Pokédex number: low to high</option><option value="dex-desc">Pokédex number: high to low</option><option value="name-asc">Name: A–Z</option><option value="name-desc">Name: Z–A</option><option value="random">Random</option></select><button id="shuffle-again" type="button" hidden>Shuffle again</button></div></div>
         <div class="control"><label for="type-filter">Pokémon type</label><select id="type-filter"><option value="">All types</option><option value="Normal">Normal</option><option value="Fighting">Fighting</option><option value="Flying">Flying</option><option value="Poison">Poison</option><option value="Ground">Ground</option><option value="Rock">Rock</option><option value="Bug">Bug</option><option value="Ghost">Ghost</option><option value="Steel">Steel</option><option value="Fire">Fire</option><option value="Water">Water</option><option value="Grass">Grass</option><option value="Electric">Electric</option><option value="Psychic">Psychic</option><option value="Ice">Ice</option><option value="Dragon">Dragon</option><option value="Dark">Dark</option><option value="Fairy">Fairy</option></select></div>
         <div class="control"><label for="library-filter">Template family / provenance</label><select id="library-filter"><option value="generated">Locally generated ordinary key-3 Dex</option></select></div>
       </div>
@@ -1353,6 +1356,7 @@
       const sourceOrder = new Map(cards.map((card, index) => [card, index]));
       const cardGrid = document.getElementById("cards");
       const sortOrder = document.getElementById("sort-order");
+      const shuffleAgain = document.getElementById("shuffle-again");
       const nameOrder = new Intl.Collator("en", { sensitivity: "base" });
       const search = document.getElementById("search");
       const typeFilter = document.getElementById("type-filter");
@@ -1384,6 +1388,17 @@
       const fold = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase();
       function applySort() {
         const order = sortOrder.value;
+        shuffleAgain.hidden = order !== "random";
+        if (order === "random") {
+          // Fisher–Yates over ALL records, including those hidden by filters.
+          for (let i = cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [cards[i], cards[j]] = [cards[j], cards[i]];
+          }
+          // The same array drives filtered viewer Next/Previous navigation.
+          cardGrid.append(...cards);
+          return;
+        }
         const direction = order.endsWith("desc") ? -1 : 1;
         cards.sort((left, right) => {
           const dex = Number(left.dataset.dex) - Number(right.dataset.dex);
@@ -1414,6 +1429,7 @@
       typeFilter.addEventListener("change", applyFilters);
       libraryFilter.addEventListener("change", applyFilters);
       sortOrder.addEventListener("change", applySort);
+      shuffleAgain.addEventListener("click", applySort);
 
       function visibleCards() { return (selectedCard?.dataset.gift ? giftCards : cards).filter((card) => !card.hidden); }
       function setCard(card) {
