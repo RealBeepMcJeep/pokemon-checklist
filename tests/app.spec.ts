@@ -450,6 +450,8 @@ test("gives sign-in a whole row on a small phone", async ({ page }, testInfo) =>
   await page.setViewportSize({ width: 320, height: 700 });
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#header-settings-toggle").click();
+  await expect(page.locator(".actions")).toBeVisible();
+  await expect(page.locator("#sync-signin")).toBeVisible();
   const actions = await page.locator(".actions").boundingBox();
   const panel = await page.locator("#sync-panel").boundingBox();
   const button = await page.locator("#sync-signin").boundingBox();
@@ -777,6 +779,9 @@ test("does not re-render every already-open location when only the focus moves",
   const bystander = page.locator("details.location").nth(2);
   await bystander.locator("summary").click();
   await expect(bystander).toHaveAttribute("open", "");
+  // Native <details> opens before its lazy body has committed. Measure only after
+  // that expected first render, not while its toggle event is still queued.
+  await expect(bystander.locator(".location-body")).toBeVisible();
   const before = await bystander.getAttribute("data-renders");
 
   const first = page.locator("details.location").first();

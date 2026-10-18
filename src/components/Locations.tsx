@@ -6,6 +6,7 @@ import { ASSETS, detailsByDex, formDetails } from "../data";
 import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
+  activeSaveNamespace,
   activeUnlocks,
   focusedLocation,
   mode,
@@ -17,7 +18,7 @@ import type {
   Island as IslandData,
   Location as LocationData,
 } from "../types";
-import { consumeRowFocusIntent, openPokemon } from "../ui";
+import { consumeRowFocusIntent, openPokemon, rememberLocation } from "../ui";
 import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts } from "./PokemonFacts";
 import {
@@ -251,6 +252,8 @@ const Location = memo(function Location({
   // time it is actually opened, then keep it so in-page search and anchor jumps
   // still find it.
   const [mounted, setMounted] = useState(open);
+  const memoryMode = mode.value;
+  const memoryNamespace = activeSaveNamespace.value;
   useEffect(() => {
     if (open) setMounted(true);
   }, [open]);
@@ -266,10 +269,19 @@ const Location = memo(function Location({
       data-renders={renders.current}
       open={open}
       onToggle={(event) => {
-        if (event.currentTarget.open) setMounted(true);
+        if (event.currentTarget.open) {
+          setMounted(true);
+          rememberLocation(location.id, memoryMode, memoryNamespace);
+        }
       }}
     >
-      <summary>
+      <summary onClick={(event) => {
+        if (!(event.currentTarget.parentElement as HTMLDetailsElement).open) {
+          // An old in-app jump is no longer an explicit request after manual browsing.
+          history.replaceState(null, "", window.location.href.split("#")[0]);
+          rememberLocation(location.id, memoryMode, memoryNamespace);
+        }
+      }}>
         <span class="location-heading">
           <span class="location-title">{location.name}</span>
           <LocationProgress location={location} />
@@ -349,6 +361,7 @@ export function LocationList({ inert = false }: { inert?: boolean }) {
   const encounters = activeEncounters.value;
   const openLocation = focusedLocation.value;
   const currentMode = mode.value;
+  const namespace = activeSaveNamespace.value;
   useEffect(() => {
     if (!openLocation) return;
     // jumpTo() is about to scroll to and focus a specific row in this location
@@ -363,11 +376,11 @@ export function LocationList({ inert = false }: { inert?: boolean }) {
         ?.querySelector<HTMLElement>("summary")
         ?.focus({ preventScroll: true });
     });
-  }, [currentMode, openLocation]);
+  }, [currentMode, namespace, openLocation]);
   return (
     <main id="main-view" tabIndex={-1} inert={inert}>
       {encounters.islands.map((island) => (
-        <Island key={island.id} island={island} openLocation={openLocation} />
+        <Island key={`${namespace}:${currentMode}:${island.id}`} island={island} openLocation={openLocation} />
       ))}
     </main>
   );

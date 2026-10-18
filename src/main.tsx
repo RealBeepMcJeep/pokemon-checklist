@@ -3,15 +3,13 @@ import { App } from "./App";
 import { followSignInFromOtherTabs, watchSyncAccount } from "./sync/engine";
 import { claimDeviceEditing } from "./editing";
 import { availableStorage, syncSessionExpected } from "./sync/outbox";
-import { firstIncompleteLocation } from "./domain";
+import { effect, untracked } from "@preact/signals";
+import { restoreLocation } from "./ui";
 import {
-  activeEncounters,
-  activeUnlocks,
+  activeSaveNamespace,
   announceBuild,
-  focusedLocation,
   initializeState,
   mode,
-  speciesStatus,
   watchOtherTabs,
 } from "./state";
 import "./styles/themes.css";
@@ -34,7 +32,12 @@ claimDeviceEditing();
 if (syncSessionExpected(availableStorage())) watchSyncAccount();
 followSignInFromOtherTabs();
 document.documentElement.dataset.mode = mode.value;
-focusedLocation.value =
-  firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value)?.id || null;
+let initialLocation = true;
+effect(() => {
+  mode.value;
+  activeSaveNamespace.value;
+  untracked(() => restoreLocation(initialLocation ? window.location.hash : ""));
+  initialLocation = false;
+});
 
 render(<App />, document.getElementById("app")!);

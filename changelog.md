@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-17
+- The checklist remembers the last-opened area per game mode and local account namespace, reopening and scrolling to it after reload. Explicit route links remain authoritative; invalid preferences fall back safely, without changing collection saves, backups or sync.
+
 ## 2026-10-15
 - Added read-only held-item overview and five-team cards with Gen VII effects, separate historical usage, conditional current/later access, single-free-copy allocation and fresh source-set checks; checklist UI and saved progress stay unchanged.
 - Five-team refreshes reuse fixed preparation, preflight sources and per-card fonts, reducing measured cold/warm workflow time without changing teams, source checks, fresh timestamps or image compression.

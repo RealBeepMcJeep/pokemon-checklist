@@ -91,6 +91,8 @@ export const formsCaught = computed(() => formCounts.value.caught);
 // Sync is the only subscriber to the change listener.
 
 let activeUid: string | null = null;
+/** Reactive UI namespace, updated only after an account transition settles. */
+export const activeSaveNamespace = signal(saveKeyFor(null));
 let localChangeListener: ((state: SavedState) => void) | null = null;
 let localReplaceListener:
   | ((before: SavedState, op: ReplaceOp) => void)
@@ -182,44 +184,50 @@ export function setSyncAccount(
   uid: string | null,
   { adopt = true, ifSaved = false }: { adopt?: boolean; ifSaved?: boolean } = {},
 ): boolean {
-  if (uid === activeUid) return true;
-  // Another checklist is about to be shown: nothing on screen can be undone into it.
-  expireUndo();
-  const previous = activeUid;
-  activeUid = uid;
-  let read: StoredSave | null = null;
-  try {
-    read = readSave();
-  } catch {
-    // Unreadable storage: nothing is found, and nothing is written over it.
-    heldKey = activeSaveKey();
-  }
-  if (ifSaved && !read?.found) {
-    // Only switch to a save that is here and readable.
-    activeUid = previous;
-    return false;
-  }
-  if (read && useSave(read)) {
-    if (read.unreadable === null) {
-      showNotice(
-        uid
-          ? "Signed in: showing this account's checklist."
-          : "Signed out: showing this device's checklist.",
-        "good",
-      );
+  return batch(() => {
+    try {
+      if (uid === activeUid) return true;
+      // Another checklist is about to be shown: nothing on screen can be undone into it.
+      expireUndo();
+      const previous = activeUid;
+      activeUid = uid;
+      let read: StoredSave | null = null;
+      try {
+        read = readSave();
+      } catch {
+        // Unreadable storage: nothing is found, and nothing is written over it.
+        heldKey = activeSaveKey();
+      }
+      if (ifSaved && !read?.found) {
+        // Only switch to a save that is here and readable.
+        activeUid = previous;
+        return false;
+      }
+      if (read && useSave(read)) {
+        if (read.unreadable === null) {
+          showNotice(
+            uid
+              ? "Signed in: showing this account's checklist."
+              : "Signed out: showing this device's checklist.",
+            "good",
+          );
+        }
+        return true;
+      }
+      if (!adopt || read?.unreadable != null) {
+        // The account already has a collection elsewhere and this device has never
+        // held it. Starting empty lets the account's own data arrive rather than
+        // pushing stale offline progress over it as a brand-new write. Nor is another
+        // checklist ever carried over a save that could not be read: signing out once
+        // silently wrote the account's checklist over the device's own that way.
+        applyState(defaultState());
+      }
+      persist();
+      return false;
+    } finally {
+      activeSaveNamespace.value = activeSaveKey();
     }
-    return true;
-  }
-  if (!adopt || read?.unreadable != null) {
-    // The account already has a collection elsewhere and this device has never
-    // held it. Starting empty lets the account's own data arrive rather than
-    // pushing stale offline progress over it as a brand-new write. Nor is another
-    // checklist ever carried over a save that could not be read: signing out once
-    // silently wrote the account's checklist over the device's own that way.
-    applyState(defaultState());
-  }
-  persist();
-  return false;
+  });
 }
 
 export function speciesSignal(id: number): Signal<Status> {

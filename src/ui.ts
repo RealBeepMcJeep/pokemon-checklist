@@ -1,12 +1,14 @@
 import { signal } from "@preact/signals";
 import {
   activeEncounters,
+  activeSaveKey,
   activeUnlocks,
   changeNotice,
   cycleSpecies,
   drawerOpen,
   exportState,
   focusedLocation,
+  mode,
   parseState,
   resetState,
   restoreState,
@@ -17,7 +19,8 @@ import {
   sidebarHidden,
   speciesStatus,
 } from "./state";
-import { firstIncompleteLocation, MODE_LABELS } from "./domain";
+import { firstIncompleteLocation, MODE_LABELS, safeId } from "./domain";
+import { readLastLocation, writeLastLocation } from "./location-memory";
 import { stillEditingAfterDialog } from "./editing";
 import type { GameMode, Location } from "./types";
 
@@ -54,28 +57,34 @@ drawerOpen.subscribe((open) => {
  * (opened for a specific Pokémon) rather than the search box (opened generically). */
 let focusSelectionOnOpen = false;
 
-export function currentOpenLocations(): string[] {
-  return [
-    ...document.querySelectorAll<HTMLDetailsElement>("details.location[open]"),
-  ]
-    .map((item) => item.dataset.locationId)
-    .filter((id): id is string => Boolean(id));
-}
-
 export function firstIncomplete(): Location | null {
   return firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value);
 }
 
+let memoryWarningShown = false;
+export function rememberLocation(id: string, expectedMode = mode.peek(), expectedNamespace = activeSaveKey()): void {
+  // A delayed toggle from an unmounted mode/account must not write into the new one.
+  if (mode.peek() !== expectedMode || activeSaveKey() !== expectedNamespace) return;
+  if (!activeEncounters.peek().islands.some(island => island.locations.some(location => location.id === id))) return;
+  if (!writeLastLocation(expectedMode, expectedNamespace, id) && !memoryWarningShown) {
+    memoryWarningShown = true;
+    showNotice("Last area could not be remembered on this device. Browsing still works.", "error");
+  }
+}
+
+/** Called only on startup or a mode/account change, never on tab visibility. */
+export function restoreLocation(hash = ""): void {
+  const locations = activeEncounters.peek().islands.flatMap(island => island.locations);
+  const linked = locations.find(location =>
+    hash === `#location-${safeId(location.id)}` || location.groups.some(group =>
+      group.encounters.some(row => hash === `#encounter-${safeId(row.id)}`)));
+  const id = linked?.id || readLastLocation(mode.peek(), activeSaveKey(), locations.map(location => location.id)) || firstIncomplete()?.id || null;
+  if (linked && hash.startsWith("#encounter-")) jumpTo(hash, linked.id);
+  else focusedLocation.value = id;
+}
+
 export function changeMode(nextMode: GameMode): void {
-  const open = currentOpenLocations();
   setMode(nextMode);
-  const available = new Set(
-    activeEncounters.value.islands.flatMap((island) =>
-      island.locations.map(({ id }) => id),
-    ),
-  );
-  focusedLocation.value =
-    open.find((id) => available.has(id)) || firstIncomplete()?.id || null;
   changeNotice(`Switched to ${MODE_LABELS[nextMode]}.`);
 }
 
@@ -90,6 +99,8 @@ export function changeSpecies(id: number): void {
 function focusEncounterRow(hash: string): boolean {
   const target = document.getElementById(hash.slice(1));
   if (!target) return false;
+  const locationId = target.closest<HTMLDetailsElement>("details.location")?.dataset.locationId;
+  if (locationId) rememberLocation(locationId);
   let parent = target.parentElement;
   while (parent) {
     if (parent instanceof HTMLDetailsElement) parent.open = true;
