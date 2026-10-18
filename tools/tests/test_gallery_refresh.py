@@ -16,7 +16,7 @@ SCRIPT = Path(os.environ.get('GALLERY_SCRIPT', str(Path(__file__).resolve().pare
 
 class GalleryFailureTests(unittest.TestCase):
     def test_selector_failure_keeps_stderr_stage_traceback_and_nonzero_exit(self):
-        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as root:
+        with tempfile.TemporaryDirectory() as root:
             root = Path(root)
             previous = root / 'previous.json'
             previous.write_text(json.dumps({'options': []}))
@@ -49,7 +49,7 @@ class GalleryFailureTests(unittest.TestCase):
             self.assertEqual(failure.code, 7)
 
     def test_renderer_nonzero_return_is_not_ignored_and_keeps_output(self):
-        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as root:
+        with tempfile.TemporaryDirectory() as root:
             root = Path(root)
             previous = root / 'previous.json'
             raw = {'options': [{'category': str(i), 'members': []} for i in range(5)],
