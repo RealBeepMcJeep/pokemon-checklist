@@ -1150,3 +1150,14 @@ tbody tr:hover {
   margin: 0.2rem 0;
   color: var(--muted);
 }
+
+/* Native top-layer modality; no competing imperative body-overflow owner. */
+body:has(.form-choice-dialog[open]) { overflow: hidden !important; }
+.form-choice-dialog { box-sizing: border-box; width: min(540px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 22px; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--panel); overflow: auto; overscroll-behavior: contain; }
+.form-choice-dialog::backdrop { background: #000a; }
+.form-choice-dialog h2 { margin: 0 0 12px; }
+.form-choice-options { display: grid; gap: 12px; margin: 18px 0; }
+.form-choice-option { display: grid; gap: 6px; min-height: 88px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.form-choice-option strong { font-size: 16px; }
+.form-choice-cancel { min-height: 44px; width: 100%; }
+@media (max-width: 599px) { .form-choice-dialog { margin: auto auto 0; width: 100%; max-height: 90dvh; border-radius: 18px 18px 0 0; padding: 20px 18px max(20px, env(safe-area-inset-bottom)); } }

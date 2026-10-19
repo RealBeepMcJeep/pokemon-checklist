@@ -105,6 +105,8 @@ export const formsCaught = computed(() => formCounts.value.caught);
 let activeUid: string | null = null;
 /** Reactive UI namespace, updated only after an account transition settles. */
 export const activeSaveNamespace = signal(saveKeyFor(null));
+/** Ephemeral action context, never player progress or sync metadata. */
+export const editContextGeneration = signal(0);
 let localChangeListener: ((state: SavedState) => void) | null = null;
 let localReplaceListener:
   | ((before: SavedState, op: ReplaceOp) => void)
@@ -199,6 +201,7 @@ export function setSyncAccount(
   return batch(() => {
     try {
       if (uid === activeUid) return true;
+      editContextGeneration.value++;
       // Another checklist is about to be shown: nothing on screen can be undone into it.
       expireUndo();
       const previous = activeUid;
@@ -564,14 +567,26 @@ function expireUndo(): void {
 function undo(done: Change): void {
   if (readOnly.value) return;
   undoable = null;
+  const current = exportState();
   const target = rebaseState(
-    exportState(),
+    current,
     done.after,
     done.before,
     validPokemon,
     validForms,
     true,
   );
+  // Record conversion deliberately suppresses stale species bridges beside form
+  // tombstones. An explicit local Undo of a legacy resolution is different:
+  // restore the unresolved intent, but never overwrite a later form favorite.
+  for (const id of done.before.starred.filter(isRegional)) {
+    const chosen = ("starredForms" in done.after ? done.after.starredForms : []).filter(key => Number(key.split(":")[0]) === id);
+    if (!done.after.starred.includes(id) && chosen.length
+        && chosen.every(key => "starredForms" in current && current.starredForms.includes(key))
+        && !("starredForms" in target && target.starredForms.some(key => Number(key.split(":")[0]) === id))) {
+      target.starred = [...new Set([...target.starred, id])].sort((a, b) => a - b);
+    }
+  }
   if (done.replace) replaceState(target, "restore");
   else {
     applyState(target);
@@ -616,6 +631,7 @@ export function showReadOnly(): void {
 
 export function cycleSpecies(id: number): void {
   if (readOnly.value) return;
+  if (isRegional(id)) { showNotice("Choose an exact regional form before editing status.", "error"); return; }
   const before = exportState();
   const status = speciesSignal(id);
   status.value = cycleStatus(status.value);
@@ -625,10 +641,14 @@ export function cycleSpecies(id: number): void {
 }
 
 export function cycleForm(key: string): void {
+  setFormStatus(key, cycleStatus(formSignal(key).value));
+}
+
+/** Apply the confirmed transition, not a second cycle based on a generic badge. */
+export function setFormStatus(key: string, next: Status): void {
   if (readOnly.value) return;
   const before = exportState();
   const status = formSignal(key);
-  const next = cycleStatus(status.value);
   const form = formDefinitions.get(key);
   if (!form) throw new Error(`Unknown form ${key}`);
   batch(() => {
@@ -666,15 +686,15 @@ export function isStarred(id: number, form?: RegionalForm): boolean {
 /** Pin a species to the top of the Pokédex list, or release it again. */
 export function toggleStar(id: number, form?: RegionalForm): void {
   if (readOnly.value) return;
+  if (isRegional(id) && !form) { showNotice("Choose an exact regional form before editing favorites.", "error"); return; }
   const before = exportState();
   const pinned = isStarred(id, form);
   if (form) {
-    const key = `${id}:${form}`;
-    if (!isRegional(id) || !validForms.has(key)) throw new Error("Unknown regional favorite");
-    starredForms.value = pinned ? starredForms.value.filter(entry => entry !== key)
-      : [...starredForms.value, key].sort((a, b) => a.localeCompare(b));
-    starred.value = starred.value.filter(entry => entry !== id);
-  } else starred.value = pinned
+    setFormFavorite(id, form, !pinned);
+    changeNotice(pinned ? "Unstarred." : "Starred. It stays at the top until you unstar it.");
+    return;
+  }
+  starred.value = pinned
     ? starred.value.filter((entry) => entry !== id)
     : [...starred.value, id].sort((a, b) => a - b);
   const done = change(before, exportState());
@@ -683,6 +703,22 @@ export function toggleStar(id: number, form?: RegionalForm): void {
   changeNotice(
     pinned ? "Unstarred." : "Starred. It stays at the top until you unstar it.",
   );
+}
+
+/** One explicit regional favorite decision, including preserved legacy intent. */
+export function setFormFavorite(id: number, form: RegionalForm, favorite: boolean): void {
+  if (readOnly.value) return;
+  const key = `${id}:${form}`;
+  if (!isRegional(id) || !validForms.has(key)) throw new Error("Unknown regional favorite");
+  const before = exportState();
+  batch(() => {
+    starredForms.value = [...new Set(favorite ? [...starredForms.value, key]
+      : starredForms.value.filter(entry => entry !== key))].sort((a, b) => a.localeCompare(b));
+    starred.value = starred.value.filter(entry => entry !== id);
+  });
+  const done = change(before, exportState());
+  persist();
+  lastChange = done;
 }
 
 export function parseState(text: string): SavedState {
@@ -701,6 +737,7 @@ export function parseState(text: string): SavedState {
  */
 function replaceState(state: SavedState, op: ReplaceOp): void {
   if (readOnly.value) return;
+  editContextGeneration.value++;
   const before = exportState();
   applyState(state);
   const done = change(before, exportState(), true);

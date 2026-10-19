@@ -21,10 +21,11 @@ import {
   sidebarHidden,
   starred,
   starredForms,
-  toggleStar,
 } from "../state";
 import {
   closeDrawer,
+  changeFavorite,
+  resolveLegacyFavorite,
   consumeSelectionFocusIntent,
   isMobile,
   jumpTo,
@@ -163,6 +164,13 @@ function Selection() {
           {" "}Confirm each form's status; neither form is assumed.
         </p>
       )}
+      {isRegional(selected) && starred.value.includes(selected) && (
+        <div class="form-ownership-warning" role="note">
+          An existing favorite has no assigned regional form. Choose its form without changing ownership.
+          {" "}<button class="action-button" type="button" disabled={readOnly.value !== null}
+            onClick={() => resolveLegacyFavorite(selected)}>Choose form for existing favorite</button>
+        </div>
+      )}
       {formsTracked.value && !isRegional(selected) && forms.length > 0 && (
         <div class="form-summary">
           <strong>Tracked forms (separate from location progress)</strong>
@@ -257,7 +265,7 @@ function StarButton({ id, name, form }: { id: number; name: string; form?: Regio
           : `Star ${name} to keep it at the top of the list`
       }
       title={pinned ? "Unstar" : "Star and keep at the top"}
-      onClick={() => toggleStar(id, form)}
+      onClick={() => changeFavorite(id, form)}
     >
       {pinned ? "★" : "☆"}
     </button>

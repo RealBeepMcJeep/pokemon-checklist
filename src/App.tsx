@@ -6,7 +6,8 @@ import { NoticeAction } from "./components/NoticeAction";
 import { Pokedex } from "./components/Pokedex";
 import { ViewOnlyBanner } from "./components/SyncPanel";
 import { drawerOpen, mode, sidebarHidden } from "./state";
-import { closeDrawer } from "./ui";
+import { closeDrawer, pendingFormEdit } from "./ui";
+import { FormChoiceDialog } from "./components/FormChoiceDialog";
 
 export function App() {
   const currentMode = mode.value;
@@ -24,7 +25,7 @@ export function App() {
   }, [hidden]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && drawerOpen.value) closeDrawer();
+      if (event.key === "Escape" && !pendingFormEdit.value && drawerOpen.value) closeDrawer();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -58,6 +59,7 @@ export function App() {
       <ViewOnlyBanner />
       <NoticeAction />
       <Tools />
+      <FormChoiceDialog />
     </>
   );
 }

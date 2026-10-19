@@ -1,9 +1,19 @@
 import { batch, signal } from "@preact/signals";
-import type { RegionalForm } from "./regional";
+import { isRegional, type RegionalForm } from "./regional";
+import { resolveFormEdit, isCurrentFormEdit, type FormEditContext, type FormEditRequest } from "./form-edit";
+import { byDex } from "./data";
 import type { EncounterViewContext } from "./encounter-names";
 import {
   activeEncounters,
   activeSaveKey,
+  activeSaveNamespace,
+  editContextGeneration,
+  readOnly,
+  starred,
+  isStarred,
+  setFormStatus,
+  setFormFavorite,
+  toggleStar,
   activeUnlocks,
   changeNotice,
   cycleSpecies,
@@ -25,7 +35,7 @@ import {
   sidebarHidden,
   speciesStatus,
 } from "./state";
-import { firstIncompleteLocation, MODE_LABELS, safeId } from "./domain";
+import { firstIncompleteLocation, MODE_LABELS, safeId, cycleStatus } from "./domain";
 import { readLastLocation, writeLastLocation } from "./location-memory";
 import { guideEncounters, guideCalls, groupUnlock } from "./unlocks";
 import { stillEditingAfterDialog } from "./editing";
@@ -103,7 +113,66 @@ export function changeForm(key: string): void {
   if (before !== after) focusedLocation.value = after;
 }
 
+export const pendingFormEdit = signal<FormEditRequest | null>(null);
+
+export function formEditContext(id: number): FormEditContext {
+  return { namespace: activeSaveNamespace.value, generation: editContextGeneration.value, mode: mode.value, tracking: formsTracked.value,
+    readOnly: readOnly.value !== null, id, species: speciesStatus(id),
+    statuses: { alolan: formStatus(`${id}:alolan`), kanto: formStatus(`${id}:kanto`) },
+    favorites: { alolan: isStarred(id, "alolan"), kanto: isStarred(id, "kanto") },
+    legacyFavorite: starred.value.includes(id) };
+}
+
+export function cancelFormEdit(): void { pendingFormEdit.value = null; }
+
+export function applyFormEdit(request: FormEditRequest, form: RegionalForm): void {
+  if (pendingFormEdit.value !== request) return;
+  if (!isCurrentFormEdit(request, formEditContext(request.before.id))) {
+    pendingFormEdit.value = null;
+    showNotice("This checklist changed. Choose again; no changes were made.", "error");
+    return;
+  }
+  const decision = resolveFormEdit(request);
+  if (!(decision.kind === "apply" && decision.form === form)
+      && !(decision.kind === "choose" && decision.forms.includes(form))) return;
+  const before = firstIncomplete()?.id || null;
+  if (request.action.kind === "status") setFormStatus(`${request.before.id}:${form}`, request.action.next);
+  else setFormFavorite(request.before.id, form, request.action.next);
+  const after = firstIncomplete()?.id || null;
+  pendingFormEdit.value = null;
+  const name = `${byDex.get(request.before.id)?.name} (${form === "alolan" ? "Alolan" : "Kanto"})`;
+  if (request.action.kind === "favorite") changeNotice(`${name} ${request.action.next ? "starred" : "unstarred"}. Other forms are unchanged.`);
+  else changeNotice(`${name} marked ${request.action.next === "caught" ? "Caught" : request.action.next === "seen" ? "Seen" : "Not caught"}.${request.action.next !== "caught" && speciesStatus(request.before.id) === "caught" ? " Another form is still owned, so the species stays Caught." : ""}`);
+  if (before !== after) focusedLocation.value = after;
+}
+
+export function resolveLegacyFavorite(id: number): void {
+  if (readOnly.value || !isRegional(id) || !starred.value.includes(id)) return;
+  const request: FormEditRequest = { before: formEditContext(id), action: { kind: "favorite", next: true } };
+  const decision = resolveFormEdit(request);
+  pendingFormEdit.value = request;
+  if (decision.kind === "apply") applyFormEdit(request, decision.form);
+}
+
+export function changeFavorite(id: number, form?: RegionalForm): void {
+  if (!isRegional(id) || form) { toggleStar(id, form); return; }
+  if (readOnly.value) return;
+  const request: FormEditRequest = { before: formEditContext(id), action: { kind: "favorite", next: !isStarred(id) } };
+  const decision = resolveFormEdit(request);
+  if (decision.kind !== "unresolved") pendingFormEdit.value = request;
+  if (decision.kind === "apply") applyFormEdit(request, decision.form);
+}
+
 export function changeSpecies(id: number): void {
+  if (isRegional(id)) {
+    if (readOnly.value) return;
+    const request: FormEditRequest = { before: formEditContext(id), action: { kind: "status", next: cycleStatus(speciesStatus(id)) } };
+    const decision = resolveFormEdit(request);
+    if (decision.kind !== "unresolved") pendingFormEdit.value = request;
+    if (decision.kind === "apply") applyFormEdit(request, decision.form);
+    else if (decision.kind === "unresolved") showNotice("Existing progress has no identified form. Choose its form in Alolan forms view first; nothing changed.", "error");
+    return;
+  }
   const before = firstIncomplete()?.id || null;
   cycleSpecies(id);
   const after = firstIncomplete()?.id || null;

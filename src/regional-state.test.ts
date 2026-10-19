@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { applyState, cycleForm, defaultState, exportState, readOnly, toggleStar, isStarred, toggleForms } from "./state";
+import { applyState, cycleForm, cycleSpecies, defaultState, exportState, readOnly, toggleStar, isStarred, toggleForms } from "./state";
 import { aggregateRegionalStatus, hasUnresolvedRegionalOwnership } from "./regional";
 
 beforeEach(() => {
@@ -14,6 +14,16 @@ beforeEach(() => {
 });
 
 describe("independent regional edits", () => {
+  it("refuses a raw generic regional status bypass", () => {
+    const before = exportState();
+    cycleSpecies(52);
+    expect(exportState()).toEqual(before);
+  });
+  it("refuses a raw generic regional favorite bypass", () => {
+    const before = exportState();
+    toggleStar(52);
+    expect(exportState()).toEqual(before);
+  });
   it("favorites one owned form without favoriting its owned counterpart", () => {
     toggleStar(52, "alolan");
     expect(exportState()).toMatchObject({ starred: [], starredForms: ["52:alolan"] });
