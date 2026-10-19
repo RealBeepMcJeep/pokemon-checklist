@@ -206,7 +206,7 @@ function Selection() {
           </details>
         )}
       </div>
-      <PopularMoves id={selected} />
+      <PopularMoves id={selected} form={form} />
     </>
   );
 }

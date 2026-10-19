@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased — regional living-Dex work (#17)
+- Popular moves now resolve exact Alolan/Kanto paths, separate SM/USUM teaching methods, verified Prismatic Standard levels and documented mart locations, with explicit missing-evidence labels and no inferred egg-to-level conversion. Legacy numeric move consumers remain readable.
+
 ## 2026-10-17
 - Experimental QR codes now offer Random sorting and a Shuffle again control, shuffling every species/form row while keeping filters and viewer navigation in the same order; original archive and QR payloads are unchanged.
 - Routine five-team cards now include paired current/later held-item strips with full Gen VII effects and acquisition locations, complete initial/final source-set validation, lossless preservation of original card content, and hash-bound offline redraw.

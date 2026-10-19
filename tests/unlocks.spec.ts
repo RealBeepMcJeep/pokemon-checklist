@@ -28,12 +28,12 @@ for (const width of [360,1440]) test(`saved Tauros unlock reveals backtracking a
   const area=page.locator(`[data-location-id="${loc.id}"]`);
   if (!(await area.evaluate(el=>(el as HTMLDetailsElement).open))) await area.locator("summary").click();
   await expect(area.locator(".encounter-group").filter({hasText:"Tauros"}).locator(".group-tag")).toHaveText("Catch now");
-  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v4")!));
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v5")!));
   expect(saved.species).toEqual(species);expect(saved.settings.unlocks).toEqual(["tauros"]);
   for (let reload=0; reload<3; reload++) {
     await page.reload();
-    await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v4")!).settings.unlocks)).toEqual(["tauros"]);
-    expect(await page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v4")!).species)).toEqual(species);
+    await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v5")!).settings.unlocks)).toEqual(["tauros"]);
+    expect(await page.evaluate(()=>JSON.parse(localStorage.getItem("pokemon-checklist-state-v5")!).species)).toEqual(species);
     await page.locator("#header-settings-toggle").click();
     await expect(settings.getByLabel("Tauros Charge",{exact:true})).toBeChecked();
     if (reload<2) await settings.getByRole("button",{name:"Close settings"}).click();

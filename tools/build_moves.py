@@ -6,11 +6,12 @@ competitive players ran most (Smogon, November 2019, the species' own tier file)
 game teaches each one along that species' own evolution path. Unevolved species point at their
 final evolutions through ``lines``.
 
-The data holds facts, not wording: ``via`` is level, reminder, TM, tutor, egg or event, and the
-app phrases them per game mode. An empty ``how`` means the game cannot teach that move at all.
-A move's name, type, power, TM and tutor details live once in the ``moves`` table.
-Entries are keyed by dex-number strings so forms (``"26:alolan"``) can be added later without a
-schema change, and ``source.profile`` names the learnset rules a future variant would replace.
+Each move has separate SM, USUM and Prismatic Standard learning profiles, with exact regional
+stage identities. Empty routes mean no verified native method, not proof against events or
+transfers. Legacy numeric entries and ``how`` remain readable for existing tools; the app must
+not use their old union as a mode-specific fallback. Shared move metadata and historical usage
+remain distinct from acquisition. Only Standard's verified levels and documented shared marts
+override USUM; Rebalanced-only TM changes are excluded.
 
 Offline by default: it reads the verified Showdown cache and the hash-pinned Smogon files in the
 same directory. ``--refresh`` downloads any missing Smogon file.
@@ -24,16 +25,25 @@ same directory. ``--refresh`` downloads any missing Smogon file.
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import re
 import json
 import sys
 from pathlib import Path
 
 try:
-    from . import moveline as ml
+    from . import moveline as ml, game_move_data as game
+    from .story_moves import standard_target_levels, TAPU_TMS
+    from .showdown_data import require_cache
+    from .showdown_text import top_blocks, field
     from .acquisition_data import TM_INFO, TUTOR_BP, TUTOR_LOCATION
     from .showdown_data import SHOWDOWN_COMMIT, ShowdownDataError, configured_cache_dir
 except ImportError:  # Running the file directly: python tools/build_moves.py ...
     import moveline as ml  # type: ignore[no-redef]
+    import game_move_data as game
+    from story_moves import standard_target_levels, TAPU_TMS
+    from showdown_data import require_cache
+    from showdown_text import top_blocks, field
     from acquisition_data import TM_INFO, TUTOR_BP, TUTOR_LOCATION  # type: ignore[no-redef]
     from showdown_data import SHOWDOWN_COMMIT, ShowdownDataError, configured_cache_dir  # type: ignore[no-redef]
 
@@ -113,17 +123,84 @@ def descendant_finals(slug: str, data: ml.MoveData, finals: set[str]) -> list[in
     return sorted(found)
 
 
-def build(cache: Path, refresh: bool = False) -> dict:
+def profile_routes(path: list[str], move: str, profile: str, native: dict,
+                   levels: dict, refs: dict, edges: dict) -> list[dict]:
+    """Only this regional branch, with Standard replacing (not unioning) levels."""
+    stages = {}
+    minimum = 1
+    for i, stage in enumerate(path):
+        identity = str(refs[stage])
+        if i:
+            edge = edges.get((str(refs[path[i - 1]]), identity), {})
+            method = edge.get("prismatic", edge.get("stock", "")) if profile == "prismatic" else edge.get("stock", "")
+            if match := re.match(r"level (\d+)", method, re.I):
+                minimum = max(minimum, int(match.group(1)))
+        routes = [route.copy() for route in native[identity]["usum" if profile == "prismatic" else profile].get(move, [])]
+        if profile == "prismatic":
+            routes = [route for route in routes if route["via"] not in {"level", "reminder", "evolution"}]
+            for level in levels[identity].get(move, []):
+                routes.append({"via": "evolution"} if level == 0 else {"via": "reminder"} if level == 1 else {"via": "level", "level": level})
+            for route in routes:
+                if route["via"] == "TM" and move in TAPU_TMS:
+                    route["tm"], route["at"] = TAPU_TMS[move], "Tapu Village specialist mart"
+        stages[stage] = [route for route in routes if route.get("level", minimum) >= minimum]
+    final_kinds = {route["via"] for route in stages[path[-1]]}
+    out, seen = [], set()
+    # Prefer a route the final itself can use; retain each distinct stage level.
+    for stage in reversed(path):
+        for route in stages[stage]:
+            key = (route["via"], route.get("tm"), route.get("note"), stage if route["via"] == "level" else None, route.get("level"))
+            if key in seen:
+                continue
+            seen.add(key)
+            route["form"] = refs[stage]
+            if stage != path[-1] and route["via"] not in final_kinds:
+                route["beforeEvolving"] = True
+            out.append(route)
+    return out
+
+
+def build(cache: Path, refresh: bool = False, game_cache: Path | None = None) -> dict:
     data = ml.load_move_data(cache)
+    levels = standard_target_levels()  # Also admits all retained creator documents.
+    forms = json.loads((ROOT / "data/regional-forms.json").read_text(encoding="utf-8"))["forms"]
+    targets = [{"key": str(row["id"]), "id": row["id"]} for row in data.rows]
+    targets += [{"key": key, **row} for key, row in forms.items()]
+    native = game.project_sources(game.load_tables(game_cache or game.configured_cache_dir()), targets)
+    edges = {(edge["from"], edge["to"]): edge for edge in json.loads((ROOT / "data/evolutions.json").read_text())["edges"]}
+    refs = {slug: identity for slug, identity in data.id_of.items()}
+    refs.update({row["showdownKey"]: key for key, row in forms.items()})
+    legacy = data
+    data = dataclasses.replace(data, nice=dict(data.nice), id_of=dict(data.id_of), tier_of=dict(data.tier_of))
+    tiers = dict(top_blocks(require_cache(cache).get_text("tiers")))
+    # Form-local copies prevent tier_of[dex] from overwriting a Kanto sibling.
+    contexts = {}
+    for key, row in forms.items():
+        slug = row["showdownKey"]
+        if row["form"] == "alolan":
+            context = dataclasses.replace(data, nice={**data.nice, slug: ml.scalar(data.dex[slug], "name") or slug},
+                                          id_of={**data.id_of, slug: row["id"]},
+                                          tier_of={**data.tier_of, row["id"]: field(tiers.get(slug, ""), "tier") or ""})
+            contexts[key] = context
+    for row in forms.values():
+        if row["form"] == "alolan":
+            slug = row["showdownKey"]
+            data.nice[slug] = ml.scalar(data.dex[slug], "name") or slug
+            data.id_of[slug] = row["id"]
     downloader = None if refresh else offline_downloader
     finals = final_forms(data)
     final_set = set(finals)
     entries: dict[str, dict] = {}
     table: dict[str, dict] = {}
     for final in finals:
-        usage, label = ml.tier_usage(final, data, downloader)
+        identity = refs[final]
+        context = contexts.get(identity, legacy)
+        if identity in contexts:
+            context = dataclasses.replace(context, nice=data.nice, id_of=data.id_of)
+        usage, label = ml.tier_usage(final, context, downloader)
         moves = []
-        for move in ml.rank_moves(final, data, usage):
+        path = ml.ancestral_path(final, data.parent_of)
+        for move in ml.rank_moves(final, context, usage):
             if move["pct"] <= 0 or len(moves) == TOP:
                 break
             info = table.setdefault(move["key"], move_info(move["key"], data))
@@ -132,13 +209,34 @@ def build(cache: Path, refresh: bool = False) -> dict:
             if move["name"] != info["name"]:
                 row["name"], row["type"] = move["name"], move["type"]
             row["how"] = compact_sources(move["sources"], data.id_of)
+            row["profiles"] = {profile: profile_routes(path, move["key"], profile, native, levels, refs, edges)
+                               for profile in ("sm", "usum", "prismatic")}
             moves.append(row)
-        entries[str(data.id_of[final])] = {"stats": label, "moves": moves}
+        entries[str(identity)] = {"stats": label, "moves": moves}
+        if ":kanto" in str(identity):
+            entries[str(data.id_of[final])] = entries[str(identity)]
+    legacy_finals = set(final_forms(legacy))
     lines = {
-        str(data.id_of[slug]): targets
-        for slug in sorted(data.id_of, key=data.id_of.get)
-        if slug not in final_set and (targets := descendant_finals(slug, data, final_set))
+        str(legacy.id_of[slug]): targets
+        for slug in sorted(legacy.id_of, key=legacy.id_of.get)
+        if slug not in legacy_finals and (targets := descendant_finals(slug, legacy, legacy_finals))
     }
+    for key, row in forms.items():
+        if key in entries:
+            continue
+        slug = row["showdownKey"]
+        descendants, stack = set(), [slug]
+        while stack:
+            current = stack.pop()
+            for child in data.evos_of.get(current, []):
+                if child not in refs:
+                    continue
+                if child in final_set:
+                    descendants.add(str(refs[child]))
+                else:
+                    stack.append(child)
+        if descendants:
+            lines[key] = sorted(descendants)
     return {
         "schemaVersion": 1,
         "source": {
@@ -146,6 +244,8 @@ def build(cache: Path, refresh: bool = False) -> dict:
             "usage": "Smogon Gen 7 moveset statistics, November 2019, each species' own tier",
             "profile": "gen7",
             "top": TOP,
+            "nativeLearnsets": {"commit": game.COMMIT, "sha256": {name: pin[1] for name, pin in game.SOURCES.items()}},
+            "prismatic": "Verified Standard level-up tables replace USUM levels; other methods are stock USUM unless documented. Rebalanced-only TM edits excluded.",
         },
         "moves": dict(sorted(table.items())),
         "finals": entries,
@@ -161,12 +261,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build data/moves.json from pinned Gen 7 sources.")
     parser.add_argument("--cache", type=Path, default=configured_cache_dir(),
                         help="verified shared Showdown cache (bootstrap it first)")
+    parser.add_argument("--game-cache", type=Path, default=game.configured_cache_dir(), help="hash-pinned PokeAPI CSV cache")
     parser.add_argument("--refresh", action="store_true",
                         help="download any missing hash-pinned Smogon moveset file")
     parser.add_argument("--check", action="store_true", help="fail if data/moves.json is stale")
     args = parser.parse_args()
     try:
-        generated = output_text(build(args.cache, args.refresh))
+        generated = output_text(build(args.cache, args.refresh, args.game_cache))
     except (OSError, ValueError, ShowdownDataError, ml.StatsIntegrityError, ml.StatsDownloadError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

@@ -71,9 +71,31 @@ LC, November 2019) must already be in the cache, and `--refresh` downloads any t
 `--check` fails when the committed file is stale:
 
 ```text
-python tools/build_moves.py --refresh
-python tools/build_moves.py --check
+python tools/game_move_data.py --cache <game-move-cache> bootstrap
+python tools/game_move_data.py --cache <game-move-cache> verify
+python tools/build_moves.py --game-cache <game-move-cache> --refresh
+python tools/build_moves.py --game-cache <game-move-cache> --check
 ```
+
+`POKEMON_GAME_MOVE_CACHE` selects the CSV cache when `--game-cache` is omitted.
+The six CSVs are pinned to PokéAPI commit `4b82c204ddd19ecb8eda2ea044ccb59e222b721c`
+with per-file SHA-256 values in `tools/game_move_data.py`; provenance is also recorded
+in the generated JSON. Explicit bootstrap checks the entire batch before replacing
+files. Normal reads never download or repair a missing/corrupt source.
+
+The projector joins exact Pokémon/form identities and separate Gen VII version groups;
+it does not union SM/USUM tutors or borrow an opposite form. Level 0 means on evolution,
+level 1 means Move Reminder, and machines retain their actual TM number. The generator
+uses the verified Standard personal-table resolver for creator levels, replacing stock
+level-up routes while retaining independent USUM methods as labeled fallbacks.
+`Move Changes.pdf` is explicitly **Rebalanced Versions Only**: those TM replacements
+are not Standard overrides. Shared documented Tapu Village mart locations are retained.
+A TM's old unscoped location is not reused as version-specific evidence.
+
+Numeric `finals`/`lines` and legacy `how` remain readable for older analysis consumers;
+the app selects canonical regional keys and the move's `profiles.sm`, `profiles.usum`
+or `profiles.prismatic`, never the legacy union as a fallback. Missing regional usage
+remains an empty, labeled regional entry, not a copy of its Kanto sibling.
 
 `build_pokedex_details.py` also requires a bootstrapped `--cache`, but unlike its
 siblings above it has no offline-only path: it downloads its separate,

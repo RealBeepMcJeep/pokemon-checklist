@@ -25,6 +25,35 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("popular moves use the selected form and change actual teaching routes by game", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      if (device === "phone") await page.locator("#sidebar-toggle").tap();
+      await page.locator("#dex-search").fill("Meowth");
+      await page.locator('.dex-row[data-target="52:alolan"] .dex-select').click();
+      await page.locator(".popular-moves > summary").click();
+      await expect(page.locator(".final-moves h3")).toContainText("Persian (Alolan)");
+      await expect(page.locator('.final-moves li[data-move="partingshot"] .move-routes')).toContainText("On evolution");
+      const knock = page.locator('.final-moves li[data-move="knockoff"] .move-routes');
+      const switchMode = async (value: string) => {
+        if (device === "phone") {
+          await page.locator("#drawer-close").tap();
+          await page.locator("#header-settings-toggle").tap();
+        }
+        await page.locator("#mode-select").selectOption(value);
+        if (device === "phone") {
+          await page.getByRole("button", { name: "Close settings", exact: true }).tap();
+          await page.locator("#sidebar-toggle").tap();
+        }
+      };
+      await switchMode("moon");
+      await expect(knock).toContainText("No verified native learning route in Pokémon Moon");
+      await switchMode("ultra-moon");
+      await expect(knock).toContainText("Tutor");
+      await page.screenshot({ path: info.outputPath(`regional-moves-${device}.png`), fullPage: true });
+      await page.locator('.dex-row[data-target="52:kanto"] .dex-select').click();
+      await expect(page.locator(".final-moves h3")).toContainText("Persian (Kanto)");
+      await expect(page.locator(".final-moves")).not.toContainText("Parting Shot");
+    });
     test("No forms collapses selected regional details without erasing either form", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       if (device === "phone") await page.locator("#sidebar-toggle").tap();

@@ -3,12 +3,45 @@ import { MOVES } from "./data";
 import {
   describeRoute,
   moveInfo,
+  moveTargetName,
+  routesForMode,
   movesFinals,
   shownRoutes,
   statsTier,
 } from "./moves";
 
 describe("popular moves", () => {
+  it("selects only the requested regional move family and defaults collapsed entries to Alolan", () => {
+    expect(movesFinals(52, "alolan")).toEqual(["53:alolan"]);
+    expect(movesFinals(52, "kanto")).toEqual(["53:kanto"]);
+    expect(movesFinals(52)).toEqual(["53:alolan"]);
+    expect(movesFinals(25, undefined, true)).toEqual(["26:alolan", "26:kanto"]);
+    expect(movesFinals(25, undefined, false)).toEqual(["26:alolan"]);
+  });
+  it("keeps native mode routes separate and uses verified Standard evolution moves", () => {
+    const entry = MOVES.finals["53:alolan"];
+    const knock = entry.moves.find(row => row.move === "knockoff")!;
+    for (const mode of ["sun", "moon"] as const) expect(routesForMode(knock, mode)).toEqual([]);
+    for (const mode of ["ultra-sun", "ultra-moon"] as const) {
+      expect(routesForMode(knock, mode)).toContainEqual({ via: "tutor", form: "53:alolan" });
+    }
+    const parting = entry.moves.find(row => row.move === "partingshot")!;
+    expect(routesForMode(parting, "photonic-prismatic")).toContainEqual({ via: "evolution", form: "53:alolan" });
+    expect(routesForMode(parting, "moon").some(route => route.via === "evolution")).toBe(false);
+    expect(routesForMode({ move: "fixture", usage: 1, how: [{ via: "tutor" }] }, "sun")).toEqual([]);
+  });
+
+  it("names the exact teaching form while collapsed details stay generic", () => {
+    expect(moveTargetName("52:alolan")).toBe("Meowth (Alolan)");
+    expect(moveTargetName("52:kanto")).toBe("Meowth (Kanto)");
+    expect(moveTargetName("52:alolan", false)).toBe("Meowth");
+    const route = { via: "level", level: 25, form: "52:alolan", beforeEvolving: true } as const;
+    const info = { name: "Fixture", type: "Normal" };
+    expect(describeRoute(route, info, "53:alolan", "moon")).toBe("Before evolving: Meowth (Alolan) at level 25");
+    expect(describeRoute(route, info, "53:alolan", "moon", false)).toBe("Before evolving: Meowth at level 25");
+    expect(describeRoute({ via: "TM", tm: 3 }, { ...info, tm: 3, tmAt: "Legacy placement" }, 282, "sun")).toBe("TM03");
+  });
+
   it("points each species at its own final evolutions", () => {
     expect(movesFinals(282)).toEqual([282]); // Gardevoir is final
     expect(movesFinals(280)).toEqual([282, 475]); // Ralts branches
@@ -17,7 +50,8 @@ describe("popular moves", () => {
   });
 
   it("covers every final evolution in the dex", () => {
-    expect(Object.keys(MOVES.finals)).toHaveLength(439);
+    expect(Object.keys(MOVES.finals).filter(key => !key.includes(":"))).toHaveLength(439);
+    expect(MOVES.finals["53:alolan"]).toBeDefined();
     for (const targets of Object.values(MOVES.lines)) {
       for (const target of targets) expect(MOVES.finals[target]).toBeDefined();
     }
@@ -47,11 +81,17 @@ describe("popular moves", () => {
     const egg = { via: "egg", form: 280, beforeEvolving: true } as const;
     expect(describeRoute(egg, plain, 475, "sun")).toBe("Egg move on Ralts (breed for it)");
     expect(describeRoute(egg, plain, 475, "photonic-prismatic")).toBe(
-      "Egg move on Ralts; this hack teaches it by level-up",
+      "Egg move on Ralts (breed for it)",
     );
     expect(
       describeRoute({ via: "tutor", form: 280, beforeEvolving: true }, { ...plain, tutorAt: "Ula'ula Beach", tutorBp: 8 }, 282, "sun"),
     ).toBe("Before evolving: Tutor · Ula'ula Beach · 8 BP (Ralts)");
+  });
+
+  it("keeps the existing level-before-reminder presentation with native CSV ordering", () => {
+    const level = { via: "level", level: 62, form: 282 } as const;
+    const reminder = { via: "reminder", form: 282 } as const;
+    expect(shownRoutes([reminder, level], 282)).toEqual([level, reminder]);
   });
 
   it("shows the useful routes only", () => {

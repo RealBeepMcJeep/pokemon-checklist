@@ -8,6 +8,23 @@ from tools import story_moves as story
 
 
 class RegionalStandardMovesTests(unittest.TestCase):
+    def test_app_move_builder_emits_exact_regional_finals_and_separate_game_profiles(self):
+        from tools import build_moves as builder
+        from tools.showdown_data import configured_cache_dir
+        from tools.game_move_data import configured_cache_dir as game_cache
+        cache = configured_cache_dir()
+        if not cache.exists() or not (game_cache() / "pokemon_moves.csv").exists():
+            self.skipTest("admitted Showdown/game-move caches not installed")
+        data = builder.build(cache)
+        self.assertTrue("53:alolan" in data["finals"], "App move payload has no regional final identity")
+        self.assertEqual(data["lines"]["52:alolan"], ["53:alolan"])
+        self.assertEqual(data["lines"]["52:kanto"], ["53:kanto"])
+        self.assertEqual(data["lines"]["52"], [53], "legacy numeric consumers must remain readable")
+        self.assertNotEqual(data["finals"]["53:alolan"]["moves"], data["finals"]["53:kanto"]["moves"])
+        for final in ["53:alolan", "53:kanto", "475"]:
+            for move in data["finals"][final]["moves"]:
+                self.assertEqual(set(move["profiles"]), {"sm", "usum", "prismatic"})
+
     def test_target_projection_covers_the_catalogue_and_keeps_raw_internal_ids_private(self):
         from tools.build_capture_data import form_record_index
         raw = story.standard_levels()

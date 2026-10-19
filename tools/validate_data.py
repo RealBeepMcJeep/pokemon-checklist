@@ -324,7 +324,7 @@ def validate_pokedex_details(details: object) -> list[str]:
     return errors
 
 
-MOVE_ROUTES = {"level", "reminder", "TM", "tutor", "egg", "event"}
+MOVE_ROUTES = {"level", "reminder", "TM", "tutor", "egg", "event", "evolution", "special"}
 
 
 def validate_moves(moves: object) -> list[str]:
@@ -339,6 +339,20 @@ def validate_moves(moves: object) -> list[str]:
         if not isinstance(info, dict) or not isinstance(info.get("name"), str) or info.get("type") not in POKEMON_TYPES:
             errors.append(f"moves.json move {key} needs a name and a known type")
     valid_ids = {str(number) for number in range(1, 808)}
+    regional_ids = set(read_json(ROOT / "data/regional-forms.json")["forms"])
+    valid_ids |= regional_ids
+
+    def valid_route(route):
+        if not isinstance(route, dict) or route.get("via") not in MOVE_ROUTES:
+            return False
+        if route.get("form") is not None and str(route["form"]) not in valid_ids:
+            return False
+        if route["via"] == "level" and (type(route.get("level")) is not int or not 2 <= route["level"] <= 100):
+            return False
+        if "tm" in route and (type(route["tm"]) is not int or not 1 <= route["tm"] <= 100):
+            return False
+        return all(isinstance(route[key], str) and bool(route[key].strip()) for key in ("at", "note") if key in route)
+
     for dex, entry in finals.items():
         label = f"moves.json final {dex}"
         if dex not in valid_ids or not isinstance(entry, dict) or not isinstance(entry.get("moves"), list):
@@ -351,12 +365,15 @@ def validate_moves(moves: object) -> list[str]:
             usage = row.get("usage")
             if not isinstance(usage, (int, float)) or not 0 < usage <= 100:
                 errors.append(f"{label} {row['move']} has invalid usage")
-            for route in row.get("how", []):
-                form = route.get("form") if isinstance(route, dict) else None
-                if not isinstance(route, dict) or route.get("via") not in MOVE_ROUTES or (
-                    form is not None and str(form) not in valid_ids
-                ):
-                    errors.append(f"{label} {row['move']} has an invalid route")
+            routes = row.get("how")
+            if not isinstance(routes, list) or any(not valid_route(route) for route in routes):
+                errors.append(f"{label} {row['move']} has an invalid route")
+            profiles = row.get("profiles")
+            if profiles is not None or dex in regional_ids:
+                if not isinstance(profiles, dict) or set(profiles) != {"sm", "usum", "prismatic"}:
+                    errors.append(f"{label} {row['move']} needs all three learning profiles")
+                elif any(not isinstance(routes, list) or any(not valid_route(route) for route in routes) for routes in profiles.values()):
+                    errors.append(f"{label} {row['move']} has an invalid profile route")
     for dex, targets in lines.items():
         if dex not in valid_ids or dex in finals or not isinstance(targets, list) or not targets or any(
             str(target) not in finals for target in targets
