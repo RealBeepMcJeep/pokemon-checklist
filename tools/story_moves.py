@@ -72,6 +72,43 @@ GOALS = {
 }
 
 
+def standard_target_levels() -> dict[str, dict[str, list[int]]]:
+    """Standard tables keyed by collection identity, never by guessed form order.
+
+    The creator numbers alternate forms with their USUM personal-table index.
+    Verify both the pinned binary mapping and the creator's header before joining.
+    Legacy numeric national-Dex keys retain the base form's original meaning.
+    """
+    try:
+        from .build_capture_data import HASHES, form_record_index
+        from .validate_data import validate_regional_data
+    except ImportError:
+        from build_capture_data import HASHES, form_record_index
+        from validate_data import validate_regional_data
+    raw = standard_levels()
+    personal = (ROOT / "data/reference/capture/personal_uu").read_bytes()
+    if hashlib.sha256(personal).hexdigest() != HASHES["personal_uu"]:
+        raise ValueError("Prismatic form mapping: USUM personal-table hash mismatch")
+    text = (CORPUS / "Level Up Moves, Standard.txt").read_text(encoding="utf-16")
+    headers = {int(index): name for index, name in re.findall(r"(?m)^(\d+) ([^\n]+)\n======", text)}
+    names = {row["id"]: row["name"] for row in json.loads((ROOT / "data/pokemon.json").read_text(encoding="utf-8"))}
+    catalogue = json.loads((ROOT / "data/regional-forms.json").read_text(encoding="utf-8"))
+    if errors := validate_regional_data(catalogue):
+        raise ValueError("Invalid regional learnset catalogue: " + "; ".join(errors))
+    forms = catalogue["forms"]
+    targets = {str(dex): raw[dex] for dex in names}
+    for key, row in forms.items():
+        form = {"kanto": 0, "alolan": 1}.get(row["form"])
+        if form is None:
+            raise ValueError(f"Unsupported regional learnset identity: {key}")
+        index = form_record_index(personal, row["id"], form)
+        expected = names[row["id"]] + (f" {form}" if form else "")
+        if index not in raw or ml.normalize(headers.get(index, "")) != ml.normalize(expected):
+            raise ValueError(f"Creator learnset header does not match {key}")
+        targets[key] = raw[index]
+    return targets
+
+
 def standard_levels() -> dict[int, dict[str, list[int]]]:
     manifest = json.loads((CORPUS / "MANIFEST.json").read_text(encoding="utf-8"))
     for entry in manifest:

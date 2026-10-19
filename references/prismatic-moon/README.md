@@ -19,3 +19,16 @@ For the user's **Prismatic Moon Standard** playthrough:
 4. Use historical Smogon data only for competitive context, not acquisition legality.
 
 `Level Up Moves, Standard.txt` and `Level Up Moves, Rebalanced.txt` are UTF-16 text files exactly as served upstream. The PDFs are exact upstream bytes; some pages in `Wild Pokemon Locations.pdf` are image-based and may require OCR for text search.
+
+## Programmatic Standard form identity
+
+`tools.story_moves.standard_target_levels()` returns manifest-verified Standard level-up tables keyed by collection identity, including `52:kanto` and `52:alolan`. Alternate-form headings use internal USUM table numbers, not new National Dex species: Alolan Meowth and Persian occupy records 922 and 923 in this retained source. The resolver uses the shared, hash-verified personal-table mapping and cross-checks the creator's header for every regional target; it refuses mismatched catalogue identities or altered binary sources rather than borrowing another form's moves.
+
+```python
+from tools.story_moves import standard_target_levels
+levels = standard_target_levels()
+alolan_meowth = levels["52:alolan"]
+kanto_meowth = levels["52:kanto"]
+```
+
+The legacy `standard_levels()` API still returns raw document records, and numeric National Dex keys in the new projection retain the regular form's original meaning. A consumer wanting the Alolan default must request its explicit key. Internal record numbers are not valid collection/search species IDs. This documents the source-loader API, not proof that every app/report consumer has migrated to it; implementation progress is tracked in #17.

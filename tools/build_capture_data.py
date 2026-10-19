@@ -7,6 +7,19 @@ HASHES = {'personal_uu':'78a0d3ba8de87a9d36900d88b6f56a62bc48c86d1d555573fbc2516
 ALOLA = {19,20,26,27,28,37,38,50,51,52,53,74,75,76,88,89,103,105}
 # Personal-table indices; other forms have explicit numeric labels rather than guessed identities.
 LABELS = {386:['Attack','Defense','Speed'], 487:['Origin'], 492:['Sky'], 646:['White','Black'], 678:['Female'], 681:['Blade'], 720:['Unbound'], 745:['Midnight','Dusk'], 746:['School'], 800:['Dusk Mane','Dawn Wings','Ultra']}
+def form_record_index(blob: bytes, sid: int, form: int) -> int | None:
+    """Resolve an admitted Gen VII personal-table form to its physical record."""
+    if type(sid) is not int or type(form) is not int or sid < 1 or sid > 807 or form < 0 or (sid + 1) * 84 > len(blob):
+        raise ValueError('Invalid personal-table species/form')
+    base = blob[sid*84:(sid+1)*84]
+    start = struct.unpack_from('<H', base, 0x1c)[0]
+    if form and (not start or form >= base[0x20]):
+        return None
+    index = start + form - 1 if form else sid
+    if (index + 1) * 84 > len(blob):
+        raise ValueError('Personal-table form points outside the admitted file')
+    return index
+
 def generate():
     raw = {}
     for name, expected in HASHES.items():
@@ -16,10 +29,9 @@ def generate():
         raw[name] = content
     def record(game, sid, form):
         if game == 'personal_sm' and sid > 802: return None
-        blob = raw[game]; base = blob[sid*84:(sid+1)*84]
-        start = struct.unpack_from('<H',base,0x1c)[0]
-        if form and (not start or form >= base[0x20]): return None
-        index = start + form - 1 if form else sid
+        blob = raw[game]
+        index = form_record_index(blob, sid, form)
+        if index is None: return None
         b = blob[index*84:(index+1)*84]
         return {'catchRate': b[8], 'speed':b[3], 'types':list(dict.fromkeys(b[6:8])), 'gender':b[0x12], 'weight':struct.unpack_from('<H',b,0x26)[0]}
     rows = []
