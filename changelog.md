@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-19
+- Corrected creator-documented encounter forms: Route 6 Deerling is a pooled Spring/Summer wild encounter with Autumn/Winter SOS allies; Thrifty Megamart Rotom is Base with Frost/Heat allies; Ula’Ula Meadow Floette is Red Flower with Orange/White Flower allies. These encounter labels remain explicit with Track forms off.
+- Preserved native encounter percentages, existing form/save keys and the v4 backup format. No per-season wild rates or ordinary SOS ally shares are invented. This narrow source-data release does not yet include the regional living-Dex redesign or inline SOS layout.
+
 ## 2026-10-18
 - Corrected Prismatic SOS guide sources: Route 1 now owns its shared Rattata/Pichu caller table; Haina keeps distinct Castform 1% Sandstorm and 11% Rain/Hail entries; the undocumented Crabrawler caller remains explicitly unverified. No ordinary ally percentages are invented.
 - Catch-next suggestions use distinct keys for allies sharing a caller row, avoiding rendering collisions. This incremental fix preserves the current save format; the regional living-Dex redesign is still in progress.
