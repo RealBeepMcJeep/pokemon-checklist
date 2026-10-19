@@ -83,6 +83,21 @@ class StatusPreconditionError(OperationError):
 UNSET = object()
 
 
+REGIONAL_FORMS = ("alolan", "kanto")
+
+
+def choose_regional_form(*, explicit: str | None, tracking: bool, owned: Iterable[str], incoming: bool) -> str | None:
+    """Resolve one form without reads or writes; None requires a caller choice."""
+    choices = set(owned)
+    if not choices.issubset(REGIONAL_FORMS) or (explicit is not None and explicit not in REGIONAL_FORMS):
+        raise OperationError("unknown regional form; use alolan or kanto exactly")
+    if explicit is not None:
+        return explicit
+    if incoming:
+        return None if tracking else "alolan"
+    return next(iter(choices)) if len(choices) == 1 else None
+
+
 def normalize(value: str) -> str:
     """Normalize names exactly as the app and chat parser do."""
     decomposed = unicodedata.normalize("NFD", value)
