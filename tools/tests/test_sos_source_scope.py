@@ -29,29 +29,6 @@ class SosSourceScopeTests(unittest.TestCase):
             if loc["id"] == location_id
         )
 
-    def test_ulaula_floette_colors_keep_the_red_caller_and_two_sos_only_colors(self):
-        source = " ".join(self.guide.pages[50].extract_text().split())
-        self.assertIn("Floette found here will have red flowers", source)
-        self.assertIn("can call Floette with orange and white flowers", source)
-        loc = self.location("ulaula-island/ulaula-meadow")
-        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 670)
-        self.assertEqual(row.get("form"), "red-flower")
-        self.assertEqual(row["forms"], ["red-flower"])
-        self.assertEqual(row["rates"], {"single": 20})
-        self.assertEqual({a.get("form") for a in row["allies"]}, {"orange-flower", "white-flower"})
-        self.assertTrue(all(a["speciesId"] == 670 and "rates" not in a for a in row["allies"]))
-
-    def test_rotom_appliances_are_distinct_documented_allies_not_extra_wild_forms(self):
-        source = " ".join(self.guide.pages[48].extract_text().split())
-        self.assertIn("Rotom can call its Fridge and Heat forms via SOS", source)
-        loc = self.location("ulaula-island/thrifty-megamart")
-        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 479)
-        self.assertEqual(row.get("form"), "base")
-        self.assertEqual(row["forms"], ["base"])
-        self.assertEqual(row["rates"], {"single": 15})
-        self.assertEqual({a.get("form") for a in row["allies"]}, {"frost", "heat"})
-        self.assertTrue(all(a["speciesId"] == 479 and "rates" not in a for a in row["allies"]))
-
     def test_deerling_seasons_preserve_pooled_wild_rates_and_sos_only_identity(self):
         source = " ".join(self.guide.pages[24].extract_text().split())
         self.assertIn("Autumn and Winter can only be found by SOS chaining the Spring and Summer forms", source)
@@ -70,6 +47,37 @@ class SosSourceScopeTests(unittest.TestCase):
         self.assertEqual({a.get("form") for a in caller["allies"]}, {"autumn", "winter"})
         self.assertTrue(all(a["speciesId"] == 585 and "rates" not in a for a in caller["allies"]))
         self.assertIn("order", caller["note"])
+
+        self.assertEqual({a["form"]: a["name"] for a in caller["allies"]}, {"autumn": "Deerling (Autumn)", "winter": "Deerling (Winter)"})
+
+    def test_rotom_appliances_are_distinct_documented_allies_not_extra_wild_forms(self):
+        source = " ".join(self.guide.pages[48].extract_text().split())
+        self.assertIn("Rotom can call its Fridge and Heat forms via SOS", source)
+        loc = self.location("ulaula-island/thrifty-megamart")
+        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 479)
+        self.assertEqual(row.get("form"), "base")
+        self.assertEqual(row["forms"], ["base"])
+        self.assertEqual(row["rates"], {"single": 15})
+        self.assertEqual({a.get("form") for a in row["allies"]}, {"frost", "heat"})
+        self.assertTrue(all(a["speciesId"] == 479 and "rates" not in a for a in row["allies"]))
+
+        self.assertEqual(row["speciesName"], "Rotom (Base)")
+        self.assertEqual({a["form"]: a["name"] for a in row["allies"]}, {'frost': 'Rotom (Frost)', 'heat': 'Rotom (Heat)'})
+
+    def test_ulaula_floette_colors_keep_the_red_caller_and_two_sos_only_colors(self):
+        source = " ".join(self.guide.pages[50].extract_text().split())
+        self.assertIn("Floette found here will have red flowers", source)
+        self.assertIn("can call Floette with orange and white flowers", source)
+        loc = self.location("ulaula-island/ulaula-meadow")
+        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 670)
+        self.assertEqual(row.get("form"), "red-flower")
+        self.assertEqual(row["forms"], ["red-flower"])
+        self.assertEqual(row["rates"], {"single": 20})
+        self.assertEqual({a.get("form") for a in row["allies"]}, {"orange-flower", "white-flower"})
+        self.assertTrue(all(a["speciesId"] == 670 and "rates" not in a for a in row["allies"]))
+
+        self.assertEqual(row["speciesName"], "Floette (Red Flower)")
+        self.assertEqual({a["form"]: a["name"] for a in row["allies"]}, {'orange-flower': 'Floette (Orange Flower)', 'white-flower': 'Floette (White Flower)'})
 
     def test_sand_castform_keeps_its_own_documented_condition_and_rate(self):
         source = " ".join(self.guide.pages[52].extract_text().split())

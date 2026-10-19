@@ -30,6 +30,16 @@ Opening the checklist in more than one tab keeps them in sync: a change made in 
 
 **Sign in to sync** is optional and off until you press it. Unsigned/offline mode remains fully local: it never contacts the network and the checklist still works from `file://` without a server. While signed in, a change on one device appears on the others on its own; a change made offline is sent when the connection returns; and if two devices change the same species, the one that reaches the server later wins. The first sign-in on a device adopts the progress already on that device rather than discarding it, and signing out returns that device to its own checklist without deleting anything. Each account keeps its own separate checklist, because progress belongs to a person.
 
+The Prismatic guide identifies source-documented forms even with **Track forms** off:
+Route 6's **Deerling (Spring / Summer)** has a pooled 15% wild rate in each listed
+grass table; the guide does not assign a season to a specific patch. **Autumn/Winter**
+are SOS-only there. Thrifty Megamart has **Rotom (Base)** at 15%, with **Frost/Heat**
+SOS allies; Ula’Ula Meadow has **Floette (Red Flower)** at 20%, with **Orange/White
+Flower** SOS allies. These wild percentages are not ally shares. Existing form keys,
+ownership/favorites and v4 backups remain compatible. The published 2026-10-19
+data-only milestone retained separate SOS tables and generic Pokédex entries;
+the unreleased regional UI described below replaces those presentation rules.
+
 ## Saved encounter unlocks
 
 In Prismatic Moon, open **Settings** to enable Tauros Charge, Surfing, Fishing,

@@ -5306,13 +5306,13 @@
                   "allies": [
                     {
                       "species": "deerling",
-                      "name": "Deerling",
+                      "name": "Deerling (Autumn)",
                       "form": "autumn",
                       "speciesId": 585
                     },
                     {
                       "species": "deerling",
-                      "name": "Deerling",
+                      "name": "Deerling (Winter)",
                       "form": "winter",
                       "speciesId": 585
                     }
@@ -10043,7 +10043,7 @@
                   "speciesId": 354
                 },
                 {
-                  "speciesName": "Rotom",
+                  "speciesName": "Rotom (Base)",
                   "species": "rotom",
                   "forms": [
                     "base"
@@ -10054,13 +10054,13 @@
                   "allies": [
                     {
                       "species": "rotom",
-                      "name": "Rotom",
+                      "name": "Rotom (Frost)",
                       "form": "frost",
                       "speciesId": 479
                     },
                     {
                       "species": "rotom",
-                      "name": "Rotom",
+                      "name": "Rotom (Heat)",
                       "form": "heat",
                       "speciesId": 479
                     }
@@ -10651,7 +10651,7 @@
                   "speciesId": 743
                 },
                 {
-                  "speciesName": "Floette",
+                  "speciesName": "Floette (Red Flower)",
                   "species": "floette",
                   "forms": [
                     "red-flower"
@@ -10662,13 +10662,13 @@
                   "allies": [
                     {
                       "species": "floette",
-                      "name": "Floette",
+                      "name": "Floette (Orange Flower)",
                       "form": "orange-flower",
                       "speciesId": 670
                     },
                     {
                       "species": "floette",
-                      "name": "Floette",
+                      "name": "Floette (White Flower)",
                       "form": "white-flower",
                       "speciesId": 670
                     }
