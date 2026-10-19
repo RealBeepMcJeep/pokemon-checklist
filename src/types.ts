@@ -112,8 +112,13 @@ export interface EncounterRow {
   ability?: string;
   rates?: Rates | null;
   conditions?: string[];
+  /** Documented original wild-method group IDs to which this SOS rule applies.
+   * Chained callers retain their starting encounter context; absent = unrestricted. */
+  callerGroups?: string[];
   note?: string;
   allies: Ally[];
+  /** Explicit source-backed conditional calls within a native pool, never shared allies. */
+  conditionalAllies?: (Ally & { callerForm: string })[];
 }
 
 export interface EncounterGroup {

@@ -57,10 +57,12 @@ SOS-only ally there, and **Pumpkaboo (Small / Average / Large / Super Size)** at
 Memorial Hill (30% pooled), with a documented Super Size ally. Neither source gives
 numerical ally shares or equal Pumpkaboo-size weights. Ten Carat Hill's **Rockruff
 (Normal / Own Tempo)** keeps its 20% combined wild rate and the source's equal-chance
-note. Its Own Tempo-only SOS restriction remains explicit in the footnote; a shared
-Own Tempo ally is intentionally not attached to that mixed caller pool because
-regular Rockruff cannot call it. Exact conditional caller presentation still needs
-normalization before the full regional milestone. Pooled/unsupported guide identities
+note. The unpublished regional UI models the Own Tempo call separately from shared
+allies and labels it **Caller: Rockruff (Own Tempo) only**; regular Rockruff cannot
+call that variant. Canyon Diancie/Sableye are attached only to cave Carbink, not
+grass encounters. Caller method context survives SOS chains; cave and bubbling-spot
+footnotes stay with their applicable callers rather than repeating under unrelated
+allies. Pooled/unsupported guide identities
 do not borrow one variant’s base type/grade facts; exact-form allies keep their
 verified facts; ordinary and documented Kanto/base facts remain correct. No new
 form/save keys are added. The narrow main source/facts candidate retains v4

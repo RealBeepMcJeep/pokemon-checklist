@@ -12,7 +12,7 @@ for(const width of [390,1440]) test.describe(`source pool audit ${width}px`,()=>
     await page.reload();
     const before=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),KEY);
     const cases=[
-      {area:"melemele-island/ten-carat-hill",name:"Rockruff (Normal / Own Tempo)",count:1,rate:"20%",allies:[]},
+      {area:"melemele-island/ten-carat-hill",name:"Rockruff (Normal / Own Tempo)",count:1,rate:"20%",allies:["Rockruff (Own Tempo)"]},
       {area:"akala-island/memorial-hill",name:"Pumpkaboo (Small / Average / Large / Super Size)",count:1,rate:"30%",allies:["Pumpkaboo (Super Size)"]},
       {area:"poni-island/vast-poni-canyon",name:"Lycanroc (Midday: Day / Midnight: Night)",count:2,rate:"20%",allies:["Lycanroc (Dusk)"]},
     ];
@@ -28,6 +28,7 @@ for(const width of [390,1440]) test.describe(`source pool audit ${width}px`,()=>
           if(c.allies.length)await expect(row.locator(".sos-identity .pokemon-facts")).toHaveCount(1);
           await expect(row.locator("td").first()).toHaveText(c.rate);
           await expect(row.locator(".sos-identity .guide-pokemon-link")).toHaveText(c.allies);
+          if(c.name.startsWith("Rockruff")) await expect(row.locator(".inline-sos .condition")).toHaveText("Caller: Rockruff (Own Tempo) only");
           if(c.allies.length){await expect(row.locator(".sos-legend")).toContainText("not documented");expect(await row.locator(".inline-sos").innerText()).not.toContain("%");}
           if(!tracking){
             await expect(row.locator(".form-status")).toHaveCount(0);

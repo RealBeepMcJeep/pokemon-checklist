@@ -1,4 +1,4 @@
-import type { EncounterGroup, EncounterRow, Location } from "./types";
+import type { Ally, EncounterGroup, EncounterRow, Location } from "./types";
 import { UNLOCKS } from "./types";
 import { encounterRegionalForm, isRegional } from "./regional";
 
@@ -22,6 +22,10 @@ export interface SosEncounter {
   /** Exact wild row for an embedded rule; a reachable identity exemplar for a
    * location-wide caller table; null for a location-wide weather rule. */
   caller: EncounterRow | null;
+  /** Original wild method, populated only where source rules require method scope. */
+  originGroupId?: string;
+  /** Restricts a call from a pooled native row to this documented caller form. */
+  callerForm?: string;
   row: EncounterRow;
 }
 export interface EncounterProjection {
@@ -69,19 +73,25 @@ export function projectEncounters(location: Location, flags: readonly string[], 
       for (const row of group.encounters) {
         const eligible = !!row.speciesId && (documented || directAccess(group, flags));
         wild.push({ group, row, eligible });
-        if (eligible && row.allies.length) sources.push({ group, row });
+        if (eligible && (row.allies.length || row.conditionalAllies?.length)) sources.push({ group, row });
       }
     }
   }
-  const queue: EncounterRow[] = [];
+  // Preserve method provenance only where needed; unscoped locations retain
+  // their compact identity-only traversal and existing source edge counts.
+  const scoped = location.groups.some(group => group.encounters.some(row => row.callerGroups !== undefined));
+  const queue: { row: EncounterRow; originGroupId?: string }[] = [];
   const reached = new Set<string>();
-  const add = (row: EncounterRow) => {
-    if (row.speciesId && !reached.has(encounterIdentity(row))) {
-      reached.add(encounterIdentity(row));
-      queue.push(row);
+  const stateKey = (row: EncounterRow, originGroupId?: string) => JSON.stringify([encounterIdentity(row), originGroupId ?? ""]);
+  const add = (row: EncounterRow, originGroupId?: string) => {
+    const key = stateKey(row, originGroupId);
+    if (row.speciesId && !reached.has(key)) {
+      reached.add(key);
+      queue.push({ row, originGroupId });
     }
   };
-  for (const entry of wild) if (entry.eligible) add(entry.row);
+  for (const entry of wild) if (entry.eligible) add(entry.row, scoped ? entry.group.id : undefined);
+  const origins = [...new Set(queue.map(state => state.originGroupId))];
   const native = new Set(reached);
   const calls: SosEncounter[] = [];
   const matched = new Set<EncounterRow>();
@@ -94,20 +104,31 @@ export function projectEncounters(location: Location, flags: readonly string[], 
           for (const ally of sourceRow.allies) targets.push(allyRow(sourceRow, ally));
           for (const row of targets) {
             calls.push({ kind: "weather-sos", group, sourceRow, caller: null, row });
-            add(row);
+            for (const origin of origins) add(row, origin);
           }
         }
       }
     }
     for (let index = 0; index < queue.length; index++) {
-      const caller = queue[index];
+      const { row: caller, originGroupId } = queue[index];
       for (const source of sources) {
         const wildcard = isWildcardCaller(source.row);
         // “All listed wild species” attaches to documented native callers; it cannot bootstrap itself.
-        if (!(wildcard ? native.has(encounterIdentity(caller)) : sameCaller(source.row, caller))) continue;
+        if (!(wildcard ? native.has(stateKey(caller, originGroupId)) : sameCaller(source.row, caller))) continue;
+        if (source.row.callerGroups !== undefined && (!originGroupId || !source.row.callerGroups.includes(originGroupId))) continue;
+        if (scoped && groupUnlock(source.group) !== "sos" && source.group.id !== originGroupId) continue;
         matched.add(source.row);
         const targets = new Set<string>();
-        for (const ally of source.row.allies) {
+        const allies: (Ally & { callerForm?: string })[] = [...source.row.allies, ...(source.row.conditionalAllies || [])];
+        for (const ally of allies) {
+          // A conditional declaration is explicit evidence, not an expansion of
+          // the mixed legacy forms list into shared native/SOS appearances.
+          const callerForm = ally.callerForm;
+          if (callerForm && caller.form !== callerForm) {
+            const nativePool = !caller.form && source.row.forms?.includes(callerForm)
+              && wild.some(entry => entry.row === source.row && entry.eligible);
+            if (!nativePool) continue;
+          }
           const row = allyRow(source.row, ally);
           const key = encounterIdentity(row);
           if (targets.has(key)) continue;
@@ -115,8 +136,8 @@ export function projectEncounters(location: Location, flags: readonly string[], 
           // An embedded rule belongs to that exact wild row/method. A standalone
           // caller table is location-wide and uses a reachable identity exemplar.
           const anchor = groupUnlock(source.group) === "sos" ? caller : source.row;
-          calls.push({ kind: "sos", group: source.group, sourceRow: source.row, caller: anchor, row });
-          add(row);
+          calls.push({ kind: "sos", group: source.group, sourceRow: source.row, caller: anchor, row, ...(originGroupId ? { originGroupId } : {}), ...(callerForm ? { callerForm } : {}) });
+          add(row, originGroupId);
         }
       }
     }
@@ -138,7 +159,7 @@ export interface GuideEncounter {
 
 const callIdentity = (call: SosEncounter): string => JSON.stringify([
   call.kind, call.group.id, call.sourceRow.id,
-  call.caller ? encounterIdentity(call.caller) : null, encounterIdentity(call.row),
+  call.caller ? encounterIdentity(call.caller) : null, encounterIdentity(call.row), call.originGroupId ?? null, call.callerForm ?? null,
 ]);
 
 /** Renderer/navigation projection. `documented` retains locked routes as facts, not access. */
@@ -157,7 +178,7 @@ export function guideEncounters(location: Location, flags: readonly string[], do
             : !!call.caller && call.caller.id === actor.id && encounterIdentity(call.caller) === encounterIdentity(actor);
         // Universal source rules belong once at this real wild anchor. Their
         // lossless edges remain in projectEncounters for all possible callers.
-        if (!applies || (!root && isWildcardCaller(call.sourceRow))) continue;
+        if (!applies || (call.originGroupId !== undefined && call.originGroupId !== entry.group.id) || (!root && isWildcardCaller(call.sourceRow))) continue;
         const key = encounterIdentity(call.row);
         const allowed = parentEligible && available.has(callIdentity(call));
         nodes.push({ call, eligible: allowed, children: path.has(key) ? []

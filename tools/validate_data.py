@@ -188,6 +188,11 @@ def validate_inputs(
                 errors.append(
                     f"{location.get('name')} is missing its numbered grass map {required_map}"
                 )
+            native_group_ids = {
+                g["id"] for g in location.get("groups", [])
+                if isinstance(g, dict) and isinstance(g.get("id"), str)
+                and "SOS" not in str(g.get("name", "")).upper()
+            }
             for group in location.get("groups", []):
                 if not isinstance(group, dict):
                     errors.append("groups must contain objects")
@@ -217,6 +222,16 @@ def validate_inputs(
                         errors.append(f"unknown species slug {slug} at {row.get('id')}")
                     elif species_id != by_slug[slug].get("id"):
                         errors.append(f"species ID mismatch at {row.get('id')}")
+                    if "callerGroups" in row:
+                        scopes = row["callerGroups"]
+                        name = str(group.get("name", "")).upper()
+                        if (
+                            "SOS" not in name or "WEATHER" in name or "RAIN" in name
+                            or not isinstance(scopes, list) or not scopes
+                            or any(not isinstance(v, str) or v not in native_group_ids for v in scopes)
+                            or len(set(scopes)) != len(scopes)
+                        ):
+                            errors.append(f"invalid callerGroups at {row.get('id')}")
                     rates = row.get("rates")
                     if rates is not None and (
                         not isinstance(rates, dict)
@@ -229,16 +244,33 @@ def validate_inputs(
                         )
                     ):
                         errors.append(f"invalid rates at {row.get('id')}")
-                    for ally in row.get("allies", []):
+                    conditional = row.get("conditionalAllies", [])
+                    if "conditionalAllies" in row:
+                        if not isinstance(conditional, list) or not conditional:
+                            errors.append(f"invalid conditionalAllies at {row.get('id')}")
+                            conditional = []
+                        native_forms = [row["form"]] if row.get("form") else row.get("forms", [])
+                        for ally in conditional:
+                            if (
+                                "SOS" in str(group.get("name", "")).upper()
+                                or not isinstance(ally, dict)
+                                or not isinstance(ally.get("callerForm"), str)
+                                or not ally.get("callerForm")
+                                or not isinstance(native_forms, list)
+                                or ally["callerForm"] not in native_forms
+                            ):
+                                errors.append(f"invalid conditional caller at {row.get('id')}")
+                    for ally in [*row.get("allies", []), *conditional]:
+                        label = "conditional ally" if ally in conditional else "ally"
                         if (
                             not isinstance(ally, dict)
                             or ally.get("species") not in by_slug
                         ):
-                            errors.append(f"unknown ally at {row.get('id')}")
+                            errors.append(f"unknown {label} at {row.get('id')}")
                         elif ally.get("speciesId") != by_slug[ally["species"]].get(
                             "id"
                         ):
-                            errors.append(f"ally ID mismatch at {row.get('id')}")
+                            errors.append(f"{label} ID mismatch at {row.get('id')}")
 
     for value in manifest:
         asset(value, "manifest")

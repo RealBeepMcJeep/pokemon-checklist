@@ -3380,6 +3380,15 @@
                   },
                   "allies": [],
                   "note": "Rockruff here can have the normal ability or Own Tempo, with equal encounter chances; Own Tempo Rockruff only summons Own Tempo Rockruff and cannot be called by regular Rockruff.",
+                  "conditionalAllies": [
+                    {
+                      "species": "rockruff",
+                      "name": "Rockruff",
+                      "speciesId": 744,
+                      "form": "own-tempo",
+                      "callerForm": "own-tempo"
+                    }
+                  ],
                   "id": "melemele-island/ten-carat-hill/grass-2/1",
                   "speciesId": 744
                 },
@@ -12936,7 +12945,12 @@
                       "speciesId": 719
                     }
                   ],
+                  "note": "Diancie and Sableye are only called by Carbink encountered in caves. Diancie is very rare, though not as rare as the Salamence on Route 3.",
                   "id": "poni-island/vast-poni-canyon/sos-calls-8/6",
+                  "callerGroups": [
+                    "poni-island/vast-poni-canyon/cave-3",
+                    "poni-island/vast-poni-canyon/caves-with-water-4"
+                  ],
                   "speciesId": 703
                 },
                 {
@@ -12950,7 +12964,12 @@
                       "speciesId": 302
                     }
                   ],
+                  "note": "Diancie and Sableye are only called by Carbink encountered in caves. Diancie is very rare, though not as rare as the Salamence on Route 3.",
                   "id": "poni-island/vast-poni-canyon/sos-calls-8/7",
+                  "callerGroups": [
+                    "poni-island/vast-poni-canyon/cave-3",
+                    "poni-island/vast-poni-canyon/caves-with-water-4"
+                  ],
                   "speciesId": 703
                 },
                 {
@@ -13022,15 +13041,12 @@
                       "speciesId": 149
                     }
                   ],
+                  "note": "Dragonite is much more likely to be called by a Dragonair encountered in a bubbling spot.",
                   "id": "poni-island/vast-poni-canyon/sos-calls-8/12",
                   "speciesId": 148
                 }
               ],
-              "notes": [
-                "Lycanroc-Midday appears during the day and Lycanroc-Midnight at night; both have a small chance to call Lycanroc-Dusk.",
-                "Diancie and Sableye are only called by Carbink encountered in caves. Diancie is very rare, though not as rare as the Salamence on Route 3.",
-                "Dragonite is much more likely to be called by a Dragonair encountered in a bubbling spot."
-              ],
+              "notes": [],
               "conditions": [],
               "id": "poni-island/vast-poni-canyon/sos-calls-8"
             }
