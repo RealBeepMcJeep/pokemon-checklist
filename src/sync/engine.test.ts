@@ -51,6 +51,7 @@ import {
 } from "../state";
 import { speciesKey } from "./records";
 import { SYNC_SESSION_KEY } from "./outbox";
+import { STORAGE_KEY } from "../domain";
 
 let storage = new Map<string, string>();
 
@@ -282,7 +283,7 @@ describe("sync startup lifecycle", () => {
 });
 
 describe("first sign-in never loses a checklist", () => {
-  const DEVICE_SAVE = "pokemon-checklist-state-v4";
+  const DEVICE_SAVE = STORAGE_KEY;
   const settings = {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
@@ -336,7 +337,7 @@ describe("first sign-in never loses a checklist", () => {
 });
 
 describe("an old copy on this device never overrides the account", () => {
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
+  const ACCOUNT_SAVE = `${STORAGE_KEY}:uid-a`;
   const blankSave = {
     schemaVersion: 4,
     species: {},
@@ -730,7 +731,7 @@ describe("the edit made last wins", () => {
 });
 
 describe("sign-in keeps the checklist on screen honest", () => {
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
+  const ACCOUNT_SAVE = `${STORAGE_KEY}:uid-a`;
   const settings = {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
@@ -845,7 +846,7 @@ describe("adversarial review", () => {
     "setting:mode": { s: "photonic-prismatic", at: 100, by: "uid-a" },
     "setting:forms": { s: "off", at: 100, by: "uid-a" },
   };
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
+  const ACCOUNT_SAVE = `${STORAGE_KEY}:uid-a`;
   const sentRecords = () =>
     mocks.update.mock.calls.map((call) =>
       Object.fromEntries(
@@ -1071,7 +1072,7 @@ describe("held clears, recovery and replacements", () => {
     [speciesKey(1)]: { s: "caught", at: 100, by: "uid-a" },
     [speciesKey(4)]: { s: "caught", at: 100, by: "uid-a" },
   };
-  const ACCOUNT_SAVE = "pokemon-checklist-state-v4:uid-a";
+  const ACCOUNT_SAVE = `${STORAGE_KEY}:uid-a`;
   const sentRecords = () =>
     Object.assign(
       {},

@@ -230,7 +230,7 @@ describe("starred species", () => {
   it("writes stars to the current storage key so they survive a reload", () => {
     const store = installStorage();
     toggleStar(25);
-    const raw = store.get("pokemon-checklist-state-v4");
+    const raw = store.get(STORAGE_KEY);
     expect(raw).toBeTruthy();
     expect(JSON.parse(raw!).starred).toEqual([25]);
   });
@@ -304,9 +304,9 @@ describe("storage migration", () => {
     expect(exportState().settings.mode).toBe("sun");
     expect(exportState().starred).toEqual([]);
 
-    const upgraded = store.get("pokemon-checklist-state-v4");
+    const upgraded = store.get(STORAGE_KEY);
     expect(upgraded).toBeTruthy();
-    expect(JSON.parse(upgraded!).schemaVersion).toBe(4);
+    expect(JSON.parse(upgraded!).schemaVersion).toBe(5);
     // The legacy entry stays put so an older build still finds its own data.
     expect(store.get("pokemon-checklist-state-v2")).toBeTruthy();
   });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../domain";
-import type { SavedState } from "../types";
+import type { SavedStateV5 as SavedState } from "../types";
 import {
   CLOCK_SLACK,
   SYNC_STORE_KEY,
@@ -41,10 +41,11 @@ const document = (records: Record<string, RecordEntry>): SyncDocument => ({
   updatedAt: 0,
 });
 const save = (overrides: Partial<SavedState> = {}): SavedState => ({
-  schemaVersion: 4,
+  schemaVersion: 5,
   species: {},
   forms: {},
   starred: [],
+  starredForms: [],
   settings: { forms: false, mode: "moon", unlocks: [] },
   ...overrides,
 });
@@ -275,10 +276,11 @@ describe("what the device shows", () => {
     });
     const view = viewWithPending(base, {});
     expect(saveFromView(view, POKEMON, FORMS)).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: { "25": "caught" },
       forms: {},
       starred: [150],
+      starredForms: [],
       settings: { forms: false, mode: "ultra-moon", unlocks: [] },
     });
   });

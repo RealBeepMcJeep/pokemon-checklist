@@ -14,6 +14,7 @@ import { UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } fro
 import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
 import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
 import { BUILD_LABEL } from "./version";
+import { isRegional, type RegionalForm } from "./regional";
 
 export interface Notice {
   message: string;
@@ -61,6 +62,7 @@ export const storageAvailable = signal(true);
 export const readOnly = signal<null | "elsewhere" | "outdated">(null);
 /** Dex numbers pinned to the top of the Pokédex list, ascending. */
 export const starred = signal<number[]>([]);
+export const starredForms = signal<string[]>([]);
 
 export const activeEncounters = computed(() => ENCOUNTERS_BY_MODE[mode.value]);
 /** Forms obtainable in the active mode only, e.g. 14-17 rather than all 54 across
@@ -250,6 +252,7 @@ export function defaultState(): SavedState {
     species: {},
     forms: {},
     starred: [],
+    starredForms: [],
     settings: { forms: false, mode: DEFAULT_MODE, unlocks: [] },
   };
 }
@@ -268,6 +271,7 @@ export function exportState(): SavedState {
     species,
     forms,
     starred: [...starred.value],
+    starredForms: [...starredForms.value],
     settings: { forms: formsTracked.value, mode: mode.value, unlocks: [...unlocks.value] },
   });
 }
@@ -284,6 +288,7 @@ export function applyState(state: SavedState): void {
     mode.value = state.settings.mode;
     unlocks.value = [...(state.settings.unlocks ?? [])];
     starred.value = [...state.starred];
+    starredForms.value = "starredForms" in state ? [...state.starredForms] : [];
   });
   // Anything that changes a record an Undo would put back ends that Undo.
   if (undoable && !stillAsLeft(undoable)) expireUndo();
@@ -617,8 +622,11 @@ export function cycleForm(key: string): void {
   if (!form) throw new Error(`Unknown form ${key}`);
   batch(() => {
     status.value = next;
-    if (next === "caught") speciesSignal(form.speciesId).value = "caught";
-    if (next === "seen" && speciesStatus(form.speciesId) === "none") {
+    if (isRegional(form.speciesId) && /:(alolan|kanto)$/.test(key)) {
+      const values = ["alolan", "kanto"].map(slug => formSignal(`${form.speciesId}:${slug}`).value);
+      speciesSignal(form.speciesId).value = values.includes("caught") ? "caught" : values.includes("seen") ? "seen" : "none";
+    } else if (next === "caught") speciesSignal(form.speciesId).value = "caught";
+    else if (next === "seen" && speciesStatus(form.speciesId) === "none") {
       speciesSignal(form.speciesId).value = "seen";
     }
   });
@@ -639,16 +647,23 @@ export function toggleForms(): void {
   persist();
 }
 
-export function isStarred(id: number): boolean {
-  return starred.value.includes(id);
+export function isStarred(id: number, form?: RegionalForm): boolean {
+  return form ? starredForms.value.includes(`${id}:${form}`)
+    : starred.value.includes(id) || starredForms.value.some(key => Number(key.split(":")[0]) === id);
 }
 
 /** Pin a species to the top of the Pokédex list, or release it again. */
-export function toggleStar(id: number): void {
+export function toggleStar(id: number, form?: RegionalForm): void {
   if (readOnly.value) return;
   const before = exportState();
-  const pinned = isStarred(id);
-  starred.value = pinned
+  const pinned = isStarred(id, form);
+  if (form) {
+    const key = `${id}:${form}`;
+    if (!isRegional(id) || !validForms.has(key)) throw new Error("Unknown regional favorite");
+    starredForms.value = pinned ? starredForms.value.filter(entry => entry !== key)
+      : [...starredForms.value, key].sort((a, b) => a.localeCompare(b));
+    starred.value = starred.value.filter(entry => entry !== id);
+  } else starred.value = pinned
     ? starred.value.filter((entry) => entry !== id)
     : [...starred.value, id].sort((a, b) => a - b);
   const done = change(before, exportState());

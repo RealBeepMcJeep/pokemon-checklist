@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SavedState } from "../types";
+import type { SavedStateV5 as SavedState } from "../types";
 import {
   SETTING_FORMS,
   SETTING_MODE,
@@ -35,10 +35,11 @@ const document = (
 ): SyncDocument => ({ schema: 1, records, updatedAt });
 
 const save = (overrides: Partial<SavedState> = {}): SavedState => ({
-  schemaVersion: 4,
+  schemaVersion: 5,
   species: {},
   forms: {},
   starred: [],
+  starredForms: [],
   settings: { forms: false, mode: "moon", unlocks: [] },
   ...overrides,
 });
@@ -222,10 +223,11 @@ describe("stateFromDocument", () => {
       [SETTING_FORMS]: entry(STAR_ON, 10),
     });
     expect(stateFromDocument(doc, POKEMON, FORMS)).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: { "25": "caught", "150": "seen" },
       forms: { "25:alola": "caught" },
       starred: [2, 150],
+      starredForms: [],
       settings: { forms: true, mode: "ultra-sun", unlocks: [] },
     });
   });
@@ -240,10 +242,11 @@ describe("stateFromDocument", () => {
       [SETTING_MODE]: entry("pokemon-go", 10),
     });
     expect(stateFromDocument(doc, POKEMON, FORMS)).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: {},
       forms: {},
       starred: [],
+      starredForms: [],
       settings: { forms: false, mode: "photonic-prismatic", unlocks: [] }
     });
   });

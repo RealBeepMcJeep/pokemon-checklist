@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_BY_MODE } from "./data";
-import { catchNowRows, validateState, STATE_VERSION } from "./domain";
+import { catchNowRows, validateState, STATE_VERSION, STORAGE_KEY } from "./domain";
 import { entriesFromState, stateFromDocument, diffEntries } from "./sync/records";
 import * as state from "./state";
 import { pendingEntries } from "./sync/outbox";
@@ -43,7 +43,7 @@ describe("encounter unlock eligibility", () => {
   it("v4 persists exact unlocks and migrates v3 without altering catches", () => {
     const old = {schemaVersion:3,species:{"25":"caught"},forms:{},starred:[25],settings:{forms:false,mode:"photonic-prismatic"}};
     const migrated = validateState(old,new Set([25]),new Set());
-    expect(STATE_VERSION).toBe(4);
+    expect(STATE_VERSION).toBe(5);
     expect(migrated.settings).toEqual({forms:false,mode:"photonic-prismatic",unlocks:[]});
     expect(migrated.species).toEqual(old.species);
     const current = {...migrated,settings:{...migrated.settings,unlocks:["tauros","sos"]}};
@@ -91,7 +91,7 @@ describe("encounter unlock eligibility", () => {
       state.applyState(state.defaultState());state.initializeState();
       expect(state.exportState().species["25"]).toBe("caught");
       expect(values.get("pokemon-checklist-state-v3")).toBe("corrupt legacy JSON");
-      expect(JSON.parse(values.get("pokemon-checklist-state-v4")!).species["25"]).toBe("caught");
+      expect(JSON.parse(values.get(STORAGE_KEY)!).species["25"]).toBe("caught");
     } finally {
       if(previous) Object.defineProperty(globalThis,"localStorage",previous);
       else Reflect.deleteProperty(globalThis,"localStorage");

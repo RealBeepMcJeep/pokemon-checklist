@@ -6,21 +6,24 @@ import type {
   Location,
   Occurrence,
   SavedState,
+  SavedStateV5,
   Status,
   StatusMap,
 } from "./types";
 import { GAME_MODES, UNLOCKS } from "./types";
 import { eligibleRows, occurrenceEligible } from "./unlocks";
+import { REGIONAL_IDS, isRegional } from "./regional";
 
 export const DEFAULT_MODE: GameMode = "photonic-prismatic";
-export const STATE_VERSION = 4;
-export const STORAGE_KEY = "pokemon-checklist-state-v4";
+export const STATE_VERSION = 5;
+export const STORAGE_KEY = "pokemon-checklist-state-v5";
 /**
  * Checked in order when the current key holds nothing. Each is migrated on read
  * and rewritten under `STORAGE_KEY`, so an older save upgrades itself and an
  * older build of the app still finds its own key untouched.
  */
 export const LEGACY_STORAGE_KEYS = [
+  "pokemon-checklist-state-v4",
   "pokemon-checklist-state-v3",
   "pokemon-checklist-state-v2",
   "pokemon-checklist-state-v1",
@@ -129,6 +132,12 @@ export function buildFormDefinitions(
   encountersByMode: Record<GameMode, EncounterData>,
 ): Map<string, FormDefinition> {
   const forms = new Map<string, FormDefinition>();
+  for (const speciesId of REGIONAL_IDS) {
+    for (const [slug, label] of [["alolan", "Alolan"], ["kanto", "Kanto"]]) {
+      const key = formKey(speciesId, "form", slug);
+      forms.set(key, { key, speciesId, label, kind: "form" });
+    }
+  }
   for (const encounters of Object.values(encountersByMode)) {
     addFormsFrom(encounters, forms);
   }
@@ -149,23 +158,30 @@ export function cycleStatus(status: Status): Status {
 
 const catchNowRowsCache = new WeakMap<Location, EncounterRow[]>();
 
-export function catchNowRows(location: Location, unlocks: readonly string[] = []): EncounterRow[] {
-  const cached = unlocks.length === 0 ? catchNowRowsCache.get(location) : undefined;
+export function catchNowRows(location: Location, unlocks: readonly string[] = [], separateForms = false): EncounterRow[] {
+  const cached = unlocks.length === 0 && !separateForms ? catchNowRowsCache.get(location) : undefined;
   if (cached) return cached;
 
-  const rows = eligibleRows(location, unlocks);
-  if (unlocks.length === 0) catchNowRowsCache.set(location, rows);
+  const rows = eligibleRows(location, unlocks, separateForms);
+  if (unlocks.length === 0 && !separateForms) catchNowRowsCache.set(location, rows);
   return rows;
+}
+
+export function encounterStatus(row: EncounterRow, statusOf: (id: number) => Status, formStatusOf?: (key: string) => Status): Status {
+  return row.speciesId && formStatusOf && isRegional(row.speciesId)
+    ? formStatusOf(formKey(row.speciesId, "form", row.form || "alolan"))
+    : statusOf(row.speciesId!);
 }
 
 export function locationProgress(
   location: Location,
   statusOf: (id: number) => Status,
   unlocks: readonly string[] = [],
+  formStatusOf?: (key: string) => Status,
 ): { none: number; seen: number; caught: number; total: number } {
   const counts = { none: 0, seen: 0, caught: 0, total: 0 };
-  for (const row of catchNowRows(location, unlocks)) {
-    counts[statusOf(row.speciesId!)]++;
+  for (const row of catchNowRows(location, unlocks, !!formStatusOf)) {
+    counts[encounterStatus(row, statusOf, formStatusOf)]++;
     counts.total++;
   }
   return counts;
@@ -175,10 +191,11 @@ export function firstIncompleteLocation(
   encounters: EncounterData,
   statusOf: (id: number) => Status,
   unlocks: readonly string[] = [],
+  formStatusOf?: (key: string) => Status,
 ): Location | null {
   for (const island of encounters.islands) {
     for (const location of island.locations) {
-      const progress = locationProgress(location, statusOf, unlocks);
+      const progress = locationProgress(location, statusOf, unlocks, formStatusOf);
       if (progress.caught !== progress.total) return location;
     }
   }
@@ -288,14 +305,16 @@ export function validateState(
   value: unknown,
   validPokemon: ReadonlySet<number>,
   validForms: ReadonlySet<string>,
-): SavedState {
+): SavedStateV5 {
   if (!isRecord(value) || !isSupportedVersion(value.schemaVersion)) {
     throw new Error("This backup format is not supported");
   }
   const { schemaVersion } = value;
   // v3 introduced `starred`; each version keeps its own exact key set.
   const expectedKeys =
-    schemaVersion >= 3
+    schemaVersion === 5
+      ? "forms,schemaVersion,settings,species,starred,starredForms"
+      : schemaVersion >= 3
       ? "forms,schemaVersion,settings,species,starred"
       : "forms,schemaVersion,settings,species";
   if (
@@ -307,7 +326,7 @@ export function validateState(
   }
   if (!isRecord(value.settings))
     throw new Error("This backup has invalid settings");
-  const expectedSettings = schemaVersion === 1 ? "forms" : schemaVersion === 4 ? "forms,mode,unlocks" : "forms,mode";
+  const expectedSettings = schemaVersion === 1 ? "forms" : schemaVersion >= 4 ? "forms,mode,unlocks" : "forms,mode";
   if (
     typeof value.settings.forms !== "boolean" ||
     Object.keys(value.settings)
@@ -321,10 +340,16 @@ export function validateState(
   if (!GAME_MODES.includes(rawMode as GameMode)) {
     throw new Error("This backup has an unknown game mode");
   }
-  const unlocks = schemaVersion === 4 ? value.settings.unlocks : [];
+  const unlocks = schemaVersion >= 4 ? value.settings.unlocks : [];
   if (!Array.isArray(unlocks) || unlocks.some(flag => !UNLOCKS.includes(flag)) || new Set(unlocks).size !== unlocks.length)
     throw new Error("This backup has invalid encounter unlocks");
-  return {
+  const starredForms: string[] = [];
+  if (schemaVersion === 5) {
+    if (!Array.isArray(value.starredForms) || value.starredForms.some(key => typeof key !== "string" || !validForms.has(key)) || new Set(value.starredForms).size !== value.starredForms.length)
+      throw new Error("This backup has invalid form favorites");
+    starredForms.push(...value.starredForms);
+  }
+  return canonicalState({
     schemaVersion: STATE_VERSION,
     species: validateStatusMap(
       value.species,
@@ -341,11 +366,12 @@ export function validateState(
     ),
     starred:
       schemaVersion >= 3 ? validateStarred(value.starred, validPokemon) : [],
+    starredForms,
     settings: { forms: value.settings.forms, mode: rawMode as GameMode, unlocks: [...unlocks] },
-  };
+  });
 }
 
-export function canonicalState(state: SavedState): SavedState {
+export function canonicalState(state: SavedState): SavedStateV5 {
   const species: StatusMap = {};
   for (const key of Object.keys(state.species).sort(
     (a, b) => Number(a) - Number(b),
@@ -358,11 +384,21 @@ export function canonicalState(state: SavedState): SavedState {
   )) {
     if (state.forms[key] !== "none") forms[key] = state.forms[key];
   }
+  const starredForms = new Set("starredForms" in state ? state.starredForms : []);
+  const starred = [...new Set(state.starred)].filter(id => {
+    if (!isRegional(id)) return true;
+    if ([...starredForms].some(key => Number(key.split(":")[0]) === id)) return false;
+    const owned = ["alolan", "kanto"].map(form => formKey(id, "form", form)).filter(key => forms[key] === "caught");
+    if (owned.length !== 1) return true;
+    starredForms.add(owned[0]);
+    return false;
+  });
   return {
     schemaVersion: STATE_VERSION,
     species,
     forms,
-    starred: [...new Set(state.starred)].sort((a, b) => a - b),
+    starred: starred.sort((a, b) => a - b),
+    starredForms: [...starredForms].sort((a, b) => a.localeCompare(b)),
     settings: { forms: state.settings.forms, mode: state.settings.mode, unlocks: UNLOCKS.filter(flag => state.settings.unlocks.includes(flag)) },
   };
 }
@@ -372,12 +408,13 @@ export function uncaughtCatchNowRows(
   location: Location,
   statusOf: (id: number) => Status,
   unlocks: readonly string[] = [],
+  formStatusOf?: (key: string) => Status,
 ): EncounterRow[] {
-  return catchNowRows(location, unlocks)
-    .filter((row) => row.speciesId && statusOf(row.speciesId) !== "caught")
+  return catchNowRows(location, unlocks, !!formStatusOf)
+    .filter((row) => row.speciesId && encounterStatus(row, statusOf, formStatusOf) !== "caught")
     .sort((a, b) =>
-      Number(statusOf(a.speciesId!) === "seen") -
-      Number(statusOf(b.speciesId!) === "seen"),
+      Number(encounterStatus(a, statusOf, formStatusOf) === "seen") -
+      Number(encounterStatus(b, statusOf, formStatusOf) === "seen"),
     );
 }
 

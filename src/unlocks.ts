@@ -1,4 +1,5 @@
 import type { EncounterGroup, EncounterRow, Location } from "./types";
+import { isRegional } from "./regional";
 
 export function groupUnlock(group: EncounterGroup): string | null {
   if (/Weather.*SOS|Rain.*SOS/i.test(group.name)) return "weather-sos";
@@ -10,10 +11,12 @@ export function groupUnlock(group: EncounterGroup): string | null {
 }
 
 /** Immutable species-level reachability; an owned Pokémon never grants access. */
-export function eligibleRows(location: Location, unlocks: readonly string[]): EncounterRow[] {
-  const rows = new Map<number, EncounterRow>();
+export function eligibleRows(location: Location, unlocks: readonly string[], separateForms = false): EncounterRow[] {
+  const identity = (row: EncounterRow): string => separateForms && row.speciesId && isRegional(row.speciesId)
+    ? `${row.speciesId}:${row.form || "alolan"}` : String(row.speciesId);
+  const rows = new Map<string, EncounterRow>();
   const add = (row: EncounterRow) => {
-    if (row.speciesId) rows.set(row.speciesId, row);
+    if (row.speciesId && !rows.has(identity(row))) rows.set(identity(row), row);
   };
   for (const group of location.groups) {
     const kind = groupUnlock(group);
@@ -40,9 +43,9 @@ export function eligibleRows(location: Location, unlocks: readonly string[]): En
         const direct = group.category === "regular" || (kind !== null && kind !== "sos" && kind !== "weather-sos" && unlocks.includes(kind));
         if (!direct && kind !== "sos") continue;
         for (const caller of group.encounters) {
-          if (!caller.speciesId || !rows.has(caller.speciesId)) continue;
+          if (!caller.speciesId || !rows.has(identity(caller))) continue;
           for (const ally of caller.allies || []) {
-            if (!rows.has(ally.speciesId)) add({id:caller.id,speciesId:ally.speciesId,
+            add({id:caller.id,speciesId:ally.speciesId,
               species:ally.species,speciesName:ally.name,form:ally.form,rates:null,allies:[]});
           }
         }

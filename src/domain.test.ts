@@ -41,10 +41,11 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: { 25: "seen" },
       forms: {},
       starred: [],
+      starredForms: [],
       settings: { forms: true, mode: DEFAULT_MODE, unlocks: [] },
     });
   });
@@ -74,10 +75,11 @@ describe("checklist domain", () => {
         settings: { forms: false, mode: "ultra-moon", unlocks: [] },
       }),
     ).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: { 1: "caught", 807: "seen" },
       forms: { "19:alolan": "caught", "20:alolan": "seen" },
       starred: [25, 731],
+      starredForms: [],
       settings: { forms: false, mode: "ultra-moon", unlocks: [] },
     });
   });
@@ -95,10 +97,11 @@ describe("checklist domain", () => {
         formKeys,
       ),
     ).toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       species: { 25: "seen", 731: "caught" },
       forms: { "19:alolan": "caught" },
       starred: [],
+      starredForms: [],
       settings: { forms: true, mode: "ultra-sun", unlocks: [] },
     });
   });
@@ -283,7 +286,7 @@ describe("checklist domain", () => {
     expect(formsForMode(ENCOUNTERS_BY_MODE["ultra-sun"]).size).toBe(17);
     expect(formsForMode(ENCOUNTERS_BY_MODE["ultra-moon"]).size).toBe(17);
     expect(formsForMode(ENCOUNTERS_BY_MODE["photonic-prismatic"]).size).toBe(48);
-    expect(forms.size).toBe(54);
+    expect(forms.size).toBe(63); // Complete regional pairs, including evolution-only variants.
   });
 
   it("builds the same key format every caller relies on", () => {

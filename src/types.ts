@@ -159,7 +159,7 @@ export interface Settings {
   unlocks: Unlock[];
 }
 
-export interface SavedState {
+export interface SavedStateV4 {
   schemaVersion: 4;
   species: StatusMap;
   forms: StatusMap;
@@ -167,6 +167,14 @@ export interface SavedState {
   starred: number[];
   settings: Settings;
 }
+
+export interface SavedStateV5 extends Omit<SavedStateV4, "schemaVersion"> {
+  schemaVersion: 5;
+  /** Independent form favorites; unresolved legacy favorites stay in starred. */
+  starredForms: string[];
+}
+
+export type SavedState = SavedStateV4 | SavedStateV5;
 
 export interface Occurrence {
   eligible?: boolean;

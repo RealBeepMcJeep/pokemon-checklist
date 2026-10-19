@@ -1,5 +1,5 @@
 import { GAME_MODES, UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } from "../types";
-import { DEFAULT_MODE, STATUS_ORDER, STATE_VERSION } from "../domain";
+import { DEFAULT_MODE, STATUS_ORDER, STATE_VERSION, canonicalState } from "../domain";
 
 /**
  * Sync payload shapes and the pure logic that merges them.
@@ -34,6 +34,7 @@ export interface SyncDocument {
 export const speciesKey = (id: number): RecordKey => `species:${id}`;
 export const formKey = (key: string): RecordKey => `form:${key}`;
 export const starKey = (id: number): RecordKey => `star:${id}`;
+export const formStarKey = (key: string): RecordKey => `starform:${key}`;
 export const SETTING_MODE: RecordKey = "setting:mode";
 export const SETTING_FORMS: RecordKey = "setting:forms";
 
@@ -56,7 +57,7 @@ export const isClearing = (value: string): boolean =>
  * both are treated as absent when a document is turned back into a save.
  */
 export function clearedValue(key: RecordKey): string {
-  return key.startsWith("star:") || key === SETTING_FORMS || key.startsWith("setting:unlock:") ? STAR_OFF : TOMBSTONE;
+  return key.startsWith("star:") || key.startsWith("starform:") || key === SETTING_FORMS || key.startsWith("setting:unlock:") ? STAR_OFF : TOMBSTONE;
 }
 
 /**
@@ -115,7 +116,10 @@ export function entriesFromState(
   for (const [key, status] of Object.entries(state.forms)) {
     if (status !== "none") stamp(formKey(key), status);
   }
-  for (const id of state.starred) stamp(starKey(id), STAR_ON);
+  const formStars = "starredForms" in state ? state.starredForms : [];
+  for (const key of formStars) stamp(formStarKey(key), STAR_ON);
+  // Old analysis/read-only clients still receive a species-level favorite view.
+  for (const id of new Set([...state.starred, ...formStars.map(key => Number(key.split(":")[0]))])) stamp(starKey(id), STAR_ON);
   for (const flag of state.settings.unlocks ?? []) stamp(`setting:unlock:${flag}`, STAR_ON);
   stamp(SETTING_MODE, state.settings.mode);
   stamp(SETTING_FORMS, state.settings.forms ? STAR_ON : STAR_OFF);
@@ -209,11 +213,21 @@ export function stateFromDocument(
   const species: Record<string, Status> = {};
   const forms: Record<string, Status> = {};
   const starred: number[] = [];
+  const starredForms: string[] = [];
+  const explicitFormStars = new Set<number>();
   let mode: GameMode = DEFAULT_MODE;
   let formsTracked = false;
   const unlocks: Unlock[] = [];
 
   for (const [key, entry] of Object.entries(document.records)) {
+    if (key.startsWith("starform:")) {
+      const form = key.slice("starform:".length);
+      if (validForms.has(form) && (entry.s === STAR_ON || entry.s === STAR_OFF)) {
+        explicitFormStars.add(Number(form.split(":")[0]));
+        if (entry.s === STAR_ON) starredForms.push(form);
+      }
+      continue;
+    }
     if (entry.s === TOMBSTONE) continue;
     if (key.startsWith("species:")) {
       const id = Number(key.slice("species:".length));
@@ -238,13 +252,14 @@ export function stateFromDocument(
     }
   }
 
-  return {
+  return canonicalState({
     schemaVersion: STATE_VERSION,
     species,
     forms,
-    starred: [...new Set(starred)].sort((a, b) => a - b),
+    starred: [...new Set(starred)].filter(id => !explicitFormStars.has(id)).sort((a, b) => a - b),
+    starredForms,
     settings: { forms: formsTracked, mode, unlocks: UNLOCKS.filter(flag => unlocks.includes(flag)) },
-  };
+  });
 }
 
 /**
