@@ -13,6 +13,9 @@ it("source-form corrections retain every legacy v4 form definition and backup re
       row.forms = ["base", "heat", "frost"];
       row.allies = [{ species: "rotom", name: "Rotom", speciesId: 479 }];
     }
+    if (row.id === "akala-island/memorial-hill/all-grass-1/1") row.allies = [{ species: "pumpkaboo", name: "Pumpkaboo", speciesId: 710 }];
+    if (row.id === "poni-island/vast-poni-canyon/grass-1-1/2") { row.forms = ["midday", "midnight", "dusk"]; row.allies = []; }
+    if (row.id === "poni-island/vast-poni-canyon/grass-2-2/2") { delete row.forms; row.allies = []; }
     if (row.id === "ulaula-island/ulaula-meadow/grass-1/2") {
       delete row.form;
       row.forms = ["red-flower", "orange-flower", "white-flower"];

@@ -33,7 +33,20 @@ are SOS-only there. Thrifty Megamart has **Rotom (Base)** at 15%, with **Frost/H
 SOS allies; Ula’Ula Meadow has **Floette (Red Flower)** at 20%, with **Orange/White
 Flower** SOS allies. These wild percentages are not ally shares. Existing form keys,
 ownership/favorites and v4 backups remain compatible; the separate SOS-table layout
-and generic Pokédex entries are unchanged in this incremental source-data release.
+and generic Pokédex entries are unchanged in this incremental source release.
+
+Ten Carat Hill's **Rockruff (Normal / Own Tempo)** retains its combined 20% wild
+rate and documented equal native chances. Its Own Tempo-only SOS restriction stays
+explicit in the footnote, not a shared ally available to regular Rockruff. Memorial
+Hill's **Pumpkaboo (Small / Average / Large / Super Size)** retains its pooled 30%
+rate and names its documented **Super Size** SOS ally; native size/ally shares are
+not supplied. Both Vast Poni Canyon grass tables name **Lycanroc (Midday: Day /
+Midnight: Night)** at a combined 20%, with **Dusk** as an SOS-only ally there.
+Pooled/unsupported guide identities do not borrow one variant's base type/grade
+facts; exact known allies, ordinary species and documented Kanto/base facts remain.
+Legacy form controls, progress and v4 Backup/Restore are preserved. This does not
+yet ship the regional living-Dex migration, exact encounter-detail context or inline
+SOS redesign.
 
 ## Saved encounter unlocks
 

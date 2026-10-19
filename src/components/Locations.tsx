@@ -2,7 +2,7 @@ import { occurrenceEligible } from "../unlocks";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { ASSETS, detailsByDex, formDetails } from "../data";
+import { ASSETS, byDex, detailsByDex, formDetails } from "../data";
 import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
@@ -46,7 +46,11 @@ function GuidePokemon({
     : ability
       ? formKey(id, "ability", formSlug(ability))
       : "";
-  const details = formDetails.get(key) || detailsByDex.get(id);
+  // Never attribute one base variant's facts to a pooled/unsupported identity.
+  const specific = !!key || formSlug(name) !== formSlug(byDex.get(id)?.name);
+  // The v4 catalogue uses base species facts for explicitly documented Kanto forms.
+  const baseForm = ["base", "kanto"].includes(formSlug(form));
+  const details = formDetails.get(key) ?? (!specific || baseForm ? detailsByDex.get(id) : undefined);
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} context={context} compact />

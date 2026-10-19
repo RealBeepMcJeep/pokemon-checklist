@@ -137,5 +137,55 @@ class SosSourceScopeTests(unittest.TestCase):
         self.assertIn("Shuckle", caller["note"])
 
 
+    def test_rockruff_names_both_native_variants_without_inventing_cross_calls(self):
+        source = " ".join(self.guide.pages[15].extract_text().split())
+        self.assertIn("equal chance of encountering either one", source)
+        self.assertIn("only summon other Own Tempo Rockruff", source)
+        self.assertIn("called by regular Rockruff", source)
+        loc = self.location("melemele-island/ten-carat-hill")
+        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 744)
+        self.assertEqual(row["speciesName"], "Rockruff (Normal / Own Tempo)")
+        self.assertEqual(row["forms"], ["normal", "own-tempo"])
+        self.assertEqual(row["rates"], {"single": 20})
+        # A mixed native pool must not claim regular Rockruff can call Own Tempo.
+        self.assertEqual(row["allies"], [])
+        self.assertIn("cannot be called by regular Rockruff", row["note"])
+
+
+
+    def test_pumpkaboo_sizes_keep_a_pooled_wild_rate_and_super_size_ally(self):
+        source = " ".join(self.guide.pages[34].extract_text().split())
+        self.assertIn("All Pumpkaboo sizes can be found here", source)
+        self.assertIn("all sizes have a chance to call super", source)
+        loc = self.location("akala-island/memorial-hill")
+        row = next(r for g in loc["groups"] for r in g["encounters"] if r.get("speciesId") == 710)
+        self.assertEqual(row["speciesName"], "Pumpkaboo (Small / Average / Large / Super Size)")
+        self.assertEqual(row["forms"], ["small", "average", "large", "super-size"])
+        self.assertEqual(row["rates"], {"single": 30})
+        self.assertEqual([(a["speciesId"], a["name"], a.get("form")) for a in row["allies"]], [(710, "Pumpkaboo (Super Size)", "super-size")])
+        self.assertTrue(all("rates" not in a for a in row["allies"]))
+
+
+
+    def test_lycanroc_day_night_callers_exclude_dusk_from_wild_pool(self):
+        page61 = " ".join(self.guide.pages[60].extract_text().split())
+        source = " ".join(self.guide.pages[61].extract_text().split())
+        self.assertEqual(page61.count("Lycanroc"), 2)
+        self.assertIn("Lycanroc-Midday will appear during the day", source)
+        self.assertIn("Lyncanroc-Midnight will appear at night", source)
+        self.assertIn("Both have a small chance to call Lycanroc-Dusk", source)
+        loc = self.location("poni-island/vast-poni-canyon")
+        rows = [r for g in loc["groups"] if g["category"] == "regular" for r in g["encounters"] if r.get("speciesId") == 745]
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            self.assertEqual(row["speciesName"], "Lycanroc (Midday: Day / Midnight: Night)")
+            self.assertEqual(row["forms"], ["midday", "midnight"])
+            self.assertEqual(row["rates"], {"single": 20})
+            self.assertEqual([(a["speciesId"], a["name"], a.get("form")) for a in row["allies"]], [(745, "Lycanroc (Dusk)", "dusk")])
+            self.assertTrue(all("rates" not in a for a in row["allies"]))
+            self.assertIn("not a separate rate", row["note"])
+
+
+
 if __name__ == "__main__":
     unittest.main()

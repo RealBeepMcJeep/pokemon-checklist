@@ -3369,7 +3369,7 @@
               },
               "encounters": [
                 {
-                  "speciesName": "Rockruff",
+                  "speciesName": "Rockruff (Normal / Own Tempo)",
                   "species": "rockruff",
                   "forms": [
                     "normal",
@@ -7642,7 +7642,7 @@
               },
               "encounters": [
                 {
-                  "speciesName": "Pumpkaboo",
+                  "speciesName": "Pumpkaboo (Small / Average / Large / Super Size)",
                   "species": "pumpkaboo",
                   "forms": [
                     "small",
@@ -7656,8 +7656,9 @@
                   "allies": [
                     {
                       "species": "pumpkaboo",
-                      "name": "Pumpkaboo",
-                      "speciesId": 710
+                      "name": "Pumpkaboo (Super Size)",
+                      "speciesId": 710,
+                      "form": "super-size"
                     }
                   ],
                   "note": "All Pumpkaboo sizes can be found here, and all sizes have a chance to call super-size Pumpkaboo in SOS battles.",
@@ -12367,18 +12368,24 @@
                   "speciesId": 67
                 },
                 {
-                  "speciesName": "Lycanroc",
+                  "speciesName": "Lycanroc (Midday: Day / Midnight: Night)",
                   "species": "lycanroc",
                   "forms": [
                     "midday",
-                    "midnight",
-                    "dusk"
+                    "midnight"
                   ],
                   "rates": {
                     "single": 20
                   },
-                  "allies": [],
-                  "note": "Lycanroc-Midday appears during the day and Lycanroc-Midnight at night; both have a small chance to call Lycanroc-Dusk.",
+                  "allies": [
+                    {
+                      "species": "lycanroc",
+                      "name": "Lycanroc (Dusk)",
+                      "speciesId": 745,
+                      "form": "dusk"
+                    }
+                  ],
+                  "note": "Lycanroc-Midday appears during the day and Lycanroc-Midnight at night; both have a small chance to call Lycanroc-Dusk. The 20% wild rate is the native pool, not a separate rate for each form; the Dusk ally share is not documented.",
                   "id": "poni-island/vast-poni-canyon/grass-1-1/2",
                   "speciesId": 745
                 },
@@ -12459,14 +12466,26 @@
                   "speciesId": 67
                 },
                 {
-                  "speciesName": "Lycanroc",
+                  "speciesName": "Lycanroc (Midday: Day / Midnight: Night)",
                   "species": "lycanroc",
                   "rates": {
                     "single": 20
                   },
-                  "allies": [],
+                  "allies": [
+                    {
+                      "species": "lycanroc",
+                      "name": "Lycanroc (Dusk)",
+                      "speciesId": 745,
+                      "form": "dusk"
+                    }
+                  ],
                   "id": "poni-island/vast-poni-canyon/grass-2-2/2",
-                  "speciesId": 745
+                  "speciesId": 745,
+                  "forms": [
+                    "midday",
+                    "midnight"
+                  ],
+                  "note": "Lycanroc-Midday appears during the day and Lycanroc-Midnight at night; both have a small chance to call Lycanroc-Dusk. The 20% wild rate is the native pool, not a separate rate for each form; the Dusk ally share is not documented."
                 },
                 {
                   "speciesName": "Mienshao",
