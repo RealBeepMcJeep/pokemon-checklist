@@ -51,7 +51,7 @@ ownership/favorites and v4 backups remain compatible. The published 2026-10-19
 data-only milestone retained separate SOS tables and generic Pokédex entries;
 the unreleased regional UI described below replaces those presentation rules.
 
-The unreleased source audit also distinguishes **Lycanroc (Midday: Day / Midnight:
+The source guide also distinguishes **Lycanroc (Midday: Day / Midnight:
 Night)** in both Vast Poni Canyon grass tables (20% native pool), with Dusk as an
 SOS-only ally there, and **Pumpkaboo (Small / Average / Large / Super Size)** at
 Memorial Hill (30% pooled), with a documented Super Size ally. Neither source gives
@@ -62,7 +62,9 @@ Own Tempo ally is intentionally not attached to that mixed caller pool because
 regular Rockruff cannot call it. Exact conditional caller presentation still needs
 normalization before the full regional milestone. Pooled/unsupported guide identities
 do not borrow one variant’s base type/grade facts; exact-form allies keep their
-verified facts. No new form/save keys are added.
+verified facts; ordinary and documented Kanto/base facts remain correct. No new
+form/save keys are added. The narrow main source/facts candidate retains v4
+compatibility; it does not publish this branch’s unfinished v5 regional migration.
 
 ## Saved encounter unlocks
 
@@ -98,8 +100,7 @@ from Autumn/Winter SOS, Base Rotom from Frost/Heat SOS, and red Ula’Ula Floett
 from Orange/White Flower SOS. Native rates stay pooled; the guide does not assign
 Spring versus Summer to individual grass patches or provide ordinary ally shares.
 These corrections preserve existing collection-form keys; they are not a new
-Extended Forms tracking mode. Remaining source gaps and non-regional detail-heading
-context are development work, not a claim of complete form naming.
+Extended Forms tracking mode. Remaining source gaps are development work, not a claim of complete form naming.
 Universal “All” rules appear once per wild row, labeled Any listed wild caller, rather
 than repeating inside every chain. Ordinary unknown-share help is shared by the row;
 weather entries retain their location-wide source scope and conditions. The caller’s

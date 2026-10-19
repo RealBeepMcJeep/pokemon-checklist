@@ -14,6 +14,8 @@
 - Popular moves now resolve exact Alolan/Kanto paths, separate SM/USUM teaching methods, verified Prismatic Standard levels and documented mart locations, with explicit missing-evidence labels and no inferred egg-to-level conversion. Legacy numeric move consumers remain readable.
 
 ## 2026-10-19
+- Named Ten Carat Hill’s Normal/Own Tempo Rockruff, Memorial Hill’s native Pumpkaboo sizes and Super Size SOS, and both canyon grass tables’ day Midday/night Midnight Lycanroc with Dusk SOS. Wild rates remain pooled and unchanged; no numerical size/ally shares are invented. The Own Tempo-only SOS restriction remains explicit in the source footnote rather than falsely attaching it to regular callers.
+- Pooled/unsupported guide names no longer borrow one variant’s base type/competitive-grade facts. Exact known allies, ordinary species and documented Kanto/base facts retain theirs. Existing form keys, mirrored controls and v4 backups are preserved; regional migration, exact encounter details and inline SOS remain upcoming.
 - Corrected creator-documented encounter forms: Route 6 Deerling is a pooled Spring/Summer wild encounter with Autumn/Winter SOS allies; Thrifty Megamart Rotom is Base with Frost/Heat allies; Ula’Ula Meadow Floette is Red Flower with Orange/White Flower allies. These encounter labels remain explicit with Track forms off.
 - Preserved native encounter percentages, existing form/save keys and the v4 backup format. No per-season wild rates or ordinary SOS ally shares are invented. This narrow source-data release does not yet include the regional living-Dex redesign or inline SOS layout.
 

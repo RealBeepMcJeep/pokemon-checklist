@@ -55,7 +55,8 @@ function GuidePokemon({
   const encounterName = formatEncounterName({ speciesId: id, speciesName: name, form, ability }, pokemon?.name);
   // A pooled/unsupported identity cannot borrow one variant's base grade/types.
   const specific = !!key || formSlug(encounterName) !== formSlug(pokemon?.name);
-  const details = formDetails.get(key) ?? (!specific || (form && formSlug(form) === "base") ? detailsByDex.get(id) : undefined);
+  const baseForm = ["base", "kanto"].includes(formSlug(form));
+  const details = formDetails.get(key) ?? (!specific || baseForm ? detailsByDex.get(id) : undefined);
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} form={actualForm} context={context} compact />
