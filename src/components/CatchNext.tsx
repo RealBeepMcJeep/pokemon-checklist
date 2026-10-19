@@ -1,4 +1,5 @@
 import { byDex } from "../data";
+import { encounterName } from "../encounter-names";
 import { firstIncompleteLocation, uncaughtCatchNowRows } from "../domain";
 import { activeEncounters,
  activeUnlocks, focusedLocation, speciesStatus } from "../state";
@@ -28,8 +29,7 @@ export function CatchNext() {
       <summary><strong>Catch next in {location.name}</strong></summary>
       <ul>
         {rows.map((row) => {
-          const name =
-            row.speciesName || row.species || byDex.get(row.speciesId!)?.name || "Pokémon";
+          const name = encounterName(row, byDex.get(row.speciesId!)?.name);
           // Different SOS targets can share their caller's source-row ID.
           return (
             <li key={`${row.id}:${row.speciesId}:${row.form || ""}`}>

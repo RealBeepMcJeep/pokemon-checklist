@@ -1,11 +1,11 @@
 import { occurrenceEligible, guideEncounters, guideCalls, projectEncounters, groupUnlock, isWildcardCaller, type GuideEncounter, type GuideSosNode } from "../unlocks";
 import { UNLOCKS } from "../types";
+import { encounterName as formatEncounterName } from "../encounter-names";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { ASSETS, byDex, detailsByDex, formDetails } from "../data";
 import { encounterRegionalForm } from "../regional";
-import { targetName } from "../collection";
 import { CollectionFacts } from "./CollectionFacts";
 import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
@@ -53,7 +53,7 @@ function GuidePokemon({
   const details = formDetails.get(key) || detailsByDex.get(id);
   const actualForm = encounterRegionalForm(id, form ? formSlug(form) : undefined);
   const pokemon = byDex.get(id);
-  const encounterName = actualForm && pokemon ? targetName(pokemon, actualForm) : name;
+  const encounterName = formatEncounterName({ speciesId: id, speciesName: name, form }, pokemon?.name);
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} form={actualForm} context={context} compact />
@@ -67,7 +67,7 @@ function GuidePokemon({
           {encounterName}
         </button>
         {actualForm ? <CollectionFacts id={id} form={actualForm} />
-          : details && <PokemonFacts details={details} name={name} />}
+          : details && <PokemonFacts details={details} name={encounterName} />}
       </span>
     </span>
   );

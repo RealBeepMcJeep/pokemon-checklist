@@ -27,6 +27,33 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("known non-regional encounter names survive tracking-off and Catch-next retains regional identity", async ({ page }, info) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+      await openRegionalFixture(page, info.project.name);
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const meadow = page.locator('details[data-location-id="poni-island/poni-meadow"]');
+      if (!await meadow.evaluate(el => (el as HTMLDetailsElement).open)) await meadow.locator("summary").click();
+      const flower = meadow.getByRole("button", { name: "Floette (Eternal Flower)", exact: true });
+      for (const enabled of [true, false]) {
+        if (!enabled) {
+          if (device === "phone") await page.locator("#header-settings-toggle").click();
+          await page.locator("#forms-toggle").click();
+          if (device === "phone") await page.getByRole("button", { name: "Close settings", exact: true }).click();
+        }
+        await expect(flower).toBeVisible();
+        expect(await flower.evaluate(el => el.clientWidth > 0 && el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      }
+      await page.screenshot({ path: info.outputPath("named-eternal-flower.png") });
+      if (device === "phone") await page.locator("#sidebar-toggle").click();
+      const next = page.locator(".catch-next");
+      if (!await next.evaluate(el => (el as HTMLDetailsElement).open)) await next.locator("summary").click();
+      await expect(next.locator(".catch-next-name").filter({ hasText: "Rattata (Alolan)" })).toBeVisible();
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+      expect(errors).toEqual([]);
+    });
     test("legacy SOS-table hashes redirect to a rendered caller row", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       const data = JSON.parse(readFileSync(resolve("data/encounters.json"), "utf8")) as EncounterData;

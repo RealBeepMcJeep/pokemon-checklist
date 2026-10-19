@@ -51,7 +51,7 @@ export const normalize = (value: unknown): string =>
 
 export const formSlug = (value: unknown): string => normalize(value);
 
-const titleForm = (value: unknown): string =>
+export const titleForm = (value: unknown): string =>
   String(value)
     .split("-")
     .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
