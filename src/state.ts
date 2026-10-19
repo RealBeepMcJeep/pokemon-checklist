@@ -255,6 +255,7 @@ export function formSignal(key: string): Signal<Status> {
 }
 
 export const speciesStatus = (id: number): Status => speciesSignal(id).value;
+export const formStatus = (key: string): Status => formSignal(key).value;
 
 export function defaultState(): SavedState {
   return {

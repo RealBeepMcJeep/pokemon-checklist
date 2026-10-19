@@ -1,5 +1,6 @@
 import { occurrenceEligible, guideEncounters, guideCalls, projectEncounters, groupUnlock, isWildcardCaller, type GuideEncounter, type GuideSosNode } from "../unlocks";
 import { UNLOCKS } from "../types";
+import { locationSummary } from "../encounter-progress";
 import { encounterName as formatEncounterName, encounterViewContext } from "../encounter-names";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
@@ -7,12 +8,14 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { ASSETS, byDex, detailsByDex, formDetails } from "../data";
 import { encounterRegionalForm } from "../regional";
 import { CollectionFacts } from "./CollectionFacts";
-import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
+import { formKey, formSlug, rateText, safeId } from "../domain";
 import {
   activeEncounters,
   activeSaveNamespace,
   activeUnlocks,
   focusedLocation,
+  formsTracked,
+  formStatus,
   mode,
   speciesStatus,
 } from "../state";
@@ -271,12 +274,9 @@ function EncounterGroup({ group, location, guide }: { group: EncounterGroupData;
 
 function LocationProgress({ location }: { location: LocationData }) {
   const flags = activeUnlocks.value;
-  const progress = locationProgress(location, speciesStatus, flags);
-  const base = catchNowRows(location);
-  const all = new Set(location.groups.flatMap(g => g.encounters.flatMap(r => [r.speciesId,...r.allies.map(a=>a.speciesId)])).filter((id): id is number => !!id));
-  const locked = all.size - progress.total;
-  const backtrack = flags.length > 0 && base.length > 0 && base.every(r=>speciesStatus(r.speciesId!) === "caught") && progress.caught < progress.total;
-  const complete = progress.total > 0 && progress.caught === progress.total;
+  const { progress, locked, backtrack, complete } = locationSummary(
+    location, speciesStatus, flags, formsTracked.value ? formStatus : undefined,
+  );
   return (
     <span
       class={`location-progress ${complete ? "complete" : ""}`}

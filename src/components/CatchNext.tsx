@@ -1,8 +1,9 @@
 import { byDex } from "../data";
 import { encounterName } from "../encounter-names";
+import { encounterRegionalForm } from "../regional";
 import { firstIncompleteLocation, uncaughtCatchNowRows } from "../domain";
 import { activeEncounters,
- activeUnlocks, focusedLocation, speciesStatus } from "../state";
+ activeUnlocks, focusedLocation, speciesStatus, formsTracked, formStatus } from "../state";
 import { closeDrawer, isMobile } from "../ui";
 import { PokemonIcon, StatusButton } from "./StatusControls";
 
@@ -15,7 +16,8 @@ import { PokemonIcon, StatusButton } from "./StatusControls";
  * location list already shows this same location open, just scrolled past.
  */
 export function CatchNext() {
-  const location = firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value);
+  const formStatusOf = formsTracked.value ? formStatus : undefined;
+  const location = firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value, formStatusOf);
   if (!location) {
     return (
       <p class="catch-next-done">
@@ -23,7 +25,7 @@ export function CatchNext() {
       </p>
     );
   }
-  const rows = uncaughtCatchNowRows(location, speciesStatus, activeUnlocks.value);
+  const rows = uncaughtCatchNowRows(location, speciesStatus, activeUnlocks.value, formStatusOf);
   return (
     <details class="catch-next" open={!isMobile.value}>
       <summary><strong>Catch next in {location.name}</strong></summary>
@@ -35,7 +37,7 @@ export function CatchNext() {
             <li key={`${row.id}:${row.speciesId}:${row.form || ""}`}>
               <PokemonIcon id={row.speciesId!} />
               <span class="catch-next-name">{name}</span>
-              <StatusButton id={row.speciesId!} context="catch next" compact />
+              <StatusButton id={row.speciesId!} form={encounterRegionalForm(row.speciesId!, row.form)} context="catch next" compact />
             </li>
           );
         })}

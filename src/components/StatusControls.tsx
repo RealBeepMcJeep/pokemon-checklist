@@ -1,15 +1,13 @@
 import { ATLAS, byDex } from "../data";
 import { STATUS_LABEL, cycleStatus, formKey as buildFormKey, formSlug } from "../domain";
 import {
-  cycleForm,
   formDefinitions,
   formSignal,
   formsTracked,
   readOnly,
-  savedNotice,
   speciesSignal,
 } from "../state";
-import { changeSpecies } from "../ui";
+import { changeSpecies, changeForm } from "../ui";
 import type { Ally, EncounterRow, Status } from "../types";
 import { targetName } from "../collection";
 import { isRegional, type RegionalForm } from "../regional";
@@ -67,7 +65,7 @@ export function StatusButton({
       data-species={id}
       aria-label={label}
       onClick={() => {
-        if (key) { cycleForm(key); savedNotice("Form status"); }
+        if (key) changeForm(key);
         else changeSpecies(id);
       }}
     >
@@ -108,8 +106,7 @@ export function FormStatusButton({
       data-form={formKey}
       aria-label={label}
       onClick={() => {
-        cycleForm(formKey);
-        savedNotice("Form status");
+        changeForm(formKey);
       }}
     >
       <span>{form.label}</span>

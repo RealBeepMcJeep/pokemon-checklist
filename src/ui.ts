@@ -7,9 +7,12 @@ import {
   activeUnlocks,
   changeNotice,
   cycleSpecies,
+  cycleForm,
   drawerOpen,
   exportState,
   focusedLocation,
+  formsTracked,
+  formStatus,
   mode,
   parseState,
   resetState,
@@ -62,7 +65,7 @@ drawerOpen.subscribe((open) => {
 let focusSelectionOnOpen = false;
 
 export function firstIncomplete(): Location | null {
-  return firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value);
+  return firstIncompleteLocation(activeEncounters.value, speciesStatus, activeUnlocks.value, formsTracked.value ? formStatus : undefined);
 }
 
 let memoryWarningShown = false;
@@ -90,6 +93,14 @@ export function restoreLocation(hash = ""): void {
 export function changeMode(nextMode: GameMode): void {
   setMode(nextMode);
   changeNotice(`Switched to ${MODE_LABELS[nextMode]}.`);
+}
+
+export function changeForm(key: string): void {
+  const before = firstIncomplete()?.id || null;
+  cycleForm(key);
+  const after = firstIncomplete()?.id || null;
+  savedNotice("Form status");
+  if (before !== after) focusedLocation.value = after;
 }
 
 export function changeSpecies(id: number): void {
