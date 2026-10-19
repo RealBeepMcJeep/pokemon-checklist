@@ -111,7 +111,8 @@
           "name": "Route 1",
           "sourcePage": 4,
           "sourcePages": [
-            4
+            4,
+            5
           ],
           "assets": [
             "assets/locations/route-1.jpg",
@@ -398,6 +399,54 @@
               "notes": [],
               "conditions": [],
               "id": "melemele-island/route-1/grass-3-3"
+            },
+            {
+              "name": "SOS Calls",
+              "sourcePage": 5,
+              "category": "return-later",
+              "levels": null,
+              "notes": [
+                "The page-5 SOS table covers Route 1 and Hau’oli Outskirts; these callers occur in the Route 1 grass patches on page 4."
+              ],
+              "conditions": [],
+              "encounters": [
+                {
+                  "speciesName": "Rattata",
+                  "species": "rattata",
+                  "form": "alolan",
+                  "rates": null,
+                  "allies": [
+                    {
+                      "species": "rattata",
+                      "name": "Rattata",
+                      "form": "kanto",
+                      "speciesId": 19
+                    }
+                  ],
+                  "id": "melemele-island/route-1/sos-calls-4/1",
+                  "speciesId": 19
+                },
+                {
+                  "speciesName": "Pichu",
+                  "species": "pichu",
+                  "rates": null,
+                  "allies": [
+                    {
+                      "species": "pikachu",
+                      "name": "Pikachu",
+                      "speciesId": 25
+                    },
+                    {
+                      "species": "happiny",
+                      "name": "Happiny",
+                      "speciesId": 440
+                    }
+                  ],
+                  "id": "melemele-island/route-1/sos-calls-4/2",
+                  "speciesId": 172
+                }
+              ],
+              "id": "melemele-island/route-1/sos-calls-4"
             }
           ],
           "notes": [],
@@ -756,41 +805,6 @@
               "category": "return-later",
               "levels": null,
               "encounters": [
-                {
-                  "speciesName": "Rattata",
-                  "species": "rattata",
-                  "form": "alolan",
-                  "rates": null,
-                  "allies": [
-                    {
-                      "species": "rattata",
-                      "name": "Rattata",
-                      "form": "kanto",
-                      "speciesId": 19
-                    }
-                  ],
-                  "id": "melemele-island/hauoli-outskirts/sos-calls-5/1",
-                  "speciesId": 19
-                },
-                {
-                  "speciesName": "Pichu",
-                  "species": "pichu",
-                  "rates": null,
-                  "allies": [
-                    {
-                      "species": "pikachu",
-                      "name": "Pikachu",
-                      "speciesId": 25
-                    },
-                    {
-                      "species": "happiny",
-                      "name": "Happiny",
-                      "speciesId": 440
-                    }
-                  ],
-                  "id": "melemele-island/hauoli-outskirts/sos-calls-5/2",
-                  "speciesId": 172
-                },
                 {
                   "speciesName": "Shellos",
                   "species": "shellos",
@@ -10524,6 +10538,7 @@
                       "speciesId": 740
                     }
                   ],
+                  "note": "The guide lists Crabrawler calling Crabominable, but lists Shuckle (100%) in Berry Piles and no wild Crabrawler here. Caller availability is unverified; do not assume Shuckle calls Crabominable.",
                   "id": "ulaula-island/route-15-16/sos-calls-7/4",
                   "speciesId": 739
                 },
@@ -11249,6 +11264,20 @@
                     "Rain, Hail"
                   ],
                   "id": "ulaula-island/haina-desert/weather-sos-3/2",
+                  "speciesId": 351
+                },
+                {
+                  "speciesName": "Castform",
+                  "species": "castform",
+                  "rates": {
+                    "single": 1
+                  },
+                  "allies": [],
+                  "conditions": [
+                    "Sandstorm"
+                  ],
+                  "note": "Guide-reported SOS encounter rate, page 53 footnote; not a per-turn or call-success probability.",
+                  "id": "ulaula-island/haina-desert/weather-sos-3/3",
                   "speciesId": 351
                 }
               ],

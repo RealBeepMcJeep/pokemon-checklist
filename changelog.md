@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18
+- Corrected Prismatic SOS guide sources: Route 1 now owns its shared Rattata/Pichu caller table; Haina keeps distinct Castform 1% Sandstorm and 11% Rain/Hail entries; the undocumented Crabrawler caller remains explicitly unverified. No ordinary ally percentages are invented.
+- Catch-next suggestions use distinct keys for allies sharing a caller row, avoiding rendering collisions. This incremental fix preserves the current save format; the regional living-Dex redesign is still in progress.
+
 ## 2026-10-17
 - Experimental QR codes now offer Random sorting and a Shuffle again control, shuffling every species/form row while keeping filters and viewer navigation in the same order; original archive and QR payloads are unchanged.
 - Routine five-team cards now include paired current/later held-item strips with full Gen VII effects and acquisition locations, complete initial/final source-set validation, lossless preservation of original card content, and hash-bound offline redraw.

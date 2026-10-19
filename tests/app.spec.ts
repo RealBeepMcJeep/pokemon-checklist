@@ -785,14 +785,16 @@ test("does not re-render every already-open location when only the focus moves",
   const before = await bystander.getAttribute("data-renders");
 
   const first = page.locator("details.location").first();
+  // Locked SOS entries are documented here too; completion only needs the
+  // currently eligible regular encounters, not every displayed control.
   const speciesIds = await first
-    .locator('[data-action="species"]')
+    .locator('.encounter-group.regular [data-action="species"]')
     .evaluateAll((nodes) => [
       ...new Set(nodes.map((node) => node.getAttribute("data-species"))),
     ]);
   for (const id of speciesIds) {
     await first
-      .locator(`[data-action="species"][data-species="${id}"]`)
+      .locator(`.encounter-group.regular [data-action="species"][data-species="${id}"]`)
       .first()
       .click();
   }
