@@ -783,10 +783,10 @@ test("does not re-render every already-open location when only the focus moves",
   const before = await bystander.getAttribute("data-renders");
 
   const first = page.locator("details.location").first();
-  // Primary guide controls now include explicit regional forms even while the
-  // Pokédex is collapsed. Excluding them leaves Rattata uncaught, so this would
-  // no longer exercise completion/focus or the bystander render invariant.
-  const targets = await first.locator(".species-cell .guide-pokemon > button.status-button")
+  // No unlocks: finish eligible regular targets, not locked documented rows.
+  // Preserve exact regional identity even when the Pokédex is collapsed.
+  const regular = first.locator(".encounter-group.regular");
+  const targets = await regular.locator(".species-cell .guide-pokemon > button.status-button")
     .evaluateAll(nodes => [...new Map(nodes.map(node => {
       const id = node.getAttribute("data-species");
       const form = node.getAttribute("data-form");
@@ -794,7 +794,7 @@ test("does not re-render every already-open location when only the focus moves",
     })).values()]);
   expect(targets.length).toBeGreaterThan(0);
   for (const { id, form } of targets) {
-    await first.locator(form ? `[data-action="form"][data-form="${form}"]`
+    await regular.locator(form ? `[data-action="form"][data-form="${form}"]`
       : `[data-action="species"][data-species="${id}"]`).first().click();
   }
   await expect(first.locator(".location-progress")).toContainText("Complete");
