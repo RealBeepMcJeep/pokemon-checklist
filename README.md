@@ -51,6 +51,19 @@ ownership/favorites and v4 backups remain compatible. The published 2026-10-19
 data-only milestone retained separate SOS tables and generic Pokédex entries;
 the unreleased regional UI described below replaces those presentation rules.
 
+The unreleased source audit also distinguishes **Lycanroc (Midday: Day / Midnight:
+Night)** in both Vast Poni Canyon grass tables (20% native pool), with Dusk as an
+SOS-only ally there, and **Pumpkaboo (Small / Average / Large / Super Size)** at
+Memorial Hill (30% pooled), with a documented Super Size ally. Neither source gives
+numerical ally shares or equal Pumpkaboo-size weights. Ten Carat Hill's **Rockruff
+(Normal / Own Tempo)** keeps its 20% combined wild rate and the source's equal-chance
+note. Its Own Tempo-only SOS restriction remains explicit in the footnote; a shared
+Own Tempo ally is intentionally not attached to that mixed caller pool because
+regular Rockruff cannot call it. Exact conditional caller presentation still needs
+normalization before the full regional milestone. Pooled/unsupported guide identities
+do not borrow one variant’s base type/grade facts; exact-form allies keep their
+verified facts. No new form/save keys are added.
+
 ## Saved encounter unlocks
 
 In Prismatic Moon, open **Settings** to enable Tauros Charge, Surfing, Fishing,
