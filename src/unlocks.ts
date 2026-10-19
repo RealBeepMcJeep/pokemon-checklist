@@ -1,4 +1,5 @@
 import type { EncounterGroup, EncounterRow, Location } from "./types";
+import { UNLOCKS } from "./types";
 import { encounterRegionalForm, isRegional } from "./regional";
 
 export function groupUnlock(group: EncounterGroup): string | null {
@@ -54,7 +55,7 @@ function allyRow(source: EncounterRow, ally: EncounterRow["allies"][number]): En
 }
 
 /** Pure caller graph. Full encounter identities drive traversal even in collapsed collection mode. */
-export function projectEncounters(location: Location, flags: readonly string[]): EncounterProjection {
+export function projectEncounters(location: Location, flags: readonly string[], documented = false): EncounterProjection {
   const wild: EncounterProjection["wild"] = [];
   const sources: { group: EncounterGroup; row: EncounterRow }[] = [];
   for (const group of location.groups) {
@@ -63,7 +64,7 @@ export function projectEncounters(location: Location, flags: readonly string[]):
       sources.push(...group.encounters.map(row => ({ group, row })));
     } else if (kind !== "weather-sos") {
       for (const row of group.encounters) {
-        const eligible = !!row.speciesId && directAccess(group, flags);
+        const eligible = !!row.speciesId && (documented || directAccess(group, flags));
         wild.push({ group, row, eligible });
         if (eligible && row.allies.length) sources.push({ group, row });
       }
@@ -118,6 +119,54 @@ export function projectEncounters(location: Location, flags: readonly string[]):
     }
   }
   return { wild, calls, unavailableCallers: sources.filter(source => groupUnlock(source.group) === "sos" && !matched.has(source.row)) };
+}
+
+export interface GuideSosNode {
+  call: SosEncounter;
+  eligible: boolean;
+  children: GuideSosNode[];
+}
+export interface GuideEncounter {
+  group: EncounterGroup;
+  row: EncounterRow;
+  eligible: boolean;
+  sos: GuideSosNode[];
+}
+
+const callIdentity = (call: SosEncounter): string => JSON.stringify([
+  call.kind, call.group.id, call.sourceRow.id,
+  call.caller ? encounterIdentity(call.caller) : null, encounterIdentity(call.row),
+]);
+
+/** Renderer/navigation projection. `documented` retains locked routes as facts, not access. */
+export function guideEncounters(location: Location, flags: readonly string[], documented = false): GuideEncounter[] {
+  const active = projectEncounters(location, flags);
+  const source = documented ? projectEncounters(location, UNLOCKS, true) : active;
+  const available = new Set(active.calls.map(callIdentity));
+  return source.wild.map(entry => {
+    const eligible = active.wild.some(item => item.group.id === entry.group.id && item.row.id === entry.row.id && item.eligible);
+    const walk = (actor: EncounterRow, path: ReadonlySet<string>, parentEligible: boolean, root: boolean): GuideSosNode[] => {
+      const nodes: GuideSosNode[] = [];
+      for (const call of source.calls) {
+        const applies = call.kind === "weather-sos" ? root
+          : groupUnlock(call.group) === "sos"
+            ? !!call.caller && encounterIdentity(call.caller) === encounterIdentity(actor)
+            : !!call.caller && call.caller.id === actor.id && encounterIdentity(call.caller) === encounterIdentity(actor);
+        if (!applies) continue;
+        const key = encounterIdentity(call.row);
+        const allowed = parentEligible && available.has(callIdentity(call));
+        nodes.push({ call, eligible: allowed, children: path.has(key) ? []
+          : walk(call.row, new Set([...path, key]), allowed, false) });
+      }
+      return nodes;
+    };
+    return { ...entry, eligible, sos: documented || eligible
+      ? walk(entry.row, new Set([encounterIdentity(entry.row)]), eligible, true) : [] };
+  });
+}
+
+export function guideCalls(nodes: readonly GuideSosNode[]): GuideSosNode[] {
+  return nodes.flatMap(node => [node, ...guideCalls(node.children)]);
 }
 
 /** Immutable species-level reachability; an owned Pokémon never grants access. */

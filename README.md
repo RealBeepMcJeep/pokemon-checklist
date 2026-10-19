@@ -50,8 +50,14 @@ Caller chains need an accessible wild starting point, cannot bootstrap themselve
 cycles, and do not gain access merely because a Pokémon is owned. Missing caller evidence
 stays unavailable rather than being replaced by another species. Ordinary ally percentages
 remain undocumented; weather percentages retain their separate source conditions.
-Development status for #17: this graph drives eligibility and availability; moving the
-separate guide SOS/weather tables into inline caller rows is still unfinished.
+In Prismatic Moon, enabled SOS allies now appear inside their documented caller rows,
+not separate SOS/weather tables. Disabling SOS hides them; weather entries additionally
+need Weather SOS and caller access. Ordinary shares remain explicitly undocumented, and
+weather entries label guide-reported rates and conditions rather than per-turn odds.
+Details link back to real caller rows; old removed-table hashes redirect to a caller or
+the area heading. Unmapped creator entries remain source warnings, not invented callers.
+Development status for #17: remaining form-name/source corrections and vanilla caller
+mapping are unfinished; vanilla location-only SOS tables have not been guessed into callers.
 
 ## Local catcher comparison
 

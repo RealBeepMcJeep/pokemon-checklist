@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_BY_MODE } from "./data";
+import { getOccurrences } from "./domain";
 import * as eligibility from "./unlocks";
 import type { EncounterGroup, EncounterRow, Location } from "./types";
 
@@ -16,6 +17,32 @@ const location = (...groups: EncounterGroup[]): Location => ({ id: "fixture", na
 const project = eligibility.projectEncounters;
 
 describe("source-preserving SOS projection", () => {
+  it("does not replay an embedded Alolan rule on an ally sharing its source-row ID", () => {
+    const native = row("shared-source", 52);
+    native.allies = [{ speciesId: 52, species: "meowth", name: "Meowth", form: "kanto" }];
+    const loc = location(group("grass", "Grass", [native], true));
+    const tree = eligibility.guideEncounters(loc, ["sos"])[0].sos;
+    expect(tree).toHaveLength(1);
+    expect(tree[0].children).toEqual([]);
+  });
+  it("projects inline chains onto a real wild anchor while retaining locked documentation", () => {
+    const native = row("fishing-caller", 52);
+    const first = row("first-rule", 52);
+    first.allies = [{ speciesId: 52, species: "meowth", name: "Meowth", form: "kanto" }];
+    const next = { ...row("next-rule", 52, [25]), form: "kanto" };
+    const loc = location(group("fish", "Fishing", [native]), group("sos", "SOS Calls", [first, next]));
+    const guide = Reflect.get(eligibility, "guideEncounters");
+    const known = guide?.(loc, [], true)?.[0];
+    expect(known?.row.id).toBe("fishing-caller");
+    expect(known?.eligible).toBe(false);
+    expect(known?.sos[0].call.row.form).toBe("kanto");
+    expect(known?.sos[0].children[0].call.row.speciesId).toBe(25);
+    expect(known?.sos[0].children[0].eligible).toBe(false);
+    expect(guide(loc, ["sos"])[0].sos).toEqual([]);
+    expect(guide(loc, ["sos", "fishing"])[0].sos[0].children[0].eligible).toBe(true);
+    const data = { schemaVersion: 1 as const, assets: [], islands: [{ id: "island", name: "Island", locations: [loc] }] };
+    expect(getOccurrences(data, 52, [], "kanto").map(item => [item.row.id, item.ally, item.eligible])).toEqual([["fishing-caller", true, false]]);
+  });
   it("keeps row-inline allies anchored to their documented wild method", () => {
     const grass = row("grass-caller", 10);
     const water = row("water-caller", 10, [20]);

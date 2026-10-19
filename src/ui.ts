@@ -23,6 +23,7 @@ import {
 } from "./state";
 import { firstIncompleteLocation, MODE_LABELS, safeId } from "./domain";
 import { readLastLocation, writeLastLocation } from "./location-memory";
+import { guideEncounters, guideCalls, groupUnlock } from "./unlocks";
 import { stillEditingAfterDialog } from "./editing";
 import type { GameMode, Location } from "./types";
 
@@ -78,7 +79,7 @@ export function rememberLocation(id: string, expectedMode = mode.peek(), expecte
 export function restoreLocation(hash = ""): void {
   const locations = activeEncounters.peek().islands.flatMap(island => island.locations);
   const linked = locations.find(location =>
-    hash === `#location-${safeId(location.id)}` || location.groups.some(group =>
+    hash === `#location-${safeId(location.id)}` || hash === `#encounter-${safeId(location.id)}` || location.groups.some(group =>
       group.encounters.some(row => hash === `#encounter-${safeId(row.id)}`)));
   const id = linked?.id || readLastLocation(mode.peek(), activeSaveKey(), locations.map(location => location.id)) || firstIncomplete()?.id || null;
   if (linked && hash.startsWith("#encounter-")) jumpTo(hash, linked.id);
@@ -142,6 +143,18 @@ export function consumeRowFocusIntent(locationId: string): boolean {
  * be on the page (e.g. one the caller just opened itself).
  */
 export function jumpTo(hash: string, locationId?: string): void {
+  // Old SOS-table hashes remain valid after those duplicate tables disappear.
+  if (locationId && mode.peek() === "photonic-prismatic" && !document.getElementById(hash.slice(1))) {
+    const location = activeEncounters.peek().islands.flatMap(island => island.locations).find(item => item.id === locationId);
+    const removed = location?.groups.some(group => ["sos", "weather-sos"].includes(groupUnlock(group) || "")
+      && group.encounters.some(row => hash === `#encounter-${safeId(row.id)}`));
+    if (location && removed) {
+      const anchor = guideEncounters(location, activeUnlocks.peek(), true)
+        .filter(entry => guideCalls(entry.sos).some(node => hash === `#encounter-${safeId(node.call.sourceRow.id)}`))
+        .sort((a, b) => Number(b.eligible) - Number(a.eligible))[0];
+      hash = `#encounter-${safeId(anchor?.row.id || location.id)}`;
+    }
+  }
   if (focusEncounterRow(hash)) return;
   if (!locationId) return;
   pendingRowFocus = locationId;

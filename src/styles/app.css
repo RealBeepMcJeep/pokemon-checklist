@@ -478,6 +478,12 @@ tbody tr:nth-child(even) {
 tbody tr:hover {
   background: var(--row-hover);
 }
+.inline-sos { list-style: none; margin: .6rem 0 0; padding: 0 0 0 .65rem; border-left: 2px solid var(--accent); font-weight: 400; }
+.sos-entry { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; padding: .4rem 0; min-width: 0; overflow-wrap: anywhere; }
+.sos-method, .sos-note { color: var(--muted); font-size: .75rem; line-height: 1.45; }
+.sos-source-warning { padding: .75rem; border-left: 2px solid var(--accent); background: var(--stripe); line-height: 1.5; }
+.inline-sos .guide-pokemon { max-width: 100%; }
+.inline-sos .guide-pokemon-link { white-space: normal; text-align: left; }
 .species-cell {
   min-width: 10rem;
 }

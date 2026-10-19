@@ -1,7 +1,8 @@
-import { occurrenceEligible } from "../unlocks";
+import { occurrenceEligible, guideEncounters, projectEncounters, groupUnlock, type GuideEncounter, type GuideSosNode } from "../unlocks";
+import { UNLOCKS } from "../types";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { ASSETS, byDex, detailsByDex, formDetails } from "../data";
 import { encounterRegionalForm } from "../regional";
 import { targetName } from "../collection";
@@ -114,12 +115,55 @@ function Allies({ row }: { row: EncounterRowData }) {
   );
 }
 
+function InlineSos({ nodes }: { nodes: readonly GuideSosNode[] }) {
+  if (!nodes.length) return null;
+  return <ul class="inline-sos">{nodes.map((node, index) => {
+    const { call } = node;
+    const row = call.row;
+    const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
+    const notes = [...(call.group.notes || []), ...(call.sourceRow.note ? [call.sourceRow.note] : [])];
+    return <li class="sos-entry" data-sos-kind={call.kind} data-source-row={call.sourceRow.id} key={`${call.sourceRow.id}:${row.speciesId}:${row.form || ""}:${index}`}>
+      <span class="sos-method">{call.kind === "weather-sos"
+        ? `Weather SOS · guide-reported rate: ${row.rates ? rateText(row.rates) : "not documented"}`
+        : "SOS ally · share not documented"}</span>
+      <GuidePokemon id={row.speciesId!} name={row.speciesName || row.species || "Pokémon"} form={row.form} ability={row.ability} context={call.kind === "weather-sos" ? "weather SOS ally" : "SOS ally"} />
+      <AllyForms ally={{ speciesId: row.speciesId!, species: row.species || "", name: row.speciesName || "Pokémon", form: row.form }} />
+      {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
+      {notes.map(note => <span class="sos-note" key={note}>{note}</span>)}
+      <InlineSos nodes={node.children} />
+    </li>;
+  })}</ul>;
+}
+
+function PrismaticEncounters({ location }: { location: LocationData }) {
+  const flags = activeUnlocks.value;
+  const guide = useMemo(() => guideEncounters(location, flags), [location, flags]);
+  const unresolved = useMemo(() => {
+    const known = new Set(projectEncounters(location, UNLOCKS, true).calls.map(call => call.sourceRow.id));
+    return location.groups.flatMap(group => {
+      const kind = groupUnlock(group);
+      return kind === "sos" || kind === "weather-sos" ? group.encounters.filter(row => !known.has(row.id)).map(row => ({ group, row, kind })) : [];
+    });
+  }, [location]);
+  return <>
+    {location.groups.filter(group => !["sos", "weather-sos"].includes(groupUnlock(group) || "")).map(group =>
+      <EncounterGroup key={group.id} group={group} location={location} guide={guide.filter(entry => entry.group.id === group.id)} />)}
+    {unresolved.filter(entry => flags.includes("sos") && (entry.kind !== "weather-sos" || flags.includes("weather-sos"))).map(({ group, row }) =>
+      <p class="sos-source-warning" id={`encounter-${safeId(row.id)}`} tabIndex={-1} key={row.id}>
+        <strong>Caller mapping unavailable. </strong>{row.note || `The guide lists ${row.speciesName || "this encounter"}, but supplies no reachable caller mapping.`}
+        {[...(group.notes || []), ...(group.conditions || []), ...(row.conditions || [])].map(note => <span key={note}> {note}</span>)}
+      </p>)}
+  </>;
+}
+
 function EncounterRow({
   row,
   group,
+  inline,
 }: {
   row: EncounterRowData;
   group: EncounterGroupData;
+  inline?: GuideSosNode[];
 }) {
   return (
     <tr id={`encounter-${safeId(row.id)}`} tabIndex={-1}>
@@ -139,22 +183,21 @@ function EncounterRow({
             <span class="muted">All listed wild species</span>
           )}
         </span>
+        {inline !== undefined && <InlineSos nodes={inline} />}
       </th>
       <td>{rateText(row.rates)}</td>
       <td>
         <Conditions group={group} row={row} />
       </td>
       <td>{row.note || "—"}</td>
-      <td>
-        <Allies row={row} />
-      </td>
+      {inline === undefined && <td><Allies row={row} /></td>}
     </tr>
   );
 }
 
-function EncounterGroup({ group, location }: { group: EncounterGroupData; location: LocationData }) {
+function EncounterGroup({ group, location, guide }: { group: EncounterGroupData; location: LocationData; guide?: GuideEncounter[] }) {
   const enabled = mode.value === "photonic-prismatic";
-  const access = enabled ? group.encounters.map(row => occurrenceEligible(location,group,row,false,activeUnlocks.value)) : [];
+  const access = enabled ? guide ? guide.map(entry => entry.eligible) : group.encounters.map(row => occurrenceEligible(location,group,row,false,activeUnlocks.value)) : [];
   const available = access.some(Boolean);
   const partial = available && !access.every(Boolean);
   const levels = group.levels
@@ -190,12 +233,12 @@ function EncounterGroup({ group, location }: { group: EncounterGroupData; locati
               <th scope="col">Chance</th>
               <th scope="col">When / where</th>
               <th scope="col">Notes</th>
-              <th scope="col">SOS allies</th>
+              {!guide && <th scope="col">SOS allies</th>}
             </tr>
           </thead>
           <tbody>
             {group.encounters.map((row) => (
-              <EncounterRow key={row.id} row={row} group={group} />
+              <EncounterRow key={row.id} row={row} group={group} inline={guide?.find(entry => entry.row.id === row.id)?.sos} />
             ))}
           </tbody>
         </table>
@@ -282,7 +325,7 @@ const Location = memo(function Location({
         }
       }}
     >
-      <summary onClick={(event) => {
+      <summary id={`encounter-${safeId(location.id)}`} onClick={(event) => {
         if (!(event.currentTarget.parentElement as HTMLDetailsElement).open) {
           // An old in-app jump is no longer an explicit request after manual browsing.
           history.replaceState(null, "", window.location.href.split("#")[0]);
@@ -323,7 +366,7 @@ const Location = memo(function Location({
               ))}
             </div>
           )}
-          {location.groups.map((group) => (
+          {mode.value === "photonic-prismatic" ? <PrismaticEncounters location={location} /> : location.groups.map((group) => (
             <EncounterGroup key={group.id} group={group} location={location} />
           ))}
         </div>

@@ -27,6 +27,49 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("legacy SOS-table hashes redirect to a rendered caller row", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      const data = JSON.parse(readFileSync(resolve("data/encounters.json"), "utf8")) as EncounterData;
+      const source = data.islands.flatMap(island => island.locations).find(loc => loc.id === "melemele-island/route-1")!;
+      const caller = source.groups.find(group => group.name === "SOS Calls")!.encounters[0];
+      const native = source.groups.filter(group => group.category === "regular").flatMap(group => group.encounters).find(row => row.speciesId === caller.speciesId)!;
+      const domId = (id: string) => `encounter-${id.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      await page.evaluate(hash => { location.hash = hash; }, `#${domId(caller.id)}`);
+      await page.reload();
+      await expect(page.locator(`[id="${domId(native.id)}"]`)).toBeFocused();
+      expect(await page.evaluate(() => location.hash)).toBe(`#${domId(native.id)}`);
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+    });
+    test("enabled SOS nests inside the real caller and disappears when disabled", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const school = page.locator('details[data-location-id="melemele-island/trainers-school"]');
+      if (!(await school.evaluate(el => (el as HTMLDetailsElement).open))) await school.locator("summary").click();
+      const row = school.locator("tr").filter({ has: page.getByRole("button", { name: "Meowth (Alolan)", exact: true }) });
+      const ally = row.locator(".species-cell .inline-sos").getByRole("button", { name: "Meowth (Kanto)", exact: true });
+      await expect(ally).toHaveCount(1);
+      await expect(row.locator("td").first()).toHaveText("15%");
+      await expect(page.locator(".location-body .group-heading strong").filter({ hasText: /SOS/ })).toHaveCount(0);
+      await ally.click();
+      await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Kanto)");
+      await page.locator("#dex-selection .location-links > ul a").click();
+      await expect(row).toBeFocused();
+      for (const enabled of [false, true]) {
+        await page.locator("#header-settings-toggle").click();
+        await page.getByLabel("SOS Calls", { exact: true }).setChecked(enabled);
+        await page.getByRole("button", { name: "Close settings", exact: true }).click();
+        await expect(ally).toHaveCount(enabled ? 1 : 0);
+        if (!enabled) await expect(row.locator(".inline-sos")).toHaveCount(0);
+      }
+      await school.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
+      await row.evaluate(el => el.scrollIntoView({ block: "center" }));
+      await expect(ally).toBeInViewport({ ratio: 0.98 });
+      await page.screenshot({ path: info.outputPath(`inline-meowth-${device}.png`) });
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+    });
     test("wildcard SOS availability follows its switch without changing collection progress", async ({ page }, info) => {
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));
@@ -49,17 +92,20 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       const area = page.locator(`[data-location-id="${source.id}"]`);
       const progress = page.locator(`[data-location-progress="${source.id}"]`);
       if (!(await area.evaluate(el => (el as HTMLDetailsElement).open))) await area.locator("summary").click();
-      const calls = area.locator(".encounter-group").filter({ has: page.getByText("SOS Calls", { exact: true }) });
-      const weather = area.locator(".encounter-group").filter({ has: page.getByText("Weather SOS", { exact: true }) });
+      const calls = area.locator(".sos-entry[data-sos-kind=\"sos\"]");
+      const weather = area.locator(".sos-entry[data-sos-kind=\"weather-sos\"]");
       await expect(progress).toContainText("Complete");
-      await expect(calls.locator(".group-tag")).toHaveText("Return later");
+      await expect(calls).toHaveCount(0);
       for (const enabled of [true, false]) {
         await page.locator("#header-settings-toggle").click();
         await page.getByLabel("SOS Calls", { exact: true }).setChecked(enabled);
         await expect(page.getByLabel("Weather SOS", { exact: true })).not.toBeChecked();
         await page.getByRole("button", { name: "Close settings", exact: true }).click();
-        await expect(calls.locator(".group-tag")).toHaveText(enabled ? "Catch now" : "Return later");
-        await expect(weather.locator(".group-tag")).toHaveText("Return later");
+        if (enabled) {
+          await expect(calls.getByRole("button", { name: "Claydol", exact: true }).first()).toBeVisible();
+          await expect(calls.getByRole("button", { name: "Golurk", exact: true }).first()).toBeVisible();
+        } else await expect(calls).toHaveCount(0);
+        await expect(weather).toHaveCount(0);
         if (enabled) {
           await expect(progress).not.toContainText("Complete");
           await expect(progress.locator("[data-backtrack]")).toBeVisible();
@@ -86,32 +132,43 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       await page.getByRole("button", { name: "Close settings", exact: true }).click();
       const route1 = page.locator('details[data-location-id="melemele-island/route-1"]');
       if (!(await route1.evaluate(el => (el as HTMLDetailsElement).open))) await route1.locator("summary").click();
-      const calls = route1.locator(".encounter-group").filter({ has: page.getByText("SOS Calls", { exact: true }) });
+      const calls = route1.locator(".inline-sos");
       await expect(calls.getByRole("button", { name: "Rattata (Kanto)", exact: true })).toHaveCount(1);
       await expect(calls.getByRole("button", { name: "Pikachu", exact: true })).toHaveCount(1);
       await expect(calls.getByRole("button", { name: "Happiny", exact: true })).toHaveCount(1);
-      const rattata = calls.locator("tr").filter({ has: page.getByRole("button", { name: "Rattata (Alolan)", exact: true }) });
-      await expect(rattata.locator("td").first()).toHaveText("—");
+      const rattata = route1.locator("tr").filter({ has: page.getByRole("button", { name: "Rattata (Alolan)", exact: true }) });
+      await expect(rattata.locator("td").first()).toContainText("20%");
+      await expect(rattata.locator(".sos-method")).toContainText("share not documented");
+      await expect(rattata.locator(".sos-method")).not.toContainText("%");
       const outskirts = page.locator('details[data-location-id="melemele-island/hauoli-outskirts"]');
       if (!(await outskirts.evaluate(el => (el as HTMLDetailsElement).open))) await outskirts.locator("summary").click();
       await expect(outskirts.getByRole("button", { name: "Rattata (Kanto)", exact: true })).toHaveCount(0);
       const desert = page.locator('details[data-location-id="ulaula-island/haina-desert"]');
       if (!(await desert.evaluate(el => (el as HTMLDetailsElement).open))) await desert.locator("summary").click();
-      const weather = desert.locator(".encounter-group").filter({ has: page.getByText("Weather SOS", { exact: true }) });
-      const castform = weather.locator("tr").filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
+      const weather = desert.locator("#encounter-ulaula-island-haina-desert-sand-1-1");
+      const castform = weather.locator('.sos-entry[data-sos-kind="weather-sos"]').filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
       await expect(castform).toHaveCount(2);
+      // Neither switch may silently leave weather allies visible without its prerequisite.
+      for (const [label, enabled, count] of [["Weather SOS", false, 0], ["Weather SOS", true, 2], ["SOS Calls", false, 0], ["SOS Calls", true, 2]] as const) {
+        await page.locator("#header-settings-toggle").click();
+        await page.getByLabel(label, { exact: true }).setChecked(enabled);
+        await page.getByRole("button", { name: "Close settings", exact: true }).click();
+        await expect(castform).toHaveCount(count);
+        if (label === "SOS Calls" && !enabled) await expect(weather.locator(".inline-sos")).toHaveCount(0);
+      }
       const sand = castform.filter({ has: page.getByText("Sandstorm", { exact: true }) });
-      await expect(sand.locator("td").first()).toHaveText("1%");
+      await expect(sand.locator(".sos-method")).toContainText("rate: 1%");
       await expect(sand).toContainText("Guide-reported SOS encounter rate");
       const rainHail = castform.filter({ has: page.getByText("Rain, Hail", { exact: true }) });
-      await expect(rainHail.locator("td").first()).toHaveText("11%");
+      await expect(rainHail.locator(".sos-method")).toContainText("rate: 11%");
       await desert.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
       await sand.evaluate(el => el.scrollIntoView({ block: "center" }));
       await expect(sand).toBeInViewport();
       await page.screenshot({ path: info.outputPath(`haina-source-footnote-${device}.png`) });
       const route15 = page.locator('details[data-location-id="ulaula-island/route-15-16"]');
       if (!(await route15.evaluate(el => (el as HTMLDetailsElement).open))) await route15.locator("summary").click();
-      const unresolved = route15.locator("tr").filter({ has: page.getByRole("button", { name: "Crabrawler", exact: true }) });
+      const unresolved = route15.locator(".sos-source-warning").filter({ hasText: "Crabrawler" });
+      await expect(route15.getByRole("button", { name: "Crabrawler", exact: true })).toHaveCount(0);
       await expect(unresolved).toContainText("Caller availability is unverified");
       await expect(unresolved).toContainText("do not assume Shuckle calls Crabominable");
       await route15.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
