@@ -1,5 +1,6 @@
 import { batch, signal } from "@preact/signals";
 import type { RegionalForm } from "./regional";
+import type { EncounterViewContext } from "./encounter-names";
 import {
   activeEncounters,
   activeSaveKey,
@@ -170,8 +171,13 @@ export function jumpTo(hash: string, locationId?: string): void {
   requestAnimationFrame(retry);
 }
 
-export function openPokemon(id: number, form?: RegionalForm): void {
-  batch(() => { selectedDex.value = id; selectedRegionalForm.value = form; });
+export const selectedEncounterContext = signal<EncounterViewContext | undefined>(undefined);
+export function openPokemon(id: number, form?: RegionalForm, context?: EncounterViewContext): void {
+  batch(() => {
+    selectedDex.value = id;
+    selectedRegionalForm.value = form;
+    selectedEncounterContext.value = context?.id === id ? context : undefined;
+  });
   if (isMobile.value) {
     if (!drawerOpen.value)
       previousFocus = document.activeElement as HTMLElement | null;

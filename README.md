@@ -16,7 +16,18 @@ On a phone, the header stays pinned while reading and shrinks to one compact row
 
 On a phone, **Add to Home Screen** installs the checklist as a full-screen app with its own icon; it still works offline.
 
-Each Pokédex entry has a collapsed **Popular moves** panel: competitive suggestions for that exact regional form or its own final evolutions, not a full learnset browser. Usage remains Smogon's November 2019 Gen 7 snapshot. Teaching routes switch between Sun/Moon, Ultra Sun/Ultra Moon and Prismatic Moon Standard. Standard's verified creator level-ups replace stock levels; documented specialist-mart locations override stock locations, while uncovered methods use USUM and Rebalanced-only TM edits stay excluded. Labels distinguish ordinary levels, on-evolution moves, Move Reminder, TM, tutor and breeding, including any required earlier form. Missing native evidence is labeled explicitly rather than borrowing the opposite form or ruling out events/transfers. TM locations appear only when verified for that profile. With form tracking off, the panel uses Alolan data without regional suffixes.
+Each Pokédex entry has a collapsed **Popular moves** panel: competitive suggestions for that exact regional form or its own final evolutions, not a full learnset browser. Usage remains Smogon's November 2019 Gen 7 snapshot. Teaching routes switch between Sun/Moon, Ultra Sun/Ultra Moon and Prismatic Moon Standard. Standard's verified creator level-ups replace stock levels; documented specialist-mart locations override stock locations, while uncovered methods use USUM and Rebalanced-only TM edits stay excluded. Labels distinguish ordinary levels, on-evolution moves, Move Reminder, TM, tutor and breeding, including any required earlier form. Missing native evidence is labeled explicitly rather than borrowing the opposite form or ruling out events/transfers. TM locations appear only when verified for that profile. The generic No-forms Pokédex defaults to Alolan information without regional suffixes; an explicitly selected regional encounter keeps its own form identity.
+
+Guide detail views retain the documented encounter name independently of collection
+tracking. Explicit Kanto encounters keep Kanto facts/status with tracking off, while
+selecting the collapsed generic Pokédex row still uses its Alolan default. Known
+non-regional encounters such as Rotom (Frost) use their own verified facts when
+available; pooled/unsupported forms do not borrow base facts. These views label
+ownership and location listings as species-wide, omit unverified form-specific
+moves/evolutions, and offer **Show species information** for the ordinary view.
+Source ability identities such as Greninja (Battle Bond) remain explicit, without
+inferring a transformed battle form. View context is temporary and adds no saved
+progress, favorites, tracking scope or schema fields.
 
 Regional caller and SOS guide links name the actual form and open its exact details. With tracking on, current- and other-game location lists contain only the selected form's encounters; an SOS ally remains linked to its caller's real row, without inheriting that caller's wild encounter percentage. Returning to the guide focuses that encounter row after closing the phone drawer. Each known regional guide encounter has one exact-form status button, not a shared species badge plus another form button. Its binding remains explicit when collection browsing is collapsed; toggling or undoing one form leaves its sibling intact.
 

@@ -1,6 +1,6 @@
 import { occurrenceEligible, guideEncounters, guideCalls, projectEncounters, groupUnlock, isWildcardCaller, type GuideEncounter, type GuideSosNode } from "../unlocks";
 import { UNLOCKS } from "../types";
-import { encounterName as formatEncounterName } from "../encounter-names";
+import { encounterName as formatEncounterName, encounterViewContext } from "../encounter-names";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -53,7 +53,7 @@ function GuidePokemon({
   const details = formDetails.get(key) || detailsByDex.get(id);
   const actualForm = encounterRegionalForm(id, form ? formSlug(form) : undefined);
   const pokemon = byDex.get(id);
-  const encounterName = formatEncounterName({ speciesId: id, speciesName: name, form }, pokemon?.name);
+  const encounterName = formatEncounterName({ speciesId: id, speciesName: name, form, ability }, pokemon?.name);
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} form={actualForm} context={context} compact />
@@ -62,7 +62,7 @@ function GuidePokemon({
         <button
           class="guide-pokemon-link"
           type="button"
-          onClick={() => openPokemon(id, actualForm)}
+          onClick={() => openPokemon(id, actualForm, encounterViewContext({ speciesId: id, speciesName: name, form, ability }, pokemon?.name || "Pokémon"))}
         >
           {encounterName}
         </button>

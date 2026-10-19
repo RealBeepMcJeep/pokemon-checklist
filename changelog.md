@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Encounter detail headings retain known form/ability identity independently of collection tracking. Explicit Kanto selection keeps exact regional facts/status with tracking off; non-regional views use verified facts only, label species-wide ownership/locations, and offer ordinary species information instead of presenting generic moves/evolutions as form-specific. No new saved fields or tracking records.
 - Restored creator-documented seasonal/appliance/flower identities: pooled Spring/Summer Deerling callers versus Autumn/Winter SOS; Base Rotom versus Frost/Heat SOS; red Floette versus Orange/White Flower SOS. Kept native percentages and existing save-form keys unchanged, with unspecified ally shares/order labeled honestly. Shared notes render once at their visible source scope instead of duplicating keys/text under each ally.
 - Guide/inline ally and Catch-next names share source identity formatting. Existing explicit non-regional metadata, such as Floette (Eternal Flower), stays named with tracking off; legacy mixed form lists are not mistaken for native availability. Missing source identities and contextual detail headings remain unfinished.
 - Universal SOS rules render once per wild caller row instead of replaying inside every chain. Shared unknown-share captions and compact scope tags reduce repetition; weather rules keep their source rates/conditions and caller percentages are labeled Wild rate. The lossless caller graph and eligible target set remain unchanged.

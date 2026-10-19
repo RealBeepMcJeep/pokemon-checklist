@@ -1,7 +1,7 @@
 import { computed, type ReadonlySignal } from "@preact/signals";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { memo } from "preact/compat";
-import { ENCOUNTERS_BY_MODE, POKEMON, byDex, formDetails } from "../data";
+import { ENCOUNTERS_BY_MODE, POKEMON, byDex, detailsByDex, formDetails } from "../data";
 import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
@@ -29,6 +29,7 @@ import {
   isMobile,
   jumpTo,
   openPokemon,
+  selectedEncounterContext,
 } from "../ui";
 import { CatchNext } from "./CatchNext";
 import { EvolutionControls } from "./EvolutionControls";
@@ -93,8 +94,14 @@ function Selection() {
   }
   const pokemon = byDex.get(selected);
   if (!pokemon) return null;
-  const form = formsTracked.value && isRegional(selected) ? selectedRegionalForm.value ?? "alolan" : undefined;
-  const name = targetName(pokemon, form);
+  const context = selectedEncounterContext.value?.id === selected ? selectedEncounterContext.value : undefined;
+  const form = (formsTracked.value || context) && isRegional(selected) ? selectedRegionalForm.value ?? "alolan" : undefined;
+  const name = context?.name ?? targetName(pokemon, form);
+  const variantView = !!context && !isRegional(selected);
+  // Never substitute base facts for a known alternate form. Explicit Base is
+  // the sole safe fallback when no separate form-detail record is stored.
+  const exactFacts = context?.detailKey ? formDetails.get(context.detailKey)
+    ?? (context.detailKey === `${selected}:base` ? detailsByDex.get(selected) : undefined) : undefined;
   const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined, form);
   const otherModeOccurrences = crossModeOccurrences(
     ENCOUNTERS_BY_MODE,
@@ -115,6 +122,7 @@ function Selection() {
         onClick={() => {
           selectedDex.value = null;
           selectedRegionalForm.value = undefined;
+          selectedEncounterContext.value = undefined;
         }}
       >
         ← Catch next
@@ -133,9 +141,20 @@ function Selection() {
         >
           Bulbapedia ↗
         </a>
-        <StatusButton id={selected} form={form} context="selected" />
+        {variantView && <small>Species status</small>}
+        <StatusButton id={selected} form={form} context={variantView ? "selected species" : "selected"} />
       </div>
-      <CollectionFacts id={selected} form={form} labels />
+      {variantView ? <>
+        <div class="encounter-facts">
+          {exactFacts ? <PokemonFacts details={exactFacts} name={name} labels />
+            : <p class="encounter-facts-missing">Verified form-specific facts are unavailable.</p>}
+        </div>
+        <div class="encounter-context-note form-ownership-warning" role="note">
+          This is an encounter view. Status and the locations below are species-wide;
+          form-specific moves and evolutions are not verified in this view.{" "}
+          <button class="action-button" type="button" onClick={() => openPokemon(selected)}>Show species information</button>
+        </div>
+      </> : <CollectionFacts id={selected} form={form} labels /> }
       {form && hasUnresolvedRegionalOwnership(speciesStatus(selected), [
         formSignal(`${selected}:alolan`).value, formSignal(`${selected}:kanto`).value,
       ]) && (
@@ -168,7 +187,7 @@ function Selection() {
       )}
       <div class="location-links">
         <strong>
-          {occurrences.length
+          {variantView ? `Species locations (all forms) (${occurrences.length})` : occurrences.length
             ? `Known places in this mode (${occurrences.length})`
             : "No direct wild location in this mode"}
         </strong>
@@ -197,11 +216,11 @@ function Selection() {
             })}
           </ul>
         )}
-        <EvolutionControls target={{ id: selected, form }} />
+        {!variantView && <EvolutionControls target={{ id: selected, form }} />}
         {otherModeOccurrences.length > 0 && (
           <details class="also-catchable">
             <summary>
-              Also catchable in {otherModeOccurrences.length}{" "}
+              {variantView ? "Species also catchable in" : "Also catchable in"} {otherModeOccurrences.length}{" "}
               other mode{otherModeOccurrences.length === 1 ? "" : "s"}
             </summary>
             <ul>
@@ -217,7 +236,7 @@ function Selection() {
           </details>
         )}
       </div>
-      <PopularMoves id={selected} form={form} />
+      {!variantView && <PopularMoves id={selected} form={form} />}
     </>
   );
 }
