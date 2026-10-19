@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import type { EncounterData } from "../src/types";
 // Deliberate versioned fixtures; do not import Vite JSON modules into the Node test loader.
 const STORAGE_KEY = "pokemon-checklist-state-v5";
 
@@ -25,6 +27,52 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("wildcard SOS availability follows its switch without changing collection progress", async ({ page }, info) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+      const data = JSON.parse(readFileSync(resolve("data/encounters.json"), "utf8")) as EncounterData;
+      const source = data.islands.flatMap(island => island.locations).find(loc => loc.id === "ulaula-island/haina-desert")!;
+      const native = source.groups.filter(group => group.category === "regular").flatMap(group => group.encounters).filter(row => row.speciesId);
+      const species = Object.fromEntries(native.map(row => [String(row.speciesId), "caught"]));
+      const forms = Object.fromEntries(native.filter(row => row.form).map(row => [`${row.speciesId}:${row.form}`, "caught"]));
+      await openRegionalFixture(page, info.project.name);
+      await page.evaluate(({ key, species, forms }) => {
+        const saved = JSON.parse(localStorage.getItem(key)!);
+        saved.species = { ...saved.species, ...species };
+        saved.forms = { ...saved.forms, ...forms };
+        saved.settings.unlocks = [];
+        localStorage.setItem(key, JSON.stringify(saved));
+      }, { key: STORAGE_KEY, species, forms });
+      await page.reload();
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const area = page.locator(`[data-location-id="${source.id}"]`);
+      const progress = page.locator(`[data-location-progress="${source.id}"]`);
+      if (!(await area.evaluate(el => (el as HTMLDetailsElement).open))) await area.locator("summary").click();
+      const calls = area.locator(".encounter-group").filter({ has: page.getByText("SOS Calls", { exact: true }) });
+      const weather = area.locator(".encounter-group").filter({ has: page.getByText("Weather SOS", { exact: true }) });
+      await expect(progress).toContainText("Complete");
+      await expect(calls.locator(".group-tag")).toHaveText("Return later");
+      for (const enabled of [true, false]) {
+        await page.locator("#header-settings-toggle").click();
+        await page.getByLabel("SOS Calls", { exact: true }).setChecked(enabled);
+        await expect(page.getByLabel("Weather SOS", { exact: true })).not.toBeChecked();
+        await page.getByRole("button", { name: "Close settings", exact: true }).click();
+        await expect(calls.locator(".group-tag")).toHaveText(enabled ? "Catch now" : "Return later");
+        await expect(weather.locator(".group-tag")).toHaveText("Return later");
+        if (enabled) {
+          await expect(progress).not.toContainText("Complete");
+          await expect(progress.locator("[data-backtrack]")).toBeVisible();
+          await area.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
+          await progress.evaluate(el => el.scrollIntoView({ block: "center" }));
+          await expect(progress).toBeInViewport();
+          await page.screenshot({ path: info.outputPath(`wildcard-access-${device}.png`) });
+        } else await expect(progress).toContainText("Complete");
+      }
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+      expect(errors).toEqual([]);
+    });
     test("source SOS scope and weather footnotes reach the guide", async ({ page }, info) => {
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));

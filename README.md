@@ -43,6 +43,16 @@ restrictions remain unchanged. Unsupported vanilla-mode controls are hidden beca
 SOS datasets do not identify callers. Reset clears unlocks; older keys/last-good copies
 remain available after upgrade. Older signed-in builds may need a reload after flags are set.
 
+SOS eligibility follows documented caller identities, including regional form and any
+explicit ability scope, before collapsing collection targets. Haina Desert’s ordinary
+“All” rules include Claydol and Golurk with SOS enabled; they do not require Weather SOS.
+Caller chains need an accessible wild starting point, cannot bootstrap themselves from
+cycles, and do not gain access merely because a Pokémon is owned. Missing caller evidence
+stays unavailable rather than being replaced by another species. Ordinary ally percentages
+remain undocumented; weather percentages retain their separate source conditions.
+Development status for #17: this graph drives eligibility and availability; moving the
+separate guide SOS/weather tables into inline caller rows is still unfinished.
+
 ## Local catcher comparison
 
 `python tools/catcher_efficiency.py --uid <uid> --level 30 --output-dir <private-dir>` creates a fresh read-only utility card plus a separate False Swipe setup-efficiency companion, structured reports and ZIP. Ability/stat/target scenarios are explicit; damage throughput never becomes utility points or capture probability. See [model, assumptions and independent reference](docs/catcher-efficiency.md). No checklist UI/save changes are involved.

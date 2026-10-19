@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Eligibility and availability share a source-preserving SOS caller graph. Haina’s ordinary “All” rules now include Claydol/Golurk without enabling weather SOS; inaccessible opposite-form callers no longer borrow access from a sibling. Cycles cannot bootstrap access, weather still needs both switches and a real wild encounter, and caller rates never become ordinary ally percentages. Inline guide rendering remains unfinished.
 - Catch-next list identity includes the encounter source and actual species/form target, preventing shared-caller SOS allies from colliding during rendering.
 - Corrected the shared Route 1 SOS table so Rattata and Pichu callers belong with their native Route 1 grass encounters, not Hau’oli Outskirts. Added the creator’s Haina Desert Castform 1% sandstorm footnote without changing its 11% rain/hail row or assigning ordinary ally weights. The Route 15/16 Crabrawler→Crabominable entry explicitly flags the guide’s missing wild caller rather than substituting Shuckle.
 - Regional caller and ally guide entries now have one exact-form status control each, including with collection form tracking off. Removed the duplicate/shared regional controls; independent cycles and Undo preserve sibling ownership.
