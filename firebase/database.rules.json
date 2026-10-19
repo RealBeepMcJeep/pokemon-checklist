@@ -10,7 +10,7 @@
           ".validate": "newData.hasChildren(['schema', 'records', 'updatedAt'])",
           "records": {
             "$key": {
-              ".validate": "!$key.matches(/^setting:unlock:/) || ($key.matches(/^setting:unlock:(tauros|surfing|fishing|sos|weather-sos)$/) && (newData.child('s').val() === 'on' || newData.child('s').val() === 'off'))"
+              ".validate": "(!$key.matches(/^setting:unlock:/) || ($key.matches(/^setting:unlock:(tauros|surfing|fishing|sos|weather-sos)$/) && (newData.child('s').val() === 'on' || newData.child('s').val() === 'off'))) && (!$key.matches(/^star(form|legacy):/) || ($key.matches(/^star(form:(19|20|26|27|28|37|38|50|51|52|53|74|75|76|88|89|103|105):(alolan|kanto)|legacy:(19|20|26|27|28|37|38|50|51|52|53|74|75|76|88|89|103|105))$/) && (newData.child('s').val() === 'on' || newData.child('s').val() === 'off')))"
             }
           }
         },
