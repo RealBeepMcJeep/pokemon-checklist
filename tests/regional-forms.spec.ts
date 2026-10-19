@@ -25,6 +25,51 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("guide status edits and Undo affect only the exact regional form", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const school = page.locator('details[data-location-id="melemele-island/trainers-school"]');
+      if (!(await school.evaluate(el => (el as HTMLDetailsElement).open))) await school.locator("summary").click();
+      const row = school.locator("tr").filter({ has: page.getByRole("button", { name: "Meowth (Alolan)", exact: true }) });
+      const alolan = row.locator('button[data-form="52:alolan"]');
+      const kanto = row.locator('button[data-form="52:kanto"]');
+      await expect(alolan).toHaveCount(1);
+      await expect(kanto).toHaveCount(1);
+      await expect(alolan).toHaveAccessibleName(/Meowth \(Alolan\).*status: Caught/);
+      await expect(kanto).toHaveAccessibleName(/Meowth \(Kanto\).*status: Not caught/);
+      await expect(row.locator('button[data-action="species"][data-species="52"]')).toHaveCount(0);
+      await expect(row.locator("td").first()).toHaveText("15%");
+      await kanto.click();
+      await expect(kanto).toHaveAccessibleName(/status: Caught/);
+      await expect(alolan).toHaveAccessibleName(/status: Caught/);
+      await page.getByRole("button", { name: "Undo", exact: true }).click();
+      await expect(kanto).toHaveAccessibleName(/status: Not caught/);
+      await expect(alolan).toHaveAccessibleName(/status: Caught/);
+      for (const label of ["Caught", "Seen", "Not caught"]) {
+        await kanto.click();
+        await expect(kanto).toHaveAccessibleName(new RegExp(`status: ${label}\\.`));
+        await expect(alolan).toHaveAccessibleName(/status: Caught/);
+      }
+      // Collapsed collection browsing must not turn an explicitly known guide
+      // encounter back into the shared species badge.
+      if (device === "phone") await page.locator("#header-settings-toggle").click();
+      await page.locator("#forms-toggle").click();
+      if (device === "phone") await page.getByRole("button", { name: "Close settings", exact: true }).click();
+      await expect(alolan).toHaveCount(1);
+      await expect(kanto).toHaveCount(1);
+      await expect(kanto).toHaveAccessibleName(/Meowth \(Kanto\).*status: Not caught/);
+      await expect(alolan).toHaveAccessibleName(/Meowth \(Alolan\).*status: Caught/);
+      await alolan.scrollIntoViewIfNeeded();
+      // Chromium can clip a fractional table-border pixel on desktop; require
+      // essentially the whole compact control, not merely any intersection.
+      await expect(alolan).toBeInViewport({ ratio: 0.98 });
+      await page.screenshot({ path: info.outputPath(`guide-status-caller-${device}.png`) });
+      await kanto.scrollIntoViewIfNeeded();
+      await expect(kanto).toBeInViewport({ ratio: 0.98 });
+      await page.screenshot({ path: info.outputPath(`guide-status-ally-${device}.png`) });
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+    });
     test("guide caller and SOS links open the exact form and only its locations", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);

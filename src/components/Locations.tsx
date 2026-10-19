@@ -55,7 +55,7 @@ function GuidePokemon({
   const encounterName = actualForm && pokemon ? targetName(pokemon, actualForm) : name;
   return (
     <span class="guide-pokemon">
-      <StatusButton id={id} context={context} compact />
+      <StatusButton id={id} form={actualForm} context={context} compact />
       <span class="guide-pokemon-identity">
         <PokemonIcon id={id} />
         <button

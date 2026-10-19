@@ -12,7 +12,7 @@ import {
 import { changeSpecies } from "../ui";
 import type { Ally, EncounterRow, Status } from "../types";
 import { targetName } from "../collection";
-import type { RegionalForm } from "../regional";
+import { isRegional, type RegionalForm } from "../regional";
 
 const STATUS_SYMBOL = {
   none: "❌",
@@ -119,7 +119,7 @@ export function FormStatusButton({
 }
 
 export function RowForms({ row }: { row: EncounterRow }) {
-  if (!formsTracked.value || !row.speciesId) return null;
+  if (!formsTracked.value || !row.speciesId || isRegional(row.speciesId)) return null;
   const keys = [
     ...(row.form ? [buildFormKey(row.speciesId, "form", formSlug(row.form))] : []),
     ...(row.forms || []).map((form) =>
@@ -141,7 +141,7 @@ export function RowForms({ row }: { row: EncounterRow }) {
 }
 
 export function AllyForms({ ally }: { ally: Ally }) {
-  if (!formsTracked.value || !ally.form) return null;
+  if (!formsTracked.value || !ally.form || isRegional(ally.speciesId)) return null;
   return (
     <FormStatusButton
       formKey={buildFormKey(ally.speciesId, "form", formSlug(ally.form))}

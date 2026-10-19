@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Regional caller and ally guide entries now have one exact-form status control each, including with collection form tracking off. Removed the duplicate/shared regional controls; independent cycles and Undo preserve sibling ownership.
 - Guide caller/SOS names and links retain exact regional identity. Selected-form location lists exclude the opposite form across game modes; returning to the guide restores row focus after the phone drawer closes, without changing encounter rates or saved progress.
 - Regional details flag legacy progress with an unknown form without assigning either form. Merged snapshots and Undo preserve an owned sibling's species aggregate, and tracking switches leave ownership/favorites untouched.
 - Popular moves now resolve exact Alolan/Kanto paths, separate SM/USUM teaching methods, verified Prismatic Standard levels and documented mart locations, with explicit missing-evidence labels and no inferred egg-to-level conversion. Legacy numeric move consumers remain readable.
