@@ -30,8 +30,9 @@ export function CatchNext() {
         {rows.map((row) => {
           const name =
             row.speciesName || row.species || byDex.get(row.speciesId!)?.name || "Pokémon";
+          // Different SOS targets can share their caller's source-row ID.
           return (
-            <li key={row.id}>
+            <li key={`${row.id}:${row.speciesId}:${row.form || ""}`}>
               <PokemonIcon id={row.speciesId!} />
               <span class="catch-next-name">{name}</span>
               <StatusButton id={row.speciesId!} context="catch next" compact />

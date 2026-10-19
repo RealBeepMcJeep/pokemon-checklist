@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Catch-next list identity includes the encounter source and actual species/form target, preventing shared-caller SOS allies from colliding during rendering.
+- Corrected the shared Route 1 SOS table so Rattata and Pichu callers belong with their native Route 1 grass encounters, not Hau’oli Outskirts. Added the creator’s Haina Desert Castform 1% sandstorm footnote without changing its 11% rain/hail row or assigning ordinary ally weights. The Route 15/16 Crabrawler→Crabominable entry explicitly flags the guide’s missing wild caller rather than substituting Shuckle.
 - Regional caller and ally guide entries now have one exact-form status control each, including with collection form tracking off. Removed the duplicate/shared regional controls; independent cycles and Undo preserve sibling ownership.
 - Guide caller/SOS names and links retain exact regional identity. Selected-form location lists exclude the opposite form across game modes; returning to the guide restores row focus after the phone drawer closes, without changing encounter rates or saved progress.
 - Regional details flag legacy progress with an unknown form without assigning either form. Merged snapshots and Undo preserve an owned sibling's species aggregate, and tracking switches leave ownership/favorites untouched.

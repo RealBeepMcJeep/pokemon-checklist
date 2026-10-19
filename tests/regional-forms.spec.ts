@@ -25,6 +25,54 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("source SOS scope and weather footnotes reach the guide", async ({ page }, info) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      page.on("console", message => {
+        if (message.type() === "error") errors.push(message.text());
+      });
+      // Listen before fixture reload: reconciliation warnings occur on first render.
+      await openRegionalFixture(page, info.project.name);
+      await page.locator("#header-settings-toggle").click();
+      await page.getByLabel("Weather SOS", { exact: true }).check();
+      await page.getByRole("button", { name: "Close settings", exact: true }).click();
+      const route1 = page.locator('details[data-location-id="melemele-island/route-1"]');
+      if (!(await route1.evaluate(el => (el as HTMLDetailsElement).open))) await route1.locator("summary").click();
+      const calls = route1.locator(".encounter-group").filter({ has: page.getByText("SOS Calls", { exact: true }) });
+      await expect(calls.getByRole("button", { name: "Rattata (Kanto)", exact: true })).toHaveCount(1);
+      await expect(calls.getByRole("button", { name: "Pikachu", exact: true })).toHaveCount(1);
+      await expect(calls.getByRole("button", { name: "Happiny", exact: true })).toHaveCount(1);
+      const rattata = calls.locator("tr").filter({ has: page.getByRole("button", { name: "Rattata (Alolan)", exact: true }) });
+      await expect(rattata.locator("td").first()).toHaveText("—");
+      const outskirts = page.locator('details[data-location-id="melemele-island/hauoli-outskirts"]');
+      if (!(await outskirts.evaluate(el => (el as HTMLDetailsElement).open))) await outskirts.locator("summary").click();
+      await expect(outskirts.getByRole("button", { name: "Rattata (Kanto)", exact: true })).toHaveCount(0);
+      const desert = page.locator('details[data-location-id="ulaula-island/haina-desert"]');
+      if (!(await desert.evaluate(el => (el as HTMLDetailsElement).open))) await desert.locator("summary").click();
+      const weather = desert.locator(".encounter-group").filter({ has: page.getByText("Weather SOS", { exact: true }) });
+      const castform = weather.locator("tr").filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
+      await expect(castform).toHaveCount(2);
+      const sand = castform.filter({ has: page.getByText("Sandstorm", { exact: true }) });
+      await expect(sand.locator("td").first()).toHaveText("1%");
+      await expect(sand).toContainText("Guide-reported SOS encounter rate");
+      const rainHail = castform.filter({ has: page.getByText("Rain, Hail", { exact: true }) });
+      await expect(rainHail.locator("td").first()).toHaveText("11%");
+      await desert.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
+      await sand.evaluate(el => el.scrollIntoView({ block: "center" }));
+      await expect(sand).toBeInViewport();
+      await page.screenshot({ path: info.outputPath(`haina-source-footnote-${device}.png`) });
+      const route15 = page.locator('details[data-location-id="ulaula-island/route-15-16"]');
+      if (!(await route15.evaluate(el => (el as HTMLDetailsElement).open))) await route15.locator("summary").click();
+      const unresolved = route15.locator("tr").filter({ has: page.getByRole("button", { name: "Crabrawler", exact: true }) });
+      await expect(unresolved).toContainText("Caller availability is unverified");
+      await expect(unresolved).toContainText("do not assume Shuckle calls Crabominable");
+      await route15.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
+      await unresolved.evaluate(el => el.scrollIntoView({ block: "center" }));
+      await expect(unresolved).toBeInViewport();
+      await page.screenshot({ path: info.outputPath(`unverified-caller-${device}.png`) });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      expect(errors).toEqual([]);
+    });
     test("guide status edits and Undo affect only the exact regional form", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
