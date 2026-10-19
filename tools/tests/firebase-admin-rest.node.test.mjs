@@ -198,3 +198,24 @@ test("rechecks the expected-old status after an ETag conflict", async () => {
   assert.equal(reads, 2);
   assert.equal(calls.filter(({ init }) => init.method === "PUT").length, 1);
 });
+
+test("a concurrent opposite-form catch aborts a stale aggregate downgrade after ETag conflict", async () => {
+  let reads = 0, writes = 0;
+  const requestFn = async (_path, init) => {
+    if (init.method === "PUT") {
+      writes += 1;
+      const conflict = new Error("precondition failed");
+      conflict.status = 412;
+      throw conflict;
+    }
+    reads += 1;
+    const records = { "species:26": { s: "caught" }, "form:26:alolan": { s: "caught" } };
+    if (reads > 1) records["form:26:kanto"] = { s: "caught" };
+    return { body: { state: { records } }, etag: `fixture-${reads}` };
+  };
+  const desired = { "species:26": "seen", "form:26:alolan": "seen", "form:26:kanto": "none", "setting:forms": "off" };
+  const expected = { "species:26": "caught", "form:26:alolan": "caught", "form:26:kanto": "none", "setting:forms": "off" };
+  await assert.rejects(applyRecords("fixture-account", desired, { expected, requestFn }), /status precondition failed.*form:26:kanto/);
+  assert.equal(reads, 2);
+  assert.equal(writes, 1, "stale aggregate must never be retried over the opposite-form catch");
+});

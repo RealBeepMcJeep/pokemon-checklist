@@ -50,6 +50,17 @@ class OperationError(Exception):
     """A requested operation cannot be performed safely."""
 
 
+class FormChoiceRequired(OperationError):
+    """An unresolved endpoint; no transaction may start before the caller chooses."""
+    code = "form_choice_required"
+
+    def __init__(self, species: Species, action: str, candidates: Sequence[Species]) -> None:
+        self.species = dict(species)
+        self.action = action
+        self.candidates = [dict(item) for item in candidates]
+        super().__init__(f"{species['name']}: choose alolan or kanto for {action}; no changes made")
+
+
 class EvolutionChoiceRequired(OperationError):
     """Several species can be next; caller must choose before account I/O."""
 
@@ -270,7 +281,7 @@ def validate_requested_patch(patch: Mapping[str, str], species_ids: Iterable[int
 
 
 def _empty_value(key: str) -> str:
-    return "off" if key.startswith(("star:", "starform:")) else "none"
+    return "off" if key.startswith(("star:", "starform:", "setting:unlock:")) or key == "setting:forms" else "none"
 
 
 def record_value(records: Mapping[str, Mapping[str, Any]], key: str) -> str:
@@ -377,8 +388,8 @@ def _apply_verified(
         applied = client.apply_records(uid, checked_desired, note=note, expected=checked_expected)
     after = _read_checked(client, uid, species)
     for key, expected_status in checked_desired.items():
-        if key not in after or after[key].get("s") != expected_status:
-            actual = after.get(key, {}).get("s", "<missing>")
+        if record_value(after, key) != expected_status:
+            actual = record_value(after, key)
             raise VerificationError(
                 f"readback mismatch for {key}: expected {expected_status!r}, got {actual!r}"
             )
@@ -417,18 +428,68 @@ def run_status(
     uid: str,
     name: str,
     species: Sequence[Species] | None = None,
+    *,
+    form: str | None = None,
 ) -> dict[str, Any]:
     catalogue = list(species) if species is not None else load_species()
     target = resolve_species(name, catalogue)
     current = _read_checked(client, uid, catalogue)
     key = f"species:{int(target['id'])}"
+    options = _regional_options(target, current)
+    regional_form = _choose_target_form(target, current, incoming=False, explicit=form) if form is not None else None
     return {
         "operation": "status",
         "species": target,
-        "status": record_value(current, key),
+        **({"forms": options} if options else {}),
+        **({"form": regional_form, "aggregate_status": record_value(current, key)} if regional_form else {}),
+        "status": record_value(current, f"form:{target['id']}:{regional_form}" if regional_form else key),
         "caught_count": caught_count(current),
         "changed": False,
     }
+
+
+def _regional_options(target: Species, current: RecordMap) -> list[Species]:
+    try:
+        from .validate_data import validate_regional_data
+    except ImportError:
+        from validate_data import validate_regional_data
+    try:
+        catalogue = json.loads((ROOT / "data" / "regional-forms.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise SchemaError("regional identity catalogue is unavailable") from error
+    if validate_regional_data(catalogue):
+        raise SchemaError("regional identity catalogue failed validation")
+    result = []
+    for form in REGIONAL_FORMS:
+        row = catalogue["forms"].get(f"{target['id']}:{form}")
+        if row:
+            key = f"form:{target['id']}:{form}"
+            result.append({"form": form, "key": key, "status": record_value(current, key), "name": row["name"]})
+    return result
+
+
+def _choose_target_form(target: Species, current: RecordMap, *, incoming: bool, explicit: str | None = None) -> str | None:
+    options = _regional_options(target, current)
+    if not options:
+        if explicit is not None:
+            raise OperationError(f"{target['name']} has no regional pair")
+        return None
+    decision = choose_regional_form(explicit=explicit, tracking=record_value(current, "setting:forms") == "on",
+                                    owned=[row["form"] for row in options if row["status"] == "caught"], incoming=incoming)
+    if decision is None:
+        raise FormChoiceRequired(target, "incoming catch" if incoming else "outgoing/status edit", options)
+    return decision
+
+
+def _regional_status_intent(target: Species, current: RecordMap, form: str, status: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Guard every aggregation input, including unchanged sibling-form records."""
+    species_key = f"species:{target['id']}"
+    keys = [species_key, *(f"form:{target['id']}:{variant}" for variant in REGIONAL_FORMS), "setting:forms"]
+    before = {key: record_value(current, key) for key in keys}
+    desired = {**before, f"form:{target['id']}:{form}": status}
+    statuses = [desired[f"form:{target['id']}:{variant}"] for variant in REGIONAL_FORMS]
+    desired[species_key] = "caught" if "caught" in statuses else "seen" if "seen" in statuses else "none"
+    return desired, before
 
 
 def run_mark(
@@ -440,17 +501,20 @@ def run_mark(
     *,
     dry_run: bool = False,
     note: str = "",
+    form: str | None = None,
 ) -> dict[str, Any]:
     if status not in STATUS_VALUES:
         raise OperationError(f"invalid status {status!r}; expected caught, seen, or none")
     catalogue = list(species) if species is not None else load_species()
     target = resolve_species(name, catalogue)
     current = _read_checked(client, uid, catalogue)
+    regional_form = _choose_target_form(target, current, incoming=status == "caught", explicit=form)
     key = f"species:{int(target['id'])}"
+    desired, expected = _regional_status_intent(target, current, regional_form, status) if regional_form else ({key: status}, None)
     result = _apply_verified(
-        client, uid, current, {key: status}, catalogue, dry_run=dry_run, note=note or f"chat mark {target['name']}",
+        client, uid, current, desired, catalogue, dry_run=dry_run, note=note or f"chat mark {target['name']}", expected=expected,
     )
-    return _with_operation(result, "mark", species=target, status=status)
+    return _with_operation(result, "mark", species=target, status=status, **({"form": regional_form} if regional_form else {}))
 
 
 def infer_next_evolution(source: Species, species: Sequence[Species]) -> Species:
@@ -520,6 +584,8 @@ def run_pair(
     dry_run: bool = False,
     note: str = "",
     return_readback: bool = False,
+    from_form: str | None = None,
+    to_form: str | None = None,
 ) -> dict[str, Any]:
     if operation not in {"evolve", "trade"}:
         raise OperationError("pair operation must be evolve or trade")
@@ -531,21 +597,27 @@ def run_pair(
     if int(source["id"]) == int(target["id"]):
         raise OperationError("FROM and TO must resolve to different species")
     current = _read_checked(client, uid, catalogue)
-    desired = {
-        f"species:{int(source['id'])}": "seen",
-        f"species:{int(target['id'])}": "caught",
-    }
+    source_form = _choose_target_form(source, current, incoming=False, explicit=from_form)
+    target_form = _choose_target_form(target, current, incoming=True, explicit=to_form)
+    expected = None
+    if source_form or target_form:
+        source_key, target_key = f"species:{source['id']}", f"species:{target['id']}"
+        outgoing, before_source = _regional_status_intent(source, current, source_form, "seen") if source_form else ({source_key: "seen"}, {source_key: record_value(current, source_key)})
+        incoming, before_target = _regional_status_intent(target, current, target_form, "caught") if target_form else ({target_key: "caught"}, {target_key: record_value(current, target_key)})
+        desired, expected = {**outgoing, **incoming}, {**before_source, **before_target}
+    else:
+        desired = {f"species:{int(source['id'])}": "seen", f"species:{int(target['id'])}": "caught"}
     result = _apply_verified(
         client, uid, current, desired, catalogue, dry_run=dry_run,
         note=note or f"chat {operation} {source['name']} to {target['name']}",
-        return_readback=return_readback,
+        expected=expected, return_readback=return_readback,
     )
     if not result["changed"] and not dry_run:
         observed = result.get("verified_statuses", result.get("current_statuses"))
         if observed != desired:
             raise VerificationError("Unchanged pair did not match its requested statuses")
         result.update(verified_no_write=True, verified_statuses=dict(observed))
-    return _with_operation(result, operation, from_species=source, to_species=target)
+    return _with_operation(result, operation, from_species=source, to_species=target, **({"from_form": source_form} if source_form else {}), **({"to_form": target_form} if target_form else {}))
 
 
 def run_favorites_exact(
@@ -556,28 +628,65 @@ def run_favorites_exact(
     *,
     dry_run: bool = False,
     note: str = "",
+    form_targets: Sequence[str] = (),
 ) -> dict[str, Any]:
-    if not names:
-        raise OperationError("favorites --exact requires at least one species")
+    if not names and not form_targets:
+        raise OperationError("favorites --exact requires at least one species or explicit form")
     catalogue = list(species) if species is not None else load_species()
     targets = [resolve_species(name, catalogue) for name in names]
     target_ids = {int(item["id"]) for item in targets}
+    target_forms = set()
+    explicit_ids = set()
+    for raw in form_targets:
+        match = re.fullmatch(r"([1-9][0-9]*):(alolan|kanto)", raw) if isinstance(raw, str) else None
+        if not match:
+            raise OperationError("form targets must be exact ID:alolan or ID:kanto tokens")
+        target = resolve_species(match[1], catalogue)
+        if not _regional_options(target, {}):
+            raise OperationError(f"{target['name']} has no regional pair")
+        dex = int(target["id"])
+        if dex not in target_ids:
+            targets.append(target)
+        target_ids.add(dex)
+        explicit_ids.add(dex)
+        target_forms.add(raw)
     current = _read_checked(client, uid, catalogue)
+    guards = {}
+    for target in targets:
+        if int(target["id"]) in explicit_ids:
+            continue
+        form = _choose_target_form(target, current, incoming=False)
+        if form:
+            key = f"form:{target['id']}:{form}"
+            target_forms.add(f"{target['id']}:{form}")
+            _, before = _regional_status_intent(target, current, form, record_value(current, key))
+            guards.update(before)
     current_ids = {
         int(key.split(":", 1)[1])
         for key, entry in current.items()
         if key.startswith("star:") and entry.get("s") == "on"
     }
-    desired: dict[str, str] = {}
+    desired: dict[str, str] = {
+        key: "off" for key, record in current.items()
+        if key.startswith("starform:") and record.get("s") == "on" and key[len("starform:"):] not in target_forms
+    }
     for species_id in sorted(current_ids - target_ids):
         desired[f"star:{species_id}"] = "off"
     for species_id in sorted(target_ids - current_ids):
         desired[f"star:{species_id}"] = "on"
+    desired.update({f"starform:{key}": "on" for key in target_forms})
+    desired.update(guards)
     result = _apply_verified(
         client, uid, current, desired, catalogue, dry_run=dry_run,
-        note=note or "chat exact favorites",
+        note=note or "chat exact favorites", expected=guards or None, return_readback=True,
     )
-    return _with_operation(result, "favorites", exact=list(sorted(target_ids)), species=targets)
+    final = result.pop("_readback_records")
+    if not dry_run:
+        actual_ids = {int(key.split(":")[1]) for key, row in final.items() if key.startswith("star:") and row["s"] == "on"}
+        actual_forms = {key[len("starform:"):] for key, row in final.items() if key.startswith("starform:") and row["s"] == "on"}
+        if actual_ids != target_ids or actual_forms != target_forms:
+            raise VerificationError("Exact favorites did not match complete-set readback; a concurrent edit may have arrived")
+    return _with_operation(result, "favorites", exact=list(sorted(target_ids)), exact_forms=sorted(target_forms), species=targets)
 
 
 def run_list(
@@ -634,13 +743,17 @@ class PokemonStatusTool:
         expected: Mapping[str, str] | None = None,
         dry_run: bool = False,
         note: str = "",
+        form: str | None = None,
     ) -> dict[str, Any]:
-        key = f"species:{int(target['id'])}"
+        regional_form = _choose_target_form(target, current, incoming=status == "caught", explicit=form)
+        key = f"form:{target['id']}:{regional_form}" if regional_form else f"species:{int(target['id'])}"
+        desired, guards = _regional_status_intent(target, current, regional_form, status) if regional_form else ({key: status}, {})
+        expected = {**guards, **(expected or {})} if regional_form else expected
         result = _apply_verified(
             self.client,
             self.uid,
             current,
-            {key: status},
+            desired,
             self.species,
             dry_run=dry_run,
             note=note or f"chat set status {target['name']} to {status}",
@@ -648,7 +761,7 @@ class PokemonStatusTool:
             return_readback=True,
         )
         final = result.pop("_readback_records")
-        output = _with_operation(result, "set_status", species=target)
+        output = _with_operation(result, "set_status", species=target, **({"form": regional_form} if regional_form else {}))
         output["status"] = record_value(final, key)
         output["caught_count"] = caught_count(final)
         return output
@@ -667,13 +780,15 @@ class PokemonStatusTool:
         *,
         dry_run: bool = False,
         note: str = "",
+        form: str | None = None,
     ) -> dict[str, Any]:
         self._validate_status(status)
         if old_status is not UNSET:
             self._validate_status(old_status)
         target = resolve_species(name, self.species)
         current = _read_checked(self.client, self.uid, self.species)
-        key = f"species:{int(target['id'])}"
+        regional_form = _choose_target_form(target, current, incoming=status == "caught", explicit=form)
+        key = f"form:{target['id']}:{regional_form}" if regional_form else f"species:{int(target['id'])}"
         actual = record_value(current, key)
         expected = None
         if old_status is not UNSET:
@@ -687,6 +802,7 @@ class PokemonStatusTool:
             return {
                 "operation": "set_status",
                 "species": target,
+                **({"form": regional_form} if regional_form else {}),
                 "status": status,
                 "caught_count": caught_count(current),
                 "changed": False,
@@ -704,6 +820,7 @@ class PokemonStatusTool:
             expected=expected,
             dry_run=dry_run,
             note=note,
+            form=regional_form,
         )
 
     def evolve_pokemon_status(
@@ -713,11 +830,13 @@ class PokemonStatusTool:
         *,
         dry_run: bool = False,
         note: str = "",
+        from_form: str | None = None,
+        to_form: str | None = None,
     ) -> dict[str, Any]:
         """Evolve one stage automatically, or preserve an explicit target."""
         return run_pair(
             self.client, self.uid, "evolve", name, to_name, self.species,
-            dry_run=dry_run, note=note,
+            dry_run=dry_run, note=note, from_form=from_form, to_form=to_form,
         )
 
     def trade_pokemon_status(
@@ -727,6 +846,8 @@ class PokemonStatusTool:
         *,
         dry_run: bool = False,
         note: str = "",
+        from_form: str | None = None,
+        to_form: str | None = None,
     ) -> dict[str, Any]:
         result = run_pair(
             self.client,
@@ -737,14 +858,15 @@ class PokemonStatusTool:
             self.species,
             dry_run=dry_run,
             note=note,
-            return_readback=True,
+            return_readback=True, from_form=from_form, to_form=to_form,
         )
         final = result.pop("_readback_records")
         source, target = result["from_species"], result["to_species"]
-        result["statuses"] = {
-            source["name"]: record_value(final, f"species:{int(source['id'])}"),
-            target["name"]: record_value(final, f"species:{int(target['id'])}"),
-        }
+        result["statuses"] = {}
+        for endpoint, form in [(source, result.get("from_form")), (target, result.get("to_form"))]:
+            label = f"{endpoint['name']} ({form.title()})" if form else endpoint["name"]
+            key = f"form:{endpoint['id']}:{form}" if form else f"species:{endpoint['id']}"
+            result["statuses"][label] = record_value(final, key)
         result["caught_count"] = caught_count(final)
         return result
 
@@ -775,11 +897,13 @@ def build_parser() -> argparse.ArgumentParser:
     status_parser = commands.add_parser("status", help="read one current species status")
     _add_common_flags(status_parser, suppress_defaults=True)
     status_parser.add_argument("name")
+    status_parser.add_argument("--form", choices=REGIONAL_FORMS, help="read this exact form rather than aggregate species ownership")
 
     set_status_parser = commands.add_parser("set-status", help="set one status with optional old-status guard")
     _add_common_flags(set_status_parser, suppress_defaults=True)
     set_status_parser.add_argument("name")
     set_status_parser.add_argument("status", choices=tuple(sorted(STATUS_VALUES)))
+    set_status_parser.add_argument("--form", choices=REGIONAL_FORMS, help="guard and edit this exact regional form")
     set_status_parser.add_argument(
         "--old-status", choices=tuple(sorted(STATUS_VALUES)), default=argparse.SUPPRESS,
         help="require this status at the Firebase conditional-write boundary",
@@ -789,17 +913,21 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_flags(mark_parser, suppress_defaults=True)
     mark_parser.add_argument("name")
     mark_parser.add_argument("status", choices=tuple(sorted(STATUS_VALUES)))
+    mark_parser.add_argument("--form", choices=REGIONAL_FORMS, help="exact regional target; required for unspecified tracking-on catches")
 
     for operation in ("evolve", "trade"):
         pair_parser = commands.add_parser(operation, help=("infer one next evolution, or specify TO; atomic Seen/Caught update" if operation == "evolve" else "mark FROM seen and TO caught atomically"))
         _add_common_flags(pair_parser, suppress_defaults=True)
+        pair_parser.add_argument("--from-form", choices=REGIONAL_FORMS, help="exact outgoing regional form")
+        pair_parser.add_argument("--to-form", choices=REGIONAL_FORMS, help="exact incoming regional form")
         pair_parser.add_argument("from_name", metavar="FROM")
         pair_parser.add_argument("to_name", metavar="TO", nargs="?" if operation == "evolve" else None,
                                  help="omit for a unique next evolution" if operation == "evolve" else "received species")
 
     favorites_parser = commands.add_parser("favorites", help="reconcile favorites")
     _add_common_flags(favorites_parser, suppress_defaults=True)
-    favorites_parser.add_argument("--exact", nargs="+", metavar="NAME", required=True)
+    favorites_parser.add_argument("--exact", nargs="*", metavar="NAME", required=True, help="replace the complete favorite set; may be empty when --forms supplies exact targets")
+    favorites_parser.add_argument("--forms", nargs="+", default=[], metavar="ID:FORM", help="explicit regional targets, e.g. 52:alolan 52:kanto")
     return parser
 
 
@@ -808,7 +936,10 @@ def _print_result(result: Mapping[str, Any], as_json: bool) -> None:
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return
     if result.get("operation") == "status":
-        print(f"{result['species']['name']}: {result['status']} · {result['caught_count']} caught")
+        label = result["species"]["name"]
+        if result.get("form"):
+            label += f" ({result['form'].title()})"
+        print(f"{label}: {result['status']} · {result['caught_count']} caught")
         return
     if result.get("operation") == "list":
         for item in result["items"]:
@@ -839,32 +970,35 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "list":
             result = run_list(client, args.uid, args.category, species)
         elif args.command == "status":
-            result = run_status(client, args.uid, args.name, species)
+            result = run_status(client, args.uid, args.name, species, form=args.form)
         elif args.command == "set-status":
             tool = PokemonStatusTool(args.uid, client=client, species=species)
             result = tool.set_pokemon_status(
                 args.name,
                 args.status,
                 old_status=getattr(args, "old_status", UNSET),
+                form=args.form,
                 dry_run=args.dry_run,
                 note=args.note or "",
             )
         elif args.command == "mark":
-            result = run_mark(client, args.uid, args.name, args.status, species, dry_run=args.dry_run, note=args.note or "")
+            result = run_mark(client, args.uid, args.name, args.status, species, dry_run=args.dry_run, note=args.note or "", form=args.form)
         elif args.command == "evolve":
-            result = run_pair(client, args.uid, "evolve", args.from_name, args.to_name, species, dry_run=args.dry_run, note=args.note or "")
+            result = run_pair(client, args.uid, "evolve", args.from_name, args.to_name, species, dry_run=args.dry_run, note=args.note or "", from_form=args.from_form, to_form=args.to_form)
         elif args.command == "trade":
             tool = PokemonStatusTool(args.uid, client=client, species=species)
             result = tool.trade_pokemon_status(
-                args.from_name, args.to_name, dry_run=args.dry_run, note=args.note or ""
+                args.from_name, args.to_name, dry_run=args.dry_run, note=args.note or "", from_form=args.from_form, to_form=args.to_form
             )
         elif args.command == "favorites":
-            result = run_favorites_exact(client, args.uid, args.exact, species, dry_run=args.dry_run, note=args.note or "")
+            result = run_favorites_exact(client, args.uid, args.exact, species, dry_run=args.dry_run, note=args.note or "", form_targets=args.forms)
         else:  # argparse makes this unreachable, but keeps the dispatch total.
             raise OperationError(f"unknown command {args.command}")
     except OperationError as exc:
         if args.json:
             error: dict[str, Any] = {"error": str(exc)}
+            if isinstance(exc, FormChoiceRequired):
+                error.update(code=exc.code, species=exc.species, action=exc.action, candidates=exc.candidates)
             if isinstance(exc, EvolutionChoiceRequired):
                 error.update(code="evolution_choice_required", source=exc.source, candidates=exc.candidates)
             print(json.dumps(error, ensure_ascii=False))

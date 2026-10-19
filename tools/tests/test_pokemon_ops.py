@@ -106,8 +106,9 @@ class PokemonOpsTests(unittest.TestCase):
     def test_evolve_payload_marks_from_seen_and_to_caught(self):
         client = FakeClient({"species:25": entry("caught")})
         result = ops.run_pair(client, "uid", "evolve", "pikachu", "raichu", SPECIES)
-        self.assertEqual(result["changes"], {"species:25": "seen", "species:26": "caught"})
-        self.assertEqual(client.applied, [result["changes"]])
+        self.assertEqual(result["changes"], {"species:25": "seen", "species:26": "caught", "form:26:alolan": "caught"})
+        self.assertEqual(client.applied, [{"species:25": "seen", "species:26": "caught", "form:26:alolan": "caught", "form:26:kanto": "none", "setting:forms": "off"}])
+        self.assertEqual(client.expected, [{"species:25": "caught", "species:26": "none", "form:26:alolan": "none", "form:26:kanto": "none", "setting:forms": "off"}])
 
     def test_trade_payload_marks_from_seen_and_to_caught(self):
         client = FakeClient()
@@ -351,7 +352,7 @@ class PokemonOpsTests(unittest.TestCase):
         self.assertEqual(marked["verified_statuses"], {"species:25": "caught"})
         evolved = ops.run_pair(client, "uid", "evolve", "pikachu", "raichu", SPECIES)
         self.assertEqual(evolved["caught_count"], 1)
-        self.assertEqual(evolved["verified_statuses"], {"species:25": "seen", "species:26": "caught"})
+        self.assertEqual(evolved["verified_statuses"], {"species:25": "seen", "species:26": "caught", "form:26:alolan": "caught", "form:26:kanto": "none", "setting:forms": "off"})
 
     def test_readback_mismatch_fails(self):
         client = FakeClient()
