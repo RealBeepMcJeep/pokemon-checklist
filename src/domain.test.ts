@@ -22,6 +22,22 @@ const pokemonIds = new Set(POKEMON.map(({ id }) => id));
 const formKeys = new Set(forms.keys());
 
 describe("checklist domain", () => {
+  it("filters encounters by the matched form, not an SOS ally's caller form", () => {
+    const data = ENCOUNTERS_BY_MODE["photonic-prismatic"];
+    const all = getOccurrences(data, 52, ["sos"]);
+    const alolan = getOccurrences(data, 52, ["sos"], "alolan");
+    const kanto = getOccurrences(data, 52, ["sos"], "kanto");
+    expect(all).toHaveLength(2);
+    expect(alolan).toHaveLength(1);
+    expect(kanto).toHaveLength(1);
+    expect(alolan[0].ally).toBe(false);
+    expect(kanto[0].ally).toBe(true);
+    // Both still point to the real caller row for navigation and its wild rate.
+    expect(kanto[0].row).toBe(alolan[0].row);
+    expect(kanto[0].row.rates).toEqual({ single: 15 });
+    expect(crossModeOccurrences(ENCOUNTERS_BY_MODE, "photonic-prismatic", 52, "kanto")).toEqual([]);
+    expect(crossModeOccurrences(ENCOUNTERS_BY_MODE, "photonic-prismatic", 52, "alolan").length).toBeGreaterThan(0);
+  });
   it("cycles statuses in the documented order", () => {
     expect(cycleStatus("none")).toBe("caught");
     expect(cycleStatus("caught")).toBe("seen");

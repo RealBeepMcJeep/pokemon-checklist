@@ -20,6 +20,13 @@ const regionalIds = new Set(REGIONAL_IDS);
 export const isRegional = (id: number): boolean => regionalIds.has(id);
 export const regionalDetails = (id: number, form: RegionalForm): RegionalFacts | undefined => REGIONAL_DETAILS[`${id}:${form}`];
 
+/** Native unmarked regional encounters default to Alolan; unknown tokens stay unknown. */
+export function encounterRegionalForm(id: number, form?: string): RegionalForm | undefined {
+  if (!isRegional(id)) return undefined;
+  if (form === undefined || form === "alolan") return "alolan";
+  return form === "kanto" ? "kanto" : undefined;
+}
+
 /** One aggregate rule for every regional species: Caught wins, then Seen. */
 export function aggregateRegionalStatus(statuses: readonly Status[]): Status {
   return statuses.includes("caught") ? "caught" : statuses.includes("seen") ? "seen" : "none";

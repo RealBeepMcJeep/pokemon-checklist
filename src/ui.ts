@@ -109,9 +109,15 @@ function focusEncounterRow(hash: string): boolean {
     parent = parent.parentElement;
   }
   history.replaceState(null, "", hash);
-  target.scrollIntoView({ block: "center" });
-  target.focus({ preventScroll: true });
   closeDrawer();
+  // On phones the guide stays inert until the drawer-close render commits.
+  // Focus after that render, and after generic drawer focus restoration, so
+  // this explicit row destination wins rather than the old caller button.
+  requestAnimationFrame(() => {
+    if (!target.isConnected) return;
+    target.scrollIntoView({ block: "center" });
+    target.focus({ preventScroll: true });
+  });
   return true;
 }
 

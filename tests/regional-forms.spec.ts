@@ -25,6 +25,42 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("guide caller and SOS links open the exact form and only its locations", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const school = page.locator('details[data-location-id="melemele-island/trainers-school"]');
+      if (!(await school.evaluate(el => (el as HTMLDetailsElement).open))) await school.locator("summary").click();
+      const caller = school.getByRole("button", { name: "Meowth (Alolan)", exact: true });
+      const ally = school.getByRole("button", { name: "Meowth (Kanto)", exact: true });
+      await expect(caller).toHaveCount(1);
+      await expect(ally).toHaveCount(1);
+      const row = school.locator("tr").filter({ has: page.getByRole("button", { name: "Meowth (Alolan)", exact: true }) });
+      await expect(row.locator("td").first()).toHaveText("15%");
+      await ally.click();
+      await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Kanto)");
+      await expect(page.locator("#dex-selection .location-links > ul > li")).toHaveCount(1);
+      await expect(page.locator("#dex-selection .location-links > ul")).toContainText("SOS ally");
+      await expect(page.locator("#dex-selection .location-links > ul")).not.toContainText("wild encounter");
+      await expect(page.locator("#dex-selection .also-catchable")).toHaveCount(0);
+      await expect(page.locator("#dex-selection")).toBeFocused();
+      // Visibility/focus can pass mid-transition. Require the whole drawer to
+      // settle inside the viewport before claiming readable screenshot coverage.
+      await expect.poll(() => page.locator("#pokedex").evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.left >= -1 && rect.right <= innerWidth + 1;
+      })).toBe(true);
+      await page.screenshot({ path: info.outputPath(`guide-kanto-details-${device}.png`) });
+      await page.locator("#dex-selection .location-links > ul a").click();
+      await expect(row).toBeFocused();
+      if (device === "phone") await expect(page.locator("#pokedex")).toHaveAttribute("aria-hidden", "true");
+      await caller.click();
+      await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Alolan)");
+      await expect(page.locator("#dex-selection .location-links > ul > li")).toHaveCount(1);
+      await expect(page.locator("#dex-selection .location-links > ul")).toContainText("wild encounter");
+      await expect(page.locator("#dex-selection .location-links > ul")).not.toContainText("SOS ally");
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+    });
     test("surfaces legacy ownership without inventing a form", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       await page.evaluate(() => {

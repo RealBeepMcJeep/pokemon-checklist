@@ -95,11 +95,12 @@ function Selection() {
   if (!pokemon) return null;
   const form = formsTracked.value && isRegional(selected) ? selectedRegionalForm.value ?? "alolan" : undefined;
   const name = targetName(pokemon, form);
-  const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined);
+  const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined, form);
   const otherModeOccurrences = crossModeOccurrences(
     ENCOUNTERS_BY_MODE,
     mode.value,
     selected,
+    form,
   );
   const bulbapediaUrl = `https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(`${pokemon.name}_(Pokémon)`).replaceAll("%20", "_")}`;
   const forms = [...formDefinitions.values()].filter(

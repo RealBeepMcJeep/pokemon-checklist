@@ -2,7 +2,10 @@ import { occurrenceEligible } from "../unlocks";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { ASSETS, detailsByDex, formDetails } from "../data";
+import { ASSETS, byDex, detailsByDex, formDetails } from "../data";
+import { encounterRegionalForm } from "../regional";
+import { targetName } from "../collection";
+import { CollectionFacts } from "./CollectionFacts";
 import { catchNowRows, formKey, formSlug, locationProgress, rateText, safeId } from "../domain";
 import {
   activeEncounters,
@@ -47,6 +50,9 @@ function GuidePokemon({
       ? formKey(id, "ability", formSlug(ability))
       : "";
   const details = formDetails.get(key) || detailsByDex.get(id);
+  const actualForm = encounterRegionalForm(id, form ? formSlug(form) : undefined);
+  const pokemon = byDex.get(id);
+  const encounterName = actualForm && pokemon ? targetName(pokemon, actualForm) : name;
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} context={context} compact />
@@ -55,11 +61,12 @@ function GuidePokemon({
         <button
           class="guide-pokemon-link"
           type="button"
-          onClick={() => openPokemon(id)}
+          onClick={() => openPokemon(id, actualForm)}
         >
-          {name}
+          {encounterName}
         </button>
-        {details && <PokemonFacts details={details} name={name} />}
+        {actualForm ? <CollectionFacts id={id} form={actualForm} />
+          : details && <PokemonFacts details={details} name={name} />}
       </span>
     </span>
   );

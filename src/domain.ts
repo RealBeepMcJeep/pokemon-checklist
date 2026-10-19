@@ -12,7 +12,7 @@ import type {
 } from "./types";
 import { GAME_MODES, UNLOCKS } from "./types";
 import { eligibleRows, occurrenceEligible } from "./unlocks";
-import { REGIONAL_IDS, isRegional } from "./regional";
+import { REGIONAL_IDS, encounterRegionalForm, isRegional, type RegionalForm } from "./regional";
 
 export const DEFAULT_MODE: GameMode = "photonic-prismatic";
 export const STATE_VERSION = 5;
@@ -206,10 +206,11 @@ export function getOccurrences(
   encounters: EncounterData,
   speciesId: number,
   unlocks?: readonly string[],
+  form?: RegionalForm,
 ): Occurrence[] {
   const found: Occurrence[] = [];
   forEachEncounter(encounters, (row, group, location, island) => {
-    if (row.speciesId === speciesId) {
+    if (row.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, row.form) === form)) {
       found.push({
         row,
         group,
@@ -219,7 +220,7 @@ export function getOccurrences(
       });
     }
     for (const ally of row.allies || []) {
-      if (ally.speciesId === speciesId) {
+      if (ally.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, ally.form) === form)) {
         found.push({ row, group, location, island, ally: true });
       }
     }
@@ -427,11 +428,12 @@ export function crossModeOccurrences(
   encountersByMode: Record<GameMode, EncounterData>,
   currentMode: GameMode,
   speciesId: number,
+  form?: RegionalForm,
 ): { mode: GameMode; occurrences: Occurrence[] }[] {
   return GAME_MODES.filter((candidate) => candidate !== currentMode)
     .map((candidate) => ({
       mode: candidate,
-      occurrences: getOccurrences(encountersByMode[candidate], speciesId),
+      occurrences: getOccurrences(encountersByMode[candidate], speciesId, undefined, form),
     }))
     .filter((entry) => entry.occurrences.length > 0);
 }
