@@ -5,6 +5,7 @@ import { ENCOUNTERS_BY_MODE, POKEMON, byDex, formDetails } from "../data";
 import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
+  formSignal,
   activeUnlocks,
   collectionCounts,
   drawerOpen,
@@ -13,6 +14,7 @@ import {
   isStarred,
   mode,
   readOnly,
+  speciesStatus,
   searchTerm,
   selectedDex,
   selectedRegionalForm,
@@ -31,7 +33,7 @@ import {
 import { CatchNext } from "./CatchNext";
 import { EvolutionControls } from "./EvolutionControls";
 import { collectionTargets, matchesTarget, targetKey, targetName, type CollectionTarget } from "../collection";
-import { isRegional, type RegionalForm } from "../regional";
+import { hasUnresolvedRegionalOwnership, isRegional, type RegionalForm } from "../regional";
 import { CollectionFacts } from "./CollectionFacts";
 import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
@@ -133,6 +135,14 @@ function Selection() {
         <StatusButton id={selected} form={form} context="selected" />
       </div>
       <CollectionFacts id={selected} form={form} labels />
+      {form && hasUnresolvedRegionalOwnership(speciesStatus(selected), [
+        formSignal(`${selected}:alolan`).value, formSignal(`${selected}:kanto`).value,
+      ]) && (
+        <p class="form-ownership-warning" role="status">
+          Existing {speciesStatus(selected) === "caught" ? "Caught" : "Seen"} progress is recorded without a form.
+          {" "}Confirm each form's status; neither form is assumed.
+        </p>
+      )}
       {formsTracked.value && !isRegional(selected) && forms.length > 0 && (
         <div class="form-summary">
           <strong>Tracked forms (separate from location progress)</strong>

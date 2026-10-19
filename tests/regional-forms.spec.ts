@@ -25,6 +25,35 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("surfaces legacy ownership without inventing a form", async ({ page }, info) => {
+      await openRegionalFixture(page, info.project.name);
+      await page.evaluate(() => {
+        const key = "pokemon-checklist-state-v5";
+        const state = JSON.parse(localStorage.getItem(key)!);
+        state.species = { "52": "caught" };
+        state.forms = {};
+        localStorage.setItem(key, JSON.stringify(state));
+      });
+      await page.reload();
+      if (device === "phone") await page.locator("#sidebar-toggle").tap();
+      await page.locator("#dex-search").fill("Meowth");
+      await page.locator('.dex-row[data-target="52:alolan"] .dex-select').click();
+      await expect(page.locator(".form-ownership-warning")).toContainText("recorded without a form");
+      const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      expect(saved.forms).toEqual({});
+      expect(saved.species["52"]).toBe("caught");
+      await page.locator('.dex-row[data-target="52:kanto"] .dex-select').click();
+      await expect(page.locator(".form-ownership-warning")).toBeVisible();
+      await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Kanto)");
+      await page.locator(".form-ownership-warning").scrollIntoViewIfNeeded();
+      await expect(page.locator(".form-ownership-warning")).toBeInViewport();
+      await page.screenshot({ path: info.outputPath(`unresolved-form-${device}.png`) });
+      await page.locator('.dex-row[data-target="52:kanto"] .status-button').click();
+      await expect(page.locator(".form-ownership-warning")).toHaveCount(0);
+      const resolved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      expect(resolved.forms).toEqual({ "52:kanto": "caught" });
+      expect(resolved.species["52"]).toBe("caught");
+    });
     test("popular moves use the selected form and change actual teaching routes by game", async ({ page }, info) => {
       await openRegionalFixture(page, info.project.name);
       if (device === "phone") await page.locator("#sidebar-toggle").tap();

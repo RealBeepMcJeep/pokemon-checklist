@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Regional details flag legacy progress with an unknown form without assigning either form. Merged snapshots and Undo preserve an owned sibling's species aggregate, and tracking switches leave ownership/favorites untouched.
 - Popular moves now resolve exact Alolan/Kanto paths, separate SM/USUM teaching methods, verified Prismatic Standard levels and documented mart locations, with explicit missing-evidence labels and no inferred egg-to-level conversion. Legacy numeric move consumers remain readable.
 
 ## 2026-10-17

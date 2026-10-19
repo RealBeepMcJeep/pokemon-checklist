@@ -14,7 +14,7 @@ import { UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } fro
 import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
 import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
 import { BUILD_LABEL } from "./version";
-import { isRegional, type RegionalForm } from "./regional";
+import { aggregateRegionalStatus, isRegional, type RegionalForm } from "./regional";
 import { collectionTargets } from "./collection";
 
 export interface Notice {
@@ -634,7 +634,7 @@ export function cycleForm(key: string): void {
     status.value = next;
     if (isRegional(form.speciesId) && /:(alolan|kanto)$/.test(key)) {
       const values = ["alolan", "kanto"].map(slug => formSignal(`${form.speciesId}:${slug}`).value);
-      speciesSignal(form.speciesId).value = values.includes("caught") ? "caught" : values.includes("seen") ? "seen" : "none";
+      speciesSignal(form.speciesId).value = aggregateRegionalStatus(values);
     } else if (next === "caught") speciesSignal(form.speciesId).value = "caught";
     else if (next === "seen" && speciesStatus(form.speciesId) === "none") {
       speciesSignal(form.speciesId).value = "seen";

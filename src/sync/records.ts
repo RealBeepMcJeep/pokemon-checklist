@@ -1,5 +1,6 @@
 import { GAME_MODES, UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } from "../types";
 import { DEFAULT_MODE, STATUS_ORDER, STATE_VERSION, canonicalState } from "../domain";
+import { REGIONAL_IDS, projectRegionalSpeciesStatus } from "../regional";
 
 /**
  * Sync payload shapes and the pure logic that merges them.
@@ -252,6 +253,13 @@ export function stateFromDocument(
     }
   }
 
+  for (const id of REGIONAL_IDS) {
+    if (!validPokemon.has(id)) continue;
+    const status = projectRegionalSpeciesStatus(species[String(id)] ?? "none", [
+      forms[`${id}:alolan`] ?? "none", forms[`${id}:kanto`] ?? "none",
+    ]);
+    if (status !== "none") species[String(id)] = status;
+  }
   return canonicalState({
     schemaVersion: STATE_VERSION,
     species,

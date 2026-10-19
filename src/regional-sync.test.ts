@@ -6,6 +6,31 @@ import type { SavedState } from "./types";
 
 const entry = (s: string) => ({ s, at: 1, by: "fixture" });
 describe("regional sync safety", () => {
+  it("projects an owned sibling over a stale aggregate downgrade without inventing missing forms", () => {
+    const ids = new Set([52, 150]), forms = new Set(["52:alolan", "52:kanto"]);
+    const remote: SyncDocument = { schema: 1, updatedAt: 4, records: {
+      "species:52": { s: "seen", at: 4, by: "first" },
+      "form:52:alolan": { s: "seen", at: 4, by: "first" },
+      "form:52:kanto": { s: "caught", at: 3, by: "second" },
+      "species:150": entry("caught"),
+    } };
+    const projected = stateFromDocument(remote, ids, forms);
+    expect(projected.species).toEqual({ "52": "caught", "150": "caught" });
+    expect(projected.forms).toEqual({ "52:alolan": "seen", "52:kanto": "caught" });
+    const unknown = stateFromDocument({ schema: 1, updatedAt: 1, records: { "species:52": entry("caught") } }, ids, forms);
+    expect(unknown.species["52"]).toBe("caught");
+    expect(unknown.forms).toEqual({});
+  });
+  it("undoes a catch without clearing a later sibling catch or its aggregate", () => {
+    const ids = new Set([52, 150]), forms = new Set(["52:alolan", "52:kanto"]);
+    const before = validateState({ schemaVersion: 5, species: {}, forms: {}, starred: [], starredForms: [], settings: { forms: true, mode: "moon", unlocks: [] } }, ids, forms);
+    const after = { ...before, species: { "52": "caught" as const }, forms: { "52:alolan": "caught" as const } };
+    const later = { ...after, species: { "52": "caught" as const, "150": "seen" as const },
+      forms: { ...after.forms, "52:kanto": "caught" as const } };
+    const undone = rebaseState(later, after, before, ids, forms, true);
+    expect(undone.forms).toEqual({ "52:kanto": "caught" });
+    expect(undone.species).toEqual({ "52": "caught", "150": "seen" });
+  });
   it("keeps the aggregate star while either form is favored and clears it with the last form", () => {
     const initial = validateState({ schemaVersion: 4, species: { "52": "caught" }, forms: { "52:alolan": "caught" }, starred: [52], settings: { forms: true, mode: "moon", unlocks: [] } }, new Set([52]), new Set(["52:alolan", "52:kanto"]));
     const both = { ...initial, starredForms: ["52:alolan", "52:kanto"] };
