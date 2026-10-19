@@ -1,7 +1,20 @@
-// Gen VII regional species at the pinned Showdown revision. Pikachu's Alola cap
-// is deliberately excluded: it is not the Kanto/Alolan regional pair feature.
-export const REGIONAL_IDS: readonly number[] = [
-  19, 20, 26, 27, 28, 37, 38, 50, 51, 52, 53, 74, 75, 76, 88, 89, 103, 105,
-];
+import regionalJson from "../data/regional-forms.json";
+
 export type RegionalForm = "alolan" | "kanto";
-export const isRegional = (id: number): boolean => REGIONAL_IDS.includes(id);
+export interface RegionalFacts {
+  id: number;
+  form: RegionalForm;
+  name: string;
+  showdownKey: string;
+  types: readonly string[];
+  baseStats: Readonly<Record<"hp" | "atk" | "def" | "spa" | "spd" | "spe", number>>;
+  abilities: Readonly<Record<string, string>>;
+}
+
+// One generated identity catalogue is shared with the Python tools. Cosmetic
+// Alola-cap Pikachu is deliberately excluded by its source-backed generator.
+export const REGIONAL_DETAILS = regionalJson.forms as Readonly<Record<string, RegionalFacts>>;
+export const REGIONAL_IDS: readonly number[] = [...new Set(Object.values(REGIONAL_DETAILS).map(row => row.id))].sort((a, b) => a - b);
+const regionalIds = new Set(REGIONAL_IDS);
+export const isRegional = (id: number): boolean => regionalIds.has(id);
+export const regionalDetails = (id: number, form: RegionalForm): RegionalFacts | undefined => REGIONAL_DETAILS[`${id}:${form}`];

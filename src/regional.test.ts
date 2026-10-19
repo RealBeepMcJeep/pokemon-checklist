@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
+import * as Regional from "./regional";
 import { buildFormDefinitions, locationProgress, uncaughtCatchNowRows, validateState } from "./domain";
 import { GAME_MODES, type EncounterData, type GameMode, type Location } from "./types";
 import { entriesFromState, stateFromDocument } from "./sync/records";
 
 describe("regional collection catalogue", () => {
+  it("loads complete form facts from the generated shared catalogue", () => {
+    const details = Reflect.get(Regional, "regionalDetails");
+    expect(typeof details).toBe("function");
+    expect(details(52, "alolan")).toMatchObject({ types: ["Dark"], baseStats: { spa: 50 }, abilities: { H: "Rattled" } });
+    expect(details(52, "kanto")).toMatchObject({ types: ["Normal"], baseStats: { atk: 45 }, abilities: { H: "Unnerve" } });
+    expect(details(53, "kanto")).toMatchObject({ name: "Persian (Kanto)", types: ["Normal"] });
+    expect(details(103, "kanto")).toMatchObject({ types: ["Grass", "Psychic"] });
+    expect(details(25, "alolan")).toBeUndefined();
+    expect(Regional.REGIONAL_IDS).toHaveLength(18);
+  });
+
   it("includes regular and Alolan evolution-only targets even without any wild encounter", () => {
     const empty: EncounterData = { schemaVersion: 1, assets: [], islands: [] };
     const modes = Object.fromEntries(GAME_MODES.map(mode => [mode, empty])) as Record<GameMode, EncounterData>;

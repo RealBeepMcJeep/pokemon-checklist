@@ -365,11 +365,49 @@ def validate_moves(moves: object) -> list[str]:
     return errors
 
 
+def validate_regional_data(data: object) -> list[str]:
+    """Validate the complete fixed Gen VII regional catalogue without cache I/O."""
+    try:
+        from .build_regional_data import GEN7_POKEDEX, STATS
+    except ImportError:
+        from build_regional_data import GEN7_POKEDEX, STATS
+    if not isinstance(data, dict) or set(data) != {"schemaVersion", "source", "forms"} or data.get("schemaVersion") != 1:
+        return ["regional-forms.json has an invalid root"]
+    expected_source = {"showdownCommit": sd.SHOWDOWN_COMMIT, "pokedex": sd.DATASETS["pokedex"].provenance(), "gen7Pokedex": GEN7_POKEDEX.provenance()}
+    errors = [] if data.get("source") == expected_source else ["regional metadata source pin mismatch"]
+    forms = data.get("forms")
+    if not isinstance(forms, dict) or len(forms) != 36:
+        return errors + ["regional catalogue must contain both targets for all 18 Gen VII species"]
+    required = {"id", "form", "name", "showdownKey", "types", "baseStats", "abilities"}
+    for key, row in forms.items():
+        if not isinstance(row, dict) or set(row) != required:
+            errors.append(f"invalid regional row: {key}")
+            continue
+        dex, form = row.get("id"), row.get("form")
+        if type(dex) is not int or not 1 <= dex <= 807 or dex == 25 or not isinstance(form, str) or form not in {"alolan", "kanto"} or key != f"{dex}:{form}":
+            errors.append(f"invalid regional identity: {key}")
+        if f"{dex}:{'kanto' if form == 'alolan' else 'alolan'}" not in forms:
+            errors.append(f"missing regional counterpart: {key}")
+        if not isinstance(row.get("name"), str) or not row["name"].endswith(" (Alolan)" if form == "alolan" else " (Kanto)") or not isinstance(row.get("showdownKey"), str) or not row["showdownKey"]:
+            errors.append(f"invalid regional labels: {key}")
+        types = row.get("types")
+        if not isinstance(types, list) or not 1 <= len(types) <= 2 or any(not isinstance(t, str) or t not in POKEMON_TYPES for t in types) or len(set(types)) != len(types):
+            errors.append(f"invalid regional typing: {key}")
+        stats = row.get("baseStats")
+        if not isinstance(stats, dict) or set(stats) != STATS or any(type(v) is not int or not 1 <= v <= 255 for v in stats.values()):
+            errors.append(f"invalid regional stats: {key}")
+        abilities = row.get("abilities")
+        if not isinstance(abilities, dict) or "0" not in abilities or not set(abilities) <= {"0", "1", "H", "S"} or any(not isinstance(v, str) or not v for v in abilities.values()):
+            errors.append(f"invalid regional abilities: {key}")
+    return errors
+
+
 def validate_all() -> list[str]:
     pokemon = read_json(POKEMON_PATH)
     encounters = read_json(ENCOUNTERS_PATH)
     errors = validate_inputs(pokemon, encounters)
     errors.extend(validate_pokedex_details(read_json(POKEDEX_DETAILS_PATH)))
+    errors.extend(validate_regional_data(read_json(ROOT / "data" / "regional-forms.json")))
     errors.extend(validate_moves(read_json(MOVES_PATH)))
     for mode, (path, expected_locations) in VANILLA_ENCOUNTERS.items():
         errors.extend(
