@@ -1,12 +1,12 @@
 import { computed, type ReadonlySignal } from "@preact/signals";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { memo } from "preact/compat";
-import { ENCOUNTERS_BY_MODE, POKEMON, byDex, detailsByDex, formDetails } from "../data";
+import { ENCOUNTERS_BY_MODE, POKEMON, byDex, formDetails } from "../data";
 import { MODE_LABELS, crossModeOccurrences, getOccurrences, normalize, safeId } from "../domain";
 import {
   activeEncounters,
   activeUnlocks,
-  speciesCounts,
+  collectionCounts,
   drawerOpen,
   formDefinitions,
   formsTracked,
@@ -15,8 +15,10 @@ import {
   readOnly,
   searchTerm,
   selectedDex,
+  selectedRegionalForm,
   sidebarHidden,
   starred,
+  starredForms,
   toggleStar,
 } from "../state";
 import {
@@ -27,23 +29,14 @@ import {
   openPokemon,
 } from "../ui";
 import { CatchNext } from "./CatchNext";
+import { EvolutionControls } from "./EvolutionControls";
+import { collectionTargets, matchesTarget, targetKey, targetName, type CollectionTarget } from "../collection";
+import { isRegional, type RegionalForm } from "../regional";
+import { CollectionFacts } from "./CollectionFacts";
 import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts, TYPES, TypeMarks } from "./PokemonFacts";
 import { PopularMoves } from "./PopularMoves";
 import { FormStatusButton, PokemonIcon, StatusButton } from "./StatusControls";
-
-const evolutionIds = new Map(
-  POKEMON.flatMap((pokemon) => [
-    [normalize(pokemon.name), pokemon.id] as const,
-    [normalize(pokemon.slug), pokemon.id] as const,
-  ]),
-);
-
-// normalize() does an NFD Unicode normalization plus two regex passes; names never
-// change at runtime, so do it once per Pokémon instead of on every search keystroke.
-const normalizedNames = new Map(
-  POKEMON.map((pokemon) => [pokemon.id, normalize(pokemon.name)] as const),
-);
 
 // A computed per id so selecting a Pokémon only invalidates the previously and
 // newly selected row: @preact/signals only notifies a computed's subscribers when
@@ -51,21 +44,22 @@ const normalizedNames = new Map(
 // sides of the change and those rows never re-render at all (memo() alone can't
 // give this, since it only gates parent-driven updates, not a row's own read of
 // the shared selectedDex signal). Created lazily as rows first mount.
-const selectedFlags = new Map<number, ReadonlySignal<boolean>>();
-function selectedFlag(id: number): ReadonlySignal<boolean> {
-  let flag = selectedFlags.get(id);
+const selectedFlags = new Map<string, ReadonlySignal<boolean>>();
+function selectedFlag(id: number, form?: RegionalForm): ReadonlySignal<boolean> {
+  const key = targetKey({ id, form });
+  let flag = selectedFlags.get(key);
   if (!flag) {
-    flag = computed(() => selectedDex.value === id);
-    selectedFlags.set(id, flag);
+    flag = computed(() => selectedDex.value === id && (!formsTracked.value || selectedRegionalForm.value === form || (!selectedRegionalForm.value && form === "alolan")));
+    selectedFlags.set(key, flag);
   }
   return flag;
 }
 
-function DexCount({ filtered }: { filtered: number }) {
+function DexCount({ filtered, total }: { filtered: number; total: number }) {
   return (
     <div class="dex-count" id="dex-count">
-      <div>{filtered} of {POKEMON.length} Pokémon</div>
-      <StatusCounts counts={speciesCounts.value} label="Pokédex collection" />
+      <div>{filtered} of {total} {formsTracked.value ? "collection targets" : "Pokémon"}</div>
+      <StatusCounts counts={collectionCounts.value} label="Pokédex collection" />
     </div>
   );
 }
@@ -97,13 +91,14 @@ function Selection() {
   }
   const pokemon = byDex.get(selected);
   if (!pokemon) return null;
+  const form = formsTracked.value && isRegional(selected) ? selectedRegionalForm.value ?? "alolan" : undefined;
+  const name = targetName(pokemon, form);
   const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined);
   const otherModeOccurrences = crossModeOccurrences(
     ENCOUNTERS_BY_MODE,
     mode.value,
     selected,
   );
-  const details = detailsByDex.get(selected);
   const bulbapediaUrl = `https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(`${pokemon.name}_(Pokémon)`).replaceAll("%20", "_")}`;
   const forms = [...formDefinitions.values()].filter(
     (form) => form.speciesId === selected,
@@ -116,6 +111,7 @@ function Selection() {
         aria-label="Close these details and show what to catch next"
         onClick={() => {
           selectedDex.value = null;
+          selectedRegionalForm.value = undefined;
         }}
       >
         ← Catch next
@@ -123,7 +119,7 @@ function Selection() {
       <div class="selected-title">
         <PokemonIcon id={selected} />
         <span>
-          #{String(selected).padStart(3, "0")} {pokemon.name}
+          #{String(selected).padStart(3, "0")} {name}
         </span>
         <a
           class="bulbapedia-link"
@@ -134,10 +130,10 @@ function Selection() {
         >
           Bulbapedia ↗
         </a>
-        <StatusButton id={selected} context="selected" />
+        <StatusButton id={selected} form={form} context="selected" />
       </div>
-      {details && <PokemonFacts details={details} name={pokemon.name} labels />}
-      {formsTracked.value && forms.length > 0 && (
+      <CollectionFacts id={selected} form={form} labels />
+      {formsTracked.value && !isRegional(selected) && forms.length > 0 && (
         <div class="form-summary">
           <strong>Tracked forms (separate from location progress)</strong>
           <div class="form-detail-list">
@@ -190,42 +186,7 @@ function Selection() {
             })}
           </ul>
         )}
-        {/* Shown whenever the species evolves, even when it also has a direct wild
-            location above: a caught-but-unevolved Pichu or Feebas still needs the
-            reminder of how to finish its line. */}
-        {details?.evolution && (
-          <div class="evolution-path">
-            <span>Evolution path</span>
-            <ol aria-label={`Evolution path to ${pokemon.name}`}>
-              {details.evolution.map((step, index) => {
-                const id = evolutionIds.get(normalize(step.name));
-                return (
-                  <li key={step.name}>
-                    {index > 0 && (
-                      <span class="evolution-method">{step.method} →</span>
-                    )}
-                    {id ? (
-                      <button
-                        class="evolution-link"
-                        type="button"
-                        onClick={() => openPokemon(id)}
-                      >
-                        {step.name}
-                      </button>
-                    ) : (
-                      step.name
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
-        {!occurrences.length && !details?.evolution && (
-          <p class="muted">
-            This Pokémon does not evolve from another Pokémon.
-          </p>
-        )}
+        <EvolutionControls target={{ id: selected, form }} />
         {otherModeOccurrences.length > 0 && (
           <details class="also-catchable">
             <summary>
@@ -250,8 +211,8 @@ function Selection() {
   );
 }
 
-function StarButton({ id, name }: { id: number; name: string }) {
-  const pinned = isStarred(id);
+function StarButton({ id, name, form }: { id: number; name: string; form?: RegionalForm }) {
+  const pinned = isStarred(id, form);
   return (
     <button
       type="button"
@@ -266,7 +227,7 @@ function StarButton({ id, name }: { id: number; name: string }) {
           : `Star ${name} to keep it at the top of the list`
       }
       title={pinned ? "Unstar" : "Star and keep at the top"}
-      onClick={() => toggleStar(id)}
+      onClick={() => toggleStar(id, form)}
     >
       {pinned ? "★" : "☆"}
     </button>
@@ -279,19 +240,20 @@ function StarButton({ id, name }: { id: number; name: string }) {
 const DexRowContent = memo(function DexRowContent({
   id,
   name,
+  form,
 }: {
   id: number;
   name: string;
+  form?: RegionalForm;
 }) {
-  const selected = selectedFlag(id).value;
-  const details = detailsByDex.get(id);
+  const selected = selectedFlag(id, form).value;
   // Render count exposed only for the Playwright test that guards the isolated
   // selectedFlag() above; an integer attribute costs nothing worth measuring.
   const renders = useRef(0);
   renders.current += 1;
   return (
     <>
-      <StarButton id={id} name={name} />
+      <StarButton id={id} name={name} form={form} />
       <button
         type="button"
         class="dex-select"
@@ -299,15 +261,15 @@ const DexRowContent = memo(function DexRowContent({
         data-species={id}
         data-renders={renders.current}
         aria-current={selected}
-        onClick={() => openPokemon(id)}
+        onClick={() => openPokemon(id, form)}
       >
         <PokemonIcon id={id} />
         <span class="dex-name">
           {String(id).padStart(3, "0")} · {name}
         </span>
-        {details && <PokemonFacts details={details} name={name} />}
+        <CollectionFacts id={id} form={form} />
       </button>
-      <StatusButton id={id} context="Pokédex" />
+      <StatusButton id={id} form={form} context="Pokédex" />
     </>
   );
 });
@@ -319,23 +281,15 @@ const ROW_CHUNK = 30;
 
 export function Pokedex() {
   const query = normalize(searchTerm.value);
-  const matches = (pokemon: (typeof POKEMON)[number]) =>
-    !query ||
-    normalizedNames.get(pokemon.id)!.includes(query) ||
-    String(pokemon.id).padStart(3, "0").includes(query) ||
-    String(pokemon.id) === query;
+  const matches = (target: CollectionTarget) => matchesTarget(byDex.get(target.id)!, target, query);
   // Starred species are pinned to the top; everything else keeps National Dex
   // order. The sort is stable for equal ranks. Re-sorting all 807 entries is wasted
   // work on renders that only touch search or the sidebar, so it only recomputes
   // when the starred list itself changes.
-  const rows = useMemo(() => {
-    const pinned = new Set(starred.value);
-    return [...POKEMON].sort(
-      (a, b) =>
-        Number(pinned.has(b.id)) - Number(pinned.has(a.id)) || a.id - b.id,
-    );
-  }, [starred.value]);
-  const matchCount = query ? POKEMON.filter(matches).length : POKEMON.length;
+  const rows = useMemo(() => collectionTargets(POKEMON, formsTracked.value).sort(
+    (a, b) => Number(isStarred(b.id, b.form)) - Number(isStarred(a.id, a.form)) || a.id - b.id,
+  ), [formsTracked.value, starred.value, starredForms.value]);
+  const matchCount = query ? rows.filter(matches).length : rows.length;
   const open = drawerOpen.value;
   const mobile = isMobile.value;
   const hidden = mobile ? !open : sidebarHidden.value;
@@ -345,12 +299,12 @@ export function Pokedex() {
   // search is cleared cost as much as the first open.
   const [mountedRows, setMountedRows] = useState(hidden ? 0 : ROW_CHUNK);
   useEffect(() => {
-    if ((hidden && !mountedRows) || mountedRows >= POKEMON.length) return;
+    if ((hidden && !mountedRows) || mountedRows >= rows.length) return;
     const frame = requestAnimationFrame(() =>
       setMountedRows((count) => count + ROW_CHUNK),
     );
     return () => cancelAnimationFrame(frame);
-  }, [hidden, mountedRows]);
+  }, [hidden, mountedRows, rows.length]);
   useEffect(() => {
     if (!open) return;
     // openPokemon() (opened for a specific Pokémon) already queued focus for the
@@ -402,7 +356,7 @@ export function Pokedex() {
               searchTerm.value = event.currentTarget.value;
             }}
           />
-          <DexCount filtered={matchCount} />
+          <DexCount filtered={matchCount} total={rows.length} />
           <details class="type-legend">
             <summary>Type colors</summary>
             <div>
@@ -417,9 +371,9 @@ export function Pokedex() {
         <div class="dex-content">
           <SelectionPanel />
           <div class="dex-list" id="dex-list">
-            {rows.slice(0, mountedRows).map((pokemon) => (
-              <div class="dex-row" key={pokemon.id} hidden={!matches(pokemon)}>
-                <DexRowContent id={pokemon.id} name={pokemon.name} />
+            {rows.slice(0, mountedRows).map((target) => (
+              <div class="dex-row" key={targetKey(target)} data-target={targetKey(target)} hidden={!matches(target)}>
+                <DexRowContent id={target.id} form={target.form} name={targetName(byDex.get(target.id)!, target.form)} />
               </div>
             ))}
             {mountedRows > 0 && !matchCount && (

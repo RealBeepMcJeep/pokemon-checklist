@@ -11,6 +11,8 @@ import {
 } from "../state";
 import { changeSpecies } from "../ui";
 import type { Ally, EncounterRow, Status } from "../types";
+import { targetName } from "../collection";
+import type { RegionalForm } from "../regional";
 
 const STATUS_SYMBOL = {
   none: "❌",
@@ -41,24 +43,33 @@ export function StatusButton({
   id,
   context = "",
   compact = false,
+  form,
 }: {
   id: number;
   context?: string;
   compact?: boolean;
+  form?: RegionalForm;
 }) {
-  const status = speciesSignal(id).value;
-  const displayName = byDex.get(id)?.name || "Pokémon";
-  const next = STATUS_LABEL[cycleStatus(status)];
-  const label = `${displayName}${context ? ` ${context}` : ""} status: ${STATUS_LABEL[status]}. Activate to mark as ${next}.`;
+  const key = form ? `${id}:${form}` : undefined;
+  const status = key ? formSignal(key).value : speciesSignal(id).value;
+  const pokemon = byDex.get(id);
+  const displayName = pokemon ? targetName(pokemon, form) : "Pokémon";
+  const statusLabel = (value: Status) => key && value === "none" ? "Not caught" : STATUS_LABEL[value];
+  const next = statusLabel(cycleStatus(status));
+  const label = `${displayName}${context ? ` ${context}` : ""} status: ${statusLabel(status)}. Activate to mark as ${next}.`;
   return (
     <button
       type="button"
       class={`status-button status-${status} ${compact ? "compact-status" : ""}`}
-      data-action="species"
+      data-action={key ? "form" : "species"}
+      data-form={key}
       disabled={readOnly.value !== null}
       data-species={id}
       aria-label={label}
-      onClick={() => changeSpecies(id)}
+      onClick={() => {
+        if (key) { cycleForm(key); savedNotice("Form status"); }
+        else changeSpecies(id);
+      }}
     >
       {compact ? (
         <>
@@ -66,11 +77,11 @@ export function StatusButton({
             {STATUS_SYMBOL[status]}
           </span>
           <span class="status-text visually-hidden">
-            {STATUS_LABEL[status]}
+            {statusLabel(status)}
           </span>
         </>
       ) : (
-        <span class="status-text">{STATUS_LABEL[status]}</span>
+        <span class="status-text">{statusLabel(status)}</span>
       )}
     </button>
   );

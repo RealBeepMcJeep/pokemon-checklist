@@ -1,0 +1,5459 @@
+{
+  "edges": [
+    {
+      "from": "1",
+      "stock": "Level 16",
+      "to": "2"
+    },
+    {
+      "from": "10",
+      "stock": "Level 7",
+      "to": "11"
+    },
+    {
+      "from": "100",
+      "stock": "Level 30",
+      "to": "101"
+    },
+    {
+      "conditions": {
+        "moon": "In Alola.",
+        "photonic-prismatic": "Evolve in Alola, not Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "In Alola.",
+        "ultra-moon": "Evolve in Alola, not Ultra Space.",
+        "ultra-sun": "Evolve in Alola, not Ultra Space."
+      },
+      "from": "102",
+      "stock": "Use Leaf Stone",
+      "to": "103:alolan"
+    },
+    {
+      "conditions": {
+        "moon": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "photonic-prismatic": "Evolve in Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "ultra-moon": "Evolve in Ultra Space.",
+        "ultra-sun": "Evolve in Ultra Space."
+      },
+      "from": "102",
+      "stock": "Use Leaf Stone",
+      "to": "103:kanto"
+    },
+    {
+      "conditions": {
+        "moon": "In Alola.",
+        "photonic-prismatic": "Evolve in Alola, not Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "In Alola.",
+        "ultra-moon": "Evolve in Alola, not Ultra Space.",
+        "ultra-sun": "Evolve in Alola, not Ultra Space."
+      },
+      "from": "104",
+      "stock": "Level 28 at night",
+      "to": "105:alolan"
+    },
+    {
+      "conditions": {
+        "moon": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "photonic-prismatic": "Evolve in Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "ultra-moon": "Evolve in Ultra Space.",
+        "ultra-sun": "Evolve in Ultra Space."
+      },
+      "from": "104",
+      "stock": "Level 28",
+      "to": "105:kanto"
+    },
+    {
+      "from": "108",
+      "stock": "Level up knowing Rollout",
+      "to": "463"
+    },
+    {
+      "from": "109",
+      "stock": "Level 35",
+      "to": "110"
+    },
+    {
+      "from": "11",
+      "stock": "Level 10",
+      "to": "12"
+    },
+    {
+      "from": "111",
+      "stock": "Level 42",
+      "to": "112"
+    },
+    {
+      "from": "112",
+      "prismatic": "level holding Protector",
+      "stock": "Trade",
+      "to": "464"
+    },
+    {
+      "from": "113",
+      "stock": "Level up with high friendship",
+      "to": "242"
+    },
+    {
+      "from": "114",
+      "stock": "Level up knowing Ancient Power",
+      "to": "465"
+    },
+    {
+      "from": "116",
+      "stock": "Level 32",
+      "to": "117"
+    },
+    {
+      "from": "117",
+      "prismatic": "level holding Dragon Scale",
+      "stock": "Trade",
+      "to": "230"
+    },
+    {
+      "from": "118",
+      "stock": "Level 33",
+      "to": "119"
+    },
+    {
+      "from": "120",
+      "stock": "Use Water Stone",
+      "to": "121"
+    },
+    {
+      "from": "123",
+      "prismatic": "level holding Metal Coat",
+      "stock": "Trade",
+      "to": "212"
+    },
+    {
+      "from": "125",
+      "prismatic": "level holding Electirizer",
+      "stock": "Trade",
+      "to": "466"
+    },
+    {
+      "from": "126",
+      "prismatic": "level holding Magmarizer",
+      "stock": "Trade",
+      "to": "467"
+    },
+    {
+      "from": "129",
+      "stock": "Level 20",
+      "to": "130"
+    },
+    {
+      "from": "13",
+      "stock": "Level 7",
+      "to": "14"
+    },
+    {
+      "from": "133",
+      "stock": "Use Water Stone",
+      "to": "134"
+    },
+    {
+      "from": "133",
+      "stock": "Use Thunder Stone",
+      "to": "135"
+    },
+    {
+      "from": "133",
+      "stock": "Use Fire Stone",
+      "to": "136"
+    },
+    {
+      "from": "133",
+      "stock": "Level up with high friendship during the day",
+      "to": "196"
+    },
+    {
+      "from": "133",
+      "stock": "Level up with high friendship at night",
+      "to": "197"
+    },
+    {
+      "from": "133",
+      "prismatic": "Leaf Stone",
+      "stock": "Level up near a Moss Rock",
+      "to": "470"
+    },
+    {
+      "from": "133",
+      "prismatic": "Ice Stone",
+      "stock": "Level up near an Ice Rock",
+      "to": "471"
+    },
+    {
+      "from": "133",
+      "stock": "Level up with a Fairy-type move and two levels of Affection",
+      "to": "700"
+    },
+    {
+      "from": "137",
+      "prismatic": "level holding Up-Grade",
+      "stock": "Trade",
+      "to": "233"
+    },
+    {
+      "from": "138",
+      "stock": "Level 40",
+      "to": "139"
+    },
+    {
+      "from": "14",
+      "stock": "Level 10",
+      "to": "15"
+    },
+    {
+      "from": "140",
+      "stock": "Level 40",
+      "to": "141"
+    },
+    {
+      "from": "147",
+      "stock": "Level 30",
+      "to": "148"
+    },
+    {
+      "from": "148",
+      "stock": "Level 55",
+      "to": "149"
+    },
+    {
+      "from": "152",
+      "stock": "Level 16",
+      "to": "153"
+    },
+    {
+      "from": "153",
+      "stock": "Level 32",
+      "to": "154"
+    },
+    {
+      "from": "155",
+      "stock": "Level 14",
+      "to": "156"
+    },
+    {
+      "from": "156",
+      "stock": "Level 36",
+      "to": "157"
+    },
+    {
+      "from": "158",
+      "stock": "Level 18",
+      "to": "159"
+    },
+    {
+      "from": "159",
+      "stock": "Level 30",
+      "to": "160"
+    },
+    {
+      "from": "16",
+      "stock": "Level 18",
+      "to": "17"
+    },
+    {
+      "from": "161",
+      "stock": "Level 15",
+      "to": "162"
+    },
+    {
+      "from": "163",
+      "stock": "Level 20",
+      "to": "164"
+    },
+    {
+      "from": "165",
+      "stock": "Level 18",
+      "to": "166"
+    },
+    {
+      "from": "167",
+      "stock": "Level 22",
+      "to": "168"
+    },
+    {
+      "from": "17",
+      "stock": "Level 36",
+      "to": "18"
+    },
+    {
+      "from": "170",
+      "stock": "Level 27",
+      "to": "171"
+    },
+    {
+      "from": "172",
+      "stock": "Level up with high friendship",
+      "to": "25"
+    },
+    {
+      "from": "173",
+      "stock": "Level up with high friendship",
+      "to": "35"
+    },
+    {
+      "from": "174",
+      "stock": "Level up with high friendship",
+      "to": "39"
+    },
+    {
+      "from": "175",
+      "stock": "Level up with high friendship",
+      "to": "176"
+    },
+    {
+      "from": "176",
+      "stock": "Use Shiny Stone",
+      "to": "468"
+    },
+    {
+      "from": "177",
+      "stock": "Level 25",
+      "to": "178"
+    },
+    {
+      "from": "179",
+      "stock": "Level 15",
+      "to": "180"
+    },
+    {
+      "from": "180",
+      "stock": "Level 30",
+      "to": "181"
+    },
+    {
+      "from": "183",
+      "stock": "Level 18",
+      "to": "184"
+    },
+    {
+      "from": "187",
+      "stock": "Level 18",
+      "to": "188"
+    },
+    {
+      "from": "188",
+      "stock": "Level 27",
+      "to": "189"
+    },
+    {
+      "from": "190",
+      "stock": "Level up knowing Double Hit",
+      "to": "424"
+    },
+    {
+      "from": "191",
+      "stock": "Use Sun Stone",
+      "to": "192"
+    },
+    {
+      "from": "193",
+      "stock": "Level up knowing Ancient Power",
+      "to": "469"
+    },
+    {
+      "from": "194",
+      "stock": "Level 20",
+      "to": "195"
+    },
+    {
+      "from": "198",
+      "stock": "Use Dusk Stone",
+      "to": "430"
+    },
+    {
+      "from": "19:alolan",
+      "stock": "Level 20 at night",
+      "to": "20:alolan"
+    },
+    {
+      "from": "19:kanto",
+      "stock": "Level 20",
+      "to": "20:kanto"
+    },
+    {
+      "from": "2",
+      "stock": "Level 32",
+      "to": "3"
+    },
+    {
+      "from": "200",
+      "stock": "Use Dusk Stone",
+      "to": "429"
+    },
+    {
+      "from": "204",
+      "stock": "Level 31",
+      "to": "205"
+    },
+    {
+      "from": "207",
+      "stock": "Level up holding Razor Fang at night",
+      "to": "472"
+    },
+    {
+      "from": "209",
+      "stock": "Level 23",
+      "to": "210"
+    },
+    {
+      "from": "21",
+      "stock": "Level 20",
+      "to": "22"
+    },
+    {
+      "from": "215",
+      "stock": "Level up holding Razor Claw",
+      "to": "461"
+    },
+    {
+      "from": "216",
+      "stock": "Level 30",
+      "to": "217"
+    },
+    {
+      "from": "218",
+      "stock": "Level 38",
+      "to": "219"
+    },
+    {
+      "from": "220",
+      "stock": "Level 33",
+      "to": "221"
+    },
+    {
+      "from": "221",
+      "stock": "Level up knowing Ancient Power",
+      "to": "473"
+    },
+    {
+      "from": "223",
+      "stock": "Level 25",
+      "to": "224"
+    },
+    {
+      "from": "228",
+      "stock": "Level 24",
+      "to": "229"
+    },
+    {
+      "from": "23",
+      "stock": "Level 22",
+      "to": "24"
+    },
+    {
+      "from": "231",
+      "stock": "Level 25",
+      "to": "232"
+    },
+    {
+      "from": "233",
+      "prismatic": "level holding Dubious Disc",
+      "stock": "Trade",
+      "to": "474"
+    },
+    {
+      "from": "236",
+      "stock": "Level 20",
+      "to": "106"
+    },
+    {
+      "from": "236",
+      "stock": "Level 20",
+      "to": "107"
+    },
+    {
+      "from": "236",
+      "stock": "Level 20",
+      "to": "237"
+    },
+    {
+      "from": "238",
+      "stock": "Level 30",
+      "to": "124"
+    },
+    {
+      "from": "239",
+      "stock": "Level 30",
+      "to": "125"
+    },
+    {
+      "from": "240",
+      "stock": "Level 30",
+      "to": "126"
+    },
+    {
+      "from": "246",
+      "stock": "Level 30",
+      "to": "247"
+    },
+    {
+      "from": "247",
+      "stock": "Level 55",
+      "to": "248"
+    },
+    {
+      "conditions": {
+        "moon": "In Alola.",
+        "photonic-prismatic": "Evolve in Alola, not Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "In Alola.",
+        "ultra-moon": "Evolve in Alola, not Ultra Space.",
+        "ultra-sun": "Evolve in Alola, not Ultra Space."
+      },
+      "from": "25",
+      "stock": "Use Thunder Stone",
+      "to": "26:alolan"
+    },
+    {
+      "conditions": {
+        "moon": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "photonic-prismatic": "Evolve in Ultra Space. Stock USUM rule; hack-specific location behavior unverified.",
+        "sun": "Trade/transfer needed; original form cannot be evolved locally in Sun/Moon.",
+        "ultra-moon": "Evolve in Ultra Space.",
+        "ultra-sun": "Evolve in Ultra Space."
+      },
+      "from": "25",
+      "stock": "Use Thunder Stone",
+      "to": "26:kanto"
+    },
+    {
+      "from": "252",
+      "stock": "Level 16",
+      "to": "253"
+    },
+    {
+      "from": "253",
+      "stock": "Level 36",
+      "to": "254"
+    },
+    {
+      "from": "255",
+      "stock": "Level 16",
+      "to": "256"
+    },
+    {
+      "from": "256",
+      "stock": "Level 36",
+      "to": "257"
+    },
+    {
+      "from": "258",
+      "stock": "Level 16",
+      "to": "259"
+    },
+    {
+      "from": "259",
+      "stock": "Level 36",
+      "to": "260"
+    },
+    {
+      "from": "261",
+      "stock": "Level 18",
+      "to": "262"
+    },
+    {
+      "from": "263",
+      "stock": "Level 20",
+      "to": "264"
+    },
+    {
+      "from": "265",
+      "stock": "Level 7",
+      "to": "266"
+    },
+    {
+      "from": "265",
+      "stock": "Level 7",
+      "to": "268"
+    },
+    {
+      "from": "266",
+      "stock": "Level 10",
+      "to": "267"
+    },
+    {
+      "from": "268",
+      "stock": "Level 10",
+      "to": "269"
+    },
+    {
+      "from": "270",
+      "stock": "Level 14",
+      "to": "271"
+    },
+    {
+      "from": "271",
+      "stock": "Use Water Stone",
+      "to": "272"
+    },
+    {
+      "from": "273",
+      "stock": "Level 14",
+      "to": "274"
+    },
+    {
+      "from": "274",
+      "stock": "Use Leaf Stone",
+      "to": "275"
+    },
+    {
+      "from": "276",
+      "stock": "Level 22",
+      "to": "277"
+    },
+    {
+      "from": "278",
+      "stock": "Level 25",
+      "to": "279"
+    },
+    {
+      "from": "27:alolan",
+      "stock": "Use Ice Stone",
+      "to": "28:alolan"
+    },
+    {
+      "from": "27:kanto",
+      "stock": "Level 22",
+      "to": "28:kanto"
+    },
+    {
+      "from": "280",
+      "stock": "Level 20",
+      "to": "281"
+    },
+    {
+      "from": "281",
+      "stock": "Level 30",
+      "to": "282"
+    },
+    {
+      "from": "281",
+      "stock": "Use Dawn Stone",
+      "to": "475"
+    },
+    {
+      "from": "283",
+      "stock": "Level 22",
+      "to": "284"
+    },
+    {
+      "from": "285",
+      "stock": "Level 23",
+      "to": "286"
+    },
+    {
+      "from": "287",
+      "stock": "Level 18",
+      "to": "288"
+    },
+    {
+      "from": "288",
+      "stock": "Level 36",
+      "to": "289"
+    },
+    {
+      "from": "29",
+      "stock": "Level 16",
+      "to": "30"
+    },
+    {
+      "from": "290",
+      "stock": "Level 20",
+      "to": "291"
+    },
+    {
+      "from": "290",
+      "stock": "Level 20",
+      "to": "292"
+    },
+    {
+      "from": "293",
+      "stock": "Level 20",
+      "to": "294"
+    },
+    {
+      "from": "294",
+      "stock": "Level 40",
+      "to": "295"
+    },
+    {
+      "from": "296",
+      "stock": "Level 24",
+      "to": "297"
+    },
+    {
+      "from": "298",
+      "stock": "Level up with high friendship",
+      "to": "183"
+    },
+    {
+      "from": "299",
+      "prismatic": "Thunder Stone",
+      "stock": "Level up near a special magnetic field",
+      "to": "476"
+    },
+    {
+      "from": "30",
+      "stock": "Use Moon Stone",
+      "to": "31"
+    },
+    {
+      "from": "300",
+      "stock": "Use Moon Stone",
+      "to": "301"
+    },
+    {
+      "from": "304",
+      "stock": "Level 32",
+      "to": "305"
+    },
+    {
+      "from": "305",
+      "stock": "Level 42",
+      "to": "306"
+    },
+    {
+      "from": "307",
+      "stock": "Level 37",
+      "to": "308"
+    },
+    {
+      "from": "309",
+      "stock": "Level 26",
+      "to": "310"
+    },
+    {
+      "from": "315",
+      "stock": "Use Shiny Stone",
+      "to": "407"
+    },
+    {
+      "from": "316",
+      "stock": "Level 26",
+      "to": "317"
+    },
+    {
+      "from": "318",
+      "stock": "Level 30",
+      "to": "319"
+    },
+    {
+      "from": "32",
+      "stock": "Level 16",
+      "to": "33"
+    },
+    {
+      "from": "320",
+      "stock": "Level 40",
+      "to": "321"
+    },
+    {
+      "from": "322",
+      "stock": "Level 33",
+      "to": "323"
+    },
+    {
+      "from": "325",
+      "stock": "Level 32",
+      "to": "326"
+    },
+    {
+      "from": "328",
+      "stock": "Level 35",
+      "to": "329"
+    },
+    {
+      "from": "329",
+      "stock": "Level 45",
+      "to": "330"
+    },
+    {
+      "from": "33",
+      "stock": "Use Moon Stone",
+      "to": "34"
+    },
+    {
+      "from": "331",
+      "stock": "Level 32",
+      "to": "332"
+    },
+    {
+      "from": "333",
+      "stock": "Level 35",
+      "to": "334"
+    },
+    {
+      "from": "339",
+      "stock": "Level 30",
+      "to": "340"
+    },
+    {
+      "from": "341",
+      "stock": "Level 30",
+      "to": "342"
+    },
+    {
+      "from": "343",
+      "stock": "Level 36",
+      "to": "344"
+    },
+    {
+      "from": "345",
+      "stock": "Level 40",
+      "to": "346"
+    },
+    {
+      "from": "347",
+      "stock": "Level 40",
+      "to": "348"
+    },
+    {
+      "from": "349",
+      "prismatic": "level holding Prism Scale",
+      "stock": "Trade",
+      "to": "350"
+    },
+    {
+      "from": "35",
+      "stock": "Use Moon Stone",
+      "to": "36"
+    },
+    {
+      "from": "353",
+      "stock": "Level 37",
+      "to": "354"
+    },
+    {
+      "from": "355",
+      "stock": "Level 37",
+      "to": "356"
+    },
+    {
+      "from": "356",
+      "prismatic": "level holding Reaper Cloth",
+      "stock": "Trade",
+      "to": "477"
+    },
+    {
+      "from": "360",
+      "stock": "Level 15",
+      "to": "202"
+    },
+    {
+      "from": "361",
+      "prismatic": "Level 30",
+      "stock": "Level 42",
+      "to": "362"
+    },
+    {
+      "from": "361",
+      "stock": "Use Dawn Stone",
+      "to": "478"
+    },
+    {
+      "from": "363",
+      "stock": "Level 32",
+      "to": "364"
+    },
+    {
+      "from": "364",
+      "stock": "Level 44",
+      "to": "365"
+    },
+    {
+      "from": "366",
+      "prismatic": "level holding Deep Sea Tooth",
+      "stock": "Trade",
+      "to": "367"
+    },
+    {
+      "from": "366",
+      "prismatic": "level holding Deep Sea Scale",
+      "stock": "Trade",
+      "to": "368"
+    },
+    {
+      "from": "371",
+      "stock": "Level 30",
+      "to": "372"
+    },
+    {
+      "from": "372",
+      "stock": "Level 50",
+      "to": "373"
+    },
+    {
+      "from": "374",
+      "stock": "Level 20",
+      "to": "375"
+    },
+    {
+      "from": "375",
+      "stock": "Level 45",
+      "to": "376"
+    },
+    {
+      "from": "37:alolan",
+      "stock": "Use Ice Stone",
+      "to": "38:alolan"
+    },
+    {
+      "from": "37:kanto",
+      "stock": "Use Fire Stone",
+      "to": "38:kanto"
+    },
+    {
+      "from": "387",
+      "stock": "Level 18",
+      "to": "388"
+    },
+    {
+      "from": "388",
+      "stock": "Level 32",
+      "to": "389"
+    },
+    {
+      "from": "39",
+      "stock": "Use Moon Stone",
+      "to": "40"
+    },
+    {
+      "from": "390",
+      "stock": "Level 14",
+      "to": "391"
+    },
+    {
+      "from": "391",
+      "stock": "Level 36",
+      "to": "392"
+    },
+    {
+      "from": "393",
+      "stock": "Level 16",
+      "to": "394"
+    },
+    {
+      "from": "394",
+      "stock": "Level 36",
+      "to": "395"
+    },
+    {
+      "from": "396",
+      "stock": "Level 14",
+      "to": "397"
+    },
+    {
+      "from": "397",
+      "stock": "Level 34",
+      "to": "398"
+    },
+    {
+      "from": "399",
+      "stock": "Level 15",
+      "to": "400"
+    },
+    {
+      "from": "4",
+      "stock": "Level 16",
+      "to": "5"
+    },
+    {
+      "from": "401",
+      "stock": "Level 10",
+      "to": "402"
+    },
+    {
+      "from": "403",
+      "stock": "Level 15",
+      "to": "404"
+    },
+    {
+      "from": "404",
+      "stock": "Level 30",
+      "to": "405"
+    },
+    {
+      "from": "406",
+      "stock": "Level up with high friendship during the day",
+      "to": "315"
+    },
+    {
+      "from": "408",
+      "stock": "Level 30",
+      "to": "409"
+    },
+    {
+      "from": "41",
+      "stock": "Level 22",
+      "to": "42"
+    },
+    {
+      "from": "410",
+      "stock": "Level 30",
+      "to": "411"
+    },
+    {
+      "from": "412",
+      "stock": "Level 20",
+      "to": "413"
+    },
+    {
+      "from": "412",
+      "stock": "Level 20",
+      "to": "414"
+    },
+    {
+      "from": "415",
+      "stock": "Level 21",
+      "to": "416"
+    },
+    {
+      "from": "418",
+      "stock": "Level 26",
+      "to": "419"
+    },
+    {
+      "from": "42",
+      "stock": "Level up with high friendship",
+      "to": "169"
+    },
+    {
+      "from": "420",
+      "stock": "Level 25",
+      "to": "421"
+    },
+    {
+      "from": "422",
+      "stock": "Level 30",
+      "to": "423"
+    },
+    {
+      "from": "425",
+      "stock": "Level 28",
+      "to": "426"
+    },
+    {
+      "from": "427",
+      "stock": "Level up with high friendship",
+      "to": "428"
+    },
+    {
+      "from": "43",
+      "stock": "Level 21",
+      "to": "44"
+    },
+    {
+      "from": "431",
+      "stock": "Level 38",
+      "to": "432"
+    },
+    {
+      "from": "433",
+      "stock": "Level up with high friendship at night",
+      "to": "358"
+    },
+    {
+      "from": "434",
+      "stock": "Level 34",
+      "to": "435"
+    },
+    {
+      "from": "436",
+      "stock": "Level 33",
+      "to": "437"
+    },
+    {
+      "from": "438",
+      "stock": "Level up knowing Mimic",
+      "to": "185"
+    },
+    {
+      "from": "439",
+      "stock": "Level up knowing Mimic",
+      "to": "122"
+    },
+    {
+      "from": "44",
+      "stock": "Use Sun Stone",
+      "to": "182"
+    },
+    {
+      "from": "44",
+      "stock": "Use Leaf Stone",
+      "to": "45"
+    },
+    {
+      "from": "440",
+      "stock": "Level up holding Oval Stone during the day",
+      "to": "113"
+    },
+    {
+      "from": "443",
+      "stock": "Level 24",
+      "to": "444"
+    },
+    {
+      "from": "444",
+      "stock": "Level 48",
+      "to": "445"
+    },
+    {
+      "from": "446",
+      "stock": "Level up with high friendship",
+      "to": "143"
+    },
+    {
+      "from": "447",
+      "stock": "Level up with high friendship during the day",
+      "to": "448"
+    },
+    {
+      "from": "449",
+      "stock": "Level 34",
+      "to": "450"
+    },
+    {
+      "from": "451",
+      "stock": "Level 40",
+      "to": "452"
+    },
+    {
+      "from": "453",
+      "stock": "Level 37",
+      "to": "454"
+    },
+    {
+      "from": "456",
+      "stock": "Level 31",
+      "to": "457"
+    },
+    {
+      "from": "458",
+      "stock": "Level up with a Remoraid in party",
+      "to": "226"
+    },
+    {
+      "from": "459",
+      "stock": "Level 40",
+      "to": "460"
+    },
+    {
+      "from": "46",
+      "stock": "Level 24",
+      "to": "47"
+    },
+    {
+      "from": "48",
+      "stock": "Level 31",
+      "to": "49"
+    },
+    {
+      "from": "495",
+      "stock": "Level 17",
+      "to": "496"
+    },
+    {
+      "from": "496",
+      "stock": "Level 36",
+      "to": "497"
+    },
+    {
+      "from": "498",
+      "stock": "Level 17",
+      "to": "499"
+    },
+    {
+      "from": "499",
+      "stock": "Level 36",
+      "to": "500"
+    },
+    {
+      "from": "5",
+      "stock": "Level 36",
+      "to": "6"
+    },
+    {
+      "from": "501",
+      "stock": "Level 17",
+      "to": "502"
+    },
+    {
+      "from": "502",
+      "stock": "Level 36",
+      "to": "503"
+    },
+    {
+      "from": "504",
+      "stock": "Level 20",
+      "to": "505"
+    },
+    {
+      "from": "506",
+      "stock": "Level 16",
+      "to": "507"
+    },
+    {
+      "from": "507",
+      "stock": "Level 32",
+      "to": "508"
+    },
+    {
+      "from": "509",
+      "stock": "Level 20",
+      "to": "510"
+    },
+    {
+      "from": "50:alolan",
+      "stock": "Level 26",
+      "to": "51:alolan"
+    },
+    {
+      "from": "50:kanto",
+      "stock": "Level 26",
+      "to": "51:kanto"
+    },
+    {
+      "from": "511",
+      "stock": "Use Leaf Stone",
+      "to": "512"
+    },
+    {
+      "from": "513",
+      "stock": "Use Fire Stone",
+      "to": "514"
+    },
+    {
+      "from": "515",
+      "stock": "Use Water Stone",
+      "to": "516"
+    },
+    {
+      "from": "517",
+      "stock": "Use Moon Stone",
+      "to": "518"
+    },
+    {
+      "from": "519",
+      "stock": "Level 21",
+      "to": "520"
+    },
+    {
+      "from": "520",
+      "stock": "Level 32",
+      "to": "521"
+    },
+    {
+      "from": "522",
+      "stock": "Level 27",
+      "to": "523"
+    },
+    {
+      "from": "524",
+      "stock": "Level 25",
+      "to": "525"
+    },
+    {
+      "from": "525",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "526"
+    },
+    {
+      "from": "527",
+      "stock": "Level up with high friendship",
+      "to": "528"
+    },
+    {
+      "from": "529",
+      "stock": "Level 31",
+      "to": "530"
+    },
+    {
+      "from": "52:alolan",
+      "stock": "Level up with high friendship",
+      "to": "53:alolan"
+    },
+    {
+      "from": "52:kanto",
+      "stock": "Level 28",
+      "to": "53:kanto"
+    },
+    {
+      "from": "532",
+      "stock": "Level 25",
+      "to": "533"
+    },
+    {
+      "from": "533",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "534"
+    },
+    {
+      "from": "535",
+      "stock": "Level 25",
+      "to": "536"
+    },
+    {
+      "from": "536",
+      "stock": "Level 36",
+      "to": "537"
+    },
+    {
+      "from": "54",
+      "stock": "Level 33",
+      "to": "55"
+    },
+    {
+      "from": "540",
+      "stock": "Level 20",
+      "to": "541"
+    },
+    {
+      "from": "541",
+      "stock": "Level up with high friendship",
+      "to": "542"
+    },
+    {
+      "from": "543",
+      "stock": "Level 22",
+      "to": "544"
+    },
+    {
+      "from": "544",
+      "stock": "Level 30",
+      "to": "545"
+    },
+    {
+      "from": "546",
+      "stock": "Use Sun Stone",
+      "to": "547"
+    },
+    {
+      "from": "548",
+      "stock": "Use Sun Stone",
+      "to": "549"
+    },
+    {
+      "from": "551",
+      "stock": "Level 29",
+      "to": "552"
+    },
+    {
+      "from": "552",
+      "stock": "Level 40",
+      "to": "553"
+    },
+    {
+      "from": "554",
+      "stock": "Level 35",
+      "to": "555"
+    },
+    {
+      "from": "557",
+      "stock": "Level 34",
+      "to": "558"
+    },
+    {
+      "from": "559",
+      "stock": "Level 39",
+      "to": "560"
+    },
+    {
+      "from": "56",
+      "stock": "Level 28",
+      "to": "57"
+    },
+    {
+      "from": "562",
+      "stock": "Level 34",
+      "to": "563"
+    },
+    {
+      "from": "564",
+      "stock": "Level 37",
+      "to": "565"
+    },
+    {
+      "from": "566",
+      "stock": "Level 37",
+      "to": "567"
+    },
+    {
+      "from": "568",
+      "stock": "Level 36",
+      "to": "569"
+    },
+    {
+      "from": "570",
+      "stock": "Level 30",
+      "to": "571"
+    },
+    {
+      "from": "572",
+      "stock": "Use Shiny Stone",
+      "to": "573"
+    },
+    {
+      "from": "574",
+      "stock": "Level 32",
+      "to": "575"
+    },
+    {
+      "from": "575",
+      "stock": "Level 41",
+      "to": "576"
+    },
+    {
+      "from": "577",
+      "stock": "Level 32",
+      "to": "578"
+    },
+    {
+      "from": "578",
+      "stock": "Level 41",
+      "to": "579"
+    },
+    {
+      "from": "58",
+      "stock": "Use Fire Stone",
+      "to": "59"
+    },
+    {
+      "from": "580",
+      "stock": "Level 35",
+      "to": "581"
+    },
+    {
+      "from": "582",
+      "prismatic": "Level 25",
+      "stock": "Level 35",
+      "to": "583"
+    },
+    {
+      "from": "583",
+      "prismatic": "Level 37",
+      "stock": "Level 47",
+      "to": "584"
+    },
+    {
+      "from": "585",
+      "stock": "Level 34",
+      "to": "586"
+    },
+    {
+      "from": "588",
+      "prismatic": "level with Shelmet in party",
+      "stock": "Trade",
+      "to": "589"
+    },
+    {
+      "from": "590",
+      "stock": "Level 39",
+      "to": "591"
+    },
+    {
+      "from": "592",
+      "stock": "Level 40",
+      "to": "593"
+    },
+    {
+      "from": "595",
+      "stock": "Level 36",
+      "to": "596"
+    },
+    {
+      "from": "597",
+      "stock": "Level 40",
+      "to": "598"
+    },
+    {
+      "from": "599",
+      "prismatic": "Level 28",
+      "stock": "Level 38",
+      "to": "600"
+    },
+    {
+      "from": "60",
+      "stock": "Level 25",
+      "to": "61"
+    },
+    {
+      "from": "600",
+      "prismatic": "Level 39",
+      "stock": "Level 49",
+      "to": "601"
+    },
+    {
+      "from": "602",
+      "prismatic": "Level 20",
+      "stock": "Level 39",
+      "to": "603"
+    },
+    {
+      "from": "603",
+      "stock": "Use Thunder Stone",
+      "to": "604"
+    },
+    {
+      "from": "605",
+      "stock": "Level 42",
+      "to": "606"
+    },
+    {
+      "from": "607",
+      "stock": "Level 41",
+      "to": "608"
+    },
+    {
+      "from": "608",
+      "stock": "Use Dusk Stone",
+      "to": "609"
+    },
+    {
+      "from": "61",
+      "prismatic": "level holding King's Rock",
+      "stock": "Trade",
+      "to": "186"
+    },
+    {
+      "from": "61",
+      "prismatic": "Water Stone",
+      "stock": "Use Water Stone",
+      "to": "62"
+    },
+    {
+      "from": "610",
+      "stock": "Level 38",
+      "to": "611"
+    },
+    {
+      "from": "611",
+      "stock": "Level 48",
+      "to": "612"
+    },
+    {
+      "from": "613",
+      "stock": "Level 37",
+      "to": "614"
+    },
+    {
+      "from": "616",
+      "prismatic": "level with Karrablast in party",
+      "stock": "Trade",
+      "to": "617"
+    },
+    {
+      "from": "619",
+      "prismatic": "Level 40",
+      "stock": "Level 50",
+      "to": "620"
+    },
+    {
+      "from": "622",
+      "stock": "Level 43",
+      "to": "623"
+    },
+    {
+      "from": "624",
+      "prismatic": "Level 42",
+      "stock": "Level 52",
+      "to": "625"
+    },
+    {
+      "from": "627",
+      "prismatic": "Level 34",
+      "stock": "Level 54",
+      "to": "628"
+    },
+    {
+      "from": "629",
+      "prismatic": "Level 34",
+      "stock": "Level 54",
+      "to": "630"
+    },
+    {
+      "from": "63",
+      "stock": "Level 16",
+      "to": "64"
+    },
+    {
+      "from": "633",
+      "prismatic": "Level 40",
+      "stock": "Level 50",
+      "to": "634"
+    },
+    {
+      "from": "634",
+      "prismatic": "Level 54",
+      "stock": "Level 64",
+      "to": "635"
+    },
+    {
+      "from": "636",
+      "prismatic": "Level 49",
+      "stock": "Level 59",
+      "to": "637"
+    },
+    {
+      "from": "64",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "65"
+    },
+    {
+      "from": "650",
+      "stock": "Level 16",
+      "to": "651"
+    },
+    {
+      "from": "651",
+      "stock": "Level 36",
+      "to": "652"
+    },
+    {
+      "from": "653",
+      "stock": "Level 16",
+      "to": "654"
+    },
+    {
+      "from": "654",
+      "stock": "Level 36",
+      "to": "655"
+    },
+    {
+      "from": "656",
+      "stock": "Level 16",
+      "to": "657"
+    },
+    {
+      "from": "657",
+      "stock": "Level 36",
+      "to": "658"
+    },
+    {
+      "from": "659",
+      "stock": "Level 20",
+      "to": "660"
+    },
+    {
+      "from": "66",
+      "stock": "Level 28",
+      "to": "67"
+    },
+    {
+      "from": "661",
+      "stock": "Level 17",
+      "to": "662"
+    },
+    {
+      "from": "662",
+      "stock": "Level 35",
+      "to": "663"
+    },
+    {
+      "from": "664",
+      "stock": "Level 9",
+      "to": "665"
+    },
+    {
+      "from": "665",
+      "stock": "Level 12",
+      "to": "666"
+    },
+    {
+      "from": "667",
+      "stock": "Level 35",
+      "to": "668"
+    },
+    {
+      "from": "669",
+      "stock": "Level 19",
+      "to": "670"
+    },
+    {
+      "from": "67",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "68"
+    },
+    {
+      "from": "670",
+      "stock": "Use Shiny Stone",
+      "to": "671"
+    },
+    {
+      "from": "672",
+      "stock": "Level 32",
+      "to": "673"
+    },
+    {
+      "from": "674",
+      "stock": "Level 32",
+      "to": "675"
+    },
+    {
+      "from": "677",
+      "stock": "Level 25",
+      "to": "678"
+    },
+    {
+      "from": "679",
+      "stock": "Level 35",
+      "to": "680"
+    },
+    {
+      "from": "680",
+      "stock": "Use Dusk Stone",
+      "to": "681"
+    },
+    {
+      "from": "682",
+      "prismatic": "level holding Sachet",
+      "stock": "Trade",
+      "to": "683"
+    },
+    {
+      "from": "684",
+      "prismatic": "level holding Whipped Dream",
+      "stock": "Trade",
+      "to": "685"
+    },
+    {
+      "from": "686",
+      "stock": "Level 30",
+      "to": "687"
+    },
+    {
+      "from": "688",
+      "stock": "Level 39",
+      "to": "689"
+    },
+    {
+      "from": "69",
+      "stock": "Level 21",
+      "to": "70"
+    },
+    {
+      "from": "690",
+      "prismatic": "Level 37",
+      "stock": "Level 48",
+      "to": "691"
+    },
+    {
+      "from": "692",
+      "stock": "Level 37",
+      "to": "693"
+    },
+    {
+      "from": "694",
+      "stock": "Use Sun Stone",
+      "to": "695"
+    },
+    {
+      "from": "696",
+      "stock": "Level 39",
+      "to": "697"
+    },
+    {
+      "from": "698",
+      "stock": "Level 39",
+      "to": "699"
+    },
+    {
+      "from": "7",
+      "stock": "Level 16",
+      "to": "8"
+    },
+    {
+      "from": "70",
+      "stock": "Use Leaf Stone",
+      "to": "71"
+    },
+    {
+      "from": "704",
+      "stock": "Level 40",
+      "to": "705"
+    },
+    {
+      "from": "705",
+      "stock": "Level 50",
+      "to": "706"
+    },
+    {
+      "from": "708",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "709"
+    },
+    {
+      "from": "710",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "711"
+    },
+    {
+      "from": "712",
+      "stock": "Level 37",
+      "to": "713"
+    },
+    {
+      "from": "714",
+      "prismatic": "high friendship at night",
+      "stock": "Level 48",
+      "to": "715"
+    },
+    {
+      "from": "72",
+      "stock": "Level 30",
+      "to": "73"
+    },
+    {
+      "from": "722",
+      "stock": "Level 17",
+      "to": "723"
+    },
+    {
+      "from": "723",
+      "stock": "Level 34",
+      "to": "724"
+    },
+    {
+      "from": "725",
+      "stock": "Level 17",
+      "to": "726"
+    },
+    {
+      "from": "726",
+      "stock": "Level 34",
+      "to": "727"
+    },
+    {
+      "from": "728",
+      "stock": "Level 17",
+      "to": "729"
+    },
+    {
+      "from": "729",
+      "stock": "Level 34",
+      "to": "730"
+    },
+    {
+      "from": "731",
+      "stock": "Level 14",
+      "to": "732"
+    },
+    {
+      "from": "732",
+      "stock": "Level 28",
+      "to": "733"
+    },
+    {
+      "from": "734",
+      "stock": "Level 20",
+      "to": "735"
+    },
+    {
+      "from": "736",
+      "stock": "Level 20",
+      "to": "737"
+    },
+    {
+      "from": "737",
+      "prismatic": "Thunder Stone",
+      "stock": "Level up near a special magnetic field",
+      "to": "738"
+    },
+    {
+      "from": "739",
+      "prismatic": "Ice Stone",
+      "stock": "Level up at Mount Lanakila",
+      "to": "740"
+    },
+    {
+      "from": "742",
+      "stock": "Level 25",
+      "to": "743"
+    },
+    {
+      "from": "744",
+      "prismatic": "level 25 during the day",
+      "stock": "Level 25",
+      "to": "745"
+    },
+    {
+      "from": "747",
+      "stock": "Level 38",
+      "to": "748"
+    },
+    {
+      "from": "749",
+      "stock": "Level 30",
+      "to": "750"
+    },
+    {
+      "from": "74:alolan",
+      "stock": "Level 25",
+      "to": "75:alolan"
+    },
+    {
+      "from": "74:kanto",
+      "stock": "Level 25",
+      "to": "75:kanto"
+    },
+    {
+      "from": "751",
+      "stock": "Level 22",
+      "to": "752"
+    },
+    {
+      "from": "753",
+      "stock": "Level 34",
+      "to": "754"
+    },
+    {
+      "from": "755",
+      "stock": "Level 24",
+      "to": "756"
+    },
+    {
+      "from": "757",
+      "stock": "Level 33",
+      "to": "758"
+    },
+    {
+      "from": "759",
+      "stock": "Level 27",
+      "to": "760"
+    },
+    {
+      "from": "75:alolan",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "76:alolan"
+    },
+    {
+      "from": "75:kanto",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "76:kanto"
+    },
+    {
+      "from": "761",
+      "stock": "Level 18",
+      "to": "762"
+    },
+    {
+      "from": "762",
+      "stock": "Level up knowing Stomp",
+      "to": "763"
+    },
+    {
+      "from": "767",
+      "stock": "Level 30",
+      "to": "768"
+    },
+    {
+      "from": "769",
+      "stock": "Level 42",
+      "to": "770"
+    },
+    {
+      "from": "77",
+      "stock": "Level 40",
+      "to": "78"
+    },
+    {
+      "from": "772",
+      "stock": "Level up with high friendship",
+      "to": "773"
+    },
+    {
+      "from": "782",
+      "stock": "Level 35",
+      "to": "783"
+    },
+    {
+      "from": "783",
+      "stock": "Level 45",
+      "to": "784"
+    },
+    {
+      "from": "789",
+      "stock": "Level 43",
+      "to": "790"
+    },
+    {
+      "from": "79",
+      "prismatic": "level holding King's Rock",
+      "stock": "Trade",
+      "to": "199"
+    },
+    {
+      "from": "79",
+      "stock": "Level 37",
+      "to": "80"
+    },
+    {
+      "from": "790",
+      "prismatic": "level 53 in Ultra Moon",
+      "stock": "Level 53",
+      "to": "791"
+    },
+    {
+      "from": "790",
+      "prismatic": "level 53 in Ultra Sun",
+      "stock": "Level 53",
+      "to": "792"
+    },
+    {
+      "from": "8",
+      "stock": "Level 36",
+      "to": "9"
+    },
+    {
+      "from": "803",
+      "stock": "Level up knowing Dragon Pulse",
+      "to": "804"
+    },
+    {
+      "from": "81",
+      "stock": "Level 30",
+      "to": "82"
+    },
+    {
+      "from": "82",
+      "prismatic": "Thunder Stone",
+      "stock": "Level up in a special magnetic field",
+      "to": "462"
+    },
+    {
+      "from": "84",
+      "stock": "Level 31",
+      "to": "85"
+    },
+    {
+      "from": "86",
+      "stock": "Level 34",
+      "to": "87"
+    },
+    {
+      "from": "88:alolan",
+      "stock": "Level 38",
+      "to": "89:alolan"
+    },
+    {
+      "from": "88:kanto",
+      "stock": "Level 38",
+      "to": "89:kanto"
+    },
+    {
+      "from": "90",
+      "stock": "Use Water Stone",
+      "to": "91"
+    },
+    {
+      "from": "92",
+      "stock": "Level 25",
+      "to": "93"
+    },
+    {
+      "from": "93",
+      "prismatic": "high friendship + level",
+      "stock": "Trade",
+      "to": "94"
+    },
+    {
+      "from": "95",
+      "prismatic": "level holding Metal Coat",
+      "stock": "Trade",
+      "to": "208"
+    },
+    {
+      "from": "96",
+      "stock": "Level 26",
+      "to": "97"
+    },
+    {
+      "from": "98",
+      "stock": "Level 28",
+      "to": "99"
+    }
+  ],
+  "methodScope": "Base requirements from pinned Gen VII metadata, verified Standard overrides and cited regional corrections; additional individual, form, ability and game conditions may apply.",
+  "nodes": {
+    "1": {
+      "id": 1,
+      "name": "Bulbasaur"
+    },
+    "10": {
+      "id": 10,
+      "name": "Caterpie"
+    },
+    "100": {
+      "id": 100,
+      "name": "Voltorb"
+    },
+    "101": {
+      "id": 101,
+      "name": "Electrode"
+    },
+    "102": {
+      "id": 102,
+      "name": "Exeggcute"
+    },
+    "103:alolan": {
+      "form": "alolan",
+      "id": 103,
+      "name": "Exeggutor (Alolan)"
+    },
+    "103:kanto": {
+      "form": "kanto",
+      "id": 103,
+      "name": "Exeggutor (Kanto)"
+    },
+    "104": {
+      "id": 104,
+      "name": "Cubone"
+    },
+    "105:alolan": {
+      "form": "alolan",
+      "id": 105,
+      "name": "Marowak (Alolan)"
+    },
+    "105:kanto": {
+      "form": "kanto",
+      "id": 105,
+      "name": "Marowak (Kanto)"
+    },
+    "106": {
+      "id": 106,
+      "name": "Hitmonlee"
+    },
+    "107": {
+      "id": 107,
+      "name": "Hitmonchan"
+    },
+    "108": {
+      "id": 108,
+      "name": "Lickitung"
+    },
+    "109": {
+      "id": 109,
+      "name": "Koffing"
+    },
+    "11": {
+      "id": 11,
+      "name": "Metapod"
+    },
+    "110": {
+      "id": 110,
+      "name": "Weezing"
+    },
+    "111": {
+      "id": 111,
+      "name": "Rhyhorn"
+    },
+    "112": {
+      "id": 112,
+      "name": "Rhydon"
+    },
+    "113": {
+      "id": 113,
+      "name": "Chansey"
+    },
+    "114": {
+      "id": 114,
+      "name": "Tangela"
+    },
+    "115": {
+      "id": 115,
+      "name": "Kangaskhan"
+    },
+    "116": {
+      "id": 116,
+      "name": "Horsea"
+    },
+    "117": {
+      "id": 117,
+      "name": "Seadra"
+    },
+    "118": {
+      "id": 118,
+      "name": "Goldeen"
+    },
+    "119": {
+      "id": 119,
+      "name": "Seaking"
+    },
+    "12": {
+      "id": 12,
+      "name": "Butterfree"
+    },
+    "120": {
+      "id": 120,
+      "name": "Staryu"
+    },
+    "121": {
+      "id": 121,
+      "name": "Starmie"
+    },
+    "122": {
+      "id": 122,
+      "name": "Mr. Mime"
+    },
+    "123": {
+      "id": 123,
+      "name": "Scyther"
+    },
+    "124": {
+      "id": 124,
+      "name": "Jynx"
+    },
+    "125": {
+      "id": 125,
+      "name": "Electabuzz"
+    },
+    "126": {
+      "id": 126,
+      "name": "Magmar"
+    },
+    "127": {
+      "id": 127,
+      "name": "Pinsir"
+    },
+    "128": {
+      "id": 128,
+      "name": "Tauros"
+    },
+    "129": {
+      "id": 129,
+      "name": "Magikarp"
+    },
+    "13": {
+      "id": 13,
+      "name": "Weedle"
+    },
+    "130": {
+      "id": 130,
+      "name": "Gyarados"
+    },
+    "131": {
+      "id": 131,
+      "name": "Lapras"
+    },
+    "132": {
+      "id": 132,
+      "name": "Ditto"
+    },
+    "133": {
+      "id": 133,
+      "name": "Eevee"
+    },
+    "134": {
+      "id": 134,
+      "name": "Vaporeon"
+    },
+    "135": {
+      "id": 135,
+      "name": "Jolteon"
+    },
+    "136": {
+      "id": 136,
+      "name": "Flareon"
+    },
+    "137": {
+      "id": 137,
+      "name": "Porygon"
+    },
+    "138": {
+      "id": 138,
+      "name": "Omanyte"
+    },
+    "139": {
+      "id": 139,
+      "name": "Omastar"
+    },
+    "14": {
+      "id": 14,
+      "name": "Kakuna"
+    },
+    "140": {
+      "id": 140,
+      "name": "Kabuto"
+    },
+    "141": {
+      "id": 141,
+      "name": "Kabutops"
+    },
+    "142": {
+      "id": 142,
+      "name": "Aerodactyl"
+    },
+    "143": {
+      "id": 143,
+      "name": "Snorlax"
+    },
+    "144": {
+      "id": 144,
+      "name": "Articuno"
+    },
+    "145": {
+      "id": 145,
+      "name": "Zapdos"
+    },
+    "146": {
+      "id": 146,
+      "name": "Moltres"
+    },
+    "147": {
+      "id": 147,
+      "name": "Dratini"
+    },
+    "148": {
+      "id": 148,
+      "name": "Dragonair"
+    },
+    "149": {
+      "id": 149,
+      "name": "Dragonite"
+    },
+    "15": {
+      "id": 15,
+      "name": "Beedrill"
+    },
+    "150": {
+      "id": 150,
+      "name": "Mewtwo"
+    },
+    "151": {
+      "id": 151,
+      "name": "Mew"
+    },
+    "152": {
+      "id": 152,
+      "name": "Chikorita"
+    },
+    "153": {
+      "id": 153,
+      "name": "Bayleef"
+    },
+    "154": {
+      "id": 154,
+      "name": "Meganium"
+    },
+    "155": {
+      "id": 155,
+      "name": "Cyndaquil"
+    },
+    "156": {
+      "id": 156,
+      "name": "Quilava"
+    },
+    "157": {
+      "id": 157,
+      "name": "Typhlosion"
+    },
+    "158": {
+      "id": 158,
+      "name": "Totodile"
+    },
+    "159": {
+      "id": 159,
+      "name": "Croconaw"
+    },
+    "16": {
+      "id": 16,
+      "name": "Pidgey"
+    },
+    "160": {
+      "id": 160,
+      "name": "Feraligatr"
+    },
+    "161": {
+      "id": 161,
+      "name": "Sentret"
+    },
+    "162": {
+      "id": 162,
+      "name": "Furret"
+    },
+    "163": {
+      "id": 163,
+      "name": "Hoothoot"
+    },
+    "164": {
+      "id": 164,
+      "name": "Noctowl"
+    },
+    "165": {
+      "id": 165,
+      "name": "Ledyba"
+    },
+    "166": {
+      "id": 166,
+      "name": "Ledian"
+    },
+    "167": {
+      "id": 167,
+      "name": "Spinarak"
+    },
+    "168": {
+      "id": 168,
+      "name": "Ariados"
+    },
+    "169": {
+      "id": 169,
+      "name": "Crobat"
+    },
+    "17": {
+      "id": 17,
+      "name": "Pidgeotto"
+    },
+    "170": {
+      "id": 170,
+      "name": "Chinchou"
+    },
+    "171": {
+      "id": 171,
+      "name": "Lanturn"
+    },
+    "172": {
+      "id": 172,
+      "name": "Pichu"
+    },
+    "173": {
+      "id": 173,
+      "name": "Cleffa"
+    },
+    "174": {
+      "id": 174,
+      "name": "Igglybuff"
+    },
+    "175": {
+      "id": 175,
+      "name": "Togepi"
+    },
+    "176": {
+      "id": 176,
+      "name": "Togetic"
+    },
+    "177": {
+      "id": 177,
+      "name": "Natu"
+    },
+    "178": {
+      "id": 178,
+      "name": "Xatu"
+    },
+    "179": {
+      "id": 179,
+      "name": "Mareep"
+    },
+    "18": {
+      "id": 18,
+      "name": "Pidgeot"
+    },
+    "180": {
+      "id": 180,
+      "name": "Flaaffy"
+    },
+    "181": {
+      "id": 181,
+      "name": "Ampharos"
+    },
+    "182": {
+      "id": 182,
+      "name": "Bellossom"
+    },
+    "183": {
+      "id": 183,
+      "name": "Marill"
+    },
+    "184": {
+      "id": 184,
+      "name": "Azumarill"
+    },
+    "185": {
+      "id": 185,
+      "name": "Sudowoodo"
+    },
+    "186": {
+      "id": 186,
+      "name": "Politoed"
+    },
+    "187": {
+      "id": 187,
+      "name": "Hoppip"
+    },
+    "188": {
+      "id": 188,
+      "name": "Skiploom"
+    },
+    "189": {
+      "id": 189,
+      "name": "Jumpluff"
+    },
+    "190": {
+      "id": 190,
+      "name": "Aipom"
+    },
+    "191": {
+      "id": 191,
+      "name": "Sunkern"
+    },
+    "192": {
+      "id": 192,
+      "name": "Sunflora"
+    },
+    "193": {
+      "id": 193,
+      "name": "Yanma"
+    },
+    "194": {
+      "id": 194,
+      "name": "Wooper"
+    },
+    "195": {
+      "id": 195,
+      "name": "Quagsire"
+    },
+    "196": {
+      "id": 196,
+      "name": "Espeon"
+    },
+    "197": {
+      "id": 197,
+      "name": "Umbreon"
+    },
+    "198": {
+      "id": 198,
+      "name": "Murkrow"
+    },
+    "199": {
+      "id": 199,
+      "name": "Slowking"
+    },
+    "19:alolan": {
+      "form": "alolan",
+      "id": 19,
+      "name": "Rattata (Alolan)"
+    },
+    "19:kanto": {
+      "form": "kanto",
+      "id": 19,
+      "name": "Rattata (Kanto)"
+    },
+    "2": {
+      "id": 2,
+      "name": "Ivysaur"
+    },
+    "200": {
+      "id": 200,
+      "name": "Misdreavus"
+    },
+    "201": {
+      "id": 201,
+      "name": "Unown"
+    },
+    "202": {
+      "id": 202,
+      "name": "Wobbuffet"
+    },
+    "203": {
+      "id": 203,
+      "name": "Girafarig"
+    },
+    "204": {
+      "id": 204,
+      "name": "Pineco"
+    },
+    "205": {
+      "id": 205,
+      "name": "Forretress"
+    },
+    "206": {
+      "id": 206,
+      "name": "Dunsparce"
+    },
+    "207": {
+      "id": 207,
+      "name": "Gligar"
+    },
+    "208": {
+      "id": 208,
+      "name": "Steelix"
+    },
+    "209": {
+      "id": 209,
+      "name": "Snubbull"
+    },
+    "20:alolan": {
+      "form": "alolan",
+      "id": 20,
+      "name": "Raticate (Alolan)"
+    },
+    "20:kanto": {
+      "form": "kanto",
+      "id": 20,
+      "name": "Raticate (Kanto)"
+    },
+    "21": {
+      "id": 21,
+      "name": "Spearow"
+    },
+    "210": {
+      "id": 210,
+      "name": "Granbull"
+    },
+    "211": {
+      "id": 211,
+      "name": "Qwilfish"
+    },
+    "212": {
+      "id": 212,
+      "name": "Scizor"
+    },
+    "213": {
+      "id": 213,
+      "name": "Shuckle"
+    },
+    "214": {
+      "id": 214,
+      "name": "Heracross"
+    },
+    "215": {
+      "id": 215,
+      "name": "Sneasel"
+    },
+    "216": {
+      "id": 216,
+      "name": "Teddiursa"
+    },
+    "217": {
+      "id": 217,
+      "name": "Ursaring"
+    },
+    "218": {
+      "id": 218,
+      "name": "Slugma"
+    },
+    "219": {
+      "id": 219,
+      "name": "Magcargo"
+    },
+    "22": {
+      "id": 22,
+      "name": "Fearow"
+    },
+    "220": {
+      "id": 220,
+      "name": "Swinub"
+    },
+    "221": {
+      "id": 221,
+      "name": "Piloswine"
+    },
+    "222": {
+      "id": 222,
+      "name": "Corsola"
+    },
+    "223": {
+      "id": 223,
+      "name": "Remoraid"
+    },
+    "224": {
+      "id": 224,
+      "name": "Octillery"
+    },
+    "225": {
+      "id": 225,
+      "name": "Delibird"
+    },
+    "226": {
+      "id": 226,
+      "name": "Mantine"
+    },
+    "227": {
+      "id": 227,
+      "name": "Skarmory"
+    },
+    "228": {
+      "id": 228,
+      "name": "Houndour"
+    },
+    "229": {
+      "id": 229,
+      "name": "Houndoom"
+    },
+    "23": {
+      "id": 23,
+      "name": "Ekans"
+    },
+    "230": {
+      "id": 230,
+      "name": "Kingdra"
+    },
+    "231": {
+      "id": 231,
+      "name": "Phanpy"
+    },
+    "232": {
+      "id": 232,
+      "name": "Donphan"
+    },
+    "233": {
+      "id": 233,
+      "name": "Porygon2"
+    },
+    "234": {
+      "id": 234,
+      "name": "Stantler"
+    },
+    "235": {
+      "id": 235,
+      "name": "Smeargle"
+    },
+    "236": {
+      "id": 236,
+      "name": "Tyrogue"
+    },
+    "237": {
+      "id": 237,
+      "name": "Hitmontop"
+    },
+    "238": {
+      "id": 238,
+      "name": "Smoochum"
+    },
+    "239": {
+      "id": 239,
+      "name": "Elekid"
+    },
+    "24": {
+      "id": 24,
+      "name": "Arbok"
+    },
+    "240": {
+      "id": 240,
+      "name": "Magby"
+    },
+    "241": {
+      "id": 241,
+      "name": "Miltank"
+    },
+    "242": {
+      "id": 242,
+      "name": "Blissey"
+    },
+    "243": {
+      "id": 243,
+      "name": "Raikou"
+    },
+    "244": {
+      "id": 244,
+      "name": "Entei"
+    },
+    "245": {
+      "id": 245,
+      "name": "Suicune"
+    },
+    "246": {
+      "id": 246,
+      "name": "Larvitar"
+    },
+    "247": {
+      "id": 247,
+      "name": "Pupitar"
+    },
+    "248": {
+      "id": 248,
+      "name": "Tyranitar"
+    },
+    "249": {
+      "id": 249,
+      "name": "Lugia"
+    },
+    "25": {
+      "id": 25,
+      "name": "Pikachu"
+    },
+    "250": {
+      "id": 250,
+      "name": "Ho-Oh"
+    },
+    "251": {
+      "id": 251,
+      "name": "Celebi"
+    },
+    "252": {
+      "id": 252,
+      "name": "Treecko"
+    },
+    "253": {
+      "id": 253,
+      "name": "Grovyle"
+    },
+    "254": {
+      "id": 254,
+      "name": "Sceptile"
+    },
+    "255": {
+      "id": 255,
+      "name": "Torchic"
+    },
+    "256": {
+      "id": 256,
+      "name": "Combusken"
+    },
+    "257": {
+      "id": 257,
+      "name": "Blaziken"
+    },
+    "258": {
+      "id": 258,
+      "name": "Mudkip"
+    },
+    "259": {
+      "id": 259,
+      "name": "Marshtomp"
+    },
+    "260": {
+      "id": 260,
+      "name": "Swampert"
+    },
+    "261": {
+      "id": 261,
+      "name": "Poochyena"
+    },
+    "262": {
+      "id": 262,
+      "name": "Mightyena"
+    },
+    "263": {
+      "id": 263,
+      "name": "Zigzagoon"
+    },
+    "264": {
+      "id": 264,
+      "name": "Linoone"
+    },
+    "265": {
+      "id": 265,
+      "name": "Wurmple"
+    },
+    "266": {
+      "id": 266,
+      "name": "Silcoon"
+    },
+    "267": {
+      "id": 267,
+      "name": "Beautifly"
+    },
+    "268": {
+      "id": 268,
+      "name": "Cascoon"
+    },
+    "269": {
+      "id": 269,
+      "name": "Dustox"
+    },
+    "26:alolan": {
+      "form": "alolan",
+      "id": 26,
+      "name": "Raichu (Alolan)"
+    },
+    "26:kanto": {
+      "form": "kanto",
+      "id": 26,
+      "name": "Raichu (Kanto)"
+    },
+    "270": {
+      "id": 270,
+      "name": "Lotad"
+    },
+    "271": {
+      "id": 271,
+      "name": "Lombre"
+    },
+    "272": {
+      "id": 272,
+      "name": "Ludicolo"
+    },
+    "273": {
+      "id": 273,
+      "name": "Seedot"
+    },
+    "274": {
+      "id": 274,
+      "name": "Nuzleaf"
+    },
+    "275": {
+      "id": 275,
+      "name": "Shiftry"
+    },
+    "276": {
+      "id": 276,
+      "name": "Taillow"
+    },
+    "277": {
+      "id": 277,
+      "name": "Swellow"
+    },
+    "278": {
+      "id": 278,
+      "name": "Wingull"
+    },
+    "279": {
+      "id": 279,
+      "name": "Pelipper"
+    },
+    "27:alolan": {
+      "form": "alolan",
+      "id": 27,
+      "name": "Sandshrew (Alolan)"
+    },
+    "27:kanto": {
+      "form": "kanto",
+      "id": 27,
+      "name": "Sandshrew (Kanto)"
+    },
+    "280": {
+      "id": 280,
+      "name": "Ralts"
+    },
+    "281": {
+      "id": 281,
+      "name": "Kirlia"
+    },
+    "282": {
+      "id": 282,
+      "name": "Gardevoir"
+    },
+    "283": {
+      "id": 283,
+      "name": "Surskit"
+    },
+    "284": {
+      "id": 284,
+      "name": "Masquerain"
+    },
+    "285": {
+      "id": 285,
+      "name": "Shroomish"
+    },
+    "286": {
+      "id": 286,
+      "name": "Breloom"
+    },
+    "287": {
+      "id": 287,
+      "name": "Slakoth"
+    },
+    "288": {
+      "id": 288,
+      "name": "Vigoroth"
+    },
+    "289": {
+      "id": 289,
+      "name": "Slaking"
+    },
+    "28:alolan": {
+      "form": "alolan",
+      "id": 28,
+      "name": "Sandslash (Alolan)"
+    },
+    "28:kanto": {
+      "form": "kanto",
+      "id": 28,
+      "name": "Sandslash (Kanto)"
+    },
+    "29": {
+      "id": 29,
+      "name": "Nidoran♀"
+    },
+    "290": {
+      "id": 290,
+      "name": "Nincada"
+    },
+    "291": {
+      "id": 291,
+      "name": "Ninjask"
+    },
+    "292": {
+      "id": 292,
+      "name": "Shedinja"
+    },
+    "293": {
+      "id": 293,
+      "name": "Whismur"
+    },
+    "294": {
+      "id": 294,
+      "name": "Loudred"
+    },
+    "295": {
+      "id": 295,
+      "name": "Exploud"
+    },
+    "296": {
+      "id": 296,
+      "name": "Makuhita"
+    },
+    "297": {
+      "id": 297,
+      "name": "Hariyama"
+    },
+    "298": {
+      "id": 298,
+      "name": "Azurill"
+    },
+    "299": {
+      "id": 299,
+      "name": "Nosepass"
+    },
+    "3": {
+      "id": 3,
+      "name": "Venusaur"
+    },
+    "30": {
+      "id": 30,
+      "name": "Nidorina"
+    },
+    "300": {
+      "id": 300,
+      "name": "Skitty"
+    },
+    "301": {
+      "id": 301,
+      "name": "Delcatty"
+    },
+    "302": {
+      "id": 302,
+      "name": "Sableye"
+    },
+    "303": {
+      "id": 303,
+      "name": "Mawile"
+    },
+    "304": {
+      "id": 304,
+      "name": "Aron"
+    },
+    "305": {
+      "id": 305,
+      "name": "Lairon"
+    },
+    "306": {
+      "id": 306,
+      "name": "Aggron"
+    },
+    "307": {
+      "id": 307,
+      "name": "Meditite"
+    },
+    "308": {
+      "id": 308,
+      "name": "Medicham"
+    },
+    "309": {
+      "id": 309,
+      "name": "Electrike"
+    },
+    "31": {
+      "id": 31,
+      "name": "Nidoqueen"
+    },
+    "310": {
+      "id": 310,
+      "name": "Manectric"
+    },
+    "311": {
+      "id": 311,
+      "name": "Plusle"
+    },
+    "312": {
+      "id": 312,
+      "name": "Minun"
+    },
+    "313": {
+      "id": 313,
+      "name": "Volbeat"
+    },
+    "314": {
+      "id": 314,
+      "name": "Illumise"
+    },
+    "315": {
+      "id": 315,
+      "name": "Roselia"
+    },
+    "316": {
+      "id": 316,
+      "name": "Gulpin"
+    },
+    "317": {
+      "id": 317,
+      "name": "Swalot"
+    },
+    "318": {
+      "id": 318,
+      "name": "Carvanha"
+    },
+    "319": {
+      "id": 319,
+      "name": "Sharpedo"
+    },
+    "32": {
+      "id": 32,
+      "name": "Nidoran♂"
+    },
+    "320": {
+      "id": 320,
+      "name": "Wailmer"
+    },
+    "321": {
+      "id": 321,
+      "name": "Wailord"
+    },
+    "322": {
+      "id": 322,
+      "name": "Numel"
+    },
+    "323": {
+      "id": 323,
+      "name": "Camerupt"
+    },
+    "324": {
+      "id": 324,
+      "name": "Torkoal"
+    },
+    "325": {
+      "id": 325,
+      "name": "Spoink"
+    },
+    "326": {
+      "id": 326,
+      "name": "Grumpig"
+    },
+    "327": {
+      "id": 327,
+      "name": "Spinda"
+    },
+    "328": {
+      "id": 328,
+      "name": "Trapinch"
+    },
+    "329": {
+      "id": 329,
+      "name": "Vibrava"
+    },
+    "33": {
+      "id": 33,
+      "name": "Nidorino"
+    },
+    "330": {
+      "id": 330,
+      "name": "Flygon"
+    },
+    "331": {
+      "id": 331,
+      "name": "Cacnea"
+    },
+    "332": {
+      "id": 332,
+      "name": "Cacturne"
+    },
+    "333": {
+      "id": 333,
+      "name": "Swablu"
+    },
+    "334": {
+      "id": 334,
+      "name": "Altaria"
+    },
+    "335": {
+      "id": 335,
+      "name": "Zangoose"
+    },
+    "336": {
+      "id": 336,
+      "name": "Seviper"
+    },
+    "337": {
+      "id": 337,
+      "name": "Lunatone"
+    },
+    "338": {
+      "id": 338,
+      "name": "Solrock"
+    },
+    "339": {
+      "id": 339,
+      "name": "Barboach"
+    },
+    "34": {
+      "id": 34,
+      "name": "Nidoking"
+    },
+    "340": {
+      "id": 340,
+      "name": "Whiscash"
+    },
+    "341": {
+      "id": 341,
+      "name": "Corphish"
+    },
+    "342": {
+      "id": 342,
+      "name": "Crawdaunt"
+    },
+    "343": {
+      "id": 343,
+      "name": "Baltoy"
+    },
+    "344": {
+      "id": 344,
+      "name": "Claydol"
+    },
+    "345": {
+      "id": 345,
+      "name": "Lileep"
+    },
+    "346": {
+      "id": 346,
+      "name": "Cradily"
+    },
+    "347": {
+      "id": 347,
+      "name": "Anorith"
+    },
+    "348": {
+      "id": 348,
+      "name": "Armaldo"
+    },
+    "349": {
+      "id": 349,
+      "name": "Feebas"
+    },
+    "35": {
+      "id": 35,
+      "name": "Clefairy"
+    },
+    "350": {
+      "id": 350,
+      "name": "Milotic"
+    },
+    "351": {
+      "id": 351,
+      "name": "Castform"
+    },
+    "352": {
+      "id": 352,
+      "name": "Kecleon"
+    },
+    "353": {
+      "id": 353,
+      "name": "Shuppet"
+    },
+    "354": {
+      "id": 354,
+      "name": "Banette"
+    },
+    "355": {
+      "id": 355,
+      "name": "Duskull"
+    },
+    "356": {
+      "id": 356,
+      "name": "Dusclops"
+    },
+    "357": {
+      "id": 357,
+      "name": "Tropius"
+    },
+    "358": {
+      "id": 358,
+      "name": "Chimecho"
+    },
+    "359": {
+      "id": 359,
+      "name": "Absol"
+    },
+    "36": {
+      "id": 36,
+      "name": "Clefable"
+    },
+    "360": {
+      "id": 360,
+      "name": "Wynaut"
+    },
+    "361": {
+      "id": 361,
+      "name": "Snorunt"
+    },
+    "362": {
+      "id": 362,
+      "name": "Glalie"
+    },
+    "363": {
+      "id": 363,
+      "name": "Spheal"
+    },
+    "364": {
+      "id": 364,
+      "name": "Sealeo"
+    },
+    "365": {
+      "id": 365,
+      "name": "Walrein"
+    },
+    "366": {
+      "id": 366,
+      "name": "Clamperl"
+    },
+    "367": {
+      "id": 367,
+      "name": "Huntail"
+    },
+    "368": {
+      "id": 368,
+      "name": "Gorebyss"
+    },
+    "369": {
+      "id": 369,
+      "name": "Relicanth"
+    },
+    "370": {
+      "id": 370,
+      "name": "Luvdisc"
+    },
+    "371": {
+      "id": 371,
+      "name": "Bagon"
+    },
+    "372": {
+      "id": 372,
+      "name": "Shelgon"
+    },
+    "373": {
+      "id": 373,
+      "name": "Salamence"
+    },
+    "374": {
+      "id": 374,
+      "name": "Beldum"
+    },
+    "375": {
+      "id": 375,
+      "name": "Metang"
+    },
+    "376": {
+      "id": 376,
+      "name": "Metagross"
+    },
+    "377": {
+      "id": 377,
+      "name": "Regirock"
+    },
+    "378": {
+      "id": 378,
+      "name": "Regice"
+    },
+    "379": {
+      "id": 379,
+      "name": "Registeel"
+    },
+    "37:alolan": {
+      "form": "alolan",
+      "id": 37,
+      "name": "Vulpix (Alolan)"
+    },
+    "37:kanto": {
+      "form": "kanto",
+      "id": 37,
+      "name": "Vulpix (Kanto)"
+    },
+    "380": {
+      "id": 380,
+      "name": "Latias"
+    },
+    "381": {
+      "id": 381,
+      "name": "Latios"
+    },
+    "382": {
+      "id": 382,
+      "name": "Kyogre"
+    },
+    "383": {
+      "id": 383,
+      "name": "Groudon"
+    },
+    "384": {
+      "id": 384,
+      "name": "Rayquaza"
+    },
+    "385": {
+      "id": 385,
+      "name": "Jirachi"
+    },
+    "386": {
+      "id": 386,
+      "name": "Deoxys"
+    },
+    "387": {
+      "id": 387,
+      "name": "Turtwig"
+    },
+    "388": {
+      "id": 388,
+      "name": "Grotle"
+    },
+    "389": {
+      "id": 389,
+      "name": "Torterra"
+    },
+    "38:alolan": {
+      "form": "alolan",
+      "id": 38,
+      "name": "Ninetales (Alolan)"
+    },
+    "38:kanto": {
+      "form": "kanto",
+      "id": 38,
+      "name": "Ninetales (Kanto)"
+    },
+    "39": {
+      "id": 39,
+      "name": "Jigglypuff"
+    },
+    "390": {
+      "id": 390,
+      "name": "Chimchar"
+    },
+    "391": {
+      "id": 391,
+      "name": "Monferno"
+    },
+    "392": {
+      "id": 392,
+      "name": "Infernape"
+    },
+    "393": {
+      "id": 393,
+      "name": "Piplup"
+    },
+    "394": {
+      "id": 394,
+      "name": "Prinplup"
+    },
+    "395": {
+      "id": 395,
+      "name": "Empoleon"
+    },
+    "396": {
+      "id": 396,
+      "name": "Starly"
+    },
+    "397": {
+      "id": 397,
+      "name": "Staravia"
+    },
+    "398": {
+      "id": 398,
+      "name": "Staraptor"
+    },
+    "399": {
+      "id": 399,
+      "name": "Bidoof"
+    },
+    "4": {
+      "id": 4,
+      "name": "Charmander"
+    },
+    "40": {
+      "id": 40,
+      "name": "Wigglytuff"
+    },
+    "400": {
+      "id": 400,
+      "name": "Bibarel"
+    },
+    "401": {
+      "id": 401,
+      "name": "Kricketot"
+    },
+    "402": {
+      "id": 402,
+      "name": "Kricketune"
+    },
+    "403": {
+      "id": 403,
+      "name": "Shinx"
+    },
+    "404": {
+      "id": 404,
+      "name": "Luxio"
+    },
+    "405": {
+      "id": 405,
+      "name": "Luxray"
+    },
+    "406": {
+      "id": 406,
+      "name": "Budew"
+    },
+    "407": {
+      "id": 407,
+      "name": "Roserade"
+    },
+    "408": {
+      "id": 408,
+      "name": "Cranidos"
+    },
+    "409": {
+      "id": 409,
+      "name": "Rampardos"
+    },
+    "41": {
+      "id": 41,
+      "name": "Zubat"
+    },
+    "410": {
+      "id": 410,
+      "name": "Shieldon"
+    },
+    "411": {
+      "id": 411,
+      "name": "Bastiodon"
+    },
+    "412": {
+      "id": 412,
+      "name": "Burmy"
+    },
+    "413": {
+      "id": 413,
+      "name": "Wormadam"
+    },
+    "414": {
+      "id": 414,
+      "name": "Mothim"
+    },
+    "415": {
+      "id": 415,
+      "name": "Combee"
+    },
+    "416": {
+      "id": 416,
+      "name": "Vespiquen"
+    },
+    "417": {
+      "id": 417,
+      "name": "Pachirisu"
+    },
+    "418": {
+      "id": 418,
+      "name": "Buizel"
+    },
+    "419": {
+      "id": 419,
+      "name": "Floatzel"
+    },
+    "42": {
+      "id": 42,
+      "name": "Golbat"
+    },
+    "420": {
+      "id": 420,
+      "name": "Cherubi"
+    },
+    "421": {
+      "id": 421,
+      "name": "Cherrim"
+    },
+    "422": {
+      "id": 422,
+      "name": "Shellos"
+    },
+    "423": {
+      "id": 423,
+      "name": "Gastrodon"
+    },
+    "424": {
+      "id": 424,
+      "name": "Ambipom"
+    },
+    "425": {
+      "id": 425,
+      "name": "Drifloon"
+    },
+    "426": {
+      "id": 426,
+      "name": "Drifblim"
+    },
+    "427": {
+      "id": 427,
+      "name": "Buneary"
+    },
+    "428": {
+      "id": 428,
+      "name": "Lopunny"
+    },
+    "429": {
+      "id": 429,
+      "name": "Mismagius"
+    },
+    "43": {
+      "id": 43,
+      "name": "Oddish"
+    },
+    "430": {
+      "id": 430,
+      "name": "Honchkrow"
+    },
+    "431": {
+      "id": 431,
+      "name": "Glameow"
+    },
+    "432": {
+      "id": 432,
+      "name": "Purugly"
+    },
+    "433": {
+      "id": 433,
+      "name": "Chingling"
+    },
+    "434": {
+      "id": 434,
+      "name": "Stunky"
+    },
+    "435": {
+      "id": 435,
+      "name": "Skuntank"
+    },
+    "436": {
+      "id": 436,
+      "name": "Bronzor"
+    },
+    "437": {
+      "id": 437,
+      "name": "Bronzong"
+    },
+    "438": {
+      "id": 438,
+      "name": "Bonsly"
+    },
+    "439": {
+      "id": 439,
+      "name": "Mime Jr."
+    },
+    "44": {
+      "id": 44,
+      "name": "Gloom"
+    },
+    "440": {
+      "id": 440,
+      "name": "Happiny"
+    },
+    "441": {
+      "id": 441,
+      "name": "Chatot"
+    },
+    "442": {
+      "id": 442,
+      "name": "Spiritomb"
+    },
+    "443": {
+      "id": 443,
+      "name": "Gible"
+    },
+    "444": {
+      "id": 444,
+      "name": "Gabite"
+    },
+    "445": {
+      "id": 445,
+      "name": "Garchomp"
+    },
+    "446": {
+      "id": 446,
+      "name": "Munchlax"
+    },
+    "447": {
+      "id": 447,
+      "name": "Riolu"
+    },
+    "448": {
+      "id": 448,
+      "name": "Lucario"
+    },
+    "449": {
+      "id": 449,
+      "name": "Hippopotas"
+    },
+    "45": {
+      "id": 45,
+      "name": "Vileplume"
+    },
+    "450": {
+      "id": 450,
+      "name": "Hippowdon"
+    },
+    "451": {
+      "id": 451,
+      "name": "Skorupi"
+    },
+    "452": {
+      "id": 452,
+      "name": "Drapion"
+    },
+    "453": {
+      "id": 453,
+      "name": "Croagunk"
+    },
+    "454": {
+      "id": 454,
+      "name": "Toxicroak"
+    },
+    "455": {
+      "id": 455,
+      "name": "Carnivine"
+    },
+    "456": {
+      "id": 456,
+      "name": "Finneon"
+    },
+    "457": {
+      "id": 457,
+      "name": "Lumineon"
+    },
+    "458": {
+      "id": 458,
+      "name": "Mantyke"
+    },
+    "459": {
+      "id": 459,
+      "name": "Snover"
+    },
+    "46": {
+      "id": 46,
+      "name": "Paras"
+    },
+    "460": {
+      "id": 460,
+      "name": "Abomasnow"
+    },
+    "461": {
+      "id": 461,
+      "name": "Weavile"
+    },
+    "462": {
+      "id": 462,
+      "name": "Magnezone"
+    },
+    "463": {
+      "id": 463,
+      "name": "Lickilicky"
+    },
+    "464": {
+      "id": 464,
+      "name": "Rhyperior"
+    },
+    "465": {
+      "id": 465,
+      "name": "Tangrowth"
+    },
+    "466": {
+      "id": 466,
+      "name": "Electivire"
+    },
+    "467": {
+      "id": 467,
+      "name": "Magmortar"
+    },
+    "468": {
+      "id": 468,
+      "name": "Togekiss"
+    },
+    "469": {
+      "id": 469,
+      "name": "Yanmega"
+    },
+    "47": {
+      "id": 47,
+      "name": "Parasect"
+    },
+    "470": {
+      "id": 470,
+      "name": "Leafeon"
+    },
+    "471": {
+      "id": 471,
+      "name": "Glaceon"
+    },
+    "472": {
+      "id": 472,
+      "name": "Gliscor"
+    },
+    "473": {
+      "id": 473,
+      "name": "Mamoswine"
+    },
+    "474": {
+      "id": 474,
+      "name": "Porygon-Z"
+    },
+    "475": {
+      "id": 475,
+      "name": "Gallade"
+    },
+    "476": {
+      "id": 476,
+      "name": "Probopass"
+    },
+    "477": {
+      "id": 477,
+      "name": "Dusknoir"
+    },
+    "478": {
+      "id": 478,
+      "name": "Froslass"
+    },
+    "479": {
+      "id": 479,
+      "name": "Rotom"
+    },
+    "48": {
+      "id": 48,
+      "name": "Venonat"
+    },
+    "480": {
+      "id": 480,
+      "name": "Uxie"
+    },
+    "481": {
+      "id": 481,
+      "name": "Mesprit"
+    },
+    "482": {
+      "id": 482,
+      "name": "Azelf"
+    },
+    "483": {
+      "id": 483,
+      "name": "Dialga"
+    },
+    "484": {
+      "id": 484,
+      "name": "Palkia"
+    },
+    "485": {
+      "id": 485,
+      "name": "Heatran"
+    },
+    "486": {
+      "id": 486,
+      "name": "Regigigas"
+    },
+    "487": {
+      "id": 487,
+      "name": "Giratina"
+    },
+    "488": {
+      "id": 488,
+      "name": "Cresselia"
+    },
+    "489": {
+      "id": 489,
+      "name": "Phione"
+    },
+    "49": {
+      "id": 49,
+      "name": "Venomoth"
+    },
+    "490": {
+      "id": 490,
+      "name": "Manaphy"
+    },
+    "491": {
+      "id": 491,
+      "name": "Darkrai"
+    },
+    "492": {
+      "id": 492,
+      "name": "Shaymin"
+    },
+    "493": {
+      "id": 493,
+      "name": "Arceus"
+    },
+    "494": {
+      "id": 494,
+      "name": "Victini"
+    },
+    "495": {
+      "id": 495,
+      "name": "Snivy"
+    },
+    "496": {
+      "id": 496,
+      "name": "Servine"
+    },
+    "497": {
+      "id": 497,
+      "name": "Serperior"
+    },
+    "498": {
+      "id": 498,
+      "name": "Tepig"
+    },
+    "499": {
+      "id": 499,
+      "name": "Pignite"
+    },
+    "5": {
+      "id": 5,
+      "name": "Charmeleon"
+    },
+    "500": {
+      "id": 500,
+      "name": "Emboar"
+    },
+    "501": {
+      "id": 501,
+      "name": "Oshawott"
+    },
+    "502": {
+      "id": 502,
+      "name": "Dewott"
+    },
+    "503": {
+      "id": 503,
+      "name": "Samurott"
+    },
+    "504": {
+      "id": 504,
+      "name": "Patrat"
+    },
+    "505": {
+      "id": 505,
+      "name": "Watchog"
+    },
+    "506": {
+      "id": 506,
+      "name": "Lillipup"
+    },
+    "507": {
+      "id": 507,
+      "name": "Herdier"
+    },
+    "508": {
+      "id": 508,
+      "name": "Stoutland"
+    },
+    "509": {
+      "id": 509,
+      "name": "Purrloin"
+    },
+    "50:alolan": {
+      "form": "alolan",
+      "id": 50,
+      "name": "Diglett (Alolan)"
+    },
+    "50:kanto": {
+      "form": "kanto",
+      "id": 50,
+      "name": "Diglett (Kanto)"
+    },
+    "510": {
+      "id": 510,
+      "name": "Liepard"
+    },
+    "511": {
+      "id": 511,
+      "name": "Pansage"
+    },
+    "512": {
+      "id": 512,
+      "name": "Simisage"
+    },
+    "513": {
+      "id": 513,
+      "name": "Pansear"
+    },
+    "514": {
+      "id": 514,
+      "name": "Simisear"
+    },
+    "515": {
+      "id": 515,
+      "name": "Panpour"
+    },
+    "516": {
+      "id": 516,
+      "name": "Simipour"
+    },
+    "517": {
+      "id": 517,
+      "name": "Munna"
+    },
+    "518": {
+      "id": 518,
+      "name": "Musharna"
+    },
+    "519": {
+      "id": 519,
+      "name": "Pidove"
+    },
+    "51:alolan": {
+      "form": "alolan",
+      "id": 51,
+      "name": "Dugtrio (Alolan)"
+    },
+    "51:kanto": {
+      "form": "kanto",
+      "id": 51,
+      "name": "Dugtrio (Kanto)"
+    },
+    "520": {
+      "id": 520,
+      "name": "Tranquill"
+    },
+    "521": {
+      "id": 521,
+      "name": "Unfezant"
+    },
+    "522": {
+      "id": 522,
+      "name": "Blitzle"
+    },
+    "523": {
+      "id": 523,
+      "name": "Zebstrika"
+    },
+    "524": {
+      "id": 524,
+      "name": "Roggenrola"
+    },
+    "525": {
+      "id": 525,
+      "name": "Boldore"
+    },
+    "526": {
+      "id": 526,
+      "name": "Gigalith"
+    },
+    "527": {
+      "id": 527,
+      "name": "Woobat"
+    },
+    "528": {
+      "id": 528,
+      "name": "Swoobat"
+    },
+    "529": {
+      "id": 529,
+      "name": "Drilbur"
+    },
+    "52:alolan": {
+      "form": "alolan",
+      "id": 52,
+      "name": "Meowth (Alolan)"
+    },
+    "52:kanto": {
+      "form": "kanto",
+      "id": 52,
+      "name": "Meowth (Kanto)"
+    },
+    "530": {
+      "id": 530,
+      "name": "Excadrill"
+    },
+    "531": {
+      "id": 531,
+      "name": "Audino"
+    },
+    "532": {
+      "id": 532,
+      "name": "Timburr"
+    },
+    "533": {
+      "id": 533,
+      "name": "Gurdurr"
+    },
+    "534": {
+      "id": 534,
+      "name": "Conkeldurr"
+    },
+    "535": {
+      "id": 535,
+      "name": "Tympole"
+    },
+    "536": {
+      "id": 536,
+      "name": "Palpitoad"
+    },
+    "537": {
+      "id": 537,
+      "name": "Seismitoad"
+    },
+    "538": {
+      "id": 538,
+      "name": "Throh"
+    },
+    "539": {
+      "id": 539,
+      "name": "Sawk"
+    },
+    "53:alolan": {
+      "form": "alolan",
+      "id": 53,
+      "name": "Persian (Alolan)"
+    },
+    "53:kanto": {
+      "form": "kanto",
+      "id": 53,
+      "name": "Persian (Kanto)"
+    },
+    "54": {
+      "id": 54,
+      "name": "Psyduck"
+    },
+    "540": {
+      "id": 540,
+      "name": "Sewaddle"
+    },
+    "541": {
+      "id": 541,
+      "name": "Swadloon"
+    },
+    "542": {
+      "id": 542,
+      "name": "Leavanny"
+    },
+    "543": {
+      "id": 543,
+      "name": "Venipede"
+    },
+    "544": {
+      "id": 544,
+      "name": "Whirlipede"
+    },
+    "545": {
+      "id": 545,
+      "name": "Scolipede"
+    },
+    "546": {
+      "id": 546,
+      "name": "Cottonee"
+    },
+    "547": {
+      "id": 547,
+      "name": "Whimsicott"
+    },
+    "548": {
+      "id": 548,
+      "name": "Petilil"
+    },
+    "549": {
+      "id": 549,
+      "name": "Lilligant"
+    },
+    "55": {
+      "id": 55,
+      "name": "Golduck"
+    },
+    "550": {
+      "id": 550,
+      "name": "Basculin"
+    },
+    "551": {
+      "id": 551,
+      "name": "Sandile"
+    },
+    "552": {
+      "id": 552,
+      "name": "Krokorok"
+    },
+    "553": {
+      "id": 553,
+      "name": "Krookodile"
+    },
+    "554": {
+      "id": 554,
+      "name": "Darumaka"
+    },
+    "555": {
+      "id": 555,
+      "name": "Darmanitan"
+    },
+    "556": {
+      "id": 556,
+      "name": "Maractus"
+    },
+    "557": {
+      "id": 557,
+      "name": "Dwebble"
+    },
+    "558": {
+      "id": 558,
+      "name": "Crustle"
+    },
+    "559": {
+      "id": 559,
+      "name": "Scraggy"
+    },
+    "56": {
+      "id": 56,
+      "name": "Mankey"
+    },
+    "560": {
+      "id": 560,
+      "name": "Scrafty"
+    },
+    "561": {
+      "id": 561,
+      "name": "Sigilyph"
+    },
+    "562": {
+      "id": 562,
+      "name": "Yamask"
+    },
+    "563": {
+      "id": 563,
+      "name": "Cofagrigus"
+    },
+    "564": {
+      "id": 564,
+      "name": "Tirtouga"
+    },
+    "565": {
+      "id": 565,
+      "name": "Carracosta"
+    },
+    "566": {
+      "id": 566,
+      "name": "Archen"
+    },
+    "567": {
+      "id": 567,
+      "name": "Archeops"
+    },
+    "568": {
+      "id": 568,
+      "name": "Trubbish"
+    },
+    "569": {
+      "id": 569,
+      "name": "Garbodor"
+    },
+    "57": {
+      "id": 57,
+      "name": "Primeape"
+    },
+    "570": {
+      "id": 570,
+      "name": "Zorua"
+    },
+    "571": {
+      "id": 571,
+      "name": "Zoroark"
+    },
+    "572": {
+      "id": 572,
+      "name": "Minccino"
+    },
+    "573": {
+      "id": 573,
+      "name": "Cinccino"
+    },
+    "574": {
+      "id": 574,
+      "name": "Gothita"
+    },
+    "575": {
+      "id": 575,
+      "name": "Gothorita"
+    },
+    "576": {
+      "id": 576,
+      "name": "Gothitelle"
+    },
+    "577": {
+      "id": 577,
+      "name": "Solosis"
+    },
+    "578": {
+      "id": 578,
+      "name": "Duosion"
+    },
+    "579": {
+      "id": 579,
+      "name": "Reuniclus"
+    },
+    "58": {
+      "id": 58,
+      "name": "Growlithe"
+    },
+    "580": {
+      "id": 580,
+      "name": "Ducklett"
+    },
+    "581": {
+      "id": 581,
+      "name": "Swanna"
+    },
+    "582": {
+      "id": 582,
+      "name": "Vanillite"
+    },
+    "583": {
+      "id": 583,
+      "name": "Vanillish"
+    },
+    "584": {
+      "id": 584,
+      "name": "Vanilluxe"
+    },
+    "585": {
+      "id": 585,
+      "name": "Deerling"
+    },
+    "586": {
+      "id": 586,
+      "name": "Sawsbuck"
+    },
+    "587": {
+      "id": 587,
+      "name": "Emolga"
+    },
+    "588": {
+      "id": 588,
+      "name": "Karrablast"
+    },
+    "589": {
+      "id": 589,
+      "name": "Escavalier"
+    },
+    "59": {
+      "id": 59,
+      "name": "Arcanine"
+    },
+    "590": {
+      "id": 590,
+      "name": "Foongus"
+    },
+    "591": {
+      "id": 591,
+      "name": "Amoonguss"
+    },
+    "592": {
+      "id": 592,
+      "name": "Frillish"
+    },
+    "593": {
+      "id": 593,
+      "name": "Jellicent"
+    },
+    "594": {
+      "id": 594,
+      "name": "Alomomola"
+    },
+    "595": {
+      "id": 595,
+      "name": "Joltik"
+    },
+    "596": {
+      "id": 596,
+      "name": "Galvantula"
+    },
+    "597": {
+      "id": 597,
+      "name": "Ferroseed"
+    },
+    "598": {
+      "id": 598,
+      "name": "Ferrothorn"
+    },
+    "599": {
+      "id": 599,
+      "name": "Klink"
+    },
+    "6": {
+      "id": 6,
+      "name": "Charizard"
+    },
+    "60": {
+      "id": 60,
+      "name": "Poliwag"
+    },
+    "600": {
+      "id": 600,
+      "name": "Klang"
+    },
+    "601": {
+      "id": 601,
+      "name": "Klinklang"
+    },
+    "602": {
+      "id": 602,
+      "name": "Tynamo"
+    },
+    "603": {
+      "id": 603,
+      "name": "Eelektrik"
+    },
+    "604": {
+      "id": 604,
+      "name": "Eelektross"
+    },
+    "605": {
+      "id": 605,
+      "name": "Elgyem"
+    },
+    "606": {
+      "id": 606,
+      "name": "Beheeyem"
+    },
+    "607": {
+      "id": 607,
+      "name": "Litwick"
+    },
+    "608": {
+      "id": 608,
+      "name": "Lampent"
+    },
+    "609": {
+      "id": 609,
+      "name": "Chandelure"
+    },
+    "61": {
+      "id": 61,
+      "name": "Poliwhirl"
+    },
+    "610": {
+      "id": 610,
+      "name": "Axew"
+    },
+    "611": {
+      "id": 611,
+      "name": "Fraxure"
+    },
+    "612": {
+      "id": 612,
+      "name": "Haxorus"
+    },
+    "613": {
+      "id": 613,
+      "name": "Cubchoo"
+    },
+    "614": {
+      "id": 614,
+      "name": "Beartic"
+    },
+    "615": {
+      "id": 615,
+      "name": "Cryogonal"
+    },
+    "616": {
+      "id": 616,
+      "name": "Shelmet"
+    },
+    "617": {
+      "id": 617,
+      "name": "Accelgor"
+    },
+    "618": {
+      "id": 618,
+      "name": "Stunfisk"
+    },
+    "619": {
+      "id": 619,
+      "name": "Mienfoo"
+    },
+    "62": {
+      "id": 62,
+      "name": "Poliwrath"
+    },
+    "620": {
+      "id": 620,
+      "name": "Mienshao"
+    },
+    "621": {
+      "id": 621,
+      "name": "Druddigon"
+    },
+    "622": {
+      "id": 622,
+      "name": "Golett"
+    },
+    "623": {
+      "id": 623,
+      "name": "Golurk"
+    },
+    "624": {
+      "id": 624,
+      "name": "Pawniard"
+    },
+    "625": {
+      "id": 625,
+      "name": "Bisharp"
+    },
+    "626": {
+      "id": 626,
+      "name": "Bouffalant"
+    },
+    "627": {
+      "id": 627,
+      "name": "Rufflet"
+    },
+    "628": {
+      "id": 628,
+      "name": "Braviary"
+    },
+    "629": {
+      "id": 629,
+      "name": "Vullaby"
+    },
+    "63": {
+      "id": 63,
+      "name": "Abra"
+    },
+    "630": {
+      "id": 630,
+      "name": "Mandibuzz"
+    },
+    "631": {
+      "id": 631,
+      "name": "Heatmor"
+    },
+    "632": {
+      "id": 632,
+      "name": "Durant"
+    },
+    "633": {
+      "id": 633,
+      "name": "Deino"
+    },
+    "634": {
+      "id": 634,
+      "name": "Zweilous"
+    },
+    "635": {
+      "id": 635,
+      "name": "Hydreigon"
+    },
+    "636": {
+      "id": 636,
+      "name": "Larvesta"
+    },
+    "637": {
+      "id": 637,
+      "name": "Volcarona"
+    },
+    "638": {
+      "id": 638,
+      "name": "Cobalion"
+    },
+    "639": {
+      "id": 639,
+      "name": "Terrakion"
+    },
+    "64": {
+      "id": 64,
+      "name": "Kadabra"
+    },
+    "640": {
+      "id": 640,
+      "name": "Virizion"
+    },
+    "641": {
+      "id": 641,
+      "name": "Tornadus"
+    },
+    "642": {
+      "id": 642,
+      "name": "Thundurus"
+    },
+    "643": {
+      "id": 643,
+      "name": "Reshiram"
+    },
+    "644": {
+      "id": 644,
+      "name": "Zekrom"
+    },
+    "645": {
+      "id": 645,
+      "name": "Landorus"
+    },
+    "646": {
+      "id": 646,
+      "name": "Kyurem"
+    },
+    "647": {
+      "id": 647,
+      "name": "Keldeo"
+    },
+    "648": {
+      "id": 648,
+      "name": "Meloetta"
+    },
+    "649": {
+      "id": 649,
+      "name": "Genesect"
+    },
+    "65": {
+      "id": 65,
+      "name": "Alakazam"
+    },
+    "650": {
+      "id": 650,
+      "name": "Chespin"
+    },
+    "651": {
+      "id": 651,
+      "name": "Quilladin"
+    },
+    "652": {
+      "id": 652,
+      "name": "Chesnaught"
+    },
+    "653": {
+      "id": 653,
+      "name": "Fennekin"
+    },
+    "654": {
+      "id": 654,
+      "name": "Braixen"
+    },
+    "655": {
+      "id": 655,
+      "name": "Delphox"
+    },
+    "656": {
+      "id": 656,
+      "name": "Froakie"
+    },
+    "657": {
+      "id": 657,
+      "name": "Frogadier"
+    },
+    "658": {
+      "id": 658,
+      "name": "Greninja"
+    },
+    "659": {
+      "id": 659,
+      "name": "Bunnelby"
+    },
+    "66": {
+      "id": 66,
+      "name": "Machop"
+    },
+    "660": {
+      "id": 660,
+      "name": "Diggersby"
+    },
+    "661": {
+      "id": 661,
+      "name": "Fletchling"
+    },
+    "662": {
+      "id": 662,
+      "name": "Fletchinder"
+    },
+    "663": {
+      "id": 663,
+      "name": "Talonflame"
+    },
+    "664": {
+      "id": 664,
+      "name": "Scatterbug"
+    },
+    "665": {
+      "id": 665,
+      "name": "Spewpa"
+    },
+    "666": {
+      "id": 666,
+      "name": "Vivillon"
+    },
+    "667": {
+      "id": 667,
+      "name": "Litleo"
+    },
+    "668": {
+      "id": 668,
+      "name": "Pyroar"
+    },
+    "669": {
+      "id": 669,
+      "name": "Flabébé"
+    },
+    "67": {
+      "id": 67,
+      "name": "Machoke"
+    },
+    "670": {
+      "id": 670,
+      "name": "Floette"
+    },
+    "671": {
+      "id": 671,
+      "name": "Florges"
+    },
+    "672": {
+      "id": 672,
+      "name": "Skiddo"
+    },
+    "673": {
+      "id": 673,
+      "name": "Gogoat"
+    },
+    "674": {
+      "id": 674,
+      "name": "Pancham"
+    },
+    "675": {
+      "id": 675,
+      "name": "Pangoro"
+    },
+    "676": {
+      "id": 676,
+      "name": "Furfrou"
+    },
+    "677": {
+      "id": 677,
+      "name": "Espurr"
+    },
+    "678": {
+      "id": 678,
+      "name": "Meowstic"
+    },
+    "679": {
+      "id": 679,
+      "name": "Honedge"
+    },
+    "68": {
+      "id": 68,
+      "name": "Machamp"
+    },
+    "680": {
+      "id": 680,
+      "name": "Doublade"
+    },
+    "681": {
+      "id": 681,
+      "name": "Aegislash"
+    },
+    "682": {
+      "id": 682,
+      "name": "Spritzee"
+    },
+    "683": {
+      "id": 683,
+      "name": "Aromatisse"
+    },
+    "684": {
+      "id": 684,
+      "name": "Swirlix"
+    },
+    "685": {
+      "id": 685,
+      "name": "Slurpuff"
+    },
+    "686": {
+      "id": 686,
+      "name": "Inkay"
+    },
+    "687": {
+      "id": 687,
+      "name": "Malamar"
+    },
+    "688": {
+      "id": 688,
+      "name": "Binacle"
+    },
+    "689": {
+      "id": 689,
+      "name": "Barbaracle"
+    },
+    "69": {
+      "id": 69,
+      "name": "Bellsprout"
+    },
+    "690": {
+      "id": 690,
+      "name": "Skrelp"
+    },
+    "691": {
+      "id": 691,
+      "name": "Dragalge"
+    },
+    "692": {
+      "id": 692,
+      "name": "Clauncher"
+    },
+    "693": {
+      "id": 693,
+      "name": "Clawitzer"
+    },
+    "694": {
+      "id": 694,
+      "name": "Helioptile"
+    },
+    "695": {
+      "id": 695,
+      "name": "Heliolisk"
+    },
+    "696": {
+      "id": 696,
+      "name": "Tyrunt"
+    },
+    "697": {
+      "id": 697,
+      "name": "Tyrantrum"
+    },
+    "698": {
+      "id": 698,
+      "name": "Amaura"
+    },
+    "699": {
+      "id": 699,
+      "name": "Aurorus"
+    },
+    "7": {
+      "id": 7,
+      "name": "Squirtle"
+    },
+    "70": {
+      "id": 70,
+      "name": "Weepinbell"
+    },
+    "700": {
+      "id": 700,
+      "name": "Sylveon"
+    },
+    "701": {
+      "id": 701,
+      "name": "Hawlucha"
+    },
+    "702": {
+      "id": 702,
+      "name": "Dedenne"
+    },
+    "703": {
+      "id": 703,
+      "name": "Carbink"
+    },
+    "704": {
+      "id": 704,
+      "name": "Goomy"
+    },
+    "705": {
+      "id": 705,
+      "name": "Sliggoo"
+    },
+    "706": {
+      "id": 706,
+      "name": "Goodra"
+    },
+    "707": {
+      "id": 707,
+      "name": "Klefki"
+    },
+    "708": {
+      "id": 708,
+      "name": "Phantump"
+    },
+    "709": {
+      "id": 709,
+      "name": "Trevenant"
+    },
+    "71": {
+      "id": 71,
+      "name": "Victreebel"
+    },
+    "710": {
+      "id": 710,
+      "name": "Pumpkaboo"
+    },
+    "711": {
+      "id": 711,
+      "name": "Gourgeist"
+    },
+    "712": {
+      "id": 712,
+      "name": "Bergmite"
+    },
+    "713": {
+      "id": 713,
+      "name": "Avalugg"
+    },
+    "714": {
+      "id": 714,
+      "name": "Noibat"
+    },
+    "715": {
+      "id": 715,
+      "name": "Noivern"
+    },
+    "716": {
+      "id": 716,
+      "name": "Xerneas"
+    },
+    "717": {
+      "id": 717,
+      "name": "Yveltal"
+    },
+    "718": {
+      "id": 718,
+      "name": "Zygarde"
+    },
+    "719": {
+      "id": 719,
+      "name": "Diancie"
+    },
+    "72": {
+      "id": 72,
+      "name": "Tentacool"
+    },
+    "720": {
+      "id": 720,
+      "name": "Hoopa"
+    },
+    "721": {
+      "id": 721,
+      "name": "Volcanion"
+    },
+    "722": {
+      "id": 722,
+      "name": "Rowlet"
+    },
+    "723": {
+      "id": 723,
+      "name": "Dartrix"
+    },
+    "724": {
+      "id": 724,
+      "name": "Decidueye"
+    },
+    "725": {
+      "id": 725,
+      "name": "Litten"
+    },
+    "726": {
+      "id": 726,
+      "name": "Torracat"
+    },
+    "727": {
+      "id": 727,
+      "name": "Incineroar"
+    },
+    "728": {
+      "id": 728,
+      "name": "Popplio"
+    },
+    "729": {
+      "id": 729,
+      "name": "Brionne"
+    },
+    "73": {
+      "id": 73,
+      "name": "Tentacruel"
+    },
+    "730": {
+      "id": 730,
+      "name": "Primarina"
+    },
+    "731": {
+      "id": 731,
+      "name": "Pikipek"
+    },
+    "732": {
+      "id": 732,
+      "name": "Trumbeak"
+    },
+    "733": {
+      "id": 733,
+      "name": "Toucannon"
+    },
+    "734": {
+      "id": 734,
+      "name": "Yungoos"
+    },
+    "735": {
+      "id": 735,
+      "name": "Gumshoos"
+    },
+    "736": {
+      "id": 736,
+      "name": "Grubbin"
+    },
+    "737": {
+      "id": 737,
+      "name": "Charjabug"
+    },
+    "738": {
+      "id": 738,
+      "name": "Vikavolt"
+    },
+    "739": {
+      "id": 739,
+      "name": "Crabrawler"
+    },
+    "740": {
+      "id": 740,
+      "name": "Crabominable"
+    },
+    "741": {
+      "id": 741,
+      "name": "Oricorio"
+    },
+    "742": {
+      "id": 742,
+      "name": "Cutiefly"
+    },
+    "743": {
+      "id": 743,
+      "name": "Ribombee"
+    },
+    "744": {
+      "id": 744,
+      "name": "Rockruff"
+    },
+    "745": {
+      "id": 745,
+      "name": "Lycanroc"
+    },
+    "746": {
+      "id": 746,
+      "name": "Wishiwashi"
+    },
+    "747": {
+      "id": 747,
+      "name": "Mareanie"
+    },
+    "748": {
+      "id": 748,
+      "name": "Toxapex"
+    },
+    "749": {
+      "id": 749,
+      "name": "Mudbray"
+    },
+    "74:alolan": {
+      "form": "alolan",
+      "id": 74,
+      "name": "Geodude (Alolan)"
+    },
+    "74:kanto": {
+      "form": "kanto",
+      "id": 74,
+      "name": "Geodude (Kanto)"
+    },
+    "750": {
+      "id": 750,
+      "name": "Mudsdale"
+    },
+    "751": {
+      "id": 751,
+      "name": "Dewpider"
+    },
+    "752": {
+      "id": 752,
+      "name": "Araquanid"
+    },
+    "753": {
+      "id": 753,
+      "name": "Fomantis"
+    },
+    "754": {
+      "id": 754,
+      "name": "Lurantis"
+    },
+    "755": {
+      "id": 755,
+      "name": "Morelull"
+    },
+    "756": {
+      "id": 756,
+      "name": "Shiinotic"
+    },
+    "757": {
+      "id": 757,
+      "name": "Salandit"
+    },
+    "758": {
+      "id": 758,
+      "name": "Salazzle"
+    },
+    "759": {
+      "id": 759,
+      "name": "Stufful"
+    },
+    "75:alolan": {
+      "form": "alolan",
+      "id": 75,
+      "name": "Graveler (Alolan)"
+    },
+    "75:kanto": {
+      "form": "kanto",
+      "id": 75,
+      "name": "Graveler (Kanto)"
+    },
+    "760": {
+      "id": 760,
+      "name": "Bewear"
+    },
+    "761": {
+      "id": 761,
+      "name": "Bounsweet"
+    },
+    "762": {
+      "id": 762,
+      "name": "Steenee"
+    },
+    "763": {
+      "id": 763,
+      "name": "Tsareena"
+    },
+    "764": {
+      "id": 764,
+      "name": "Comfey"
+    },
+    "765": {
+      "id": 765,
+      "name": "Oranguru"
+    },
+    "766": {
+      "id": 766,
+      "name": "Passimian"
+    },
+    "767": {
+      "id": 767,
+      "name": "Wimpod"
+    },
+    "768": {
+      "id": 768,
+      "name": "Golisopod"
+    },
+    "769": {
+      "id": 769,
+      "name": "Sandygast"
+    },
+    "76:alolan": {
+      "form": "alolan",
+      "id": 76,
+      "name": "Golem (Alolan)"
+    },
+    "76:kanto": {
+      "form": "kanto",
+      "id": 76,
+      "name": "Golem (Kanto)"
+    },
+    "77": {
+      "id": 77,
+      "name": "Ponyta"
+    },
+    "770": {
+      "id": 770,
+      "name": "Palossand"
+    },
+    "771": {
+      "id": 771,
+      "name": "Pyukumuku"
+    },
+    "772": {
+      "id": 772,
+      "name": "Type: Null"
+    },
+    "773": {
+      "id": 773,
+      "name": "Silvally"
+    },
+    "774": {
+      "id": 774,
+      "name": "Minior"
+    },
+    "775": {
+      "id": 775,
+      "name": "Komala"
+    },
+    "776": {
+      "id": 776,
+      "name": "Turtonator"
+    },
+    "777": {
+      "id": 777,
+      "name": "Togedemaru"
+    },
+    "778": {
+      "id": 778,
+      "name": "Mimikyu"
+    },
+    "779": {
+      "id": 779,
+      "name": "Bruxish"
+    },
+    "78": {
+      "id": 78,
+      "name": "Rapidash"
+    },
+    "780": {
+      "id": 780,
+      "name": "Drampa"
+    },
+    "781": {
+      "id": 781,
+      "name": "Dhelmise"
+    },
+    "782": {
+      "id": 782,
+      "name": "Jangmo-o"
+    },
+    "783": {
+      "id": 783,
+      "name": "Hakamo-o"
+    },
+    "784": {
+      "id": 784,
+      "name": "Kommo-o"
+    },
+    "785": {
+      "id": 785,
+      "name": "Tapu Koko"
+    },
+    "786": {
+      "id": 786,
+      "name": "Tapu Lele"
+    },
+    "787": {
+      "id": 787,
+      "name": "Tapu Bulu"
+    },
+    "788": {
+      "id": 788,
+      "name": "Tapu Fini"
+    },
+    "789": {
+      "id": 789,
+      "name": "Cosmog"
+    },
+    "79": {
+      "id": 79,
+      "name": "Slowpoke"
+    },
+    "790": {
+      "id": 790,
+      "name": "Cosmoem"
+    },
+    "791": {
+      "id": 791,
+      "name": "Solgaleo"
+    },
+    "792": {
+      "id": 792,
+      "name": "Lunala"
+    },
+    "793": {
+      "id": 793,
+      "name": "Nihilego"
+    },
+    "794": {
+      "id": 794,
+      "name": "Buzzwole"
+    },
+    "795": {
+      "id": 795,
+      "name": "Pheromosa"
+    },
+    "796": {
+      "id": 796,
+      "name": "Xurkitree"
+    },
+    "797": {
+      "id": 797,
+      "name": "Celesteela"
+    },
+    "798": {
+      "id": 798,
+      "name": "Kartana"
+    },
+    "799": {
+      "id": 799,
+      "name": "Guzzlord"
+    },
+    "8": {
+      "id": 8,
+      "name": "Wartortle"
+    },
+    "80": {
+      "id": 80,
+      "name": "Slowbro"
+    },
+    "800": {
+      "id": 800,
+      "name": "Necrozma"
+    },
+    "801": {
+      "id": 801,
+      "name": "Magearna"
+    },
+    "802": {
+      "id": 802,
+      "name": "Marshadow"
+    },
+    "803": {
+      "id": 803,
+      "name": "Poipole"
+    },
+    "804": {
+      "id": 804,
+      "name": "Naganadel"
+    },
+    "805": {
+      "id": 805,
+      "name": "Stakataka"
+    },
+    "806": {
+      "id": 806,
+      "name": "Blacephalon"
+    },
+    "807": {
+      "id": 807,
+      "name": "Zeraora"
+    },
+    "81": {
+      "id": 81,
+      "name": "Magnemite"
+    },
+    "82": {
+      "id": 82,
+      "name": "Magneton"
+    },
+    "83": {
+      "id": 83,
+      "name": "Farfetch’d"
+    },
+    "84": {
+      "id": 84,
+      "name": "Doduo"
+    },
+    "85": {
+      "id": 85,
+      "name": "Dodrio"
+    },
+    "86": {
+      "id": 86,
+      "name": "Seel"
+    },
+    "87": {
+      "id": 87,
+      "name": "Dewgong"
+    },
+    "88:alolan": {
+      "form": "alolan",
+      "id": 88,
+      "name": "Grimer (Alolan)"
+    },
+    "88:kanto": {
+      "form": "kanto",
+      "id": 88,
+      "name": "Grimer (Kanto)"
+    },
+    "89:alolan": {
+      "form": "alolan",
+      "id": 89,
+      "name": "Muk (Alolan)"
+    },
+    "89:kanto": {
+      "form": "kanto",
+      "id": 89,
+      "name": "Muk (Kanto)"
+    },
+    "9": {
+      "id": 9,
+      "name": "Blastoise"
+    },
+    "90": {
+      "id": 90,
+      "name": "Shellder"
+    },
+    "91": {
+      "id": 91,
+      "name": "Cloyster"
+    },
+    "92": {
+      "id": 92,
+      "name": "Gastly"
+    },
+    "93": {
+      "id": 93,
+      "name": "Haunter"
+    },
+    "94": {
+      "id": 94,
+      "name": "Gengar"
+    },
+    "95": {
+      "id": 95,
+      "name": "Onix"
+    },
+    "96": {
+      "id": 96,
+      "name": "Drowzee"
+    },
+    "97": {
+      "id": 97,
+      "name": "Hypno"
+    },
+    "98": {
+      "id": 98,
+      "name": "Krabby"
+    },
+    "99": {
+      "id": 99,
+      "name": "Kingler"
+    }
+  },
+  "schemaVersion": 1,
+  "source": {
+    "gen7Pokedex": {
+      "commit": "e7aee8d9ccc983c59c5608929773249adca16b8f",
+      "filename": "gen7-pokedex.js",
+      "name": "gen7-pokedex",
+      "sha256": "70a4080bed36a66a75141d938ec6f90f9ab1cbb6c14c61154e2046498e7d6c34",
+      "syntax": "classic-showdown-js",
+      "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/mods/gen7/pokedex.js"
+    },
+    "pokedex": {
+      "commit": "e7aee8d9ccc983c59c5608929773249adca16b8f",
+      "filename": "pokedex.js",
+      "name": "pokedex",
+      "sha256": "3d0f28348380c92cb01e0a9daebeba5ee12b6ed32899f583ed9f2b72029065d0",
+      "syntax": "classic-showdown-js",
+      "url": "https://raw.githubusercontent.com/smogon/pokemon-showdown/e7aee8d9ccc983c59c5608929773249adca16b8f/data/pokedex.js"
+    },
+    "regionalConditionUrls": [
+      "https://www.serebii.net/ultrasunultramoon/evolution.shtml",
+      "https://bulbapedia.bulbagarden.net/wiki/Alolan_Form",
+      "https://bulbapedia.bulbagarden.net/wiki/Cubone_(Pok%C3%A9mon)",
+      "https://bulbapedia.bulbagarden.net/wiki/Rattata_%28Pok%C3%A9mon%29"
+    ],
+    "showdownCommit": "e7aee8d9ccc983c59c5608929773249adca16b8f",
+    "standardEvolution": {
+      "bytes": 287749,
+      "name": "Evolution Changes.pdf",
+      "sha256": "206c040f4b4ddad295a8f3680508ab41514d65ad6cec06acda036a356b0355b1"
+    },
+    "standardMethodsSha256": "c66fc90ad2e9a5b751d8ba85d4fd8a42398b10c64ad4b8fb3a75c9a68180850d"
+  }
+}

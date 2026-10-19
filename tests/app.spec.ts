@@ -112,13 +112,13 @@ test("searches, selects, and navigates to known locations", async ({
     "No direct wild location in this mode",
   );
   await expect(
-    page.locator("#dex-selection .evolution-path .evolution-link"),
+    page.locator("#dex-selection .evolution-controls .evolution-name"),
   ).toHaveText(["Charmander", "Charmeleon", "Charizard"]);
   await expect(
-    page.locator("#dex-selection .evolution-path .evolution-method"),
-  ).toHaveText(["Level 16 →", "Level 36 →"]);
+    page.locator("#dex-selection .evolution-controls .evolution-method"),
+  ).toHaveText(["Level 16", "Level 36"]);
   await page
-    .locator("#dex-selection .evolution-path")
+    .locator("#dex-selection .evolution-controls")
     .getByRole("button", { name: "Charmander", exact: true })
     .click();
   await expect(page.locator("#dex-selection .selected-title")).toContainText(
@@ -202,25 +202,23 @@ test("tracks forms and validates restore, migration, and reset", async ({
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#forms-toggle").click();
   await page.locator("#dex-search").fill("37");
-  await page.locator('[data-action="select"][data-species="37"]').click();
-  const alolan = page.locator("#dex-selection .form-detail").filter({
-    has: page.locator('[data-form="37:alolan"]'),
-  });
+  await page.locator('.dex-row[data-target="37:alolan"] .dex-select').click();
+  const alolan = page.locator("#dex-selection .pokemon-facts-expanded");
   await expect(alolan.locator(".type-mark")).toHaveCount(1);
   await expect(alolan.locator(".grade-badge")).toHaveText("S");
   await expect(alolan.locator(".grade-badge")).toHaveAttribute(
     "title",
     /Ninetales-Alola.*UUBL/,
   );
-  const form = page.locator('[data-action="form"]').first();
+  const form = page.locator('#dex-selection .selected-title [data-form="37:alolan"]');
   const formKey = await form.getAttribute("data-form");
   await form.click();
-  const promotedId = formKey!.split(":")[0];
-  await expect(
-    page
-      .locator(`[data-action="species"][data-species="${promotedId}"]`)
-      .first(),
-  ).toContainText("Caught");
+  await expect(form).toContainText("Caught");
+  const savedForm = await page.evaluate(() => JSON.parse(localStorage.getItem("pokemon-checklist-state-v5")!));
+  expect(savedForm.forms[formKey!]).toBe("caught");
+  expect(savedForm.species[37]).toBe("caught");
+  expect(savedForm.forms["37:kanto"] ?? "none").toBe("none");
+  await expect(page.locator("#overall-text")).toContainText("Caught 1");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#import-file").setInputFiles({
@@ -683,7 +681,7 @@ test("lists where a species is caught in other game modes", async ({
   expect(errors).toEqual([]);
 });
 
-test("always shows the evolution path, even next to a direct wild location", async ({
+test("always shows the complete evolution family, even next to a direct wild location", async ({
   page,
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
@@ -693,8 +691,8 @@ test("always shows the evolution path, even next to a direct wild location", asy
     page.locator("#dex-selection .location-links > strong"),
   ).toContainText("Known places in this mode");
   await expect(
-    page.locator("#dex-selection .evolution-path .evolution-link"),
-  ).toHaveText(["Pichu", "Pikachu"]);
+    page.locator("#dex-selection .evolution-controls .evolution-name"),
+  ).toHaveText(["Pichu", "Pikachu", "Raichu"]);
   expect(errors).toEqual([]);
 });
 
@@ -1064,7 +1062,7 @@ test("shows the last good copy when the save cannot be read", async ({
   await page.locator('[data-action="species"][data-species="731"]').first().click();
   await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
   await page.evaluate(() =>
-    localStorage.setItem("pokemon-checklist-state-v4", "{half a save"),
+    localStorage.setItem("pokemon-checklist-state-v5", "{half a save"),
   );
 
   await page.reload();
@@ -1074,7 +1072,7 @@ test("shows the last good copy when the save cannot be read", async ({
   await expect(page.locator("#notice-action")).toHaveText("Download unreadable copy");
   expect(
     await page.evaluate(() =>
-      localStorage.getItem("pokemon-checklist-state-v4:unreadable"),
+      localStorage.getItem("pokemon-checklist-state-v5:unreadable"),
     ),
   ).toBe("{half a save");
   expect(errors).toEqual([]);

@@ -20,6 +20,11 @@ ROOT_SOURCE = '''\n\tmeowth: {num: 52, species: "Meowth", types: ["Normal"], bas
 
 
 class RegionalDataTests(unittest.TestCase):
+    def test_shared_standard_methods_include_source_documented_eevee_stones(self):
+        from team_options import HACK_EVOLUTIONS
+        self.assertEqual(HACK_EVOLUTIONS.get(("Eevee", "Leafeon")), "Leaf Stone")
+        self.assertEqual(HACK_EVOLUTIONS.get(("Eevee", "Glaceon")), "Ice Stone")
+
     def test_main_data_validator_rejects_malformed_regional_facts(self):
         import validate_data
         validator = getattr(validate_data, "validate_regional_data", None)

@@ -25,6 +25,8 @@ CONDITIONAL_LEVEL_EVOLUTIONS = {
 # Standard evolution changes take precedence over the pinned vanilla metadata.
 # These entries come from references/prismatic-moon/Evolution Changes.pdf.
 HACK_EVOLUTIONS = {
+    ("Eevee", "Leafeon"): "Leaf Stone",
+    ("Eevee", "Glaceon"): "Ice Stone",
     ("Graveler", "Golem"): "high friendship + level",
     ("Kadabra", "Alakazam"): "high friendship + level",
     ("Machoke", "Machamp"): "high friendship + level",

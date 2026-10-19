@@ -1,4 +1,5 @@
-import { signal } from "@preact/signals";
+import { batch, signal } from "@preact/signals";
+import type { RegionalForm } from "./regional";
 import {
   activeEncounters,
   activeSaveKey,
@@ -14,6 +15,7 @@ import {
   restoreState,
   savedNotice,
   selectedDex,
+  selectedRegionalForm,
   setMode,
   showNotice,
   sidebarHidden,
@@ -149,8 +151,8 @@ export function jumpTo(hash: string, locationId?: string): void {
   requestAnimationFrame(retry);
 }
 
-export function openPokemon(id: number): void {
-  selectedDex.value = id;
+export function openPokemon(id: number, form?: RegionalForm): void {
+  batch(() => { selectedDex.value = id; selectedRegionalForm.value = form; });
   if (isMobile.value) {
     if (!drawerOpen.value)
       previousFocus = document.activeElement as HTMLElement | null;

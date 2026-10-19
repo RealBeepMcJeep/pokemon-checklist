@@ -15,6 +15,7 @@ import { saveKeyFor, type ReplaceOp } from "./sync/outbox";
 import { diffEntries, entriesFromState, rebaseState } from "./sync/records";
 import { BUILD_LABEL } from "./version";
 import { isRegional, type RegionalForm } from "./regional";
+import { collectionTargets } from "./collection";
 
 export interface Notice {
   message: string;
@@ -49,6 +50,7 @@ export function setUnlock(flag: Unlock, enabled: boolean): void {
   persist();
 }
 export const selectedDex = signal<number | null>(null);
+export const selectedRegionalForm = signal<RegionalForm | undefined>(undefined);
 export const searchTerm = signal("");
 export const focusedLocation = signal<string | null>(null);
 export const drawerOpen = signal(false);
@@ -73,6 +75,14 @@ export const activeFormDefinitions = computed(() =>
 export const speciesCounts = computed(() => {
   const counts = { none: 0, seen: 0, caught: 0 };
   for (const status of speciesSignals.values()) counts[status.value]++;
+  return counts;
+});
+export const collectionCounts = computed(() => {
+  const counts = { none: 0, seen: 0, caught: 0 };
+  for (const target of collectionTargets(POKEMON, formsTracked.value)) {
+    const status = target.form ? formSignal(`${target.id}:${target.form}`).value : speciesSignal(target.id).value;
+    counts[status]++;
+  }
   return counts;
 });
 export const caughtCount = computed(() => speciesCounts.value.caught);
