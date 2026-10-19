@@ -27,6 +27,57 @@ async function openRegionalFixture(page: Page, project: string) {
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test.describe(device, () => {
     test.use({ viewport: { width, height: 950 }, isMobile: device === "phone", hasTouch: device === "phone" });
+    test("source footnotes distinguish seasonal callers and cosmetic SOS forms without expanding saves", async ({ page }, info) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+      await openRegionalFixture(page, info.project.name);
+      const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      const cases = [
+        { location: "akala-island/route-6", caller: "Deerling (Spring / Summer)", count: 2, rate: "15%", allies: ["Deerling (Autumn)", "Deerling (Winter)"] },
+        { location: "ulaula-island/thrifty-megamart", caller: "Rotom (Base)", count: 1, rate: "15%", allies: ["Rotom (Frost)", "Rotom (Heat)"] },
+        { location: "ulaula-island/ulaula-meadow", caller: "Floette (Red Flower)", count: 1, rate: "20%", allies: ["Floette (Orange Flower)", "Floette (White Flower)"] },
+      ];
+      for (const tracking of [true, false]) {
+        if (!tracking) {
+          if (device === "phone") await page.locator("#header-settings-toggle").click();
+          await page.locator("#forms-toggle").click();
+          if (device === "phone") await page.getByRole("button", { name: "Close settings", exact: true }).click();
+        }
+        for (const example of cases) {
+          const area = page.locator(`[data-location-id="${example.location}"]`);
+          if (!await area.evaluate(el => (el as HTMLDetailsElement).open)) await area.locator("summary").click();
+          const rows = area.locator("tr").filter({ has: page.getByRole("button", { name: example.caller, exact: true }) });
+          await expect(rows).toHaveCount(example.count);
+          for (const row of await rows.all()) {
+            await expect(row.locator("td").first()).toHaveText(example.rate);
+            await expect(row.locator(".sos-legend")).not.toContainText("%");
+            // Native footnotes remain in the caller/group. A separate shared
+            // SOS-table note is shown once, not repeated under every ally.
+            expect(await row.locator(".sos-note").count()).toBe(example.count === 2 ? 1 : 0);
+            for (const name of example.allies) {
+              const label = row.getByRole("button", { name, exact: true });
+              await expect(label).toHaveCount(1);
+              await label.scrollIntoViewIfNeeded();
+              await expect(label).toBeInViewport({ ratio: 0.98 });
+              expect(await label.evaluate(el => el.clientWidth > 0 && el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+            }
+          }
+          await page.screenshot({ path: info.outputPath(`${example.location.split("/").pop()}-${tracking ? "tracking" : "collapsed"}.png`) });
+        }
+      }
+      await page.locator("#header-settings-toggle").click();
+      await page.getByLabel("SOS Calls", { exact: true }).uncheck();
+      await page.getByRole("button", { name: "Close settings", exact: true }).click();
+      for (const example of cases) {
+        const area = page.locator(`[data-location-id="${example.location}"]`);
+        await expect(area.locator(".inline-sos")).toHaveCount(0);
+        await expect(area.getByRole("button", { name: example.caller, exact: true })).toHaveCount(example.count);
+      }
+      const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+      for (const field of ["species", "forms", "starred", "starredForms"]) expect(after[field]).toEqual(before[field]);
+      expect(errors).toEqual([]);
+    });
     test("known non-regional encounter names survive tracking-off and Catch-next retains regional identity", async ({ page }, info) => {
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));

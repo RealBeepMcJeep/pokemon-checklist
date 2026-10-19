@@ -115,7 +115,7 @@ function Allies({ row }: { row: EncounterRowData }) {
   );
 }
 
-function InlineSos({ nodes, root = true }: { nodes: readonly GuideSosNode[]; root?: boolean }) {
+function InlineSos({ nodes, root = true, visibleNotes = [] }: { nodes: readonly GuideSosNode[]; root?: boolean; visibleNotes?: readonly string[] }) {
   if (!nodes.length) return null;
   return <ul class="inline-sos">
     {root && guideCalls(nodes).some(node => node.call.kind === "sos") &&
@@ -124,7 +124,13 @@ function InlineSos({ nodes, root = true }: { nodes: readonly GuideSosNode[]; roo
       const { call } = node;
       const row = call.row;
       const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
-      const notes = [...(call.group.notes || []), ...(call.sourceRow.note ? [call.sourceRow.note] : [])];
+      // Keep exact source text, but do not replay a visible native footnote or
+      // a single SOS-table rule's shared note under each sibling ally.
+      const sameSource = (other: GuideSosNode) => other.call.group.id === call.group.id && other.call.sourceRow.id === call.sourceRow.id;
+      const shared = nodes.filter(sameSource).length > 1;
+      const earlier = nodes.slice(0, index).some(sameSource);
+      const notes = earlier ? [] : [...new Set([...(call.group.notes || []), ...(call.sourceRow.note ? [call.sourceRow.note] : [])])]
+        .filter(note => !visibleNotes.includes(note));
       return <li class="sos-entry" data-sos-kind={call.kind} data-source-row={call.sourceRow.id} key={`${call.sourceRow.id}:${row.speciesId}:${row.form || ""}:${index}`}>
         {call.kind === "weather-sos" && <span class="sos-method">{`Weather SOS · guide-reported rate: ${row.rates ? rateText(row.rates) : "not documented"} · location-wide rule`}</span>}
         <div class="sos-identity">
@@ -133,8 +139,8 @@ function InlineSos({ nodes, root = true }: { nodes: readonly GuideSosNode[]; roo
         </div>
         <AllyForms ally={{ speciesId: row.speciesId!, species: row.species || "", name: row.speciesName || "Pokémon", form: row.form }} />
         {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
-        {notes.map(note => <span class="sos-note" key={note}>{note}</span>)}
-        <InlineSos nodes={node.children} root={false} />
+        {notes.map(note => <span class="sos-note" key={note}>{shared && "Shared ally source note: "}{note}</span>)}
+        <InlineSos nodes={node.children} root={false} visibleNotes={visibleNotes} />
       </li>;
     })}
   </ul>;
@@ -188,7 +194,7 @@ function EncounterRow({
             <span class="muted">All listed wild species</span>
           )}
         </span>
-        {inline !== undefined && <InlineSos nodes={inline} />}
+        {inline !== undefined && <InlineSos nodes={inline} visibleNotes={[...(group.notes || []), ...(row.note ? [row.note] : [])]} />}
       </th>
       <td class={inline === undefined ? undefined : "caller-rate"}>{rateText(row.rates)}</td>
       <td>

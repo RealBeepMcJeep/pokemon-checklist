@@ -5133,19 +5133,17 @@
                   "speciesId": 574
                 },
                 {
-                  "speciesName": "Deerling",
+                  "speciesName": "Deerling (Spring / Summer)",
                   "species": "deerling",
                   "forms": [
                     "spring",
-                    "summer",
-                    "autumn",
-                    "winter"
+                    "summer"
                   ],
                   "rates": {
                     "single": 15
                   },
                   "allies": [],
-                  "note": "All Deerling forms are available; Autumn and Winter can only be found by SOS chaining the Spring and Summer forms.",
+                  "note": "All Deerling forms are available; Autumn and Winter can only be found by SOS chaining the Spring and Summer forms. The guide does not assign Spring versus Summer to a specific grass patch; the 15% rate is pooled, not per form.",
                   "id": "akala-island/route-6/grass-1-1/4",
                   "speciesId": 585
                 },
@@ -5246,14 +5244,19 @@
                   "speciesId": 574
                 },
                 {
-                  "speciesName": "Deerling",
+                  "speciesName": "Deerling (Spring / Summer)",
                   "species": "deerling",
                   "rates": {
                     "single": 15
                   },
                   "allies": [],
                   "id": "akala-island/route-6/grass-2-2/5",
-                  "speciesId": 585
+                  "speciesId": 585,
+                  "forms": [
+                    "spring",
+                    "summer"
+                  ],
+                  "note": "All Deerling forms are available; Autumn and Winter can only be found by SOS chaining the Spring and Summer forms. The guide does not assign Spring versus Summer to a specific grass patch; the 15% rate is pooled, not per form."
                 },
                 {
                   "speciesName": "Electrike",
@@ -5297,23 +5300,26 @@
               "levels": null,
               "encounters": [
                 {
-                  "speciesName": "Deerling",
+                  "speciesName": "Deerling (Spring / Summer)",
                   "species": "deerling",
                   "rates": null,
                   "allies": [
                     {
                       "species": "deerling",
                       "name": "Deerling",
+                      "form": "autumn",
                       "speciesId": 585
                     },
                     {
                       "species": "deerling",
                       "name": "Deerling",
+                      "form": "winter",
                       "speciesId": 585
                     }
                   ],
                   "id": "akala-island/route-6/sos-calls-3/1",
-                  "speciesId": 585
+                  "speciesId": 585,
+                  "note": "Season identities follow the page-25 footnote; ally column order and selection shares are not documented."
                 },
                 {
                   "speciesName": "Fennekin",
@@ -10040,9 +10046,7 @@
                   "speciesName": "Rotom",
                   "species": "rotom",
                   "forms": [
-                    "base",
-                    "heat",
-                    "frost"
+                    "base"
                   ],
                   "rates": {
                     "single": 15
@@ -10051,12 +10055,20 @@
                     {
                       "species": "rotom",
                       "name": "Rotom",
+                      "form": "frost",
+                      "speciesId": 479
+                    },
+                    {
+                      "species": "rotom",
+                      "name": "Rotom",
+                      "form": "heat",
                       "speciesId": 479
                     }
                   ],
                   "note": "Rotom can call its Fridge (Frost) and Heat forms via SOS.",
                   "id": "ulaula-island/thrifty-megamart/building-1/5",
-                  "speciesId": 479
+                  "speciesId": 479,
+                  "form": "base"
                 },
                 {
                   "speciesName": "Klefki",
@@ -10642,17 +10654,29 @@
                   "speciesName": "Floette",
                   "species": "floette",
                   "forms": [
-                    "red-flower",
-                    "orange-flower",
-                    "white-flower"
+                    "red-flower"
                   ],
                   "rates": {
                     "single": 20
                   },
-                  "allies": [],
+                  "allies": [
+                    {
+                      "species": "floette",
+                      "name": "Floette",
+                      "form": "orange-flower",
+                      "speciesId": 670
+                    },
+                    {
+                      "species": "floette",
+                      "name": "Floette",
+                      "form": "white-flower",
+                      "speciesId": 670
+                    }
+                  ],
                   "note": "Floette found here has red flowers and can call Floette with orange and white flowers.",
                   "id": "ulaula-island/ulaula-meadow/grass-1/2",
-                  "speciesId": 670
+                  "speciesId": 670,
+                  "form": "red-flower"
                 },
                 {
                   "speciesName": "Oricorio",

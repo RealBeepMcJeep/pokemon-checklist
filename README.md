@@ -59,8 +59,13 @@ the area heading. Unmapped creator entries remain source warnings, not invented 
 Existing explicit encounter-form metadata is named in the guide, inline allies and
 Catch next even when collection form tracking is off (for example Floette (Eternal
 Flower)); a broad legacy form list is not evidence that every listed form is wild.
-Remaining missing source identities and non-regional detail-heading context are
-development work, not a claim of complete form naming.
+Source-footnote corrections distinguish Route 6 Spring/Summer Deerling callers
+from Autumn/Winter SOS, Base Rotom from Frost/Heat SOS, and red Ula’Ula Floette
+from Orange/White Flower SOS. Native rates stay pooled; the guide does not assign
+Spring versus Summer to individual grass patches or provide ordinary ally shares.
+These corrections preserve existing collection-form keys; they are not a new
+Extended Forms tracking mode. Remaining source gaps and non-regional detail-heading
+context are development work, not a claim of complete form naming.
 Universal “All” rules appear once per wild row, labeled Any listed wild caller, rather
 than repeating inside every chain. Ordinary unknown-share help is shared by the row;
 weather entries retain their location-wide source scope and conditions. The caller’s

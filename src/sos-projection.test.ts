@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_BY_MODE } from "./data";
-import { getOccurrences } from "./domain";
+import { getOccurrences, buildFormDefinitions } from "./domain";
 import { encounterRegionalForm, isRegional } from "./regional";
 import { UNLOCKS } from "./types";
 import * as eligibility from "./unlocks";
@@ -19,6 +19,36 @@ const location = (...groups: EncounterGroup[]): Location => ({ id: "fixture", na
 const project = eligibility.projectEncounters;
 
 describe("source-preserving SOS projection", () => {
+  it("restores documented cosmetic allies without adding collection-form keys or wild targets", () => {
+    const modes = structuredClone(ENCOUNTERS_BY_MODE);
+    const locations = modes["photonic-prismatic"].islands.flatMap(island => island.locations);
+    const find = (id: string) => locations.find(loc => loc.id === id)!;
+    const deer = find("akala-island/route-6");
+    const store = find("ulaula-island/thrifty-megamart");
+    const meadow = find("ulaula-island/ulaula-meadow");
+    for (const [loc, id, forms] of [[deer, 585, ["autumn", "winter"]], [store, 479, ["frost", "heat"]], [meadow, 670, ["orange-flower", "white-flower"]]] as const) {
+      const projected = project(loc, ["sos"]);
+      expect(projected.calls.filter(call => call.row.speciesId === id).map(call => call.row.form).sort()).toEqual([...forms].sort());
+      expect(projected.calls.filter(call => call.row.speciesId === id).every(call => call.row.rates === null)).toBe(true);
+      expect(eligibility.eligibleRows(loc, ["sos"], true).filter(row => row.speciesId === id)).toHaveLength(1);
+      expect(project(loc, []).calls).toEqual([]);
+    }
+    const after = [...buildFormDefinitions(modes).keys()].sort();
+    // Reconstruct the previous mixed-list transcription: these keys already
+    // existed before restoring exact acquisition identities. No new save scope.
+    const native = deer.groups.filter(g => g.category === "regular").flatMap(g => g.encounters).filter(r => r.speciesId === 585);
+    native[0].forms = ["spring", "summer", "autumn", "winter"];
+    delete native[1].forms;
+    const rule = deer.groups.find(g => g.name === "SOS Calls")!.encounters.find(r => r.speciesId === 585)!;
+    for (const ally of rule.allies) delete ally.form;
+    for (const [loc, id, oldForms] of [[store, 479, ["base", "heat", "frost"]], [meadow, 670, ["red-flower", "orange-flower", "white-flower"]]] as const) {
+      const caller = loc.groups.flatMap(g => g.encounters).find(row => row.speciesId === id)!;
+      delete caller.form;
+      caller.forms = [...oldForms];
+      caller.allies = id === 479 ? [{ speciesId: 479, species: "rotom", name: "Rotom" }] : [];
+    }
+    expect([...buildFormDefinitions(modes).keys()].sort()).toEqual(after);
+  });
   it("retains every eligible collection target across all Prismatic locations and capability combinations", () => {
     const target = (entry: EncounterRow): string => isRegional(entry.speciesId!)
       ? `${entry.speciesId}:${encounterRegionalForm(entry.speciesId!, entry.form) ?? entry.form ?? ""}` : String(entry.speciesId);
