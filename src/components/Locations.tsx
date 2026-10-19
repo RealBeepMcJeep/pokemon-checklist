@@ -1,4 +1,4 @@
-import { occurrenceEligible, guideEncounters, projectEncounters, groupUnlock, type GuideEncounter, type GuideSosNode } from "../unlocks";
+import { occurrenceEligible, guideEncounters, guideCalls, projectEncounters, groupUnlock, isWildcardCaller, type GuideEncounter, type GuideSosNode } from "../unlocks";
 import { UNLOCKS } from "../types";
 import { Fragment } from "preact";
 import { memo } from "preact/compat";
@@ -115,24 +115,29 @@ function Allies({ row }: { row: EncounterRowData }) {
   );
 }
 
-function InlineSos({ nodes }: { nodes: readonly GuideSosNode[] }) {
+function InlineSos({ nodes, root = true }: { nodes: readonly GuideSosNode[]; root?: boolean }) {
   if (!nodes.length) return null;
-  return <ul class="inline-sos">{nodes.map((node, index) => {
-    const { call } = node;
-    const row = call.row;
-    const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
-    const notes = [...(call.group.notes || []), ...(call.sourceRow.note ? [call.sourceRow.note] : [])];
-    return <li class="sos-entry" data-sos-kind={call.kind} data-source-row={call.sourceRow.id} key={`${call.sourceRow.id}:${row.speciesId}:${row.form || ""}:${index}`}>
-      <span class="sos-method">{call.kind === "weather-sos"
-        ? `Weather SOS · guide-reported rate: ${row.rates ? rateText(row.rates) : "not documented"}`
-        : "SOS ally · share not documented"}</span>
-      <GuidePokemon id={row.speciesId!} name={row.speciesName || row.species || "Pokémon"} form={row.form} ability={row.ability} context={call.kind === "weather-sos" ? "weather SOS ally" : "SOS ally"} />
-      <AllyForms ally={{ speciesId: row.speciesId!, species: row.species || "", name: row.speciesName || "Pokémon", form: row.form }} />
-      {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
-      {notes.map(note => <span class="sos-note" key={note}>{note}</span>)}
-      <InlineSos nodes={node.children} />
-    </li>;
-  })}</ul>;
+  return <ul class="inline-sos">
+    {root && guideCalls(nodes).some(node => node.call.kind === "sos") &&
+      <li class="sos-legend">Ordinary SOS ally share not documented.</li>}
+    {nodes.map((node, index) => {
+      const { call } = node;
+      const row = call.row;
+      const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
+      const notes = [...(call.group.notes || []), ...(call.sourceRow.note ? [call.sourceRow.note] : [])];
+      return <li class="sos-entry" data-sos-kind={call.kind} data-source-row={call.sourceRow.id} key={`${call.sourceRow.id}:${row.speciesId}:${row.form || ""}:${index}`}>
+        {call.kind === "weather-sos" && <span class="sos-method">{`Weather SOS · guide-reported rate: ${row.rates ? rateText(row.rates) : "not documented"} · location-wide rule`}</span>}
+        <div class="sos-identity">
+          <GuidePokemon id={row.speciesId!} name={row.speciesName || row.species || "Pokémon"} form={row.form} ability={row.ability} context={call.kind === "weather-sos" ? "weather SOS ally" : "SOS ally"} />
+          {call.kind === "sos" && <span class="sos-kind">{isWildcardCaller(call.sourceRow) ? "Any listed wild caller" : "SOS"}</span>}
+        </div>
+        <AllyForms ally={{ speciesId: row.speciesId!, species: row.species || "", name: row.speciesName || "Pokémon", form: row.form }} />
+        {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
+        {notes.map(note => <span class="sos-note" key={note}>{note}</span>)}
+        <InlineSos nodes={node.children} root={false} />
+      </li>;
+    })}
+  </ul>;
 }
 
 function PrismaticEncounters({ location }: { location: LocationData }) {
@@ -185,7 +190,7 @@ function EncounterRow({
         </span>
         {inline !== undefined && <InlineSos nodes={inline} />}
       </th>
-      <td>{rateText(row.rates)}</td>
+      <td class={inline === undefined ? undefined : "caller-rate"}>{rateText(row.rates)}</td>
       <td>
         <Conditions group={group} row={row} />
       </td>
@@ -230,7 +235,7 @@ function EncounterGroup({ group, location, guide }: { group: EncounterGroupData;
           <thead>
             <tr>
               <th scope="col">Pokémon / status</th>
-              <th scope="col">Chance</th>
+              <th scope="col">{guide ? "Wild rate" : "Chance"}</th>
               <th scope="col">When / where</th>
               <th scope="col">Notes</th>
               {!guide && <th scope="col">SOS allies</th>}

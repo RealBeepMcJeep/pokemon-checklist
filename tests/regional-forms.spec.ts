@@ -51,6 +51,8 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       const ally = row.locator(".species-cell .inline-sos").getByRole("button", { name: "Meowth (Kanto)", exact: true });
       await expect(ally).toHaveCount(1);
       await expect(row.locator("td").first()).toHaveText("15%");
+      await expect(school.locator('th[scope="col"]').nth(1)).toHaveText("Wild rate");
+      if (device === "phone") expect(await row.locator("td").first().evaluate(el => getComputedStyle(el, "::before").content)).toContain("Wild rate");
       await expect(page.locator(".location-body .group-heading strong").filter({ hasText: /SOS/ })).toHaveCount(0);
       await ally.click();
       await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Kanto)");
@@ -138,14 +140,19 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       await expect(calls.getByRole("button", { name: "Happiny", exact: true })).toHaveCount(1);
       const rattata = route1.locator("tr").filter({ has: page.getByRole("button", { name: "Rattata (Alolan)", exact: true }) });
       await expect(rattata.locator("td").first()).toContainText("20%");
-      await expect(rattata.locator(".sos-method")).toContainText("share not documented");
-      await expect(rattata.locator(".sos-method")).not.toContainText("%");
+      await expect(rattata.locator(".sos-legend")).toContainText("share not documented");
+      await expect(rattata.locator(".sos-legend")).not.toContainText("%");
       const outskirts = page.locator('details[data-location-id="melemele-island/hauoli-outskirts"]');
       if (!(await outskirts.evaluate(el => (el as HTMLDetailsElement).open))) await outskirts.locator("summary").click();
       await expect(outskirts.getByRole("button", { name: "Rattata (Kanto)", exact: true })).toHaveCount(0);
       const desert = page.locator('details[data-location-id="ulaula-island/haina-desert"]');
       if (!(await desert.evaluate(el => (el as HTMLDetailsElement).open))) await desert.locator("summary").click();
       const weather = desert.locator("#encounter-ulaula-island-haina-desert-sand-1-1");
+      await expect(weather.locator(".sos-legend")).toHaveCount(1);
+      await expect(weather.locator(".sos-legend")).toContainText("share not documented");
+      await expect(weather.locator('.sos-entry[data-source-row="ulaula-island/haina-desert/sos-calls-2/6"]')).toHaveCount(1);
+      await expect(weather.locator('.sos-entry[data-source-row="ulaula-island/haina-desert/sos-calls-2/7"]')).toHaveCount(1);
+      await expect(weather.locator(".sos-kind").filter({ hasText: "Any listed wild caller" })).toHaveCount(2);
       const castform = weather.locator('.sos-entry[data-sos-kind="weather-sos"]').filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
       await expect(castform).toHaveCount(2);
       // Neither switch may silently leave weather allies visible without its prerequisite.

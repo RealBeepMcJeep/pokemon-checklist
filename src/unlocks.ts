@@ -11,6 +11,9 @@ export function groupUnlock(group: EncounterGroup): string | null {
   return null;
 }
 
+/** Literal source wildcard; never an invented Pokémon/caller identity. */
+export const isWildcardCaller = (row: EncounterRow): boolean => !row.speciesId && row.speciesName === "All";
+
 /** A documented call edge; source conditions/notes remain on the original records. */
 export interface SosEncounter {
   kind: "sos" | "weather-sos";
@@ -99,7 +102,7 @@ export function projectEncounters(location: Location, flags: readonly string[], 
     for (let index = 0; index < queue.length; index++) {
       const caller = queue[index];
       for (const source of sources) {
-        const wildcard = !source.row.speciesId && source.row.speciesName === "All";
+        const wildcard = isWildcardCaller(source.row);
         // “All listed wild species” attaches to documented native callers; it cannot bootstrap itself.
         if (!(wildcard ? native.has(encounterIdentity(caller)) : sameCaller(source.row, caller))) continue;
         matched.add(source.row);
@@ -152,7 +155,9 @@ export function guideEncounters(location: Location, flags: readonly string[], do
           : groupUnlock(call.group) === "sos"
             ? !!call.caller && encounterIdentity(call.caller) === encounterIdentity(actor)
             : !!call.caller && call.caller.id === actor.id && encounterIdentity(call.caller) === encounterIdentity(actor);
-        if (!applies) continue;
+        // Universal source rules belong once at this real wild anchor. Their
+        // lossless edges remain in projectEncounters for all possible callers.
+        if (!applies || (!root && isWildcardCaller(call.sourceRow))) continue;
         const key = encounterIdentity(call.row);
         const allowed = parentEligible && available.has(callIdentity(call));
         nodes.push({ call, eligible: allowed, children: path.has(key) ? []

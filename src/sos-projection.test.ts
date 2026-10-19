@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_BY_MODE } from "./data";
 import { getOccurrences } from "./domain";
+import { encounterRegionalForm, isRegional } from "./regional";
+import { UNLOCKS } from "./types";
 import * as eligibility from "./unlocks";
 import type { EncounterGroup, EncounterRow, Location } from "./types";
 
@@ -17,6 +19,39 @@ const location = (...groups: EncounterGroup[]): Location => ({ id: "fixture", na
 const project = eligibility.projectEncounters;
 
 describe("source-preserving SOS projection", () => {
+  it("retains every eligible collection target across all Prismatic locations and capability combinations", () => {
+    const target = (entry: EncounterRow): string => isRegional(entry.speciesId!)
+      ? `${entry.speciesId}:${encounterRegionalForm(entry.speciesId!, entry.form) ?? entry.form ?? ""}` : String(entry.speciesId);
+    const locations = ENCOUNTERS_BY_MODE["photonic-prismatic"].islands.flatMap(island => island.locations);
+    for (let mask = 0; mask < (1 << UNLOCKS.length); mask++) {
+      const flags = UNLOCKS.filter((_, index) => mask & (1 << index));
+      for (const loc of locations) {
+        const guide = eligibility.guideEncounters(loc, flags);
+        const visible = new Set(guide.flatMap(entry => [
+          ...(entry.eligible ? [target(entry.row)] : []),
+          ...eligibility.guideCalls(entry.sos).filter(node => node.eligible).map(node => target(node.call.row)),
+        ]));
+        const expected = new Set(eligibility.eligibleRows(loc, flags, true).map(target));
+        expect([...visible].sort(), `${loc.id} / ${flags.join(",")}`).toEqual([...expected].sort());
+      }
+    }
+  });
+  it("shows a universal wildcard once per wild row without deleting specific caller chains", () => {
+    const all = row("any-caller", null, [30]);
+    all.conditions = ["Documented condition"];
+    const chain = row("second-rule", 20, [40]);
+    const loc = location(group("grass", "Grass", [row("first", 10), row("second", 20)], true),
+      group("sos", "SOS Calls", [row("first-rule", 10, [20]), chain, all]));
+    const raw = project(loc, ["sos"]);
+    expect(raw.calls.filter(call => call.sourceRow.id === all.id)).toHaveLength(2);
+    const first = eligibility.guideEncounters(loc, ["sos"])[0];
+    const shown = eligibility.guideCalls(first.sos);
+    expect(shown.filter(node => node.call.sourceRow.id === all.id)).toHaveLength(1);
+    expect(first.sos.find(node => node.call.sourceRow.id === all.id)?.call.sourceRow.conditions).toEqual(["Documented condition"]);
+    expect(shown.some(node => node.call.sourceRow.id === chain.id && node.call.row.speciesId === 40)).toBe(true);
+    // Reachability still uses the lossless raw graph, not a shortened UI traversal.
+    expect(eligibility.eligibleRows(loc, ["sos"]).map(row => row.speciesId)).toEqual(expect.arrayContaining([10,20,30,40]));
+  });
   it("does not replay an embedded Alolan rule on an ally sharing its source-row ID", () => {
     const native = row("shared-source", 52);
     native.allies = [{ speciesId: 52, species: "meowth", name: "Meowth", form: "kanto" }];

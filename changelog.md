@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased — regional living-Dex work (#17)
+- Universal SOS rules render once per wild caller row instead of replaying inside every chain. Shared unknown-share captions and compact scope tags reduce repetition; weather rules keep their source rates/conditions and caller percentages are labeled Wild rate. The lossless caller graph and eligible target set remain unchanged.
 - Prismatic ordinary/weather SOS now nests inside real caller rows and disappears with the applicable Settings/access gates; removed standalone tables and their empty allies column. Preserved source conditions/notes and explicit unknown ordinary shares versus guide-reported weather rates. Details and old table hashes return to rendered callers; unresolved source entries remain warnings without fake catch controls. Vanilla caller mapping and remaining form-name corrections are still unfinished.
 - Eligibility and availability share a source-preserving SOS caller graph. Haina’s ordinary “All” rules now include Claydol/Golurk without enabling weather SOS; inaccessible opposite-form callers no longer borrow access from a sibling. Cycles cannot bootstrap access, weather still needs both switches and a real wild encounter, and caller rates never become ordinary ally percentages. Prismatic inline rendering now uses the same graph; remaining naming and vanilla mapping work is unfinished.
 - Catch-next list identity includes the encounter source and actual species/form target, preventing shared-caller SOS allies from colliding during rendering.

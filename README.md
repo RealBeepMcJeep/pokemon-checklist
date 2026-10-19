@@ -56,6 +56,10 @@ need Weather SOS and caller access. Ordinary shares remain explicitly undocument
 weather entries label guide-reported rates and conditions rather than per-turn odds.
 Details link back to real caller rows; old removed-table hashes redirect to a caller or
 the area heading. Unmapped creator entries remain source warnings, not invented callers.
+Universal “All” rules appear once per wild row, labeled Any listed wild caller, rather
+than repeating inside every chain. Ordinary unknown-share help is shared by the row;
+weather entries retain their location-wide source scope and conditions. The caller’s
+percentage is explicitly labeled Wild rate, separate from ally selection/arrival odds.
 Development status for #17: remaining form-name/source corrections and vanilla caller
 mapping are unfinished; vanilla location-only SOS tables have not been guessed into callers.
 
