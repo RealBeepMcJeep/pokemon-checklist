@@ -55,6 +55,22 @@ class FakeClient:
 
 
 class PokemonOpsTests(unittest.TestCase):
+    def test_regional_favorite_keys_and_values_fail_closed(self):
+        for key in ["starform:0:alolan", "starform:052:alolan", "starform:999:alolan", "starform:52:future", "starform:52:alolan/extra", "starform:52:alolan?query"]:
+            with self.subTest(key=key), self.assertRaises(ops.SchemaError):
+                ops.validate_requested_patch({key: "on"}, [52])
+        with self.assertRaises(ops.SchemaError):
+            ops.validate_requested_patch({"starform:52:alolan": "caught"}, [52])
+
+    def test_regional_favorite_records_preserve_ownership(self):
+        records = {"starform:52:alolan": entry("on"), "species:52": entry("caught")}
+        try:
+            checked = ops.validate_record_map(records, [52])
+        except ops.SchemaError:
+            checked = None
+        self.assertEqual(checked, records)
+        self.assertEqual(ops.record_value({}, "starform:52:alolan"), "off")
+
     def test_mark_writes_only_the_minimal_diff(self):
         client = FakeClient({"species:25": entry("seen"), "species:1": entry("caught")})
         result = ops.run_mark(client, "uid", "pikachu", "caught", SPECIES)

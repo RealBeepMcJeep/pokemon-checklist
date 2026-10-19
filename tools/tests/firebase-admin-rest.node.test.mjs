@@ -9,6 +9,28 @@ import {
   validateUid,
 } from "../firebase-admin-rest.mjs";
 
+test("writes a regional favorite with an off before-image and preserves ownership", async () => {
+  const records = { "species:52": { s: "caught", at: 1, by: "fixture" } };
+  let written;
+  const requestFn = async (_path, init) => {
+    if (init.method === "PUT") { written = JSON.parse(init.body); return null; }
+    return { body: { state: { records } }, etag: "fixture-etag" };
+  };
+  let result = null;
+  try { result = await applyRecords("fixture-account", { "starform:52:alolan": "on" }, { requestFn }); }
+  catch (error) { assert.match(error.message, /invalid record key/); }
+  assert.notEqual(result, null, "regional favorite key must be accepted");
+  assert.deepEqual(result.changes, [{ key: "starform:52:alolan", from: "off", to: "on" }]);
+  assert.deepEqual(written.state.records["species:52"], records["species:52"]);
+});
+
+test("regional favorite keys and values fail closed", () => {
+  for (const key of ["starform:0:alolan", "starform:052:alolan", "starform:808:alolan", "starform:52:future", "starform:52:alolan/extra", "starform:52:alolan?query"]) {
+    assert.throws(() => validateRecordMap({ [key]: "on" }));
+  }
+  assert.throws(() => validateRecordMap({ "starform:52:alolan": "caught" }));
+});
+
 test("validates Firebase-safe account and record keys", () => {
   assert.equal(validateUid("abc:123"), "abc:123");
   for (const value of ["", "a/b", "a.b", "a#b", "a$b", "a[b", "a]b", "a?b", "a#b", "a%b"]) {

@@ -249,10 +249,14 @@ export function pendingEntries(
   at: number,
   by: string,
   legacyUnlocks = false,
+  legacyFormFavorites = false,
 ): Record<RecordKey, RecordEntry> {
   const pending = diffEntries(base.records, entriesFromState(save, at, by), at, by);
   if (legacyUnlocks) for (const key of Object.keys(pending)) {
     if (key.startsWith("setting:unlock:") && isClearing(pending[key].s)) delete pending[key];
+  }
+  if (save.schemaVersion < 5 || legacyFormFavorites) for (const key of Object.keys(pending)) {
+    if (key.startsWith("starform:") && isClearing(pending[key].s)) delete pending[key];
   }
   return pending;
 }
@@ -375,17 +379,21 @@ export function isProgressClear(key: string, status: string): boolean {
 }
 
 function isProgress(key: string): boolean {
-  return key.startsWith("species:") || key.startsWith("star:");
+  return key.startsWith("species:") || isFavourite(key);
+}
+
+function isFavourite(key: string): boolean {
+  return key.startsWith("star:") || key.startsWith("starform:");
 }
 
 /** A star is live while it is "on"; a species is live at any status but none. */
 function isLive(key: string, status: string): boolean {
-  return key.startsWith("star:") ? status === "on" : status !== TOMBSTONE;
+  return isFavourite(key) ? status === "on" : status !== TOMBSTONE;
 }
 
 /** A cleared star is "off", not a tombstone: the two keys clear differently. */
 function isCleared(key: string, status: string): boolean {
-  return key.startsWith("star:") ? status === "off" : status === TOMBSTONE;
+  return isFavourite(key) ? status === "off" : status === TOMBSTONE;
 }
 
 /**
@@ -393,7 +401,7 @@ function isCleared(key: string, status: string): boolean {
  * e.g. "2 Pokémon and 1 favourite".
  */
 export function heldSummary(keys: readonly RecordKey[]): string {
-  const favourites = keys.filter((key) => key.startsWith("star:")).length;
+  const favourites = keys.filter(isFavourite).length;
   const pokemon = keys.filter(
     (key) => key.startsWith("species:") || key.startsWith("form:"),
   ).length;

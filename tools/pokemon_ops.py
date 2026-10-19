@@ -183,6 +183,9 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
         if species_id not in species_ids:
             raise SchemaError(f"unknown species record key: {key}")
         return kind
+    form_star = re.fullmatch(r"starform:([1-9][0-9]*):(alolan|kanto)", key)
+    if form_star and int(form_star[1]) in species_ids:
+        return "starform"
     if key.startswith("form:") and len(key) > len("form:") and "/" not in key:
         return "form"
     if key in {"setting:unlock:" + flag for flag in ("tauros", "surfing", "fishing", "sos", "weather-sos")}:
@@ -197,7 +200,7 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
 def _allowed_value(kind: str) -> frozenset[str]:
     if kind in {"species", "form"}:
         return STATUS_VALUES
-    if kind in {"star", "setting:forms", "setting:unlock"}:
+    if kind in {"star", "starform", "setting:forms", "setting:unlock"}:
         return STAR_VALUES
     if kind == "setting:mode":
         return MODE_VALUES
@@ -252,7 +255,7 @@ def validate_requested_patch(patch: Mapping[str, str], species_ids: Iterable[int
 
 
 def _empty_value(key: str) -> str:
-    return "off" if key.startswith("star:") else "none"
+    return "off" if key.startswith(("star:", "starform:")) else "none"
 
 
 def record_value(records: Mapping[str, Mapping[str, Any]], key: str) -> str:
