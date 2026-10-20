@@ -33,6 +33,7 @@ import {
   selectedEncounterContext,
 } from "../ui";
 import { CatchNext } from "./CatchNext";
+import { CatchBadge, CatchInfo } from "./CatchDifficulty";
 import { EvolutionControls } from "./EvolutionControls";
 import { collectionTargets, matchesTarget, targetKey, targetName, type CollectionTarget } from "../collection";
 import { hasUnresolvedRegionalOwnership, isRegional, type RegionalForm } from "../regional";
@@ -156,6 +157,8 @@ function Selection() {
           <button class="action-button" type="button" onClick={() => openPokemon(selected)}>Show species information</button>
         </div>
       </> : <CollectionFacts id={selected} form={form} labels /> }
+      {variantView && <CatchBadge id={selected} form={context?.detailKey?.slice(String(selected).length + 1) ?? "unsupported"} />}
+      <CatchInfo id={selected} form={variantView ? context?.detailKey?.slice(String(selected).length + 1) ?? "unsupported" : form} />
       {form && hasUnresolvedRegionalOwnership(speciesStatus(selected), [
         formSignal(`${selected}:alolan`).value, formSignal(`${selected}:kanto`).value,
       ]) && (

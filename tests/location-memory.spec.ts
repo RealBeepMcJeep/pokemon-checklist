@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
+import { writeFile } from "node:fs/promises";
 
 async function open(page: Page, project: string) {
   if (project === "standalone-file") {
@@ -18,8 +19,44 @@ test.afterEach(async ({ page }, info) => {
     active: document.activeElement?.textContent,
     locations: [...document.querySelectorAll("details.location[open]")].map(el => ({ id: el.getAttribute("data-location-id"), box: el.querySelector("summary")?.getBoundingClientRect().toJSON(), margin: getComputedStyle(el).scrollMarginTop })),
   }));
+  await writeFile(info.outputPath("restoration-geometry.json"), JSON.stringify(geometry, null, 2));
   await info.attach("restoration-geometry", { body: JSON.stringify(geometry), contentType: "application/json" });
   await page.screenshot({ path: info.outputPath("restoration-failure.png") });
+});
+
+test("late native history restoration cannot override the remembered area", async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await open(page, info.project.name);
+  await expect(page.locator("#mode-select")).toHaveValue("photonic-prismatic");
+  await expect(page.locator("#mode-select")).toBeEnabled();
+  const area = page.locator("details.location").nth(12);
+  const id = await area.getAttribute("data-location-id");
+  await area.locator("summary").click();
+  await expect(area.locator(".location-body")).toBeVisible();
+  // Hold a one-pixel load, not application scrolling: Chromium's real history
+  // restoration will run after the app focuses its remembered section.
+  let release: (() => Promise<void>) | undefined;
+  await page.route("**/restore-load-gate.svg", route => {
+    release = () => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' });
+  });
+  const imageURL = `http://127.0.0.1:${process.env.PW_PORT ?? 4173}/restore-load-gate.svg`;
+  await page.addInitScript(url => document.addEventListener("DOMContentLoaded", () => {
+    const image = document.createElement("img"); image.src = url;
+    image.style.cssText = "position:fixed;width:1px;height:1px;opacity:0";
+    document.body.append(image);
+  }), imageURL);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const summary = page.locator(`[data-location-id="${id}"] > summary`);
+  await expect(summary).toBeFocused();
+  await expect.poll(() => typeof release).toBe("function");
+  await release!(); await page.waitForLoadState("load");
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect.poll(async () => {
+    const box = await summary.boundingBox();
+    const header = await page.locator(".app-header").boundingBox();
+    return box !== null && header !== null && box.y >= header.y + header.height - 1 && box.y < 400;
+  }).toBe(true);
+  await expect(summary).toBeFocused();
 });
 
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {

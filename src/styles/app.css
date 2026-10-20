@@ -1025,18 +1025,18 @@ tbody tr:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* A shared sprite cannot identify a region: never ellipsize away its name.
-   Keep the compact existing layout for ordinary species rows. */
-.dex-row[data-target*=":"] .dex-select {
+/* Shared sprites and compact facts must never ellipsize identity.
+   Give every collection row a wrapping name above its grades and catch tier. */
+.dex-row .dex-select {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr);
   gap: 0.15rem 0.25rem;
   text-align: left;
 }
-.dex-row[data-target*=":"] .dex-select > .icon {
+.dex-row .dex-select > .icon {
   grid-row: 1 / span 2;
 }
-.dex-row[data-target*=":"] .dex-name {
+.dex-row .dex-name {
   grid-column: 2;
   min-width: 0;
   overflow: visible;
@@ -1045,12 +1045,12 @@ tbody tr:hover {
   overflow-wrap: break-word;
   line-height: 1.25;
 }
-.dex-row[data-target*=":"] .dex-select > .pokemon-facts,
-.dex-row[data-target*=":"] .dex-select > .type-marks {
+.dex-row .dex-select > .pokemon-facts,
+.dex-row .dex-select > .type-marks {
   grid-column: 2;
   justify-self: start;
 }
-.dex-row[data-target*=":"] {
+.dex-row {
   contain-intrinsic-size: auto 3.4rem;
 }
 .dex-row .status-button {
@@ -1100,9 +1100,9 @@ tbody tr:hover {
 .catch-next-name {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .catch-next-jump {
   margin-top: 0.5rem;
@@ -1183,3 +1183,16 @@ body:has(.form-choice-dialog[open]) { overflow: hidden !important; }
   .mobile-header .collection-headline progress { position: absolute; bottom: 0; left: 0; height: 3px; }
   .mobile-header:not(.is-scrolled) .collection-headline { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: center; height: 24px; gap: 8px; padding-bottom: 4px; }
 }
+
+/* Intrinsic stock catch difficulty: independent of competitive grades and odds. */
+.collection-facts { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px; flex: 0 0 auto; }
+.dex-row .collection-facts { grid-column: 2; justify-self: start; }
+.catch-badge { display: inline-block; white-space: nowrap; font-size: 10px; font-weight: 700; line-height: 1.4; padding: 1px 4px; color: var(--text); background: var(--control-bg); border: 1px solid var(--line); border-radius: 4px; }
+.catch-badge-action { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 2px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.catch-badge-action:focus-visible, .catch-legend > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.catch-info { margin: 8px 0; font-size: .82rem; line-height: 1.45; }
+.catch-info p { margin: 6px 0; }
+.catch-stock-note { color: var(--muted); }
+.catch-legend > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 650; }
+.catch-legend ul { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; padding: 0; margin: 6px 0; }
+.catch-next li { flex-wrap: wrap; }

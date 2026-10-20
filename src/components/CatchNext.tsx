@@ -1,10 +1,12 @@
 import { byDex } from "../data";
-import { encounterName } from "../encounter-names";
+import { encounterName, encounterViewContext } from "../encounter-names";
+import { encounterCatchForm } from "../catch-difficulty";
+import { CatchBadge } from "./CatchDifficulty";
 import { encounterRegionalForm } from "../regional";
 import { firstIncompleteLocation, uncaughtCatchNowRows } from "../domain";
 import { activeEncounters,
  activeUnlocks, focusedLocation, speciesStatus, formsTracked, formStatus } from "../state";
-import { closeDrawer, isMobile } from "../ui";
+import { closeDrawer, isMobile, openPokemon } from "../ui";
 import { PokemonIcon, StatusButton } from "./StatusControls";
 
 /**
@@ -37,6 +39,7 @@ export function CatchNext() {
             <li key={`${row.id}:${row.speciesId}:${row.form || ""}`}>
               <PokemonIcon id={row.speciesId!} />
               <span class="catch-next-name">{name}</span>
+              <CatchBadge id={row.speciesId!} form={encounterCatchForm(row, byDex.get(row.speciesId!)?.name || "Pokémon")} onInspect={() => openPokemon(row.speciesId!, encounterRegionalForm(row.speciesId!, row.form), encounterViewContext(row, byDex.get(row.speciesId!)?.name || "Pokémon"))} />
               <StatusButton id={row.speciesId!} form={encounterRegionalForm(row.speciesId!, row.form)} context="catch next" compact />
             </li>
           );

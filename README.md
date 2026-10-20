@@ -2,6 +2,14 @@
 
 A self-contained wild Pokémon checklist for the supplied Generation VII location guide and all four vanilla Alola games. It covers National Dex 001–807, chronological island/location sections, encounter rates, SOS allies, optional forms, and a searchable Pokédex in a responsive dark encyclopedia layout.
 
+## Intrinsic catch difficulty
+
+Compact **Catch F / D / C / B / A / S** badges describe only the stock Gen VII base catch constant: **F easiest, S hardest**. This app-specific scale is not an official game grade, competitive strength, encounter frequency, SOS odds or battle catch probability. Fixed bands are **F 200–255; D 120–199; C 75–119; B 45–74; A 16–44; S 1–15**. Equal positive constants always share a tier; no SS/SSS subdivisions or percentile recalculation are used. Missing, zero or unsupported exact form/profile data shows **Catch —**, never an assumed hard tier.
+
+Badges reuse the same pinned `data/capture.json` constants as the calculator, including same-rate Alolan/Kanto forms that its carousel deliberately omits. Sun/Moon uses `sm.catchRate`; the Ultra games use `usum.catchRate`. A missing profile never borrows the other game's constant. Prismatic Moon currently identifies the same stock USUM fallback as the calculator: hack rate overrides and engine equivalence remain unverified. Pooled/unsupported source identities do not silently borrow a base form.
+
+Tap a guide, inline-ally or Catch-next badge to inspect its Pokémon. In the Pokédex, choose the row; selected details show the raw constant and a keyboard/touch-accessible **Catch scale and limitations** disclosure. HP, status, ball/turn effects and special Ultra Beast/Beast Ball rules remain the calculator's responsibility. A badge does not imply a wild acquisition route. Inspecting catch facts changes no ownership, favorites, backups, sync records or remembered calculator selection.
+
 ## Use it
 
 Open [`index.html`](index.html) directly in a browser. It is self-contained and works from `file://`; no server, package manager, CDN, or network connection is needed.

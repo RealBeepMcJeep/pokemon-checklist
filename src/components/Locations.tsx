@@ -28,6 +28,8 @@ import type {
 import { consumeRowFocusIntent, openPokemon, rememberLocation } from "../ui";
 import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts } from "./PokemonFacts";
+import { CatchBadge } from "./CatchDifficulty";
+import { encounterCatchForm } from "../catch-difficulty";
 import {
   AllyForms,
   PokemonIcon,
@@ -60,6 +62,7 @@ function GuidePokemon({
   const specific = !!key || formSlug(encounterName) !== formSlug(pokemon?.name);
   const baseForm = ["base", "kanto"].includes(formSlug(form));
   const details = formDetails.get(key) ?? (!specific || baseForm ? detailsByDex.get(id) : undefined);
+  const inspect = () => openPokemon(id, actualForm, encounterViewContext({ speciesId: id, speciesName: name, form, ability }, pokemon?.name || "Pokémon"));
   return (
     <span class="guide-pokemon">
       <StatusButton id={id} form={actualForm} context={context} compact />
@@ -68,12 +71,12 @@ function GuidePokemon({
         <button
           class="guide-pokemon-link"
           type="button"
-          onClick={() => openPokemon(id, actualForm, encounterViewContext({ speciesId: id, speciesName: name, form, ability }, pokemon?.name || "Pokémon"))}
+          onClick={inspect}
         >
           {encounterName}
         </button>
-        {actualForm ? <CollectionFacts id={id} form={actualForm} />
-          : details && <PokemonFacts details={details} name={encounterName} />}
+        {actualForm ? <CollectionFacts id={id} form={actualForm} onCatchInspect={inspect} />
+          : <><span>{details && <PokemonFacts details={details} name={encounterName} />}</span><CatchBadge id={id} form={encounterCatchForm({ speciesId: id, speciesName: name, form, ability }, pokemon?.name || name)} onInspect={inspect} /></>}
       </span>
     </span>
   );

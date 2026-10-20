@@ -1,9 +1,11 @@
 # Changelog
 
 ## Upcoming — #17 follow-on milestones
-- M4: verified intrinsic catch tiers; M5: final combined independent phone/desktop review and closeout.
+- M5: final combined independent phone/desktop review and closeout.
 
 ## 2026-10-19
+- Fixed a real reload race where late native history restoration could move the remembered area offscreen after the app had focused it. The app now owns section restoration; delayed-load HTTP/file regression tests preserve its position and focus without relaxing bounds.
+- Added compact intrinsic Catch F–S badges across collection, selected details, guide callers, ordinary/weather SOS and Catch next. Exact stock SM/USUM rates, equal-rate regional forms and truthful unsupported/missing data share one tested resolver; keyboard/touch help separates the fixed app scale from competitive grades, encounter odds and actual battle chance. Calculator formulas, preferences and player records are unchanged.
 - Added one selectable progress headline on phone and desktop: Registered species, National Dex owned, or Living Dex owned. Settings holds the other statistics. The device-local choice survives reload/account/game/tracking changes without touching player saves, backups or sync. Defaults follow regional tracking; legacy ownership never invents a form, No forms makes both Owned totals coincide, and UI-storage failures are reported separately.
 - Released the M2 regional living-Dex core: separate Kanto/Alolan rows, independent ownership/favorites, exact types/facts/move routes/evolution paths and form-aware search. No forms collapses browsing without discarding form records; encounter identities remain explicit. Extended Forms stays out of scope.
 - Added sibling-safe form-choice dialogs, independent evolution-stage toggles, exact Undo and visible unresolved-legacy-favorite assignment without invented ownership. Stale confirmations reject account/save/mode/tracking changes. Schema-v5 favorites/backups preserve meaningful v1–v4 imports, namespace-local migration capability, wire/reload/Undo intent and last-area continuity.

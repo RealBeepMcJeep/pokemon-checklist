@@ -30,6 +30,9 @@ for (const width of [390, 1440]) for (const mode of ["sun", "moon", "ultra-sun",
     const caller = page.locator(`#encounter-${safe(native.id)}`);
     await expect(caller).toHaveCount(1);
     await expect(caller.locator(".inline-sos").getByText(ally, { exact: true })).toBeVisible();
+    await expect(caller.locator(".guide-pokemon").first().locator(".catch-badge")).toHaveCount(1);
+    const allyFacts = caller.locator(".inline-sos .guide-pokemon").filter({ has: page.getByRole("button", { name: ally, exact: true }) }).first();
+    await expect(allyFacts.locator(".catch-badge")).toHaveText(/^Catch [FDCBAS]$/);
     await expect(details.locator(".group-heading strong").filter({ hasText: /SOS allies|Weather SOS/i })).toHaveCount(0);
     const toggle = page.getByLabel("SOS Calls", { exact: true });
     if (!await toggle.isVisible()) {
@@ -95,6 +98,8 @@ for (const width of [390, 1440]) test(`stock weather and unavailable-source acce
   await page.getByLabel("Weather SOS", { exact: true }).check();
   await expect(weather).toHaveCount(1);
   await expect(weather.locator(".sos-method")).toContainText("guide-reported rate: 1%");
+  await expect(weather.locator(".catch-badge")).toHaveText("Catch B");
+  await expect(weather.locator(".catch-badge")).toHaveAttribute("data-catch-rate", "45");
   await expect(weather).toContainText("During rain");
   await page.getByLabel("SOS Calls", { exact: true }).uncheck();
   await expect(caller.locator(".inline-sos")).toHaveCount(0);

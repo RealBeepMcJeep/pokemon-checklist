@@ -18,6 +18,10 @@ import "./styles/responsive.css";
 import "./styles/tools.css";
 import "./styles/unlocks.css";
 
+// The app restores a section, not an old pixel offset. Native history can
+// restore AFTER our focus/scroll when an image finishes loading late.
+if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+
 initializeState();
 watchOtherTabs();
 // Any older build still open in another tab stops editing when this one arrives.
