@@ -158,7 +158,7 @@ def _write(path, key, options, references):
 
 
 def choose_cached(profiles, utility, chart, *, pokedex_profiles, selector,
-                  cache_dir, enabled=True, implementation=None):
+                  cache_dir, enabled=True, implementation=None, source_context=None):
     """Cache failures are misses; selector failures retain their original behavior."""
     if not enabled:
         return selector(profiles, utility, chart, pokedex_profiles=pokedex_profiles)
@@ -167,7 +167,7 @@ def choose_cached(profiles, utility, chart, *, pokedex_profiles, selector,
     path, key = None, ""
     try:
         identity = implementation if implementation is not None else implementation_identity(selector)
-        key = hashlib.sha256(_json(_pack([profiles, utility, chart, pokedex_profiles, identity])).encode()).hexdigest()
+        key = hashlib.sha256(_json(_pack([profiles, utility, chart, pokedex_profiles, identity, source_context])).encode()).hexdigest()
         directory = Path(cache_dir)
         _private_directory(directory)
         path = directory / f"{key}.json"

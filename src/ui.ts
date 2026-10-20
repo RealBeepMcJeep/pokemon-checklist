@@ -35,7 +35,7 @@ import {
   sidebarHidden,
   speciesStatus,
 } from "./state";
-import { firstIncompleteLocation, MODE_LABELS, safeId, cycleStatus } from "./domain";
+import { firstIncompleteLocation, MODE_LABELS, safeId, cycleStatus, STATE_VERSION } from "./domain";
 import { readLastLocation, writeLastLocation } from "./location-memory";
 import { guideEncounters, guideCalls, groupUnlock } from "./unlocks";
 import { stillEditingAfterDialog } from "./editing";
@@ -225,7 +225,7 @@ export function consumeRowFocusIntent(locationId: string): boolean {
  */
 export function jumpTo(hash: string, locationId?: string): void {
   // Old SOS-table hashes remain valid after those duplicate tables disappear.
-  if (locationId && mode.peek() === "photonic-prismatic" && !document.getElementById(hash.slice(1))) {
+  if (locationId && !document.getElementById(hash.slice(1))) {
     const location = activeEncounters.peek().islands.flatMap(island => island.locations).find(item => item.id === locationId);
     const removed = location?.groups.some(group => ["sos", "weather-sos"].includes(groupUnlock(group) || "")
       && group.encounters.some(row => hash === `#encounter-${safeId(row.id)}`));
@@ -302,7 +302,7 @@ export function exportJSON(): void {
   });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "pokemon-checklist-state-v4.json";
+  link.download = `pokemon-checklist-state-v${STATE_VERSION}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();

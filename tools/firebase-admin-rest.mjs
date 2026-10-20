@@ -34,6 +34,7 @@ function loadNationalDexMax() {
   return Math.max(...list.map((entry) => Number(entry.id)));
 }
 const NATIONAL_DEX_MAX = loadNationalDexMax();
+const REGIONAL_SPECIES_IDS = new Set(Object.values(JSON.parse(readFileSync(resolve(REPO, "data", "regional-forms.json"), "utf8")).forms).map(row => row.id));
 const MAX_UID_LENGTH = 128;
 const MAX_APPLY_RETRIES = 3;
 const KEY_RE = /^(species|star):([1-9][0-9]*)$/;
@@ -144,8 +145,10 @@ export function keyKind(key) {
     }
     return match[1];
   }
+  const legacyStar = /^starlegacy:([1-9][0-9]*)$/.exec(key);
+  if (legacyStar && REGIONAL_SPECIES_IDS.has(Number(legacyStar[1]))) return "starlegacy";
   const formStar = /^starform:([1-9][0-9]*):(alolan|kanto)$/.exec(key);
-  if (formStar && Number(formStar[1]) <= NATIONAL_DEX_MAX) return "starform";
+  if (formStar && REGIONAL_SPECIES_IDS.has(Number(formStar[1]))) return "starform";
   if (/^form:[^/]+$/.test(key)) return "form";
   if (/^setting:unlock:(tauros|surfing|fishing|sos|weather-sos)$/.test(key)) return "setting:unlock";
   if (key === "setting:mode") return "setting:mode";
@@ -155,7 +158,7 @@ export function keyKind(key) {
 
 function allowedValues(kind) {
   if (kind === "species" || kind === "form") return STATUS_VALUES;
-  if (kind === "star" || kind === "starform" || kind === "setting:forms" || kind === "setting:unlock") return STAR_VALUES;
+  if (kind === "star" || kind === "starform" || kind === "starlegacy" || kind === "setting:forms" || kind === "setting:unlock") return STAR_VALUES;
   if (kind === "setting:mode") return MODE_VALUES;
   throw new Error(`invalid record kind: ${kind}`);
 }
@@ -200,7 +203,7 @@ export function validateRecordMap(records, { entries = false } = {}) {
 }
 
 function emptyValue(key) {
-  return key.startsWith("star:") || key.startsWith("starform:") || key === "setting:forms" || key.startsWith("setting:unlock:") ? "off" : "none";
+  return key.startsWith("star:") || key.startsWith("starform:") || key.startsWith("starlegacy:") || key === "setting:forms" || key.startsWith("setting:unlock:") ? "off" : "none";
 }
 
 export function validateUid(uid) {

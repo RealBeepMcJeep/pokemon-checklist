@@ -160,7 +160,7 @@ function InlineSos({ nodes, root = true, visibleNotes = [] }: { nodes: readonly 
   </ul>;
 }
 
-function PrismaticEncounters({ location }: { location: LocationData }) {
+function InlineEncounters({ location }: { location: LocationData }) {
   const flags = activeUnlocks.value;
   const guide = useMemo(() => guideEncounters(location, flags), [location, flags]);
   const unresolved = useMemo(() => {
@@ -175,7 +175,7 @@ function PrismaticEncounters({ location }: { location: LocationData }) {
       <EncounterGroup key={group.id} group={group} location={location} guide={guide.filter(entry => entry.group.id === group.id)} />)}
     {unresolved.filter(entry => flags.includes("sos") && (entry.kind !== "weather-sos" || flags.includes("weather-sos"))).map(({ group, row }) =>
       <p class="sos-source-warning" id={`encounter-${safeId(row.id)}`} tabIndex={-1} key={row.id}>
-        <strong>Caller mapping unavailable. </strong>{row.note || `The guide lists ${row.speciesName || "this encounter"}, but supplies no reachable caller mapping.`}
+        <strong>Caller mapping unavailable. </strong>{row.note || `The guide lists ${row.speciesName || "this encounter"}, but its exact caller-row mapping is not verified for this encounter.`}
         {[...(group.notes || []), ...(group.conditions || []), ...(row.conditions || [])].map(note => <span key={note}> {note}</span>)}
       </p>)}
   </>;
@@ -221,8 +221,7 @@ function EncounterRow({
 }
 
 function EncounterGroup({ group, location, guide }: { group: EncounterGroupData; location: LocationData; guide?: GuideEncounter[] }) {
-  const enabled = mode.value === "photonic-prismatic";
-  const access = enabled ? guide ? guide.map(entry => entry.eligible) : group.encounters.map(row => occurrenceEligible(location,group,row,false,activeUnlocks.value)) : [];
+  const access = guide ? guide.map(entry => entry.eligible) : group.encounters.map(row => occurrenceEligible(location,group,row,false,activeUnlocks.value));
   const available = access.some(Boolean);
   const partial = available && !access.every(Boolean);
   const levels = group.levels
@@ -240,7 +239,7 @@ function EncounterGroup({ group, location, guide }: { group: EncounterGroupData;
           {levels}
         </strong>
         <span class="group-tag">
-          {enabled ? (available ? (partial ? "Some available" : "Catch now") : "Return later") : (group.category === "return-later" ? "Return later" : "Catch now")}
+          {available ? (partial ? "Some available" : "Catch now") : "Return later"}
         </span>
       </div>
       {notes.length > 0 && (
@@ -285,7 +284,7 @@ function LocationProgress({ location }: { location: LocationData }) {
       {progress.total ? (
         <>{complete && <span>Complete · </span>}<StatusCounts counts={progress} label={`${location.name} catch now`} /></>
       ) : "No Pokémon to catch now"}
-      {mode.value === "photonic-prismatic" && <span class="location-extras">{locked > 0 && <span class="locked-count">Locked {locked}</span>}{backtrack && <strong data-backtrack="true">↩ Backtrack</strong>}</span>}
+      <span class="location-extras">{locked > 0 && <span class="locked-count">Locked {locked}</span>}{backtrack && <strong data-backtrack="true">↩ Backtrack</strong>}</span>
     </span>
   );
 }
@@ -388,9 +387,7 @@ const Location = memo(function Location({
               ))}
             </div>
           )}
-          {mode.value === "photonic-prismatic" ? <PrismaticEncounters location={location} /> : location.groups.map((group) => (
-            <EncounterGroup key={group.id} group={group} location={location} />
-          ))}
+          <InlineEncounters location={location} />
         </div>
       )}
     </details>

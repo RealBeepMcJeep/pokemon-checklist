@@ -2,7 +2,12 @@ import type { Ally, EncounterGroup, EncounterRow, Location } from "./types";
 import { UNLOCKS } from "./types";
 import { encounterRegionalForm, isRegional } from "./regional";
 
+const stockRustling = (group: EncounterGroup): boolean => group.encounterType === "wild"
+  && group.sourceArea?.location === "poni-plains" && group.sourceArea.method === "bubbling-spots"
+  && ["center-rustling-bush", "center-grass"].includes(group.sourceArea.area);
+
 export function groupUnlock(group: EncounterGroup): string | null {
+  if (group.encounterType === "wild" && group.sourceArea?.method === "bubbling-spots" && !stockRustling(group)) return "fishing";
   if (/Weather.*SOS|Rain.*SOS/i.test(group.name)) return "weather-sos";
   if (/Surfing/i.test(group.name)) return "surfing";
   if (/Tauros/i.test(group.name)) return "tauros";
@@ -37,7 +42,7 @@ export interface EncounterProjection {
 
 function directAccess(group: EncounterGroup, flags: readonly string[]): boolean {
   const kind = groupUnlock(group);
-  return group.category === "regular" || (kind !== null && kind !== "sos" && kind !== "weather-sos" && flags.includes(kind));
+  return stockRustling(group) || group.category === "regular" || (kind !== null && kind !== "sos" && kind !== "weather-sos" && flags.includes(kind));
 }
 
 function encounterIdentity(row: EncounterRow): string {
@@ -69,6 +74,8 @@ export function projectEncounters(location: Location, flags: readonly string[], 
     const kind = groupUnlock(group);
     if (kind === "sos") {
       sources.push(...group.encounters.map(row => ({ group, row })));
+    } else if (kind === "weather-sos") {
+      sources.push(...group.encounters.filter(row => row.sosRules !== undefined).map(row => ({ group, row })));
     } else if (kind !== "weather-sos") {
       for (const row of group.encounters) {
         const eligible = !!row.speciesId && (documented || directAccess(group, flags));
@@ -79,10 +86,11 @@ export function projectEncounters(location: Location, flags: readonly string[], 
   }
   // Preserve method provenance only where needed; unscoped locations retain
   // their compact identity-only traversal and existing source edge counts.
-  const scoped = location.groups.some(group => group.encounters.some(row => row.callerGroups !== undefined));
+  const leafScoped = location.groups.some(group => group.encounters.some(row => row.sosRules !== undefined));
+  const scoped = leafScoped || location.groups.some(group => group.encounters.some(row => row.callerGroups !== undefined));
   const queue: { row: EncounterRow; originGroupId?: string }[] = [];
   const reached = new Set<string>();
-  const stateKey = (row: EncounterRow, originGroupId?: string) => JSON.stringify([encounterIdentity(row), originGroupId ?? ""]);
+  const stateKey = (row: EncounterRow, originGroupId?: string) => JSON.stringify([encounterIdentity(row), originGroupId ?? "", ...(leafScoped ? [row.id] : [])]);
   const add = (row: EncounterRow, originGroupId?: string) => {
     const key = stateKey(row, originGroupId);
     if (row.speciesId && !reached.has(key)) {
@@ -100,6 +108,7 @@ export function projectEncounters(location: Location, flags: readonly string[], 
       for (const group of location.groups) {
         if (groupUnlock(group) !== "weather-sos") continue;
         for (const sourceRow of group.encounters) {
+          if (sourceRow.sosRules !== undefined) continue;
           const targets: EncounterRow[] = sourceRow.speciesId ? [{ ...sourceRow, allies: [] }] : [];
           for (const ally of sourceRow.allies) targets.push(allyRow(sourceRow, ally));
           for (const row of targets) {
@@ -112,10 +121,24 @@ export function projectEncounters(location: Location, flags: readonly string[], 
     for (let index = 0; index < queue.length; index++) {
       const { row: caller, originGroupId } = queue[index];
       for (const source of sources) {
+        if (source.row.callerGroups !== undefined && (!originGroupId || !source.row.callerGroups.includes(originGroupId))) continue;
+        if (source.row.sosRules !== undefined) {
+          if (!source.row.speciesId) continue;
+          for (const rule of source.row.sosRules) {
+            if (rule.kind === "weather-sos" && !flags.includes("weather-sos")) continue;
+            if (!rule.callerIds.includes(caller.id)) continue;
+            const target: EncounterRow = { ...source.row, allies: [], rates: rule.kind === "weather-sos" ? rule.rates ?? null : null,
+              conditions: [...new Set([...(source.row.conditions || []), ...(rule.conditions || [])])] };
+            matched.add(source.row);
+            calls.push({ kind: rule.kind, group: source.group, sourceRow: target,
+              caller, row: target, ...(originGroupId ? { originGroupId } : {}) });
+            add(target, originGroupId);
+          }
+          continue;
+        }
         const wildcard = isWildcardCaller(source.row);
         // “All listed wild species” attaches to documented native callers; it cannot bootstrap itself.
         if (!(wildcard ? native.has(stateKey(caller, originGroupId)) : sameCaller(source.row, caller))) continue;
-        if (source.row.callerGroups !== undefined && (!originGroupId || !source.row.callerGroups.includes(originGroupId))) continue;
         if (scoped && groupUnlock(source.group) !== "sos" && source.group.id !== originGroupId) continue;
         matched.add(source.row);
         const targets = new Set<string>();
@@ -172,7 +195,9 @@ export function guideEncounters(location: Location, flags: readonly string[], do
     const walk = (actor: EncounterRow, path: ReadonlySet<string>, parentEligible: boolean, root: boolean): GuideSosNode[] => {
       const nodes: GuideSosNode[] = [];
       for (const call of source.calls) {
-        const applies = call.kind === "weather-sos" ? root
+        const applies = call.sourceRow.sosRules !== undefined
+          ? !!call.caller && call.caller.id === actor.id && encounterIdentity(call.caller) === encounterIdentity(actor)
+          : call.kind === "weather-sos" ? root
           : groupUnlock(call.group) === "sos"
             ? !!call.caller && encounterIdentity(call.caller) === encounterIdentity(actor)
             : !!call.caller && call.caller.id === actor.id && encounterIdentity(call.caller) === encounterIdentity(actor);

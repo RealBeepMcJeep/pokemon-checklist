@@ -50,8 +50,9 @@ import {
   toggleStar,
 } from "../state";
 import { speciesKey } from "./records";
-import { SYNC_SESSION_KEY } from "./outbox";
-import { STORAGE_KEY } from "../domain";
+import { ALLOWED_EMAILS } from "./config";
+import { SYNC_SESSION_KEY, SYNC_STORE_KEY } from "./outbox";
+import { STORAGE_KEY, LEGACY_STORAGE_KEYS } from "../domain";
 
 let storage = new Map<string, string>();
 
@@ -108,6 +109,92 @@ afterEach(() => {
 });
 
 describe("sync startup lifecycle", () => {
+  it.each([true, false])("preserves remote form favorites after a legacy account migration, reload and namespace roundtrip (confirmed=%s)", async (hasBase) => {
+    resetState();
+    const state = await import("../state");
+    const legacy = { schemaVersion: 4, species: { "52": "caught" }, forms: { "52:alolan": "caught", "52:kanto": "caught" }, starred: [52], settings: { forms: true, mode: "photonic-prismatic", unlocks: [] } };
+    const oldKey = `${LEGACY_STORAGE_KEYS[0]}:uid-a`;
+    storage.set(oldKey, JSON.stringify(legacy));
+    state.setSyncAccount("uid-a");
+    expect(state.exportState()).toMatchObject({ schemaVersion: 5, starred: [52], starredForms: [] });
+    state.reloadSave();
+    state.setSyncAccount("uid-b", { adopt: false });
+    state.setSyncAccount(null);
+    const remote = Object.fromEntries(Object.entries({
+      "species:52": "caught", "form:52:alolan": "caught", "form:52:kanto": "caught", "star:52": "on", "starform:52:kanto": "on",
+      "setting:mode": "photonic-prismatic", "setting:forms": "on",
+    }).map(([key, s]) => [key, { s, at: 100, by: "uid-a" }]));
+    if (hasBase) storage.set(SYNC_STORE_KEY, JSON.stringify({ version: 1, uid: "uid-a", email: null, deviceId: "fixture", base: { schema: 1, records: remote, updatedAt: 100 } }));
+    mocks.get.mockResolvedValue(snapshot(remote));
+    await startSync({ uid: "uid-a", email: ALLOWED_EMAILS[0] });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(state.exportState()).toMatchObject({ starred: [], starredForms: ["52:kanto"], forms: legacy.forms });
+    expect(storage.get(oldKey)).toBe(JSON.stringify(legacy));
+  });
+
+  it("recovers an explicit offline form-favorite clear despite the legacy capability guard", async () => {
+    resetState();
+    const state = await import("../state");
+    storage.set(`${LEGACY_STORAGE_KEYS[0]}:uid-a`, JSON.stringify({ schemaVersion: 4, species: { "52": "caught" }, forms: { "52:alolan": "caught", "52:kanto": "caught" }, starred: [52], settings: { forms: true, mode: "photonic-prismatic", unlocks: [] } }));
+    const remote = Object.fromEntries(Object.entries({
+      "species:52": "caught", "form:52:alolan": "caught", "form:52:kanto": "caught", "star:52": "on", "starform:52:alolan": "on", "starform:52:kanto": "on",
+      "setting:mode": "photonic-prismatic", "setting:forms": "on",
+    }).map(([key, s]) => [key, { s, at: 100, by: "uid-a" }]));
+    mocks.get.mockResolvedValue(snapshot(remote));
+    await startSync({ uid: "uid-a", email: ALLOWED_EMAILS[0] });
+    expect(state.exportState()).toMatchObject({ starredForms: ["52:alolan", "52:kanto"] });
+    connected[0]({ val: () => false });
+    mocks.update.mockClear();
+    state.setFormFavorite(52, "kanto", false);
+    expect(state.exportState()).toMatchObject({ starredForms: ["52:alolan"] });
+    expect(mocks.update).not.toHaveBeenCalled();
+    stopSync();
+    await startSync({ uid: "uid-a", email: ALLOWED_EMAILS[0] });
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    const payload = mocks.update.mock.calls[0][1] as Record<string, { s: string }>;
+    expect(payload["state/records/starform:52:kanto"]?.s).toBe("off");
+    expect(payload["state/records/starform:52:alolan"]).toBeUndefined();
+    expect(state.exportState()).toMatchObject({ starredForms: ["52:alolan"] });
+    expect(syncHeld.value).toBe(0);
+  });
+
+  it("publishes legacy favorite resolution and its Undo then reloads the explicit unresolved intent", async () => {
+    resetState();
+    const state = await import("../state");
+    const remote: Record<string, { s: string; at: number; by: string }> = Object.fromEntries(Object.entries({
+      "species:52": "caught", "form:52:alolan": "caught", "form:52:kanto": "caught", "star:52": "on",
+      "setting:mode": "photonic-prismatic", "setting:forms": "on",
+    }).map(([key, s]) => [key, { s, at: 100, by: "uid-a" }]));
+    mocks.get.mockResolvedValue(snapshot(remote));
+    await startSync({ uid: "uid-a", email: ALLOWED_EMAILS[0] });
+    expect(state.exportState()).toMatchObject({ starred: [52], starredForms: [] });
+    mocks.update.mockClear();
+    state.setFormFavorite(52, "kanto", true);
+    state.changeNotice("Assigned favorite.");
+    const undo = state.notice.value.action!;
+    expect(undo.label).toBe("Undo");
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    const applyPayload = (index: number, at: number) => {
+      const payload = mocks.update.mock.calls[index][1] as Record<string, { s: string }>;
+      for (const [path, row] of Object.entries(payload)) if (path.startsWith("state/records/"))
+        remote[path.slice("state/records/".length)] = { s: row.s, at, by: "uid-a" };
+      recordsChanged[0](snapshot({ ...remote }));
+    };
+    applyPayload(0, 200);
+    undo.run();
+    await vi.waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+    const payload = mocks.update.mock.calls[1][1] as Record<string, { s: string }>;
+    expect(payload["state/records/starlegacy:52"].s).toBe("on");
+    expect(payload["state/records/starform:52:kanto"].s).toBe("off");
+    applyPayload(1, 300);
+    expect(state.exportState()).toMatchObject({ starred: [52], starredForms: [] });
+    stopSync();
+    mocks.update.mockClear();
+    mocks.get.mockResolvedValue(snapshot({ ...remote }));
+    await startSync({ uid: "uid-a", email: ALLOWED_EMAILS[0] });
+    expect(state.exportState()).toMatchObject({ starred: [52], starredForms: [], forms: { "52:alolan": "caught", "52:kanto": "caught" } });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
   it("keeps sync off when storage can be read but not written", async () => {
     (globalThis as { localStorage?: unknown }).localStorage = {
       getItem: () => null,

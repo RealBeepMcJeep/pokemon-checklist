@@ -741,6 +741,19 @@ def signature(entries: list[dict]) -> Counter:
     return Counter((entry["speciesId"], entry["rate"]) for entry in entries)
 
 
+def table_signature(table: dict) -> Counter:
+    # Merge the two temporal views before dropping form identity. Otherwise
+    # Midday/Midnight at the same rate collapse into a single species slot.
+    merged = Counter((entry["speciesId"], entry.get("form"), entry["rate"])
+                     for entry in table["day"]["entries"]) | Counter(
+                         (entry["speciesId"], entry.get("form"), entry["rate"])
+                         for entry in table["night"]["entries"])
+    result = Counter()
+    for (species_id, _form, rate), count in merged.items():
+        result[(species_id, rate)] += count
+    return result
+
+
 def table_for(
     records: list[dict],
     tables: list[dict],
@@ -770,7 +783,7 @@ def table_for(
     candidates = [
         table
         for table in tables
-        if (signature(table["day"]["entries"]) | signature(table["night"]["entries"]))
+        if table_signature(table)
         == wanted
     ]
     location_hint = normalize(
@@ -1250,6 +1263,11 @@ def main() -> int:
             data, unmatched, direct_groups, matched_groups = generate(
                 csv_text, table_text, game
             )
+            try:
+                from .stock_sos import annotate
+            except ImportError:
+                from stock_sos import annotate
+            annotate(data)
             validate_generated(game, data, unmatched, direct_groups, matched_groups)
         except (OSError, RuntimeError, TypeError, ValueError) as error:
             print(f"ERROR: {error}", file=sys.stderr)

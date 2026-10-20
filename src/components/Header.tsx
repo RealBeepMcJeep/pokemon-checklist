@@ -229,7 +229,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
               </span>
             </div>
           </div>
-            <div class="actions" aria-label="Checklist actions">{dex}{controls}{tools}{currentMode === DEFAULT_MODE && <button class="action-button" id="header-settings-toggle" type="button" aria-haspopup="dialog" aria-controls="header-settings-panel" onClick={() => setSettingsOpen(true)}>Settings</button>}<SyncPanel /></div>
+            <div class="actions" aria-label="Checklist actions">{dex}{controls}{tools}<button class="action-button" id="header-settings-toggle" type="button" aria-haspopup="dialog" aria-controls="header-settings-panel" onClick={() => setSettingsOpen(true)}>Settings</button><SyncPanel /></div>
           </div>
         </>}
         <div class={mobile ? "mobile-alerts" : undefined} ref={alertsRef}>

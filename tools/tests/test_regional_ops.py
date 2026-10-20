@@ -10,6 +10,15 @@ from test_pokemon_ops import FakeClient, SPECIES, entry, ops
 
 
 class RegionalResolutionTests(unittest.TestCase):
+    def test_exact_favorite_resolution_retires_explicit_unresolved_intent_atomically(self):
+        progress = {"species:26": entry("caught"), "form:26:alolan": entry("caught"), "form:26:kanto": entry("caught")}
+        client = FakeClient({**progress, "star:26": entry("on"), "starlegacy:26": entry("on")})
+        result = ops.run_favorites_exact(client, "fixture-account", [], SPECIES, form_targets=["26:kanto"])
+        self.assertEqual(ops.record_value(client.records, "starlegacy:26"), "off")
+        self.assertEqual(result["changes"], {"starlegacy:26": "off", "starform:26:kanto": "on"})
+        self.assertEqual(len(client.applied), 1)
+        self.assertEqual({key: client.records[key] for key in progress}, progress)
+
     def test_cli_status_reports_exact_form_separately_from_aggregate_ownership(self):
         argv = ["--uid", "fixture-account", "--json", "status", "Raichu", "--form", "kanto"]
         _, unknown = ops.build_parser().parse_known_args(argv)
@@ -90,6 +99,16 @@ class RegionalResolutionTests(unittest.TestCase):
             self.assertEqual(client.records["species:26"]["s"], "caught")
             self.assertEqual(client.records["starform:26:alolan"]["s"], "on")
             self.assertEqual(client.records["starform:26:kanto"]["s"], "on")
+
+    def test_exact_favorites_refuse_success_if_unresolved_intent_arrives_during_the_write(self):
+        class ConcurrentClient(FakeClient):
+            def apply_records(self, uid, records, note="", expected=None):
+                super().apply_records(uid, records, note=note, expected=expected)
+                self.records["starlegacy:26"] = entry("on")
+        client = ConcurrentClient()
+        with self.assertRaises(ops.VerificationError):
+            ops.run_favorites_exact(client, "fixture-account", ["Pikachu"], SPECIES)
+        self.assertEqual(client.records["starlegacy:26"]["s"], "on")
 
     def test_exact_favorites_refuse_success_if_an_unrequested_favorite_arrives_during_the_write(self):
         class ConcurrentClient(FakeClient):

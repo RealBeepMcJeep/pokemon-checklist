@@ -6,6 +6,23 @@ import type { SavedState } from "./types";
 
 const entry = (s: string) => ({ s, at: 1, by: "fixture" });
 describe("regional sync safety", () => {
+  it("preserves an explicitly restored unresolved favorite through actual wire reload", () => {
+    const ids = new Set([52]), forms = new Set(["52:alolan", "52:kanto"]);
+    const legacy = validateState({ schemaVersion: 5, species: { "52": "caught" }, forms: { "52:alolan": "caught", "52:kanto": "caught" }, starred: [52], starredForms: [], settings: { forms: true, mode: "moon", unlocks: [] } }, ids, forms);
+    const resolved = { ...legacy, starred: [], starredForms: ["52:kanto"] };
+    const before = entriesFromState(legacy, 1, "fixture");
+    const after = entriesFromState(resolved, 2, "fixture");
+    const assigned = { ...before, ...localIntentChanges(legacy, resolved, 2, "fixture") };
+    expect(stateFromDocument({ schema: 1, updatedAt: 2, records: assigned }, ids, forms)).toEqual(resolved);
+    const undone = { ...assigned, ...localIntentChanges(resolved, legacy, 3, "fixture") };
+    expect(stateFromDocument({ schema: 1, updatedAt: 3, records: undone }, ids, forms)).toEqual(legacy);
+    expect(before["star:52"].s).toBe(after["star:52"].s);
+  });
+  it("does not revive unresolved intent older than an explicit form-favorite clear", () => {
+    const records = { "star:52": entry("on"), "starlegacy:52": { s: "on", at: 2, by: "old" }, "starform:52:kanto": { s: "off", at: 3, by: "new" } };
+    const read = stateFromDocument({ schema: 1, updatedAt: 3, records }, new Set([52]), new Set(["52:alolan", "52:kanto"]));
+    expect(read).toMatchObject({ starred: [], starredForms: [] });
+  });
   it("projects an owned sibling over a stale aggregate downgrade without inventing missing forms", () => {
     const ids = new Set([52, 150]), forms = new Set(["52:alolan", "52:kanto"]);
     const remote: SyncDocument = { schema: 1, updatedAt: 4, records: {
@@ -68,6 +85,19 @@ describe("regional sync safety", () => {
     }
   });
 
+  it("does not invent or clear new unresolved-intent flags from a legacy migration", () => {
+    const legacy: SavedState = { schemaVersion: 4, species: { "52": "caught" }, forms: { "52:alolan": "caught", "52:kanto": "caught" }, starred: [52], settings: { forms: true, mode: "moon", unlocks: [] } };
+    const migrated = validateState(legacy, new Set([52]), new Set(["52:alolan", "52:kanto"]));
+    const base: SyncDocument = { schema: 1, updatedAt: 1, records: entriesFromState(legacy, 1, "fixture") };
+    expect(pendingEntries(base, migrated, 2, "fixture", false, true)["starlegacy:52"]).toBeUndefined();
+    const current = { ...base, records: { ...base.records, "starlegacy:52": entry("on") } };
+    expect(pendingEntries(current, { ...migrated, starred: [] }, 2, "fixture", false, true)["starlegacy:52"]).toBeUndefined();
+  });
+  it("counts unresolved favorite clears as protected favorites", () => {
+    const base: SyncDocument = { schema: 1, updatedAt: 1, records: { "starlegacy:52": entry("on"), "starlegacy:26": entry("on") } };
+    expect(isWholeAccountClear(base, { "starlegacy:52": entry("off"), "starlegacy:26": entry("off") })).toBe(true);
+    expect(heldSummary(["starlegacy:52"])).toBe("1 favourite");
+  });
   it("names held regional favorites as favorites, not zero Pokémon", () => {
     expect(heldSummary(["starform:52:alolan", "starform:52:kanto"])).toBe("2 favourites");
   });

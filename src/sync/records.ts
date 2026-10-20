@@ -1,6 +1,6 @@
 import { GAME_MODES, UNLOCKS, type Unlock, type GameMode, type SavedState, type Status } from "../types";
 import { DEFAULT_MODE, STATUS_ORDER, STATE_VERSION, canonicalState } from "../domain";
-import { REGIONAL_IDS, projectRegionalSpeciesStatus } from "../regional";
+import { REGIONAL_IDS, isRegional, projectRegionalSpeciesStatus } from "../regional";
 
 /**
  * Sync payload shapes and the pure logic that merges them.
@@ -36,6 +36,8 @@ export const speciesKey = (id: number): RecordKey => `species:${id}`;
 export const formKey = (key: string): RecordKey => `form:${key}`;
 export const starKey = (id: number): RecordKey => `star:${id}`;
 export const formStarKey = (key: string): RecordKey => `starform:${key}`;
+/** Explicit unresolved intent, distinct from the old aggregate compatibility bridge. */
+export const legacyStarKey = (id: number): RecordKey => `starlegacy:${id}`;
 export const SETTING_MODE: RecordKey = "setting:mode";
 export const SETTING_FORMS: RecordKey = "setting:forms";
 
@@ -58,7 +60,7 @@ export const isClearing = (value: string): boolean =>
  * both are treated as absent when a document is turned back into a save.
  */
 export function clearedValue(key: RecordKey): string {
-  return key.startsWith("star:") || key.startsWith("starform:") || key === SETTING_FORMS || key.startsWith("setting:unlock:") ? STAR_OFF : TOMBSTONE;
+  return key.startsWith("star:") || key.startsWith("starform:") || key.startsWith("starlegacy:") || key === SETTING_FORMS || key.startsWith("setting:unlock:") ? STAR_OFF : TOMBSTONE;
 }
 
 /**
@@ -119,6 +121,9 @@ export function entriesFromState(
   }
   const formStars = "starredForms" in state ? state.starredForms : [];
   for (const key of formStars) stamp(formStarKey(key), STAR_ON);
+  if (state.schemaVersion >= 5) for (const id of state.starred) {
+    if (isRegional(id) && !formStars.some(key => Number(key.split(":")[0]) === id)) stamp(legacyStarKey(id), STAR_ON);
+  }
   // Old analysis/read-only clients still receive a species-level favorite view.
   for (const id of new Set([...state.starred, ...formStars.map(key => Number(key.split(":")[0]))])) stamp(starKey(id), STAR_ON);
   for (const flag of state.settings.unlocks ?? []) stamp(`setting:unlock:${flag}`, STAR_ON);
@@ -216,15 +221,28 @@ export function stateFromDocument(
   const starred: number[] = [];
   const starredForms: string[] = [];
   const explicitFormStars = new Set<number>();
+  const unresolvedStars = new Map<number, RecordEntry>();
+  const latestFormStar = new Map<number, number>();
   let mode: GameMode = DEFAULT_MODE;
   let formsTracked = false;
   const unlocks: Unlock[] = [];
 
   for (const [key, entry] of Object.entries(document.records)) {
+    if (key.startsWith("starlegacy:")) {
+      const match = /^starlegacy:([1-9][0-9]*)$/.exec(key);
+      const id = match ? Number(match[1]) : 0;
+      if (validPokemon.has(id) && isRegional(id) && (entry.s === STAR_ON || entry.s === STAR_OFF)) {
+        explicitFormStars.add(id);
+        if (entry.s === STAR_ON) unresolvedStars.set(id, entry);
+      }
+      continue;
+    }
     if (key.startsWith("starform:")) {
       const form = key.slice("starform:".length);
       if (validForms.has(form) && (entry.s === STAR_ON || entry.s === STAR_OFF)) {
-        explicitFormStars.add(Number(form.split(":")[0]));
+        const id = Number(form.split(":")[0]);
+        explicitFormStars.add(id);
+        latestFormStar.set(id, Math.max(latestFormStar.get(id) ?? -Infinity, entry.at));
         if (entry.s === STAR_ON) starredForms.push(form);
       }
       continue;
@@ -264,7 +282,7 @@ export function stateFromDocument(
     schemaVersion: STATE_VERSION,
     species,
     forms,
-    starred: [...new Set(starred)].filter(id => !explicitFormStars.has(id)).sort((a, b) => a - b),
+    starred: [...new Set(starred)].filter(id => !explicitFormStars.has(id) || (unresolvedStars.has(id) && unresolvedStars.get(id)!.at >= (latestFormStar.get(id) ?? -Infinity))).sort((a, b) => a - b),
     starredForms,
     settings: { forms: formsTracked, mode, unlocks: UNLOCKS.filter(flag => unlocks.includes(flag)) },
   });

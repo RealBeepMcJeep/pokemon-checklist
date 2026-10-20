@@ -136,6 +136,8 @@ try:
     final_stars = sorted(int(k.split(':')[1]) for k,v in records.items() if k.startswith('star:') and v['s'] == 'on')
     if final_stars != raw['source_starred_ids']:
         raise ValueError('complete favorites changed; regenerate selection')
+    if 'source_form_records' in raw:
+        held_item_cards.validate_sources(raw, {'caught': raw['source_caught_ids'], 'seen': raw['source_seen_ids'], 'starred': raw['source_starred_ids']}, records)
     for option in raw['options']:
         assert len(option['members']) == 5
         assert len({m['dex'] for m in option['members']}) == 5

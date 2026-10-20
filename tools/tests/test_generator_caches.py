@@ -198,6 +198,18 @@ class GeneratorCacheTests(unittest.TestCase):
         # Nidoran happened to be processed last.
         self.assertNotEqual(vanilla.normalize("Nidoran♀"), vanilla.normalize("Nidoran♂"))
 
+    def test_table_matching_merges_day_night_before_projecting_away_form_identity(self):
+        records = [{"speciesId": 745, "form": form, "rarity": 20, "minimum": 43, "maximum": 46}
+                   for form in ("midday", "midnight")]
+        table = {"header": "Test Area", "number": "1",
+                 "day": {"entries": [{"speciesId": 745, "form": "midday", "rate": 20}], "minimum": 43, "maximum": 46},
+                 "night": {"entries": [{"speciesId": 745, "form": "midnight", "rate": 20}], "minimum": 43, "maximum": 46}}
+        self.assertIs(vanilla.table_for(records, [table], "test-area", "field", "walk", False), table)
+        # Repeated appearance of one form at both times is not two slots.
+        records[1]["form"] = "midday"
+        table["night"]["entries"][0]["form"] = "midday"
+        self.assertIsNone(vanilla.table_for(records, [table], "test-area", "field", "walk", False))
+
     def test_table_for_counts_duplicate_species_rarity_pairs_as_a_multiset(self):
         # wanted used to be built with a set comprehension around the generator
         # expression, collapsing a duplicate (speciesId, rarity) pair to one

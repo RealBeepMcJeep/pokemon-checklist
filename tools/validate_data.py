@@ -90,6 +90,32 @@ def png_size(path: Path) -> tuple[int, int]:
     return struct.unpack(">II", raw[16:24])
 
 
+def valid_sos_rules(rules: object, caller_ids: set[str]) -> bool:
+    """Validate explicit local row refs, not inferred species/slot associations."""
+    if not isinstance(rules, list):
+        return False
+    for rule in rules:
+        if not isinstance(rule, dict) or set(rule) - {"kind", "callerIds", "conditions", "rates"}:
+            return False
+        if not isinstance(rule.get("kind"), str) or rule["kind"] not in {"sos", "weather-sos"}:
+            return False
+        callers = rule.get("callerIds")
+        if (not isinstance(callers, list) or not callers
+                or any(not isinstance(ref, str) or ref not in caller_ids for ref in callers)
+                or len(set(callers)) != len(callers)):
+            return False
+        if "conditions" in rule and (not isinstance(rule["conditions"], list)
+                or any(not isinstance(note, str) or not note.strip() for note in rule["conditions"])):
+            return False
+        if "rates" in rule:
+            rates = rule["rates"]
+            if (rule["kind"] != "weather-sos" or not isinstance(rates, dict) or not rates
+                    or any(key not in {"single", "day", "night", "bubbling"}
+                           or type(value) is not int or not 0 <= value <= 100 for key, value in rates.items())):
+                return False
+    return True
+
+
 def validate_inputs(
     pokemon: object,
     encounters: object,
@@ -188,6 +214,12 @@ def validate_inputs(
                 errors.append(
                     f"{location.get('name')} is missing its numbered grass map {required_map}"
                 )
+            local_caller_ids = {
+                row["id"] for group in location.get("groups", []) if isinstance(group, dict)
+                for row in group.get("encounters", []) if isinstance(row, dict)
+                and isinstance(row.get("id"), str) and type(row.get("speciesId")) is int
+                and row["speciesId"] > 0
+            }
             native_group_ids = {
                 g["id"] for g in location.get("groups", [])
                 if isinstance(g, dict) and isinstance(g.get("id"), str)
@@ -222,6 +254,12 @@ def validate_inputs(
                         errors.append(f"unknown species slug {slug} at {row.get('id')}")
                     elif species_id != by_slug[slug].get("id"):
                         errors.append(f"species ID mismatch at {row.get('id')}")
+                    if "sosRules" in row and (
+                        (group.get("encounterType") != "sos" and "SOS" not in str(group.get("name", "")).upper())
+                        or type(species_id) is not int or species_id <= 0
+                        or not valid_sos_rules(row["sosRules"], local_caller_ids)
+                    ):
+                        errors.append(f"invalid sosRules at {row.get('id')}")
                     if "callerGroups" in row:
                         scopes = row["callerGroups"]
                         name = str(group.get("name", "")).upper()

@@ -1,0 +1,1568 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "url": "https://bulbapedia.bulbagarden.net/w/index.php?title=SOS_Battle&oldid=4478885",
+    "sha256": "f5361cea7df8694bf88fe66cb29231ec6d9bbe7962ab6c8e7d993fb3e58e4b43",
+    "bytes": 306575
+  },
+  "scope": "Stock normal wild SM/USUM only; never Prismatic or Totem/trial-special mechanics. Island Scan Pokemon, Legendary Pokemon and Ultra Beasts are excluded callers by the source introduction. Apply no-call game/form exceptions. Ordinary exception records are species-level transcription, not authorization for cross-form reuse; validate exact native source form independently, never from shared icons or a species bridge. Table transcription retains game/location/method/time/form and partial-encounter qualifications. linkTitles are verbatim source-cell link labels, not resolved geographic predicates. No slot indices, ordinary weights or per-turn arrival probabilities inferred.",
+  "default": "Most wild Pokémon only call for allies of the same species as themselves; the exception table lists all callers with different-species allies. No-call and battle-context exceptions still apply.",
+  "ordinary": [
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 10,
+      "allies": [
+        10,
+        12
+      ],
+      "note": "Anywhere but Route 1",
+      "linkTitles": [
+        "Alola Route 1"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 11,
+      "allies": [
+        10
+      ],
+      "note": "Only on Route 1",
+      "linkTitles": [
+        "Alola Route 1"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 11,
+      "allies": [
+        10,
+        12
+      ],
+      "note": "Anywhere but Route 1",
+      "linkTitles": [
+        "Alola Route 1"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 19,
+      "allies": [
+        19,
+        20
+      ],
+      "note": "Only on Route 8",
+      "linkTitles": [
+        "Alola Route 8"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 41,
+      "allies": [
+        41,
+        42
+      ],
+      "note": "Only in Diglett's Tunnel and Memorial Hill",
+      "linkTitles": [
+        "Diglett's Tunnel",
+        "Memorial Hill"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 42,
+      "allies": [
+        42,
+        169
+      ],
+      "note": "Only in Resolution Cave",
+      "linkTitles": [
+        "Resolution Cave"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 42,
+      "allies": [
+        42,
+        169
+      ],
+      "note": "Only in Resolution Cave and Lush Jungle",
+      "linkTitles": [
+        "Resolution Cave",
+        "Lush Jungle"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun"
+      ],
+      "caller": 51,
+      "allies": [
+        51,
+        622
+      ],
+      "note": "Only at Haina Desert",
+      "linkTitles": [
+        "Haina Desert"
+      ]
+    },
+    {
+      "games": [
+        "ultra-moon"
+      ],
+      "caller": 51,
+      "allies": [
+        51,
+        343
+      ],
+      "note": "Only at Haina Desert",
+      "linkTitles": [
+        "Haina Desert"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 52,
+      "allies": [
+        52,
+        53
+      ],
+      "note": "Only at Malie Garden",
+      "linkTitles": [
+        "Malie Garden"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 54,
+      "allies": [
+        54,
+        41
+      ],
+      "note": "Only while surfing in Seaward Cave",
+      "linkTitles": [
+        "Seaward Cave"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 73,
+      "allies": [
+        73,
+        457
+      ],
+      "note": "Some encounters at Poni Wilds",
+      "linkTitles": [
+        "Poni Wilds"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 79,
+      "allies": [
+        79,
+        80
+      ],
+      "note": "Only at Kala'e Bay",
+      "linkTitles": [
+        "Kala'e Bay"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 79,
+      "allies": [
+        79,
+        80,
+        199
+      ],
+      "note": "Only at Kala'e Bay",
+      "linkTitles": [
+        "Kala'e Bay"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 93,
+      "allies": [
+        93,
+        94
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 104,
+      "allies": [
+        104,
+        115
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 113,
+      "allies": [
+        113,
+        242
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 118,
+      "allies": [
+        118,
+        119
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 120,
+      "allies": [
+        120,
+        121
+      ],
+      "note": "Only on Route 7",
+      "linkTitles": [
+        "Alola Route 7"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 120,
+      "allies": [
+        120,
+        121
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 128,
+      "allies": [
+        128,
+        241
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 129,
+      "allies": [
+        129,
+        130
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 133,
+      "allies": [
+        133,
+        196
+      ],
+      "note": "Only during the day",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 133,
+      "allies": [
+        133,
+        197
+      ],
+      "note": "Only during the night",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 147,
+      "allies": [
+        147,
+        148
+      ],
+      "note": "Anywhere but Poni Gauntlet",
+      "linkTitles": [
+        "Poni Gauntlet"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 147,
+      "allies": [
+        147,
+        148,
+        149
+      ],
+      "note": "Only at Poni Gauntlet",
+      "linkTitles": [
+        "Poni Gauntlet"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 163,
+      "allies": [
+        163,
+        164
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 170,
+      "allies": [
+        170,
+        171
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 172,
+      "allies": [
+        172,
+        25,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 173,
+      "allies": [
+        173,
+        35,
+        113
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 173,
+      "allies": [
+        173,
+        35,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 174,
+      "allies": [
+        174,
+        39,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 177,
+      "allies": [
+        177,
+        178
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 190,
+      "allies": [
+        190,
+        424
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 222,
+      "allies": [
+        222,
+        747
+      ],
+      "note": "Mareanie will attack Corsola before targeting the player's Pokémon.",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 223,
+      "allies": [
+        223,
+        224
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 238,
+      "allies": [
+        238,
+        124,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 239,
+      "allies": [
+        239,
+        125,
+        113
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 239,
+      "allies": [
+        239,
+        125,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 240,
+      "allies": [
+        240,
+        126
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 240,
+      "allies": [
+        240,
+        126,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 241,
+      "allies": [
+        241,
+        128
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 318,
+      "allies": [
+        318,
+        319
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 320,
+      "allies": [
+        320,
+        321
+      ],
+      "note": "Only while fishing",
+      "linkTitles": [
+        "Fishing"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun"
+      ],
+      "caller": 328,
+      "allies": [
+        328,
+        622
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-moon"
+      ],
+      "caller": 328,
+      "allies": [
+        328,
+        343
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 339,
+      "allies": [
+        339,
+        340
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 341,
+      "allies": [
+        341,
+        342
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 361,
+      "allies": [
+        361,
+        362
+      ],
+      "note": "Only at Mount Lanakila",
+      "linkTitles": [
+        "Mount Lanakila"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 366,
+      "allies": [
+        366,
+        367
+      ],
+      "note": "Only during the night",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 366,
+      "allies": [
+        366,
+        368
+      ],
+      "note": "Only during the day",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 371,
+      "allies": [
+        371,
+        372
+      ],
+      "note": "Only at Kala'e Bay",
+      "linkTitles": [
+        "Kala'e Bay"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 371,
+      "allies": [
+        371,
+        373
+      ],
+      "note": "Only on Route 3",
+      "linkTitles": [
+        "Alola Route 3"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 427,
+      "allies": [
+        427,
+        428
+      ],
+      "note": "Only in Poni Grove (all encounters during the day, some encounters at night)",
+      "linkTitles": [
+        "Poni Grove"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 438,
+      "allies": [
+        438,
+        185,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 439,
+      "allies": [
+        439,
+        122,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 446,
+      "allies": [
+        446,
+        143,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 447,
+      "allies": [
+        447,
+        448,
+        113
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 447,
+      "allies": [
+        447,
+        448,
+        440
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 456,
+      "allies": [
+        456,
+        457
+      ],
+      "note": "Only in Route 15",
+      "linkTitles": [
+        "Alola Route 15"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 458,
+      "allies": [
+        458,
+        223
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun"
+      ],
+      "caller": 552,
+      "allies": [
+        552,
+        622
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-moon"
+      ],
+      "caller": 552,
+      "allies": [
+        552,
+        343
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 559,
+      "allies": [
+        559,
+        22
+      ],
+      "note": "Some encounters on Route 17 at night",
+      "linkTitles": [
+        "Alola Route 17"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 568,
+      "allies": [
+        568,
+        569
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 621,
+      "allies": [
+        621,
+        42
+      ],
+      "note": "Some encounters at Resolution Cave at night",
+      "linkTitles": [
+        "Resolution Cave"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 625,
+      "allies": [
+        624
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 636,
+      "allies": [
+        636,
+        637
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 661,
+      "allies": [
+        661,
+        662
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 674,
+      "allies": [
+        674,
+        675
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 702,
+      "allies": [
+        702,
+        777
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 703,
+      "allies": [
+        703,
+        302
+      ],
+      "note": "Only in caves. Sableye will attack Carbink before targeting the player's Pokémon.",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon"
+      ],
+      "caller": 732,
+      "allies": [
+        731
+      ],
+      "note": "Only on Route 8",
+      "linkTitles": [
+        "Alola Route 8"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 732,
+      "allies": [
+        732,
+        733
+      ],
+      "note": "Only on Route 11 , Poni Grove , and Poni Plains",
+      "linkTitles": [
+        "Alola Route 11",
+        "Poni Grove",
+        "Poni Plains"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 734,
+      "allies": [
+        734,
+        735
+      ],
+      "note": "Only on Route 8",
+      "linkTitles": [
+        "Alola Route 8"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 737,
+      "allies": [
+        736,
+        738
+      ],
+      "note": "Only during the day",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 749,
+      "allies": [
+        749,
+        750
+      ],
+      "note": "Only on Route 12 and Blush Mountain",
+      "linkTitles": [
+        "Alola Route 12",
+        "Blush Mountain"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 757,
+      "allies": [
+        757,
+        758
+      ],
+      "note": "Only in Wela Volcano Park and Lush Jungle",
+      "linkTitles": [
+        "Wela Volcano Park",
+        "Lush Jungle"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 757,
+      "allies": [
+        757,
+        759
+      ],
+      "note": "Some encounters on Route 8 at night",
+      "linkTitles": [
+        "Alola Route 8"
+      ]
+    },
+    {
+      "games": [
+        "sun",
+        "ultra-sun"
+      ],
+      "caller": 766,
+      "allies": [
+        732
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "moon",
+        "ultra-moon"
+      ],
+      "caller": 765,
+      "allies": [
+        732
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 771,
+      "allies": [
+        771,
+        278
+      ],
+      "note": "Some encounters on Hano Beach at night",
+      "linkTitles": [
+        "Hano Beach"
+      ]
+    },
+    {
+      "games": [
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 777,
+      "allies": [
+        777,
+        702
+      ],
+      "note": "",
+      "linkTitles": []
+    },
+    {
+      "games": [
+        "sun",
+        "moon",
+        "ultra-sun",
+        "ultra-moon"
+      ],
+      "caller": 782,
+      "allies": [
+        783,
+        784
+      ],
+      "note": "",
+      "linkTitles": []
+    }
+  ],
+  "weather": [
+    {
+      "speciesId": 61,
+      "rain": "10%",
+      "hail": "",
+      "sandstorm": "",
+      "linkTitles": [
+        "Malie Garden"
+      ],
+      "locationText": "Malie Garden"
+    },
+    {
+      "speciesId": 62,
+      "rain": "1% Day",
+      "hail": "",
+      "sandstorm": "",
+      "linkTitles": [
+        "Malie Garden"
+      ],
+      "locationText": "Malie Garden"
+    },
+    {
+      "speciesId": 186,
+      "rain": "1% Night",
+      "hail": "",
+      "sandstorm": "",
+      "linkTitles": [
+        "Malie Garden"
+      ],
+      "locationText": "Malie Garden"
+    },
+    {
+      "speciesId": 351,
+      "rain": "",
+      "hail": "11%",
+      "sandstorm": "11%",
+      "linkTitles": [
+        "Malie Garden"
+      ],
+      "locationText": "Malie Garden"
+    },
+    {
+      "speciesId": 351,
+      "rain": "1%",
+      "hail": "11%",
+      "sandstorm": "11%",
+      "linkTitles": [
+        "Lush Jungle",
+        "Alola Route 17",
+        "Exeggutor Island"
+      ],
+      "locationText": "Lush Jungle , Route 17 , Exeggutor Island"
+    },
+    {
+      "speciesId": 351,
+      "rain": "11%",
+      "hail": "1%",
+      "sandstorm": "11%",
+      "linkTitles": [
+        "Mount Lanakila",
+        "Pokémon Sun and Moon",
+        "Pokémon Ultra Sun and Ultra Moon",
+        "Tapu Village"
+      ],
+      "locationText": "Mount Lanakila S M , Mount Lanakila (base) US UM , Tapu Village"
+    },
+    {
+      "speciesId": 351,
+      "rain": "11%",
+      "hail": "",
+      "sandstorm": "11%",
+      "linkTitles": [
+        "Mount Lanakila",
+        "Pokémon Ultra Sun and Ultra Moon"
+      ],
+      "locationText": "Mount Lanakila (except base) US UM"
+    },
+    {
+      "speciesId": 351,
+      "rain": "11%",
+      "hail": "11%",
+      "sandstorm": "1%",
+      "linkTitles": [
+        "Haina Desert"
+      ],
+      "locationText": "Haina Desert"
+    },
+    {
+      "speciesId": 444,
+      "rain": "",
+      "hail": "",
+      "sandstorm": "10%",
+      "linkTitles": [
+        "Haina Desert"
+      ],
+      "locationText": "Haina Desert"
+    },
+    {
+      "speciesId": 582,
+      "rain": "",
+      "hail": "10%",
+      "sandstorm": "",
+      "linkTitles": [
+        "Tapu Village",
+        "Mount Lanakila",
+        "Pokémon Ultra Sun and Ultra Moon"
+      ],
+      "locationText": "Tapu Village , Mount Lanakila (base) US UM"
+    },
+    {
+      "speciesId": 583,
+      "rain": "",
+      "hail": "10%",
+      "sandstorm": "",
+      "linkTitles": [
+        "Mount Lanakila"
+      ],
+      "locationText": "Mount Lanakila (except base and icy cave)"
+    },
+    {
+      "speciesId": 584,
+      "rain": "",
+      "hail": "1%",
+      "sandstorm": "",
+      "linkTitles": [
+        "Mount Lanakila",
+        "Pokémon Ultra Sun and Ultra Moon"
+      ],
+      "locationText": "Mount Lanakila (except base and icy cave) US UM"
+    },
+    {
+      "speciesId": 704,
+      "rain": "10%",
+      "hail": "",
+      "sandstorm": "",
+      "linkTitles": [
+        "Lush Jungle",
+        "Alola Route 17"
+      ],
+      "locationText": "Lush Jungle , Route 17"
+    },
+    {
+      "speciesId": 705,
+      "rain": "10%",
+      "hail": "",
+      "sandstorm": "",
+      "linkTitles": [
+        "Exeggutor Island"
+      ],
+      "locationText": "Exeggutor Island"
+    }
+  ],
+  "noCall": [
+    {
+      "speciesId": 12,
+      "qualification": "Butterfree"
+    },
+    {
+      "speciesId": 62,
+      "qualification": "Poliwrath"
+    },
+    {
+      "speciesId": 94,
+      "qualification": "Gengar"
+    },
+    {
+      "speciesId": 101,
+      "qualification": "Electrode"
+    },
+    {
+      "speciesId": 103,
+      "qualification": "Exeggutor"
+    },
+    {
+      "speciesId": 113,
+      "qualification": "Chansey S M"
+    },
+    {
+      "speciesId": 121,
+      "qualification": "Starmie"
+    },
+    {
+      "speciesId": 122,
+      "qualification": "Mr. Mime"
+    },
+    {
+      "speciesId": 124,
+      "qualification": "Jynx"
+    },
+    {
+      "speciesId": 143,
+      "qualification": "Snorlax"
+    },
+    {
+      "speciesId": 149,
+      "qualification": "Dragonite"
+    },
+    {
+      "speciesId": 169,
+      "qualification": "Crobat"
+    },
+    {
+      "speciesId": 185,
+      "qualification": "Sudowoodo"
+    },
+    {
+      "speciesId": 186,
+      "qualification": "Politoed"
+    },
+    {
+      "speciesId": 196,
+      "qualification": "Espeon"
+    },
+    {
+      "speciesId": 197,
+      "qualification": "Umbreon"
+    },
+    {
+      "speciesId": 199,
+      "qualification": "Slowking"
+    },
+    {
+      "speciesId": 224,
+      "qualification": "Octillery"
+    },
+    {
+      "speciesId": 242,
+      "qualification": "Blissey"
+    },
+    {
+      "speciesId": 302,
+      "qualification": "Sableye"
+    },
+    {
+      "speciesId": 351,
+      "qualification": "Castform"
+    },
+    {
+      "speciesId": 367,
+      "qualification": "Huntail"
+    },
+    {
+      "speciesId": 368,
+      "qualification": "Gorebyss"
+    },
+    {
+      "speciesId": 373,
+      "qualification": "Salamence"
+    },
+    {
+      "speciesId": 424,
+      "qualification": "Ambipom"
+    },
+    {
+      "speciesId": 440,
+      "qualification": "Happiny"
+    },
+    {
+      "speciesId": 444,
+      "qualification": "Gabite"
+    },
+    {
+      "speciesId": 448,
+      "qualification": "Lucario"
+    },
+    {
+      "speciesId": 550,
+      "qualification": "Basculin Blue-Striped Form"
+    },
+    {
+      "speciesId": 582,
+      "qualification": "Vanillite"
+    },
+    {
+      "speciesId": 583,
+      "qualification": "Vanillish"
+    },
+    {
+      "speciesId": 584,
+      "qualification": "Vanilluxe"
+    },
+    {
+      "speciesId": 624,
+      "qualification": "Pawniard"
+    },
+    {
+      "speciesId": 637,
+      "qualification": "Volcarona"
+    },
+    {
+      "speciesId": 670,
+      "qualification": "Floette Orange Flower"
+    },
+    {
+      "speciesId": 670,
+      "qualification": "Floette Blue Flower"
+    },
+    {
+      "speciesId": 670,
+      "qualification": "Floette White Flower"
+    },
+    {
+      "speciesId": 675,
+      "qualification": "Pangoro"
+    },
+    {
+      "speciesId": 704,
+      "qualification": "Goomy"
+    },
+    {
+      "speciesId": 705,
+      "qualification": "Sliggoo"
+    },
+    {
+      "speciesId": 733,
+      "qualification": "Toucannon"
+    },
+    {
+      "speciesId": 738,
+      "qualification": "Vikavolt"
+    },
+    {
+      "speciesId": 747,
+      "qualification": "Mareanie"
+    },
+    {
+      "speciesId": 767,
+      "qualification": "Wimpod"
+    },
+    {
+      "speciesId": 774,
+      "qualification": "Minior"
+    },
+    {
+      "speciesId": 775,
+      "qualification": "Komala"
+    },
+    {
+      "speciesId": 784,
+      "qualification": "Kommo-o"
+    }
+  ]
+}

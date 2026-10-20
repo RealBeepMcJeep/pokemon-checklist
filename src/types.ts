@@ -115,6 +115,9 @@ export interface EncounterRow {
   /** Documented original wild-method group IDs to which this SOS rule applies.
    * Chained callers retain their starting encounter context; absent = unrestricted. */
   callerGroups?: string[];
+  /** Ally-centric source rows retain their IDs; callers are explicit row refs,
+   * never inferred from shared species, source column order or wild rates. */
+  sosRules?: { kind: "sos" | "weather-sos"; callerIds: string[]; conditions?: string[]; rates?: Rates }[];
   note?: string;
   allies: Ally[];
   /** Explicit source-backed conditional calls within a native pool, never shared allies. */
@@ -129,6 +132,8 @@ export interface EncounterGroup {
   conditions?: string[];
   notes?: string[];
   encounterType?: string;
+  /** Pinned stock source provenance; not display aliases or saved progress. */
+  sourceArea?: { location: string; area: string; method: string };
   encounters: EncounterRow[];
 }
 

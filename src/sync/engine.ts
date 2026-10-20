@@ -12,6 +12,7 @@ import {
 import {
   activeSaveKey,
   unlocksFromLegacy,
+  formFavoritesFromLegacy,
   applyState,
   downloadText,
   exportState,
@@ -756,7 +757,8 @@ function recoveredEdits(
   if (Object.keys(confirmed.records).length === 0) {
     const edits = Object.fromEntries(
       Object.entries(shown).filter(
-        ([key, entry]) => !(key in base.records) && !isClearing(entry.s),
+        ([key, entry]) => !(key in base.records) && !isClearing(entry.s)
+          && !(formFavoritesFromLegacy.value && !pendingReset && key.startsWith("starlegacy:")),
       ),
     );
     for (const [key, intent] of Object.entries(localIntents)) {
@@ -764,9 +766,14 @@ function recoveredEdits(
     }
     return edits;
   }
-  const edits = pendingEntries(confirmed, save, now, uid, unlocksFromLegacy.value && !pendingReset);
+  const edits = pendingEntries(confirmed, save, now, uid, unlocksFromLegacy.value && !pendingReset, formFavoritesFromLegacy.value && !pendingReset);
   for (const [key, intent] of Object.entries(localIntents)) {
     if (key.startsWith("setting:unlock:") && intent.s === "off" && !shown[key]) edits[key] = intent;
+    // Capability guards suppress inferred snapshot edits, never a persisted,
+    // value-matched action the current client actually recorded on this device.
+    if ((key.startsWith("starform:") || key.startsWith("starlegacy:"))
+        && (intent.s === "on" || intent.s === "off")
+        && (shown[key]?.s ?? clearedValue(key)) === intent.s) edits[key] = intent;
   }
   for (const [key, edit] of Object.entries(edits)) {
     const known = localIntents[key];

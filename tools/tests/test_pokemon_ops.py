@@ -55,7 +55,23 @@ class FakeClient:
 
 
 class PokemonOpsTests(unittest.TestCase):
+    def test_explicit_unresolved_favorite_flag_is_strict_and_preserves_ownership(self):
+        records = {"starlegacy:52": entry("on"), "species:52": entry("caught")}
+        try:
+            checked = ops.validate_record_map(records, [52])
+        except ops.SchemaError:
+            checked = None
+        self.assertEqual(checked, records)
+        self.assertEqual(ops.record_value({}, "starlegacy:52"), "off")
+        for key in ["starlegacy:0", "starlegacy:052", "starlegacy:25", "starlegacy:999", "starlegacy:52/extra", "starlegacy:52?query"]:
+            with self.subTest(key=key), self.assertRaises(ops.SchemaError):
+                ops.validate_requested_patch({key: "on"}, [25, 52])
+        with self.assertRaises(ops.SchemaError):
+            ops.validate_requested_patch({"starlegacy:52": "caught"}, [52])
+
     def test_regional_favorite_keys_and_values_fail_closed(self):
+        with self.assertRaises(ops.SchemaError):
+            ops.validate_requested_patch({"starform:25:kanto": "on"}, [25, 52])
         for key in ["starform:0:alolan", "starform:052:alolan", "starform:999:alolan", "starform:52:future", "starform:52:alolan/extra", "starform:52:alolan?query"]:
             with self.subTest(key=key), self.assertRaises(ops.SchemaError):
                 ops.validate_requested_patch({key: "on"}, [52])

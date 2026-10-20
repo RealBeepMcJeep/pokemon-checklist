@@ -301,7 +301,7 @@ class StoryCacheCLITests(unittest.TestCase):
                                     side_effect=lambda path: original_store(path, datasets=specs))
         factory.start()
         self.addCleanup(factory.stop)
-        self.records = {f"species:{i}": {"s": "caught"} for i in (12, 6, 9, 3, 26, 65, 94)}
+        self.records: dict[str, dict[str, object]] = {f"species:{i}": {"s": "caught"} for i in (12, 6, 9, 3, 26, 65, 94)}
         transport = mock.patch.object(tb, "read_records", side_effect=lambda uid: copy.deepcopy(self.records))
         self.read = transport.start()
         self.addCleanup(transport.stop)
@@ -321,6 +321,47 @@ class StoryCacheCLITests(unittest.TestCase):
              contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             code = ts.main()
         return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_known_form_favorites_reach_real_story_score_inputs_without_bridge_borrowing(self):
+        self.records.update({"star:26": {"s": "on"}, "form:26:kanto": {"s": "caught"},
+                             "starform:26:alolan": {"s": "on"}, "starform:26:kanto": {"s": "off"}})
+        observed = []
+        original = opt.choose_options
+        def capture(profiles, *args, **kwargs):
+            observed.extend(p for p in profiles if p["endpoint_id"] == 26)
+            return original(profiles, *args, **kwargs)
+        with mock.patch.object(opt, "choose_options", new=capture):
+            code, stdout, stderr = self.cli("--form-override", "raichu=base", "--no-result-cache")
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(len(observed), 1, "fixture must contain the explicit Kanto Raichu candidate")
+        self.assertEqual(observed[0]["form_kind"], "base")
+        self.assertFalse(observed[0]["favorite"], "Alolan favorite must not boost Kanto score input")
+        self.assertEqual(len(json.loads(stdout)["options"]), 5)
+
+    def test_form_records_invalidate_selection_even_when_species_and_star_bridges_do_not_change(self):
+        self.records.update({"star:26": {"s": "on"}, "form:26:alolan": {"s": "caught"},
+                             "form:26:kanto": {"s": "seen"}, "starform:26:alolan": {"s": "on"},
+                             "starform:26:kanto": {"s": "off"}})
+        first = self.cli()
+        self.assertEqual(first[0], 0, first[2])
+        before = json.loads(first[1])
+        self.assertEqual(self.cli()[0], 0)
+        self.assertEqual(len(self.calls), 1)
+        self.records["starform:26:alolan"] = {"s": "off"}
+        self.records["starform:26:kanto"] = {"s": "on"}
+        changed = self.cli()
+        self.assertEqual(changed[0], 0, changed[2])
+        self.assertEqual(len(self.calls), 2, "opposite-form favorite edit must invalidate despite unchanged species bridge")
+        self.assertEqual(json.loads(changed[1])["source_caught_ids"], before["source_caught_ids"])
+        self.assertEqual(json.loads(changed[1])["source_starred_ids"], before["source_starred_ids"])
+        self.records["form:26:alolan"] = {"s": "seen"}
+        self.records["form:26:kanto"] = {"s": "caught"}
+        self.assertEqual(self.cli()[0], 0)
+        self.assertEqual(len(self.calls), 3, "opposite-form ownership edit must also invalidate")
+        self.records["starform:26:kanto"].update(at=999, by="another-device")
+        self.assertEqual(self.cli()[0], 0)
+        self.assertEqual(len(self.calls), 3, "timestamp-only echo must not invalidate identical values")
+        self.assertEqual(self.read.call_count, 5)
 
     def test_story_preparation_parses_each_shared_moves_abilities_blob_once(self):
         path = self.directory / "chaos-gen7ou-1695.json"

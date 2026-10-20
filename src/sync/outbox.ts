@@ -256,7 +256,7 @@ export function pendingEntries(
     if (key.startsWith("setting:unlock:") && isClearing(pending[key].s)) delete pending[key];
   }
   if (save.schemaVersion < 5 || legacyFormFavorites) for (const key of Object.keys(pending)) {
-    if (key.startsWith("starform:") && isClearing(pending[key].s)) delete pending[key];
+    if (key.startsWith("starlegacy:") || (key.startsWith("starform:") && isClearing(pending[key].s))) delete pending[key];
   }
   return pending;
 }
@@ -383,7 +383,7 @@ function isProgress(key: string): boolean {
 }
 
 function isFavourite(key: string): boolean {
-  return key.startsWith("star:") || key.startsWith("starform:");
+  return key.startsWith("star:") || key.startsWith("starform:") || key.startsWith("starlegacy:");
 }
 
 /** A star is live while it is "on"; a species is live at any status but none. */

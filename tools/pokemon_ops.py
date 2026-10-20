@@ -36,6 +36,7 @@ from typing import Any, Iterable, Mapping, Sequence
 ROOT = Path(__file__).resolve().parent.parent
 POKEMON_PATH = ROOT / "data" / "pokemon.json"
 FIREBASE_TOOL = ROOT / "tools" / "firebase-admin-rest.mjs"
+REGIONAL_SPECIES_IDS = frozenset(row["id"] for row in json.loads((ROOT / "data" / "regional-forms.json").read_text())["forms"].values())
 
 Species = dict[str, Any]
 RecordMap = dict[str, dict[str, Any]]
@@ -209,8 +210,11 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
         if species_id not in species_ids:
             raise SchemaError(f"unknown species record key: {key}")
         return kind
+    legacy_star = re.fullmatch(r"starlegacy:([1-9][0-9]*)", key)
+    if legacy_star and int(legacy_star[1]) in species_ids & REGIONAL_SPECIES_IDS:
+        return "starlegacy"
     form_star = re.fullmatch(r"starform:([1-9][0-9]*):(alolan|kanto)", key)
-    if form_star and int(form_star[1]) in species_ids:
+    if form_star and int(form_star[1]) in species_ids & REGIONAL_SPECIES_IDS:
         return "starform"
     if key.startswith("form:") and len(key) > len("form:") and "/" not in key:
         return "form"
@@ -226,7 +230,7 @@ def _valid_key(key: str, species_ids: set[int]) -> str:
 def _allowed_value(kind: str) -> frozenset[str]:
     if kind in {"species", "form"}:
         return STATUS_VALUES
-    if kind in {"star", "starform", "setting:forms", "setting:unlock"}:
+    if kind in {"star", "starform", "starlegacy", "setting:forms", "setting:unlock"}:
         return STAR_VALUES
     if kind == "setting:mode":
         return MODE_VALUES
@@ -281,7 +285,7 @@ def validate_requested_patch(patch: Mapping[str, str], species_ids: Iterable[int
 
 
 def _empty_value(key: str) -> str:
-    return "off" if key.startswith(("star:", "starform:", "setting:unlock:")) or key == "setting:forms" else "none"
+    return "off" if key.startswith(("star:", "starform:", "starlegacy:", "setting:unlock:")) or key == "setting:forms" else "none"
 
 
 def record_value(records: Mapping[str, Mapping[str, Any]], key: str) -> str:
@@ -670,6 +674,8 @@ def run_favorites_exact(
         key: "off" for key, record in current.items()
         if key.startswith("starform:") and record.get("s") == "on" and key[len("starform:"):] not in target_forms
     }
+    desired.update({key: "off" for key, record in current.items()
+                    if key.startswith("starlegacy:") and record.get("s") == "on"})
     for species_id in sorted(current_ids - target_ids):
         desired[f"star:{species_id}"] = "off"
     for species_id in sorted(target_ids - current_ids):
@@ -684,7 +690,8 @@ def run_favorites_exact(
     if not dry_run:
         actual_ids = {int(key.split(":")[1]) for key, row in final.items() if key.startswith("star:") and row["s"] == "on"}
         actual_forms = {key[len("starform:"):] for key, row in final.items() if key.startswith("starform:") and row["s"] == "on"}
-        if actual_ids != target_ids or actual_forms != target_forms:
+        unresolved = {key for key, row in final.items() if key.startswith("starlegacy:") and row["s"] == "on"}
+        if actual_ids != target_ids or actual_forms != target_forms or unresolved:
             raise VerificationError("Exact favorites did not match complete-set readback; a concurrent edit may have arrived")
     return _with_operation(result, "favorites", exact=list(sorted(target_ids)), exact_forms=sorted(target_forms), species=targets)
 

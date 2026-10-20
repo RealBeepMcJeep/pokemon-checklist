@@ -24,8 +24,25 @@ test("writes a regional favorite with an off before-image and preserves ownershi
   assert.deepEqual(written.state.records["species:52"], records["species:52"]);
 });
 
+test("unresolved favorite flags are strict regional on/off records with off before-images", async () => {
+  let written; let result = null;
+  const records = { "species:52": { s: "caught", at: 1, by: "fixture" } };
+  const requestFn = async (_path, init) => {
+    if (init.method === "PUT") { written = JSON.parse(init.body); return null; }
+    return { body: { state: { records } }, etag: "fixture-etag" };
+  };
+  try { result = await applyRecords("fixture-account", { "starlegacy:52": "on" }, { requestFn }); }
+  catch (error) { assert.match(error.message, /invalid record key/); }
+  assert.notEqual(result, null, "explicit unresolved-intent flag must be admitted");
+  assert.deepEqual(result.changes, [{ key: "starlegacy:52", from: "off", to: "on" }]);
+  assert.deepEqual(written.state.records["species:52"], records["species:52"]);
+  for (const key of ["starlegacy:0", "starlegacy:052", "starlegacy:25", "starlegacy:808", "starlegacy:52/extra", "starlegacy:52?query"])
+    assert.throws(() => validateRecordMap({ [key]: "on" }));
+  assert.throws(() => validateRecordMap({ "starlegacy:52": "caught" }));
+});
+
 test("regional favorite keys and values fail closed", () => {
-  for (const key of ["starform:0:alolan", "starform:052:alolan", "starform:808:alolan", "starform:52:future", "starform:52:alolan/extra", "starform:52:alolan?query"]) {
+  for (const key of ["starform:25:kanto", "starform:0:alolan", "starform:052:alolan", "starform:808:alolan", "starform:52:future", "starform:52:alolan/extra", "starform:52:alolan?query"]) {
     assert.throws(() => validateRecordMap({ [key]: "on" }));
   }
   assert.throws(() => validateRecordMap({ "starform:52:alolan": "caught" }));

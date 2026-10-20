@@ -209,59 +209,39 @@ export function getOccurrences(
   form?: RegionalForm,
 ): Occurrence[] {
   const found: Occurrence[] = [];
-  if (!encounters.mode || encounters.mode === "photonic-prismatic") {
-    for (const island of encounters.islands) for (const location of island.locations) {
-      const source = guideEncounters(location, unlocks || [], true);
-      const mapped = new Set<string>();
-      const routes = new Map<string, Occurrence>();
-      for (const entry of source) {
-        if (entry.row.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, entry.row.form) === form)) {
-          found.push({ row: entry.row, group: entry.group, location, island, ally: false, eligible: entry.eligible });
-        }
-        for (const node of guideCalls(entry.sos)) {
-          const call = node.call;
-          mapped.add(call.sourceRow.id);
-          if (call.row.speciesId !== speciesId || (form && encounterRegionalForm(speciesId, call.row.form) !== form)) continue;
-          const key = JSON.stringify([call.group.id, call.sourceRow.id, call.row.form || ""]);
-          const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
-          const group = { ...call.group, name: [call.group.name, ...conditions].join(" · ") };
-          const item = { row: entry.row, group, location, island, ally: true, eligible: node.eligible };
-          if (!routes.has(key) || node.eligible) routes.set(key, item);
-        }
+  for (const island of encounters.islands) for (const location of island.locations) {
+    const source = guideEncounters(location, unlocks || [], true);
+    const mapped = new Set<string>();
+    const routes = new Map<string, Occurrence>();
+    for (const entry of source) {
+      if (entry.row.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, entry.row.form) === form)) {
+        found.push({ row: entry.row, group: entry.group, location, island, ally: false, eligible: entry.eligible });
       }
-      found.push(...routes.values());
-      // Preserve unresolved source evidence at its warning, never as a fake wild caller.
-      for (const group of location.groups) {
-        const kind = groupUnlock(group);
-        if (kind !== "sos" && kind !== "weather-sos") continue;
-        for (const row of group.encounters) if (!mapped.has(row.id)) {
-          const match = kind === "weather-sos" && row.speciesId === speciesId
-            && (!form || encounterRegionalForm(speciesId, row.form) === form);
-          if (match || row.allies.some(ally => ally.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, ally.form) === form))) {
-            found.push({ row, group, location, island, ally: true, eligible: false });
-          }
+      for (const node of guideCalls(entry.sos)) {
+        const call = node.call;
+        mapped.add(call.sourceRow.id);
+        if (call.row.speciesId !== speciesId || (form && encounterRegionalForm(speciesId, call.row.form) !== form)) continue;
+        const key = JSON.stringify([call.group.id, call.sourceRow.id, call.row.form || ""]);
+        const conditions = [...(call.group.conditions || []), ...(call.sourceRow.conditions || [])];
+        const group = { ...call.group, name: [call.group.name, ...conditions].join(" · ") };
+        const item = { row: entry.row, group, location, island, ally: true, eligible: node.eligible };
+        if (!routes.has(key) || node.eligible) routes.set(key, item);
+      }
+    }
+    found.push(...routes.values());
+    // Preserve unresolved source evidence at its warning, never as a fake wild caller.
+    for (const group of location.groups) {
+      const kind = groupUnlock(group);
+      if (kind !== "sos" && kind !== "weather-sos") continue;
+      for (const row of group.encounters) if (!mapped.has(row.id)) {
+        const match = (kind === "weather-sos" || row.sosRules !== undefined) && row.speciesId === speciesId
+          && (!form || encounterRegionalForm(speciesId, row.form) === form);
+        if (match || row.allies.some(ally => ally.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, ally.form) === form))) {
+          found.push({ row, group, location, island, ally: true, eligible: false });
         }
       }
     }
-    return found;
   }
-  forEachEncounter(encounters, (row, group, location, island) => {
-    if (row.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, row.form) === form)) {
-      found.push({
-        row,
-        group,
-        location,
-        island,
-        ally: group.encounterType === "sos",
-      });
-    }
-    for (const ally of row.allies || []) {
-      if (ally.speciesId === speciesId && (!form || encounterRegionalForm(speciesId, ally.form) === form)) {
-        found.push({ row, group, location, island, ally: true });
-      }
-    }
-  });
-  if (unlocks) for (const item of found) item.eligible = occurrenceEligible(item.location,item.group,item.row,item.ally,unlocks);
   return found;
 }
 

@@ -62,6 +62,13 @@ def validate_sources(team, expected, records):
         raise ValueError('team report and selection snapshot disagree')
     if found != expected:
         raise ValueError('live source sets changed; regenerate the upstream selection')
+    from team_options import form_record_values
+    form_values = form_record_values(records)
+    if 'source_form_records' in team:
+        if team['source_form_records'] != form_values:
+            raise ValueError('live form ownership/favorites changed; regenerate the upstream selection')
+    elif any(key.startswith(('starform:', 'starlegacy:')) for key in records):
+        raise ValueError('team snapshot lacks form ownership/favorites; regenerate selection')
     return found
 
 

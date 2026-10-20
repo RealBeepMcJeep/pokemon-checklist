@@ -43,7 +43,9 @@ export const formsTracked = signal(false);
 export const unlocks = signal<Unlock[]>([]);
 /** Replica migration hint, never exported as player progress. */
 export const unlocksFromLegacy = signal(false);
-export const activeUnlocks = computed(() => mode.value === DEFAULT_MODE ? unlocks.value : []);
+/** Source-capability metadata: missing old favorite fields are not clears. */
+export const formFavoritesFromLegacy = signal(false);
+export const activeUnlocks = computed(() => unlocks.value);
 export function setUnlock(flag: Unlock, enabled: boolean): void {
   if (readOnly.value || !UNLOCKS.includes(flag)) return;
   unlocks.value = UNLOCKS.filter(item => item === flag ? enabled : unlocks.value.includes(item));
@@ -235,6 +237,7 @@ export function setSyncAccount(
         // pushing stale offline progress over it as a brand-new write. Nor is another
         // checklist ever carried over a save that could not be read: signing out once
         // silently wrote the account's checklist over the device's own that way.
+        formFavoritesFromLegacy.value = false;
         applyState(defaultState());
       }
       persist();
@@ -332,7 +335,7 @@ let heldKey: string | null = null;
 let seen: { key: string; raw: string | null; state: SavedState } | null = null;
 
 interface StoredSave {
-  found: { key: string; state: SavedState; legacyUnlocks?: boolean } | null;
+  found: { key: string; state: SavedState; legacyUnlocks?: boolean; legacyFormFavorites?: boolean } | null;
   /** The save key's own text, when it holds something that cannot be read. */
   unreadable: string | null;
   raw: string | null;
@@ -341,6 +344,13 @@ interface StoredSave {
 function readSave(): StoredSave {
   const key = activeSaveKey();
   const raw = localStorage.getItem(key);
+  let legacyFormFavorites = true;
+  try {
+    // Keep this account/device-local; neither exported progress nor shared settings.
+    legacyFormFavorites = localStorage.getItem(`${key}:legacy-form-favorites`) !== null;
+  } catch {
+    // An unreadable capability marker must not authorize inferred favorite clears.
+  }
   // Signed in, an account has its own save only. Signed out, an older build's key
   // is migrated on read, but only when there is no current save at all: an older
   // save never replaces a current one that merely could not be read.
@@ -358,7 +368,7 @@ function readSave(): StoredSave {
     try {
       const parsed = JSON.parse(text);
       const state = validateState(parsed, validPokemon, validForms);
-      return { found: { key: candidate, state, legacyUnlocks: parsed.schemaVersion < 4 }, unreadable, raw };
+      return { found: { key: candidate, state, legacyUnlocks: parsed.schemaVersion < 4, legacyFormFavorites: parsed.schemaVersion < 5 || legacyFormFavorites }, unreadable, raw };
     } catch {
       if (candidate === key || candidate === (activeUid ? `${LEGACY_STORAGE_KEYS[0]}:${activeUid}` : LEGACY_STORAGE_KEYS[0])) unreadable = text;
     }
@@ -398,6 +408,7 @@ function useSave({ found, unreadable, raw }: StoredSave): boolean {
   if (unreadable !== null && !found) heldKey = key;
   if (found) {
     unlocksFromLegacy.value = !!found.legacyUnlocks;
+    formFavoritesFromLegacy.value = !!found.legacyFormFavorites;
     applyState(found.state);
     // An older (or last good) copy rewrites itself under the current key. A legacy
     // entry is deliberately left behind so an older build still finds its own data.
@@ -469,6 +480,9 @@ export function persist(): void {
   try {
     state = withOtherTabsChanges(key, state);
     if (key === heldKey) throw new Error("the unreadable save could not be kept");
+    // Write the capability before the migrated v5 image. If it cannot persist,
+    // leave the old recoverable save intact rather than lose provenance on reload.
+    if (formFavoritesFromLegacy.value) localStorage.setItem(`${key}:legacy-form-favorites`, "1");
     const raw = JSON.stringify(state);
     localStorage.setItem(key, raw);
     seen = { key, raw, state };

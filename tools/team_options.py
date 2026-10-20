@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 import math
 import re
 
@@ -10,6 +11,7 @@ import team_builder as tb
 import team_synergy as ts
 
 OG_LIMIT = 151
+REGIONAL_IDS = frozenset(row["id"] for row in json.loads((tb.REPO / "data" / "regional-forms.json").read_text())["forms"].values())
 UNVERIFIED_INDIVIDUAL_GATES = {"Salazzle", "Froslass", "Gallade", "Hitmonlee", "Hitmonchan", "Hitmontop"}
 HIDDEN_ABILITY_PENALTY = 0.75  # bounded heuristic; usage share is not a strength fraction
 LEVEL_METHOD = re.compile(r"Level \d+\Z", re.IGNORECASE)
@@ -589,6 +591,35 @@ def starred_ids(roster: dict) -> set[int]:
             if key.startswith("star:") and record.get("s") == "on"}
 
 
+def form_record_values(records: dict) -> dict:
+    """Complete form progress/favorite source values; timestamps are not intent."""
+    return {key: record.get("s") for key, record in records.items()
+            if key.startswith(("form:", "starform:", "starlegacy:")) and isinstance(record, dict)}
+
+
+def profile_favorite(profile: dict, roster: dict) -> bool:
+    """Exact known terminal forms use their own flag, never the species bridge.
+
+    A regional pre-evolution cannot inherit its endpoint's form assumption. Full
+    regional source/path selection is a separate audit; unknown identity is not
+    permission to attach an exact favorite to an assumed form.
+    """
+    records = roster.get("records", {})
+    for identifier in _caught_ids(profile):
+        if identifier not in REGIONAL_IDS:
+            if records.get(f"star:{identifier}", {}).get("s") == "on":
+                return True
+            continue
+        if identifier != profile.get("endpoint_id"):
+            continue
+        region = {"base": "kanto", "kanto": "kanto", "alolan": "alolan"}.get(str(profile.get("form_kind", "")))
+        if profile.get("alolan") is True:
+            region = "alolan"
+        if region and records.get(f"starform:{identifier}:{region}", {}).get("s") == "on":
+            return True
+    return False
+
+
 def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
     stars = starred_ids(roster)
     rendered = []
@@ -607,7 +638,7 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
                 "final": profile["final"], "dex": int(profile["endpoint_id"]),
                 "evolution": chain, "types": profile["types"],
                 "tier": profile.get("tier"),
-                "favorite": bool(stars.intersection(profile.get("caught_ids", ()))),
+                "favorite": profile_favorite(profile, roster),
                 "hidden_ability_caveat": has_hidden_ability_caveat(profile),
                 "hidden_ability_usage_share": (hidden_ability_usage_share(profile)
                                                if profile.get("competitive_ability_usage") else None),
@@ -625,7 +656,7 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
     seen_ids = sorted(int(key.split(":", 1)[1]) for key, record in roster.get("records", {}).items()
                       if key.startswith("species:") and isinstance(record, dict)
                       and record.get("s") == "seen")
-    return {
+    report = {
         "caught_records": roster["caught_count"],
         "source_caught_ids": caught_ids,
         "source_seen_ids": seen_ids,
@@ -655,6 +686,11 @@ def story_report(roster: dict, options: list[dict], utility: dict) -> dict:
             "Butterfree is fixed sleep utility and cannot use False Swipe.",
         ],
     }
+    form_values = form_record_values(roster.get("records", {}))
+    if form_values:
+        report["source_form_records"] = form_values
+        report["warnings"][2] = ("Regional ownership/favorites are recorded, but this selector's species-based eligibility and form assumptions still need the #22 audit; individual ability, sex, level and items remain unconfirmed.")
+    return report
 
 
 def format_story_report(report: dict) -> str:

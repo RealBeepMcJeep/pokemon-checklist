@@ -12,7 +12,7 @@ Select a Pokémon's name in the guide or Pokédex to open its Pokédex details, 
 
 Before you pick a Pokémon, the Pokédex shows **Catch next**: the uncaught catch-now Pokémon at the next unfinished location, with unseen Pokémon ahead of seen Pokémon, their status buttons and a jump to that location. Route order stays unchanged. With regional tracking on, a missing eligible SOS form remains suggested even when its caller/species aggregate is Caught. Its exact-form button and Undo preserve the owned sibling; completing the last missing form advances the area like a species edit. On phones, suggestions start collapsed; tap the heading to expand them, and they scroll away with the Pokémon list instead of staying pinned above it. Desktop suggestions start expanded. Each entry lists where the Pokémon appears in the other game modes and always shows its evolution path.
 
-On a phone, the header stays pinned while reading and shrinks to one compact row after scrolling. The game shortcut, **Not caught / Seen / Caught** totals, Pokédex, Tools, and **Settings** remain available. Settings keeps the full Game mode picker, Track forms and form progress, Backup/Restore/Reset, account/sync controls, and the actual app version/build-source hash at the bottom. Offline/pending/error and view-only/held-clear safeguards stay visible outside closed Settings. Desktop retains its existing controls and adds Settings for Prismatic Moon encounter unlocks. The compact three-color rail shows the collection buckets; the **Overall caught** progress bar remains in Settings.
+On a phone, the header stays pinned while reading and shrinks to one compact row after scrolling. The game shortcut, **Not caught / Seen / Caught** totals, Pokédex, Tools, and **Settings** remain available. Settings keeps the full Game mode picker, Track forms and form progress, Backup/Restore/Reset, account/sync controls, and the actual app version/build-source hash at the bottom. Offline/pending/error and view-only/held-clear safeguards stay visible outside closed Settings. Desktop retains its existing controls and has Settings for encounter unlocks in every mode. The compact three-color rail shows the collection buckets; the **Overall caught** progress bar remains in Settings.
 
 On a phone, **Add to Home Screen** installs the checklist as a full-screen app with its own icon; it still works offline.
 
@@ -33,9 +33,9 @@ Regional caller and SOS guide links name the actual form and open its exact deta
 
 When regional tracking is on, selected details warn if an older species-level Caught/Seen record has no corresponding confirmed form status. The record is preserved without assigning Alolan or Kanto ownership. Explicit form edits update that species' aggregate; an owned sibling remains owned, including after a concurrent edit or Undo. Switching tracking alone changes no progress or favorites.
 
-Collapsed regional edits change one actual form. A new catch defaults to Alolan with tracking off; outgoing/status removal infers a unique applicable form or asks. Ambiguous ownership is not guessed. A phone sheet/desktop dialog shows full form names, types, current status and the exact action; Cancel/Escape changes nothing, Tab stays inside, and confirmation rejects changed account/save/mode/tracking or relevant before-values. Favorites choose favored forms independently of ownership; a preserved legacy favorite has an explicit assignment control that changes no ownership. Exact actions and local Undo preserve the sibling. Complete wire/reload migration remains a release gate for this unpublished v5 branch.
+Collapsed regional edits change one actual form. A new catch defaults to Alolan with tracking off; outgoing/status removal infers a unique applicable form or asks. Ambiguous ownership is not guessed. A phone sheet/desktop dialog shows full form names, types, current status and the exact action; Cancel/Escape changes nothing, Tab stays inside, and confirmation rejects changed account/save/mode/tracking or relevant before-values. Favorites choose favored forms independently of ownership; a preserved legacy favorite has an explicit assignment control that changes no ownership. Exact actions and local Undo preserve the sibling. Unresolved legacy intent and exact form favorites survive wire echo, reload and Undo; migration capability stays local to the account/device rather than entering exported player progress.
 
-Status buttons cycle **None → Caught → Seen → None**. Collection summaries show **Not caught / Seen / Caught**, with mutually exclusive buckets: Not caught means neither seen nor caught, and Seen means seen-only. Location headers count each currently eligible collection target once: distinct Alolan/Kanto forms with tracking on, species with tracking off. Disabled SOS/weather targets do not block current completion, and locked/backtrack totals use the same target scope. Overall and Pokédex status totals cover all 807 species; the optional form summary covers forms in the active game mode. Filtered search totals remain separate. Only Caught fills the progress bar or completes a location. The browser saves species statuses, tracked forms, starred Pokémon, and the selected mode in versioned local storage (`pokemon-checklist-state-v4`). Existing v1, v2 and v3 browser saves and backup files migrate without changing progress, and an upgraded save is rewritten under the current key while the older key is left untouched. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
+Status buttons cycle **None → Caught → Seen → None**. Collection summaries show **Not caught / Seen / Caught**, with mutually exclusive buckets: Not caught means neither seen nor caught, and Seen means seen-only. Location headers count each currently eligible collection target once: distinct Alolan/Kanto forms with tracking on, species with tracking off. Disabled SOS/weather targets do not block current completion, and locked/backtrack totals use the same target scope. Overall and Pokédex status totals cover all 807 species; the optional form summary covers forms in the active game mode. Filtered search totals remain separate. Only Caught fills the progress bar or completes a location. The browser saves species statuses, tracked forms, starred Pokémon, and the selected mode in versioned local storage (`pokemon-checklist-state-v5`). Existing v1, v2, v3 and v4 browser saves and backup files migrate without changing progress, and an upgraded save is rewritten under the current key while the older key is left untouched. **Backup** downloads deterministic JSON; **Restore** validates the complete file before asking to replace the current checklist. If storage is unavailable, changes remain visible until the tab closes.
 
 Star any Pokédex row to pin that Pokémon above the rest of the list; click the star again to release it. Starred entries stay in National Dex order among themselves, still float to the top inside search results, are kept in backups, and are cleared by Reset along with progress.
 
@@ -51,7 +51,7 @@ SOS allies; Ula’Ula Meadow has **Floette (Red Flower)** at 20%, with **Orange/
 Flower** SOS allies. These wild percentages are not ally shares. Existing form keys,
 ownership/favorites and v4 backups remain compatible. The published 2026-10-19
 data-only milestone retained separate SOS tables and generic Pokédex entries;
-the unreleased regional UI described below replaces those presentation rules.
+the regional core replaces those presentation rules while retaining old backup compatibility.
 
 The source guide also distinguishes **Lycanroc (Midday: Day / Midnight:
 Night)** in both Vast Poni Canyon grass tables (20% native pool), with Dusk as an
@@ -59,7 +59,7 @@ SOS-only ally there, and **Pumpkaboo (Small / Average / Large / Super Size)** at
 Memorial Hill (30% pooled), with a documented Super Size ally. Neither source gives
 numerical ally shares or equal Pumpkaboo-size weights. Ten Carat Hill's **Rockruff
 (Normal / Own Tempo)** keeps its 20% combined wild rate and the source's equal-chance
-note. The unpublished regional UI models the Own Tempo call separately from shared
+note. The regional core models the Own Tempo call separately from shared
 allies and labels it **Caller: Rockruff (Own Tempo) only**; regular Rockruff cannot
 call that variant. Canyon Diancie/Sableye are attached only to cave Carbink, not
 grass encounters. Caller method context survives SOS chains; cave and bubbling-spot
@@ -67,21 +67,22 @@ footnotes stay with their applicable callers rather than repeating under unrelat
 allies. Pooled/unsupported guide identities
 do not borrow one variant’s base type/grade facts; exact-form allies keep their
 verified facts; ordinary and documented Kanto/base facts remain correct. No new
-form/save keys are added. The narrow main source/facts candidate retains v4
-compatibility; it does not publish this branch’s unfinished v5 regional migration.
+encounter-form keys are added by these source corrections. The regional core uses v5
+backups with exact form favorites, while retaining readable v1–v4 imports.
 
 ## Saved encounter unlocks
 
-In Prismatic Moon, open **Settings** to enable Tauros Charge, Surfing, Fishing,
-SOS Calls and Weather SOS. Desktop has a Settings button; phones retain the existing
-Settings dialog. Flags start off on migration and are saved in v4 backups, across tabs
-and account sync; they do not mark or clear Pokémon. Location counters, Catch next and
-availability labels update immediately. Locked totals stay separate; **Backtrack** marks
-a regular-complete area with newly eligible uncaught species. Weather SOS also needs
-SOS and caller access, and its actual weather conditions still apply. Other story-only
-restrictions remain unchanged. Unsupported vanilla-mode controls are hidden because those
-SOS datasets do not identify callers. Reset clears unlocks; older keys/last-good copies
-remain available after upgrade. Older signed-in builds may need a reload after flags are set.
+In all five modes, open **Settings** to enable Tauros
+Charge, Surfing, Fishing, SOS Calls and Weather SOS. Settings is available on phone
+and desktop. Flags are shared across modes and saved in v5 backups, across tabs and
+account sync; v1–v4 imports remain readable. They never mark or clear Pokémon.
+Location counters, Catch next and availability use the same eligible targets. Locked
+totals stay separate; **Backtrack** marks a regular-complete area with newly eligible
+uncaught targets. Weather SOS needs SOS, caller access and its documented weather/time
+conditions. Stock bubbling fishing uses Fishing; the separately identified Poni Plains
+rustling encounters are not fishing. Other story-only restrictions remain unchanged.
+Reset clears unlocks; older keys/last-good copies remain available after upgrade.
+Older signed-in builds may need a reload after flags are set.
 
 SOS eligibility follows documented caller identities, including regional form and any
 explicit ability scope, before collapsing collection targets. Haina Desert’s ordinary
@@ -90,7 +91,7 @@ Caller chains need an accessible wild starting point, cannot bootstrap themselve
 cycles, and do not gain access merely because a Pokémon is owned. Missing caller evidence
 stays unavailable rather than being replaced by another species. Ordinary ally percentages
 remain undocumented; weather percentages retain their separate source conditions.
-In Prismatic Moon, enabled SOS allies now appear inside their documented caller rows,
+In each supported mode, enabled SOS allies appear inside their documented caller rows,
 not separate SOS/weather tables. Disabling SOS hides them; weather entries additionally
 need Weather SOS and caller access. Ordinary shares remain explicitly undocumented, and
 weather entries label guide-reported rates and conditions rather than per-turn odds.
@@ -109,8 +110,15 @@ Universal “All” rules appear once per wild row, labeled Any listed wild call
 than repeating inside every chain. Ordinary unknown-share help is shared by the row;
 weather entries retain their location-wide source scope and conditions. The caller’s
 percentage is explicitly labeled Wild rate, separate from ally selection/arrival odds.
-Development status for #17: remaining form-name/source corrections and vanilla caller
-mapping are unfinished; vanilla location-only SOS tables have not been guessed into callers.
+Stock associations come from the pinned stock SOS reference, exact source form and
+native method/subarea/time context—not slot order, display aliases or wild percentages.
+Each stock dataset retains its original rows/IDs/rates. Three Sableye records per game
+(Ten Carat Hill inside and canyon inside/northwest) still have unverified exact native
+caller-row bindings and appear as mapping-unavailable warnings without catch controls.
+Details use the same caller graph and return to the actual native row; unknown source
+entries remain unavailable. Prismatic creator rules remain separate from stock rules.
+The regional/save-v5/cross-mode core is the M2 release. Selectable progress, intrinsic
+catch tiers and the final combined independent review follow separately in M3–M5.
 
 ## Local catcher comparison
 

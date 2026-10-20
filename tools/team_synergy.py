@@ -460,9 +460,8 @@ def main() -> int:
     if args.story_options:
         import team_options as opt
         profiles = opt.attach_evolution_paths(profiles, roster)
-        stars = opt.starred_ids(roster)
         for member in profiles:
-            member["favorite"] = bool(stars.intersection(member["caught_ids"]))
+            member["favorite"] = opt.profile_favorite(member, roster)
         profiles = opt.conservative_profiles(profiles)
         utility = next((p for p in profiles if tb.normalize(p["final"]) == tb.normalize(args.utility)), None)
         if utility is None:
@@ -471,11 +470,16 @@ def main() -> int:
         pokedex_profiles = opt.conservative_profiles(
             opt.build_pokedex_profiles(profiles, roster, chart))
         from story_cache import choose_cached
+        # Regional edits can leave species/star bridges and legacy prepared
+        # candidates unchanged. Still invalidate, without treating echo stamps
+        # as a changed roster or changing the existing selection objectives.
+        source_form_values = opt.form_record_values(roster["records"])
         options = choose_cached(profiles, utility, chart,
                                 pokedex_profiles=pokedex_profiles,
                                 selector=opt.choose_options,
                                 cache_dir=Path(args.cache) / "story-selection-v1",
-                                enabled=not args.no_result_cache)
+                                enabled=not args.no_result_cache,
+                                source_context=source_form_values)
         report = opt.story_report(roster, options, utility)
         if args.json:
             print(json.dumps(report, indent=2))

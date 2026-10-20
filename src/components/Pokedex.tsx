@@ -103,7 +103,7 @@ function Selection() {
   // the sole safe fallback when no separate form-detail record is stored.
   const exactFacts = context?.detailKey ? formDetails.get(context.detailKey)
     ?? (context.detailKey === `${selected}:base` ? detailsByDex.get(selected) : undefined) : undefined;
-  const occurrences = getOccurrences(activeEncounters.value, selected, mode.value === "photonic-prismatic" ? activeUnlocks.value : undefined, form);
+  const occurrences = getOccurrences(activeEncounters.value, selected, activeUnlocks.value, form);
   const otherModeOccurrences = crossModeOccurrences(
     ENCOUNTERS_BY_MODE,
     mode.value,
