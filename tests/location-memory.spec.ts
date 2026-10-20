@@ -10,6 +10,18 @@ async function open(page: Page, project: string) {
   await expect(page.locator("details.location")).toHaveCount(60);
 }
 
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus) return;
+  const geometry = await page.evaluate(() => ({
+    scrollY, viewport: innerHeight, ready: document.readyState,
+    header: document.querySelector(".app-header")?.getBoundingClientRect().toJSON(),
+    active: document.activeElement?.textContent,
+    locations: [...document.querySelectorAll("details.location[open]")].map(el => ({ id: el.getAttribute("data-location-id"), box: el.querySelector("summary")?.getBoundingClientRect().toJSON(), margin: getComputedStyle(el).scrollMarginTop })),
+  }));
+  await info.attach("restoration-geometry", { body: JSON.stringify(geometry), contentType: "application/json" });
+  await page.screenshot({ path: info.outputPath("restoration-failure.png") });
+});
+
 for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
   test(`remembers the last manually opened area on reload: ${device}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
@@ -84,7 +96,7 @@ test("corrupt preference falls back without losing collection progress", async (
   });
   await page.reload();
   await expect(page.locator("details.location").first()).toHaveJSProperty("open", true);
-  await expect(page.locator("#overall-text")).toContainText("Caught 1");
+  await expect(page.locator("#overall-text")).toContainText("1 / 807");
 });
 
 test("switching local account namespaces restores only that account's area", async ({ page }, info) => {
@@ -133,5 +145,5 @@ test("unavailable area storage leaves browsing and player saves working", async 
   await expect(page.locator("#notice")).toContainText("Last area could not be remembered");
   await area.locator('[data-action="species"]').first().click();
   await page.reload();
-  await expect(page.locator("#overall-text")).toContainText("Caught 1");
+  await expect(page.locator("#overall-text")).toContainText("1 / 807");
 });

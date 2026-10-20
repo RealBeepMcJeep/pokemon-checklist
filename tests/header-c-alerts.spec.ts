@@ -27,12 +27,12 @@ test("C closes Settings after Reset so its timed Undo is immediately reachable",
   await page.locator("#dex-search").fill("Pikipek");
   await page.locator('#dex-list [data-action="species"][data-species="731"]').click();
   await page.keyboard.press("Escape");
-  await expect(page.locator('#overall-text [data-status="caught"]')).toHaveText("Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
   await page.locator("#header-settings-toggle").click();
   page.once("dialog", dialog => dialog.accept());
   await page.locator("#reset-button").click();
   await expect(page.locator("#header-settings-panel")).not.toBeVisible();
   await expect(page.locator("#notice-action")).toHaveText("Undo");
   await page.locator("#notice-action").click();
-  await expect(page.locator('#overall-text [data-status="caught"]')).toHaveText("Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
 });

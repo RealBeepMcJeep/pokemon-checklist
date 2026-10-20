@@ -18,7 +18,7 @@ for (const width of [360, 412]) {
     await expect.poll(() => page.locator(".app-header").evaluate(el => Math.abs(el.getBoundingClientRect().top))).toBeLessThanOrEqual(1);
     await expect(page.locator("#sidebar-toggle")).toBeVisible();
     await expect(page.locator("#tools-toggle")).toBeVisible();
-    await expect(page.locator("#overall-text [data-status]")).toHaveText(["Not caught 807", "Seen 0", "Caught 0"]);
+    await expect(page.locator("#overall-text")).toHaveText("0 / 807");
     await page.locator("#header-settings-toggle").click();
     const settings = page.locator("#header-settings-panel");
     await expect(settings).toBeVisible();
@@ -31,7 +31,7 @@ for (const width of [360, 412]) {
     for (const id of ["export-button", "import-button", "reset-button"]) await expect(settings.locator(`#${id}`)).toBeVisible();
     await expect(settings.getByRole("button", { name: /Sign in to sync/i })).toBeVisible();
     await settings.locator("#forms-toggle").click();
-    await expect(settings.locator("#form-progress [data-status]")).toHaveText(["Not caught 48", "Seen 0", "Caught 0"]);
+    await expect(settings.locator('[data-progress-stat="living"]')).toContainText("0 / 825");
     await page.keyboard.press("Escape");
     await expect(settings).not.toBeVisible();
     await expect(page.locator("#header-settings-toggle")).toBeFocused();

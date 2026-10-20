@@ -8,17 +8,17 @@ vi.mock("./Tools", () => ({ toolsOpen: signal(false) }));
 vi.mock("./SyncPanel", () => ({ HeldClears: function HeldClears(){return null;}, MobileSyncStatus: function MobileSyncStatus(){return null;}, SyncPanel: function SyncPanel(){return null;} }));
 import { Header } from "./Header";
 afterEach(() => vi.unstubAllGlobals());
-it("keeps desktop HeldClears, CollectionProgress and notice in their original order", () => {
+it("keeps desktop HeldClears, ProgressHeadline and notice in their original order", () => {
   vi.stubGlobal("window", { scrollY: 0 });
   const order: string[] = [];
   function visit(value: unknown): void {
     if (Array.isArray(value)) { value.forEach(visit); return; }
     if (!value || typeof value !== "object") return;
     const node = value as VNode<{children?: unknown; id?: string}>;
-    if (typeof node.type === "function" && ["HeldClears", "CollectionProgress"].includes(node.type.name)) order.push(node.type.name);
+    if (typeof node.type === "function" && ["HeldClears", "ProgressHeadline"].includes(node.type.name)) order.push(node.type.name);
     if (node.props?.id === "notice") order.push("notice");
     visit(node.props?.children);
   }
   visit(Header({}));
-  expect(order).toEqual(["HeldClears", "CollectionProgress", "notice"]);
+  expect(order).toEqual(["HeldClears", "ProgressHeadline", "notice"]);
 });

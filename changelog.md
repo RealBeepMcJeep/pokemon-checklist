@@ -1,9 +1,10 @@
 # Changelog
 
 ## Upcoming — #17 follow-on milestones
-- M3: device-local progress selection and compact headline; M4: verified intrinsic catch tiers; M5: final combined independent phone/desktop review and closeout. These are not included in M2.
+- M4: verified intrinsic catch tiers; M5: final combined independent phone/desktop review and closeout.
 
 ## 2026-10-19
+- Added one selectable progress headline on phone and desktop: Registered species, National Dex owned, or Living Dex owned. Settings holds the other statistics. The device-local choice survives reload/account/game/tracking changes without touching player saves, backups or sync. Defaults follow regional tracking; legacy ownership never invents a form, No forms makes both Owned totals coincide, and UI-storage failures are reported separately.
 - Released the M2 regional living-Dex core: separate Kanto/Alolan rows, independent ownership/favorites, exact types/facts/move routes/evolution paths and form-aware search. No forms collapses browsing without discarding form records; encounter identities remain explicit. Extended Forms stays out of scope.
 - Added sibling-safe form-choice dialogs, independent evolution-stage toggles, exact Undo and visible unresolved-legacy-favorite assignment without invented ownership. Stale confirmations reject account/save/mode/tracking changes. Schema-v5 favorites/backups preserve meaningful v1–v4 imports, namespace-local migration capability, wire/reload/Undo intent and last-area continuity.
 - All five modes render documented ordinary/weather SOS allies beneath their real caller rows with shared unlocks on phone/desktop. Details and removed-table links return to native callers; conditions, abilities, method scope, pooled facts and weather rates remain explicit. Stock Sableye's three unresolved native-subarea bindings per mode remain source warnings without fake catch controls. No ordinary ally percentages or stock-to-hack engine equivalence are invented.

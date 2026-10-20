@@ -18,7 +18,7 @@ async function openApp(page: Page, project: string): Promise<string[]> {
   } else {
     await page.goto("/");
   }
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
   return errors;
 }
 
@@ -218,7 +218,7 @@ test("tracks forms and validates restore, migration, and reset", async ({
   expect(savedForm.forms[formKey!]).toBe("caught");
   expect(savedForm.species[37]).toBe("caught");
   expect(savedForm.forms["37:kanto"] ?? "none").toBe("none");
-  await expect(page.locator("#overall-text")).toContainText("Caught 1");
+  await expect(page.locator("#overall-text")).toContainText("1 / 825");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#import-file").setInputFiles({
@@ -271,7 +271,7 @@ test("tracks forms and validates restore, migration, and reset", async ({
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#reset-button").click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
   await expect(page.locator("#mode-select")).toHaveValue("photonic-prismatic");
   expect(errors).toEqual([]);
 });
@@ -315,16 +315,16 @@ test("mirrors progress between two tabs of the same site", async ({
   // Act in the first tab; the second (view-only: one tab edits) must follow
   // without any user action.
   await page.locator(pikipek).first().click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
-  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
+  await expect(other.locator("#overall-text")).toHaveText("1 / 807");
   await expect(other.locator(pikipek).first()).toContainText("Caught");
 
   // Take editing to the second tab; the first must follow in the other direction.
   // Cycling continues Caught → Seen, so Caught stops counting toward progress.
   await other.locator("#use-this-tab").click();
   await other.locator(pikipek).first().click();
-  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 1 / Caught 0");
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 1 / Caught 0");
+  await expect(other.locator("#overall-text")).toHaveText("0 / 807");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
   await expect(page.locator(pikipek).first()).toContainText("Seen");
 
   // Stars travel between tabs the same way statuses do.
@@ -437,7 +437,7 @@ test("attempts no network requests while signed out", async ({
     await mobilePage.route(/^https?:\/\//, (route) => route.abort("blockedbyclient"));
   }
   await mobilePage.goto(standalone ? standaloneUrl : "/");
-  await expect(mobilePage.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(mobilePage.locator("#overall-text")).toHaveText("0 / 807");
   await mobilePage.waitForTimeout(2500);
   expect(external(mobileAttempts)).toEqual([]);
   await mobile.close();
@@ -803,17 +803,16 @@ test("does not re-render every already-open location when only the focus moves",
   expect(errors).toEqual([]);
 });
 
-test("counts forms caught against the active mode's own obtainable forms", async ({
+test("keeps the regional living-Dex scope independent of encounter mode", async ({
   page,
 }, testInfo) => {
-  // The denominator used to be the 54-form union of all five modes in every mode,
-  // so Sun/Moon (14 forms) and the Ultra games (17) could never reach completion.
+  // M3 replaces the legacy active-mode extended-form counter with the approved regional living-Dex scope.
   const errors = await openApp(page, testInfo.project.name);
   await page.locator("#forms-toggle").click();
   await page.locator("#mode-select").selectOption("sun");
-  await expect(page.locator("#form-progress")).toHaveText("Forms Not caught 14 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 825");
   await page.locator("#mode-select").selectOption("photonic-prismatic");
-  await expect(page.locator("#form-progress")).toHaveText("Forms Not caught 48 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 825");
   expect(errors).toEqual([]);
 });
 
@@ -1047,14 +1046,14 @@ test("undoes a status change, a star, and a Reset in one tap", async ({
   await pikipek.click();
   page.once("dialog", (dialog) => dialog.accept());
   await page.locator("#reset-button").click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
   await expect(undo).toHaveText("Undo");
   await undo.click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
 
   // The undo was saved like any other change.
   await page.reload();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
   expect(errors).toEqual([]);
 });
 
@@ -1063,14 +1062,14 @@ test("shows the last good copy when the save cannot be read", async ({
 }, testInfo) => {
   const errors = await openApp(page, testInfo.project.name);
   await page.locator('[data-action="species"][data-species="731"]').first().click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
   await page.evaluate(() =>
     localStorage.setItem("pokemon-checklist-state-v5", "{half a save"),
   );
 
   await page.reload();
 
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
   await expect(page.locator("#notice")).toContainText("could not be read");
   await expect(page.locator("#notice-action")).toHaveText("Download unreadable copy");
   expect(
@@ -1134,8 +1133,8 @@ test("lets one tab edit, shows the other view-only, and hands editing over", asy
   await expect(other.locator("#reset-button")).toBeDisabled();
   await expect(other.locator('[data-action="star"][data-species="25"]')).toBeDisabled();
   await other.locator(pikipek).first().click({ force: true });
-  await expect(other.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 807 / Seen 0 / Caught 0");
+  await expect(other.locator("#overall-text")).toHaveText("0 / 807");
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
 
   // "Use this tab" moves editing: the first tab turns view-only at once.
   await other.locator("#use-this-tab").click();
@@ -1143,7 +1142,7 @@ test("lets one tab edit, shows the other view-only, and hands editing over", asy
   await expect(page.locator("#view-only")).toBeVisible();
   await expect(page.locator(pikipek).first()).toBeDisabled();
   await other.locator(pikipek).first().click();
-  await expect(page.locator("#overall-text")).toHaveText("Pokémon Not caught 806 / Seen 0 / Caught 1");
+  await expect(page.locator("#overall-text")).toHaveText("1 / 807");
 
   // Closing the editing tab lets the other one edit again.
   await other.close();

@@ -1161,3 +1161,25 @@ body:has(.form-choice-dialog[open]) { overflow: hidden !important; }
 .form-choice-option strong { font-size: 16px; }
 .form-choice-cancel { min-height: 44px; width: 100%; }
 @media (max-width: 599px) { .form-choice-dialog { margin: auto auto 0; width: 100%; max-height: 90dvh; border-radius: 18px 18px 0 0; padding: 20px 18px max(20px, env(safe-area-inset-bottom)); } }
+
+/* One collection headline; the alternative metrics are Settings-only. */
+.collection-headline { display: grid; grid-template-columns: auto auto minmax(8rem,20rem); align-items: center; gap: 8px; max-width: 42rem; padding: 4px 0; }
+.collection-headline label { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.collection-headline #overall-text { font-weight: 700; white-space: nowrap; }
+.collection-headline progress { width: 100%; height: 5px; }
+.progress-settings { margin: 16px 0; }
+.progress-settings h3 { margin: 0 0 8px; }
+.progress-settings > label { display: block; margin-bottom: 6px; }
+#progress-metric { width: 100%; padding: 10px; font: inherit; font-size: 16px; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.progress-settings p { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+.progress-settings dl { margin: 10px 0; }
+.progress-settings dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.progress-settings dd { margin: 0; white-space: nowrap; }
+.progress-settings .preference-error { color: var(--accent-bright); }
+@media (max-width: 999px) {
+  .mobile-command-row .collection-headline { flex: 1; min-width: 0; max-width: none; display: grid; grid-template-columns: 1fr; justify-items: center; gap: 1px; line-height: 1.1; padding: 0 0 5px; position: relative; }
+  .mobile-header .collection-headline label { font-size: 9px; }
+  .mobile-header .collection-headline #overall-text { flex: 0 0 auto; font-size: 13px; }
+  .mobile-header .collection-headline progress { position: absolute; bottom: 0; left: 0; height: 3px; }
+  .mobile-header:not(.is-scrolled) .collection-headline { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: center; height: 24px; gap: 8px; padding-bottom: 4px; }
+}

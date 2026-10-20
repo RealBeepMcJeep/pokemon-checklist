@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { UnlockSettings } from "./UnlockSettings";
 import { toolsOpen } from "./Tools";
-import { ASSETS, POKEMON } from "../data";
+import { ASSETS } from "../data";
 import { DEFAULT_MODE, MODE_LABELS } from "../domain";
 import {
-  speciesCounts,
-  caughtCount,
   drawerOpen,
-  formCounts,
   formsTracked,
   mode,
   notice,
@@ -28,30 +25,7 @@ import {
   toggleSidebar,
 } from "../ui";
 
-import { StatusCounts } from "./StatusCounts";
-
-// Keep collection subscriptions out of the action/header tree.
-function CollectionProgress({ details = false }: { details?: boolean }) {
-  const counts = speciesCounts.value;
-  return (
-    <div class="progress-row">
-      <label for="overall-progress">Overall caught</label>
-      <progress id="overall-progress" max={POKEMON.length} value={caughtCount.value} />
-      {!details && <span id="overall-text">
-        <span class="collection-label">Pokémon</span> <StatusCounts counts={counts} label="Overall Pokémon" />
-      </span>}
-      {formsTracked.value && <span id="form-progress">
-        <span class="collection-label">Forms</span> <StatusCounts counts={formCounts.value} label="Active mode forms" />
-      </span>}
-    </div>
-  );
-}
-
-function MobileCounts() {
-  const counts = speciesCounts.value;
-  return <><span id="overall-text"><span class="visually-hidden">Pokémon </span><StatusCounts counts={counts} label="Overall Pokémon" compact /></span>
-    <span class="mobile-progress-rail" aria-hidden="true">{(["none", "seen", "caught"] as const).map(status => <span data-status={status} style={{ width: `${counts[status] / POKEMON.length * 100}%` }} />)}</span></>;
-}
+import { ProgressHeadline, ProgressSettings } from "./CollectionProgress";
 
 function HeaderIcon({ name }: { name: "dex" | "tools" | "more" | "game" }) {
   const paths = {
@@ -197,7 +171,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
           <div class="mobile-identity"><h1>Pokémon Checklist</h1><span>{MODE_LABELS[currentMode]}</span></div>
           <div class="mobile-command-row">
             <button class="action-button mobile-mode" type="button" aria-label={`Game mode: ${MODE_LABELS[currentMode]}`} onClick={() => { setSettingsOpen(true); requestAnimationFrame(() => document.getElementById("mode-select")?.focus()); }}><HeaderIcon name="game" /><small>{({ "photonic-prismatic": "PM", sun: "Sun", moon: "Moon", "ultra-sun": "US", "ultra-moon": "UM" })[currentMode]}</small></button>
-            <MobileCounts />{dex}{tools}
+            <ProgressHeadline />{dex}{tools}
             <button class="action-button" id="header-settings-toggle" type="button" aria-label="Settings" aria-haspopup="dialog" aria-controls="header-settings-panel" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)}><HeaderIcon name="more" /></button>
           </div>
         </> : <>
@@ -235,7 +209,7 @@ export function Header({ inert = false }: { inert?: boolean }) {
         <div class={mobile ? "mobile-alerts" : undefined} ref={alertsRef}>
           {mobile && <MobileSyncStatus />}
           <HeldClears />
-          {!mobile && <CollectionProgress />}
+          {!mobile && <ProgressHeadline />}
           <div id="notice" class={currentNotice.kind} role="status" aria-live="polite">{currentNotice.message}</div>
         </div>
       </div>
@@ -244,7 +218,8 @@ export function Header({ inert = false }: { inert?: boolean }) {
       <div class="header-settings-heading"><h2 id="header-settings-title">Settings</h2><button class="action-button" type="button" onClick={() => setSettingsOpen(false)}>Close settings</button></div>
       {mobile && <div class="header-settings-controls actions" aria-label="Checklist actions">{controls}</div>}
       <UnlockSettings />
-      {mobile && <><CollectionProgress details /><SyncPanel /></>}
+      <ProgressSettings />
+      {mobile && <SyncPanel />}
       {mobile && <footer><strong>Wild Pokémon Checklist</strong><p>{MODE_LABELS[currentMode]} · Alola locations in story order · National Pokédex 001–807</p><span class="build-stamp" id="build-version" title="Release version and commit this build came from">{BUILD_LABEL}</span></footer>}
     </dialog>}
   </>;

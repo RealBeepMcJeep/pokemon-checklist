@@ -13,8 +13,8 @@ for (const width of [360,412]) {
   await page.screenshot({path:info.outputPath(`C-${width}-top.png`)});
   await page.evaluate(()=>scrollTo(0,500));
   await expect(page.locator(".mobile-identity")).toHaveCSS("opacity","0");
-  await expect(page.locator("#overall-text .status-count-number")).toHaveText(["807","0","0"]);
-  await expect(page.locator(".mobile-progress-rail > span")).toHaveCount(3);
+  await expect(page.locator("#overall-text")).toHaveText("0 / 807");
+  await expect(page.locator(".app-header progress")).toHaveCount(1);
   for (const selector of [".mobile-mode","#sidebar-toggle","#tools-toggle","#header-settings-toggle"]) {
    const box = await page.locator(selector).boundingBox(); expect(box!.width).toBeGreaterThanOrEqual(44); expect(box!.height).toBeGreaterThanOrEqual(44);
   }
