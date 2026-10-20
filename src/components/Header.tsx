@@ -55,17 +55,25 @@ export function Header({ inert = false }: { inert?: boolean }) {
   }, [mobile]);
   const alertsRef = useRef<HTMLDivElement>(null);
   const [alertsHeight, setAlertsHeight] = useState(0);
-  // Reserve only extra alert space, never the shrinking identity row: this avoids
-  // scroll/height feedback while keeping notices from covering the first section.
+  // Keep the document-flow spacer stable while browsing or using the drawer.
+  // Transient pending/synced messages must not push the guide behind each tap.
+  // At the top, reserve all alert space so the expanded header covers no content.
   useEffect(() => {
     const alerts = alertsRef.current;
     if (!mobile || !alerts) return;
-    const measure = () => setAlertsHeight(Math.ceil(alerts.getBoundingClientRect().height));
+    const measure = () => {
+      if (inert || window.scrollY > 0) return;
+      setAlertsHeight(Math.ceil(alerts.getBoundingClientRect().height));
+    };
     const observer = new ResizeObserver(measure);
     observer.observe(alerts);
+    window.addEventListener("scroll", measure, { passive: true });
     measure();
-    return () => observer.disconnect();
-  }, [mobile]);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", measure);
+    };
+  }, [mobile, inert]);
   // Undo expires after eight seconds. A new action/error must not be left behind
   // a modal backdrop; opening Settings with an older notice does not close it.
   useEffect(() => {

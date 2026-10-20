@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-20
+- Fixed small guide/background scroll jumps when phone status edits show save or pending/synced feedback, including edits inside the Pokédex. Header space remains stable while browsing and beneath the open drawer, then updates at the top so long warnings do not cover the first section. Sync messages, Undo, intentional navigation, player saves and desktop behavior remain unchanged.
+
 ## 2026-10-19
 - Phone encounter rows keep caller identity/status and wild rate together before inline allies and hide only genuinely empty When/Where and Notes fields. Desktop table columns and all real restrictions/source notes remain.
 - Repeated weather allies within each caller share one exact identity/status presentation while retaining separate weather/rate/source rules. Redundant classification prose is removed conservatively; caller relationships, form/ability distinctions, encounter data, target counts and saves are unchanged.
