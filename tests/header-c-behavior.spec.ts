@@ -5,13 +5,19 @@ for (const width of [360,412]) {
  test(`C lifecycle and labeled compact counters at ${width}px`, async ({page}, info) => {
   await page.setViewportSize({width,height:844});
   await page.goto(info.project.name === "standalone-file" ? pathToFileURL(resolve("index.html")).href : "/");
+  await expect(page.locator("details.location[open] > summary").first()).toBeFocused();
   await page.evaluate(()=>scrollTo(0,0));
+  await expect(page.locator(".app-header")).not.toHaveClass(/is-scrolled/);
   await expect(page.locator(".mobile-identity")).toHaveCSS("opacity","1");
-  const topCounts = await page.locator("#overall-text").boundingBox();
-  const topCommands = await page.locator("#tools-toggle").boundingBox();
+  // One layout snapshot: separate protocol calls can straddle a scroll update.
+  const { topCounts, topCommands } = await page.evaluate(() => ({
+    topCounts: document.querySelector("#overall-text")!.getBoundingClientRect().toJSON(),
+    topCommands: document.querySelector("#tools-toggle")!.getBoundingClientRect().toJSON(),
+  }));
   expect(topCounts!.y).toBeGreaterThanOrEqual(topCommands!.y + topCommands!.height);
   await page.screenshot({path:info.outputPath(`C-${width}-top.png`)});
   await page.evaluate(()=>scrollTo(0,500));
+  await expect(page.locator(".app-header")).toHaveClass(/is-scrolled/);
   await expect(page.locator(".mobile-identity")).toHaveCSS("opacity","0");
   await expect(page.locator("#overall-text")).toHaveText("0 / 807");
   await expect(page.locator(".app-header progress")).toHaveCount(1);
@@ -43,6 +49,7 @@ for (const width of [360,412]) {
   await page.screenshot({path:info.outputPath("C-desktop-1440.png")});
   await page.setViewportSize({width,height:844});
   await page.evaluate(()=>scrollTo(0,0));
+  await expect(page.locator(".app-header")).not.toHaveClass(/is-scrolled/);
   await expect(page.locator(".mobile-identity")).toHaveCSS("opacity","1");
  });
 }

@@ -816,7 +816,7 @@ test("keeps the regional living-Dex scope independent of encounter mode", async 
   expect(errors).toEqual([]);
 });
 
-test("gives phone tap targets at least 44px without changing desktop", async ({
+test("gives phone tap targets at least 44px and keeps desktop labels compact", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -846,7 +846,13 @@ test("gives phone tap targets at least 44px without changing desktop", async ({
     .locator("tbody .compact-status")
     .first()
     .boundingBox();
-  expect(desktopCompact!.width).toBeLessThan(44);
+  // Visible words may be wider than the old emoji-only square; desktop keeps
+  // its compact height, while the complete state label must not be clipped.
+  expect(desktopCompact!.height).toBeGreaterThanOrEqual(32);
+  expect(desktopCompact!.height).toBeLessThan(44);
+  const desktopLabel = page.locator("tbody .compact-status .status-text").first();
+  await expect(desktopLabel).toHaveText("None");
+  expect(await desktopLabel.evaluate(el => el.clientWidth >= 20 && el.scrollWidth <= el.clientWidth + 1)).toBe(true);
   expect(errors).toEqual([]);
 });
 

@@ -213,7 +213,9 @@ function EncounterRow({
         </span>
         {inline !== undefined && <InlineSos nodes={inline} visibleNotes={[...(group.notes || []), ...(row.note ? [row.note] : [])]} />}
       </th>
-      <td class={inline === undefined ? undefined : "caller-rate"}>{rateText(row.rates)}</td>
+      <td class={inline === undefined ? undefined : "caller-rate"}>
+        <span>{!!inline?.length && row.speciesId ? `${formatEncounterName(row, byDex.get(row.speciesId)?.name)} · ` : ""}{rateText(row.rates)}</span>
+      </td>
       <td>
         <Conditions group={group} row={row} />
       </td>

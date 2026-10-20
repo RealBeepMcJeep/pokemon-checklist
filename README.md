@@ -2,6 +2,12 @@
 
 A self-contained wild Pokémon checklist for the supplied Generation VII location guide and all four vanilla Alola games. It covers National Dex 001–807, chronological island/location sections, encounter rates, SOS allies, optional forms, and a searchable Pokédex in a responsive dark encyclopedia layout.
 
+## Ownership controls and inline encounter facts
+
+Compact ownership controls use visible **None / Seen / Caught** words (regional None is **Not caught**), without requiring an emoji font. Caught means currently owned, not ever caught. Pokémon sprites remain unchanged. Phone controls keep their touch-sized hit areas; desktop controls keep a shorter height and grow horizontally to fit the words.
+
+Closing the phone Pokédex returns focus to its opener after background controls become interactive again. An explicit guide-row jump keeps its destination focus. With inline SOS allies visible, the wild-rate value names its caller; it is not the ally's undocumented encounter share.
+
 ## Intrinsic catch difficulty
 
 Compact **Catch F / D / C / B / A / S** badges describe only the stock Gen VII base catch constant: **F easiest, S hardest**. This app-specific scale is not an official game grade, competitive strength, encounter frequency, SOS odds or battle catch probability. Fixed bands are **F 200–255; D 120–199; C 75–119; B 45–74; A 16–44; S 1–15**. Equal positive constants always share a tier; no SS/SSS subdivisions or percentile recalculation are used. Missing, zero or unsupported exact form/profile data shows **Catch —**, never an assumed hard tier.
@@ -39,7 +45,7 @@ Source ability identities such as Greninja (Battle Bond) remain explicit, withou
 inferring a transformed battle form. View context is temporary and adds no saved
 progress, favorites, tracking scope or schema fields.
 
-Regional caller and SOS guide links name the actual form and open its exact details. With tracking on, current- and other-game location lists contain only the selected form's encounters; an SOS ally remains linked to its caller's real row, without inheriting that caller's wild encounter percentage. Returning to the guide focuses that encounter row after closing the phone drawer. Each known regional guide encounter has one exact-form status button, not a shared species badge plus another form button. Its binding remains explicit when collection browsing is collapsed; toggling or undoing one form leaves its sibling intact.
+Regional caller and SOS guide links name the actual form and open its exact details. With tracking on, current- and other-game location lists contain only the selected form's encounters; an SOS ally remains linked to its caller's real row, without inheriting that caller's wild encounter percentage. Returning to the guide focuses that encounter row after closing the phone drawer and aligns its caller below the measured sticky header, even when several screens of inline SOS make the row taller than the viewport. Each known regional guide encounter has one exact-form status button, not a shared species badge plus another form button. Its binding remains explicit when collection browsing is collapsed; toggling or undoing one form leaves its sibling intact.
 
 When regional tracking is on, selected details warn if an older species-level Caught/Seen record has no corresponding confirmed form status. The record is preserved without assigning Alolan or Kanto ownership. Explicit form edits update that species' aggregate; an owned sibling remains owned, including after a concurrent edit or Undo. Switching tracking alone changes no progress or favorites.
 

@@ -52,7 +52,7 @@ for (const width of [390, 1440]) test.describe(`source form labels at ${width}px
         expect(await caller.evaluate(el => el.clientWidth > 0 && el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         await expect(row.locator(".species-name .pokemon-facts")).toHaveCount(example.pooled ? 0 : 1);
         await expect(row.locator(".sos-identity .pokemon-facts")).toHaveCount(example.allies.length);
-        await expect(row.locator("td").nth(0)).toHaveText(example.rate);
+        await expect(row.locator("td").nth(0)).toHaveText(`${example.name} · ${example.rate}`);
         await expect(row.locator(".inline-sos .sos-identity .guide-pokemon-link")).toHaveText(example.allies);
         if (example.name.startsWith("Rockruff")) await expect(row.locator(".inline-sos .condition")).toHaveText("Caller: Rockruff (Own Tempo) only");
         if (example.allies.length) expect(await row.locator(".inline-sos").innerText()).not.toContain("%");

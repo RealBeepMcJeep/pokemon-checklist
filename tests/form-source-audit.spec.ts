@@ -26,7 +26,7 @@ for(const width of [390,1440]) test.describe(`source pool audit ${width}px`,()=>
           // A pooled identity must not inherit one variant's competitive grade.
           await expect(row.locator(".species-name .pokemon-facts")).toHaveCount(0);
           if(c.allies.length)await expect(row.locator(".sos-identity .pokemon-facts")).toHaveCount(1);
-          await expect(row.locator("td").first()).toHaveText(c.rate);
+          await expect(row.locator("td").first()).toHaveText(`${c.name} · ${c.rate}`);
           await expect(row.locator(".sos-identity .guide-pokemon-link")).toHaveText(c.allies);
           if(c.name.startsWith("Rockruff")) await expect(row.locator(".inline-sos .condition")).toHaveText("Caller: Rockruff (Own Tempo) only");
           if(c.allies.length){await expect(row.locator(".sos-legend")).toContainText("not documented");expect(await row.locator(".inline-sos").innerText()).not.toContain("%");}

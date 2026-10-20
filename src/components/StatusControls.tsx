@@ -74,7 +74,7 @@ export function StatusButton({
           <span class="status-symbol" aria-hidden="true">
             {STATUS_SYMBOL[status]}
           </span>
-          <span class="status-text visually-hidden">
+          <span class="status-text">
             {statusLabel(status)}
           </span>
         </>

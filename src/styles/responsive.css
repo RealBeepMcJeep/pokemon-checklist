@@ -84,9 +84,10 @@
     min-height: 2.75rem;
   }
   .compact-status {
-    width: 2.75rem;
+    width: auto;
+    min-width: 2.75rem;
     height: 2.75rem;
-    flex: 0 0 2.75rem;
+    flex: 0 0 auto;
   }
   /* The account shortens before the status does: the status is the signal. */
   .sync-account {
@@ -249,7 +250,9 @@
   .mobile-header:not(.is-scrolled) .mobile-sync-healthy { top: 34px; }
   .mobile-sync-warning { display: block; padding: 5px 0; color: var(--accent-bright); font-size: 13px; overflow-wrap: anywhere; }
   .mobile-sync-warning[data-phase="error"] { color: #ff9a9a; }
-  .mobile-identity { height: 24px; overflow: hidden; transition: height .18s ease, opacity .18s ease; }
+  /* Command-grid placement switches immediately; identity must switch with it,
+     not remain visible over the compact row during a separate transition. */
+  .mobile-identity { height: 24px; overflow: hidden; }
   .mobile-identity h1 { font-size: 17px; margin: 0; }
   .mobile-identity > span { position: absolute; top: 40px; left: 60px; right: 156px; text-align: center; color: var(--accent); font-size: 10px; }
   .mobile-header:not(.is-scrolled) .mobile-command-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) repeat(3, 44px); grid-template-rows: 44px 24px; height: 73px; }

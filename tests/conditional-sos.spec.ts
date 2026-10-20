@@ -19,7 +19,7 @@ for (const width of [390, 1440]) test.describe(`conditional SOS ${width}px`, () 
     if (!await location.evaluate(element => (element as HTMLDetailsElement).open)) await location.locator("summary").click();
     const row = location.locator("#encounter-melemele-island-ten-carat-hill-grass-2-1");
     await expect(row.locator(".species-name .guide-pokemon-link").first()).toHaveText("Rockruff (Normal / Own Tempo)");
-    await expect(row.locator("td").first()).toHaveText("20%");
+    await expect(row.locator("td").first()).toHaveText("Rockruff (Normal / Own Tempo) · 20%");
     await expect(row.locator(".sos-identity .guide-pokemon-link")).toHaveText(["Rockruff (Own Tempo)"]);
     await expect(row.locator(".inline-sos .condition")).toHaveText("Caller: Rockruff (Own Tempo) only");
     expect(await row.locator(".inline-sos").innerText()).not.toContain("%");

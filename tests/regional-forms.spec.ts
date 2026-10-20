@@ -50,7 +50,9 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
           const rows = area.locator("tr").filter({ has: page.getByRole("button", { name: example.caller, exact: true }) });
           await expect(rows).toHaveCount(example.count);
           for (const row of await rows.all()) {
-            await expect(row.locator("td").first()).toHaveText(example.rate);
+            // With nested allies visible, identify the exact owner of the
+            // unchanged wild percentage; an ally must never inherit that rate.
+            await expect(row.locator("td").first()).toHaveText(`${example.caller} · ${example.rate}`);
             await expect(row.locator(".sos-legend")).not.toContainText("%");
             // Native footnotes remain in the caller/group. A separate shared
             // SOS-table note is shown once, not repeated under every ally.
@@ -128,7 +130,7 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       const row = school.locator("tr").filter({ has: page.getByRole("button", { name: "Meowth (Alolan)", exact: true }) });
       const ally = row.locator(".species-cell .inline-sos").getByRole("button", { name: "Meowth (Kanto)", exact: true });
       await expect(ally).toHaveCount(1);
-      await expect(row.locator("td").first()).toHaveText("15%");
+      await expect(row.locator("td").first()).toHaveText("Meowth (Alolan) · 15%");
       await expect(school.locator('th[scope="col"]').nth(1)).toHaveText("Wild rate");
       if (device === "phone") expect(await row.locator("td").first().evaluate(el => getComputedStyle(el, "::before").content)).toContain("Wild rate");
       await expect(page.locator(".location-body .group-heading strong").filter({ hasText: /SOS/ })).toHaveCount(0);
@@ -276,7 +278,7 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       await expect(alolan).toHaveAccessibleName(/Meowth \(Alolan\).*status: Caught/);
       await expect(kanto).toHaveAccessibleName(/Meowth \(Kanto\).*status: Not caught/);
       await expect(row.locator('button[data-action="species"][data-species="52"]')).toHaveCount(0);
-      await expect(row.locator("td").first()).toHaveText("15%");
+      await expect(row.locator("td").first()).toHaveText("Meowth (Alolan) · 15%");
       await kanto.click();
       await expect(kanto).toHaveAccessibleName(/status: Caught/);
       await expect(alolan).toHaveAccessibleName(/status: Caught/);
@@ -318,7 +320,7 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       await expect(caller).toHaveCount(1);
       await expect(ally).toHaveCount(1);
       const row = school.locator("tr").filter({ has: page.getByRole("button", { name: "Meowth (Alolan)", exact: true }) });
-      await expect(row.locator("td").first()).toHaveText("15%");
+      await expect(row.locator("td").first()).toHaveText("Meowth (Alolan) · 15%");
       await ally.click();
       await expect(page.locator("#dex-selection .selected-title")).toContainText("Meowth (Kanto)");
       await expect(page.locator("#dex-selection .location-links > ul > li")).toHaveCount(1);

@@ -82,7 +82,8 @@ for (const width of [390, 1440]) test.describe(`SOS source corrections at ${widt
     const rain = castform.filter({ hasText: "Rain, Hail" });
     await expect(sand.locator(".sos-method")).toContainText("guide-reported rate: 1%");
     await expect(rain.locator(".sos-method")).toContainText("guide-reported rate: 11%");
-    await expect(caller.locator("td").first()).toHaveText("20%");
+    await expect(caller.locator(".species-name .guide-pokemon-link").first()).toHaveText("Krokorok");
+    await expect(caller.locator("td").first()).toHaveText("Krokorok · 20%");
     await expect(sand).toContainText("not a per-turn or call-success probability");
     await expect(sand).toContainText("Guide-reported SOS encounter rate");
     await weather.locator("img").evaluateAll(imgs => Promise.all(imgs.map(img => (img as HTMLImageElement).decode().catch(() => {}))));

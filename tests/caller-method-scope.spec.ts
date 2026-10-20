@@ -14,7 +14,7 @@ for(const width of [390,1440])test.describe(`canyon caller method ${width}px`,()
    if(!tracking){if(width===390)await page.locator("#header-settings-toggle").click();await page.locator("#forms-toggle").click();if(width===390)await page.getByRole("button",{name:"Close settings",exact:true}).click();}
    for(const [suffix,rate,cave] of [["grass-1-1/6","10%",false],["grass-2-2/6","10%",false],["cave-3/5","20%",true],["caves-with-water-4/2","20%",true]] as const){
     const id=("encounter-poni-island/vast-poni-canyon/"+suffix).replace(/[^a-zA-Z0-9]+/g,"-");const row=loc.locator(`[id="${id}"]`);
-    await expect(row.locator(".species-name .guide-pokemon-link").first()).toHaveText("Carbink");await expect(row.locator("td").first()).toHaveText(rate);
+    await expect(row.locator(".species-name .guide-pokemon-link").first()).toHaveText("Carbink");await expect(row.locator("td").first()).toHaveText(cave ? `Carbink · ${rate}` : rate);
     await expect(row.locator(".sos-identity .guide-pokemon-link")).toHaveText(cave?["Diancie","Sableye"]:[]);
     if(cave){expect(await row.locator(".inline-sos").innerText()).not.toContain("%");await expect(row.locator(".sos-legend")).toContainText("not documented");}
     if(!tracking){await row.evaluate(e=>{const h=document.querySelector("header")!.getBoundingClientRect();window.scrollBy(0,e.getBoundingClientRect().top-h.bottom-16);});await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r()))));await expect(row.locator(".species-name .guide-pokemon-link").first()).toBeInViewport({ratio:0.98});await page.screenshot({path:info.outputPath(`${width}-${suffix.replaceAll("/","-")}.png`)});}

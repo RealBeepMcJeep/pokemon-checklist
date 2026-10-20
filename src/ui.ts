@@ -197,7 +197,9 @@ function focusEncounterRow(hash: string): boolean {
   // this explicit row destination wins rather than the old caller button.
   requestAnimationFrame(() => {
     if (!target.isConnected) return;
-    target.scrollIntoView({ block: "center" });
+    // A caller row may contain several screens of inline SOS allies. Centering
+    // it hides the caller; align its start using the measured-header CSS margin.
+    target.scrollIntoView({ block: "start" });
     target.focus({ preventScroll: true });
   });
   return true;
@@ -282,15 +284,27 @@ export function consumeSelectionFocusIntent(): boolean {
 }
 
 export function closeDrawer(): void {
+  const wasOpen = drawerOpen.peek();
+  const target = previousFocus;
   drawerOpen.value = false;
-  if (isMobile.value) previousFocus?.focus();
+  previousFocus = null;
+  if (wasOpen && isMobile.peek()) requestAnimationFrame(() => {
+    // Header/guide remain inert until the close render commits. A reopened
+    // drawer or a later explicit row jump must retain its own focus intent.
+    if (drawerOpen.peek() || !isMobile.peek()) return;
+    const connected = target?.isConnected && !target.closest("[inert]") ? target : document.getElementById("sidebar-toggle");
+    connected?.focus({ preventScroll: true });
+  });
 }
 
 export function toggleSidebar(): void {
   if (isMobile.value) {
-    if (!drawerOpen.value)
-      previousFocus = document.activeElement as HTMLElement | null;
-    drawerOpen.value = !drawerOpen.value;
+    if (drawerOpen.peek()) closeDrawer();
+    else {
+      // A touch tap does not necessarily focus its button before onClick.
+      previousFocus = document.getElementById("sidebar-toggle") ?? document.activeElement as HTMLElement | null;
+      drawerOpen.value = true;
+    }
   } else {
     sidebarHidden.value = !sidebarHidden.value;
   }

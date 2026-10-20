@@ -1,9 +1,9 @@
 # Changelog
 
-## Upcoming — #17 follow-on milestones
-- M5: final combined independent phone/desktop review and closeout.
-
 ## 2026-10-19
+- Guide return links focus the actual encounter row after drawer cleanup and align its caller below the measured header, including rows containing several screens of inline SOS. Explicit row destinations retain precedence over generic drawer focus return.
+- Phone drawer Escape, Close and backdrop return focus after background inert cleanup, including touch-opened drawers. Inline wild-rate values name their caller when allies are shown, so an opposite-form ally cannot inherit that percentage visually.
+- Mobile identity and command layout switch atomically to avoid transition overlap. Compact ownership states use readable words without requiring emoji fonts; Pokémon atlas icons, collection records and source rates stay unchanged.
 - Fixed a real reload race where late native history restoration could move the remembered area offscreen after the app had focused it. The app now owns section restoration; delayed-load HTTP/file regression tests preserve its position and focus without relaxing bounds.
 - Added compact intrinsic Catch F–S badges across collection, selected details, guide callers, ordinary/weather SOS and Catch next. Exact stock SM/USUM rates, equal-rate regional forms and truthful unsupported/missing data share one tested resolver; keyboard/touch help separates the fixed app scale from competitive grades, encounter odds and actual battle chance. Calculator formulas, preferences and player records are unchanged.
 - Added one selectable progress headline on phone and desktop: Registered species, National Dex owned, or Living Dex owned. Settings holds the other statistics. The device-local choice survives reload/account/game/tracking changes without touching player saves, backups or sync. Defaults follow regional tracking; legacy ownership never invents a form, No forms makes both Owned totals coincide, and UI-storage failures are reported separately.
