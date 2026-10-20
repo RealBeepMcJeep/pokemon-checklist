@@ -8,6 +8,12 @@ Compact ownership controls use visible **None / Seen / Caught** words (regional 
 
 Closing the phone Pokédex returns focus to its opener after background controls become interactive again. An explicit guide-row jump keeps its destination focus. With inline SOS allies visible, the wild-rate value names its caller; it is not the ally's undocumented encounter share.
 
+On phones, each caller's identity, ownership control and wild rate appear before its inline allies. Genuinely empty When/Where and Notes fields are omitted; actual restrictions and source notes remain. Desktop keeps its aligned table columns.
+
+Repeated weather rules for the same exact ally within one caller share one identity and status control, with separate weather/rate lines. Different forms, abilities and access states are not combined. Allies remain beneath each actual caller; every source rule and guide-reported rate is retained, without inventing ordinary SOS shares or per-turn odds.
+
+The phone Pokédex uses one content scroller below its heading/search controls. Selected details can grow naturally before the filtered list instead of being capped in a second small scroll box. Evolution-family disclosures, unknown-data labels and the return to Catch next remain available; desktop retains its compact detail panel.
+
 ## Intrinsic catch difficulty
 
 Compact **Catch F / D / C / B / A / S** badges describe only the stock Gen VII base catch constant: **F easiest, S hardest**. This app-specific scale is not an official game grade, competitive strength, encounter frequency, SOS odds or battle catch probability. Fixed bands are **F 200–255; D 120–199; C 75–119; B 45–74; A 16–44; S 1–15**. Equal positive constants always share a tier; no SS/SSS subdivisions or percentile recalculation are used. Missing, zero or unsupported exact form/profile data shows **Catch —**, never an assumed hard tier.

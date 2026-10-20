@@ -1,6 +1,9 @@
 # Changelog
 
 ## 2026-10-19
+- Phone encounter rows keep caller identity/status and wild rate together before inline allies and hide only genuinely empty When/Where and Notes fields. Desktop table columns and all real restrictions/source notes remain.
+- Repeated weather allies within each caller share one exact identity/status presentation while retaining separate weather/rate/source rules. Redundant classification prose is removed conservatively; caller relationships, form/ability distinctions, encounter data, target counts and saves are unchanged.
+- Phone Pokédex details grow inside one content scroller rather than a capped nested panel, preserving reachable search, filtered-list navigation, evolution-family controls, uncertainty labels and drawer focus return.
 - Guide return links focus the actual encounter row after drawer cleanup and align its caller below the measured header, including rows containing several screens of inline SOS. Explicit row destinations retain precedence over generic drawer focus return.
 - Phone drawer Escape, Close and backdrop return focus after background inert cleanup, including touch-opened drawers. Inline wild-rate values name their caller when allies are shown, so an opposite-form ally cannot inherit that percentage visually.
 - Mobile identity and command layout switch atomically to avoid transition overlap. Compact ownership states use readable words without requiring emoji fonts; Pokémon atlas icons, collection records and source rates stay unchanged.

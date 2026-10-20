@@ -294,9 +294,11 @@ test("opens the Pokédex drawer without mobile overflow", async ({
     width: innerWidth,
     scrollWidth: document.documentElement.scrollWidth,
     rowDisplay: getComputedStyle(document.querySelector("tbody tr")!).display,
+    rowColumns: getComputedStyle(document.querySelector("tbody tr")!).gridTemplateColumns,
   }));
   expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.width);
-  expect(sizes.rowDisplay).toBe("block");
+  expect(sizes.rowDisplay).toBe("grid");
+  expect(sizes.rowColumns.split(" ")).toHaveLength(1);
   await page.keyboard.press("Escape");
   await expect(page.locator("#pokedex")).not.toHaveClass(/drawer-open/);
   expect(errors).toEqual([]);

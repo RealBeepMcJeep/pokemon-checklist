@@ -234,19 +234,20 @@ for (const [device, width] of [["desktop", 1440], ["phone", 390]] as const) {
       await expect(weather.locator('.sos-entry[data-source-row="ulaula-island/haina-desert/sos-calls-2/7"]')).toHaveCount(1);
       await expect(weather.locator(".sos-kind").filter({ hasText: "Any listed wild caller" })).toHaveCount(2);
       const castform = weather.locator('.sos-entry[data-sos-kind="weather-sos"]').filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
-      await expect(castform).toHaveCount(2);
+      await expect(castform).toHaveCount(1);
+      await expect(castform.locator(".sos-rule")).toHaveCount(2);
       // Neither switch may silently leave weather allies visible without its prerequisite.
-      for (const [label, enabled, count] of [["Weather SOS", false, 0], ["Weather SOS", true, 2], ["SOS Calls", false, 0], ["SOS Calls", true, 2]] as const) {
+      for (const [label, enabled, count] of [["Weather SOS", false, 0], ["Weather SOS", true, 1], ["SOS Calls", false, 0], ["SOS Calls", true, 1]] as const) {
         await page.locator("#header-settings-toggle").click();
         await page.getByLabel(label, { exact: true }).setChecked(enabled);
         await page.getByRole("button", { name: "Close settings", exact: true }).click();
         await expect(castform).toHaveCount(count);
         if (label === "SOS Calls" && !enabled) await expect(weather.locator(".inline-sos")).toHaveCount(0);
       }
-      const sand = castform.filter({ has: page.getByText("Sandstorm", { exact: true }) });
+      const sand = castform.locator(".sos-rule").filter({ has: page.getByText("Sandstorm", { exact: true }) });
       await expect(sand.locator(".sos-method")).toContainText("rate: 1%");
       await expect(sand).toContainText("Guide-reported SOS encounter rate");
-      const rainHail = castform.filter({ has: page.getByText("Rain, Hail", { exact: true }) });
+      const rainHail = castform.locator(".sos-rule").filter({ has: page.getByText("Rain, Hail", { exact: true }) });
       await expect(rainHail.locator(".sos-method")).toContainText("rate: 11%");
       await desert.locator("img").evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode().catch(() => {}))));
       await sand.evaluate(el => el.scrollIntoView({ block: "center" }));

@@ -77,9 +77,10 @@ for (const width of [390, 1440]) test.describe(`SOS source corrections at ${widt
     const weather = caller.locator('.sos-entry[data-sos-kind="weather-sos"]');
     const castform = weather.filter({ has: page.getByRole("button", { name: "Castform", exact: true }) });
     await expect(haina.locator(".group-heading strong").filter({ hasText: /^Weather SOS$/ })).toHaveCount(0);
-    await expect(castform).toHaveCount(2);
-    const sand = castform.filter({ hasText: "Sandstorm" });
-    const rain = castform.filter({ hasText: "Rain, Hail" });
+    await expect(castform).toHaveCount(1);
+    await expect(castform.locator(".sos-rule")).toHaveCount(2);
+    const sand = castform.locator(".sos-rule").filter({ hasText: "Sandstorm" });
+    const rain = castform.locator(".sos-rule").filter({ hasText: "Rain, Hail" });
     await expect(sand.locator(".sos-method")).toContainText("guide-reported rate: 1%");
     await expect(rain.locator(".sos-method")).toContainText("guide-reported rate: 11%");
     await expect(caller.locator(".species-name .guide-pokemon-link").first()).toHaveText("Krokorok");

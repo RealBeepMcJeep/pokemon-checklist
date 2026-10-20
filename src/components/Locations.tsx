@@ -30,6 +30,7 @@ import { StatusCounts } from "./StatusCounts";
 import { PokemonFacts } from "./PokemonFacts";
 import { CatchBadge } from "./CatchDifficulty";
 import { encounterCatchForm } from "../catch-difficulty";
+import { groupWeatherNodes, sosConditions } from "../sos-presentation";
 import {
   AllyForms,
   PokemonIcon,
@@ -126,37 +127,44 @@ function Allies({ row }: { row: EncounterRowData }) {
 
 function InlineSos({ nodes, root = true, visibleNotes = [] }: { nodes: readonly GuideSosNode[]; root?: boolean; visibleNotes?: readonly string[] }) {
   if (!nodes.length) return null;
+  const sourceNotes = (other: GuideSosNode) => [...new Set([
+    ...(other.call.group.notes || []),
+    ...(other.call.sourceRow.note ? [other.call.sourceRow.note] : []),
+  ])];
+  const ruleFacts = (node: GuideSosNode) => {
+    const { call } = node;
+    const conditions = [
+      ...sosConditions(node),
+      ...(call.callerForm ? [`Caller: ${formatEncounterName(
+        { speciesId: call.sourceRow.speciesId, form: call.callerForm },
+        byDex.get(call.sourceRow.speciesId!)?.name,
+      )} only`] : []),
+    ];
+    // Retain the original sibling-source scope even when weather identities share a heading.
+    const earlierNotes = new Set(nodes.slice(0, nodes.indexOf(node)).flatMap(sourceNotes));
+    const notes = sourceNotes(node).filter(note => !visibleNotes.includes(note) && !earlierNotes.has(note));
+    return <>
+      {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
+      {notes.map(note => <span class="sos-note" key={note}>{nodes.filter(other => sourceNotes(other).includes(note)).length > 1 && "Shared ally source note: "}{note}</span>)}
+    </>;
+  };
   return <ul class="inline-sos">
     {root && guideCalls(nodes).some(node => node.call.kind === "sos") &&
       <li class="sos-legend">Ordinary SOS ally share not documented.</li>}
-    {nodes.map((node, index) => {
-      const { call } = node;
-      const row = call.row;
-      const conditions = [
-        ...(call.group.conditions || []), ...(call.sourceRow.conditions || []),
-        ...(call.callerForm ? [`Caller: ${formatEncounterName(
-          { speciesId: call.sourceRow.speciesId, form: call.callerForm },
-          byDex.get(call.sourceRow.speciesId!)?.name,
-        )} only`] : []),
-      ];
-      // Share exact note text across sibling rules as well as sibling allies;
-      // a source footnote can describe two separately imported caller records.
-      const sourceNotes = (other: GuideSosNode) => [...new Set([
-        ...(other.call.group.notes || []),
-        ...(other.call.sourceRow.note ? [other.call.sourceRow.note] : []),
-      ])];
-      const earlierNotes = new Set(nodes.slice(0, index).flatMap(sourceNotes));
-      const notes = sourceNotes(node).filter(note => !visibleNotes.includes(note) && !earlierNotes.has(note));
-      const sharedNote = (note: string) => nodes.filter(other => sourceNotes(other).includes(note)).length > 1;
+    {groupWeatherNodes(nodes).map((rules, index) => {
+      const node = rules[0], { call } = node, row = call.row;
       return <li class="sos-entry" data-sos-kind={call.kind} data-source-row={call.sourceRow.id} key={`${call.sourceRow.id}:${row.speciesId}:${row.form || ""}:${index}`}>
-        {call.kind === "weather-sos" && <span class="sos-method">{`Weather SOS · guide-reported rate: ${row.rates ? rateText(row.rates) : "not documented"} · location-wide rule`}</span>}
         <div class="sos-identity">
           <GuidePokemon id={row.speciesId!} name={row.speciesName || row.species || "Pokémon"} form={row.form} ability={row.ability} context={call.kind === "weather-sos" ? "weather SOS ally" : "SOS ally"} />
-          {call.kind === "sos" && <span class="sos-kind">{isWildcardCaller(call.sourceRow) ? "Any listed wild caller" : "SOS"}</span>}
+          <span class="sos-kind">{call.kind === "weather-sos" ? "Weather SOS · location-wide rule" : isWildcardCaller(call.sourceRow) ? "Any listed wild caller" : "SOS"}</span>
         </div>
         <AllyForms ally={{ speciesId: row.speciesId!, species: row.species || "", name: row.speciesName || "Pokémon", form: row.form }} />
-        {conditions.map(condition => <span class="condition" key={condition}>{condition}</span>)}
-        {notes.map(note => <span class="sos-note" key={note}>{sharedNote(note) && "Shared ally source note: "}{note}</span>)}
+        {call.kind === "weather-sos" ? <div class="weather-rules">
+          {rules.map((rule, ruleIndex) => <div class="sos-rule" data-source-row={rule.call.sourceRow.id} key={`${rule.call.sourceRow.id}:${ruleIndex}`}>
+            <span class="sos-method">{`guide-reported rate: ${rule.call.row.rates ? rateText(rule.call.row.rates) : "not documented"}`}</span>
+            {ruleFacts(rule)}
+          </div>)}
+        </div> : ruleFacts(node)}
         <InlineSos nodes={node.children} root={false} visibleNotes={visibleNotes} />
       </li>;
     })}
@@ -216,10 +224,10 @@ function EncounterRow({
       <td class={inline === undefined ? undefined : "caller-rate"}>
         <span>{!!inline?.length && row.speciesId ? `${formatEncounterName(row, byDex.get(row.speciesId)?.name)} · ` : ""}{rateText(row.rates)}</span>
       </td>
-      <td>
+      <td class={[...(group.conditions || []), ...(row.conditions || [])].some(value => value.trim()) ? undefined : "empty-fact"}>
         <Conditions group={group} row={row} />
       </td>
-      <td>{row.note || "—"}</td>
+      <td class={row.note?.trim() ? undefined : "empty-fact"}>{row.note || "—"}</td>
       {inline === undefined && <td><Allies row={row} /></td>}
     </tr>
   );

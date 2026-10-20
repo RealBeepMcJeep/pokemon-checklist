@@ -97,7 +97,10 @@ for (const width of [390, 1440]) test(`stock weather and unavailable-source acce
   await expect(page.getByLabel("SOS Calls", { exact: true })).toBeChecked();
   await page.getByLabel("Weather SOS", { exact: true }).check();
   await expect(weather).toHaveCount(1);
-  await expect(weather.locator(".sos-method")).toContainText("guide-reported rate: 1%");
+  await expect(weather.locator(".sos-rule")).toHaveCount(3);
+  const rainRule = weather.locator(".sos-rule").filter({ has: page.getByText("During rain", { exact: true }) });
+  await expect(rainRule).toHaveCount(1);
+  await expect(rainRule.locator(".sos-method")).toHaveText("guide-reported rate: 1%");
   await expect(weather.locator(".catch-badge")).toHaveText("Catch B");
   await expect(weather.locator(".catch-badge")).toHaveAttribute("data-catch-rate", "45");
   await expect(weather).toContainText("During rain");
